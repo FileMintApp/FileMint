@@ -1,0 +1,17 @@
+.DS_Store
+.build/
+build/
+DerivedData/
+FileMint.xcodeproj/
+*.xcworkspace/
+*.xcuserstate
+*.dmg
+*.app
+.local/
+
+# Local agent and product-planning workspace. Do not publish these to GitHub.
+AGENTS.md
+specs/
+docs/AI_PLAYBOOK.md
+.agents/
+.codex/

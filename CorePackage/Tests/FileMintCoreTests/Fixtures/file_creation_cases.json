@@ -1,0 +1,42 @@
+[
+  {
+    "name": "create plain text file in empty folder",
+    "templateID": "plain-text",
+    "requestedFileName": null,
+    "existingFileNames": [],
+    "expectedFileName": "Untitled.txt",
+    "expectedContentContains": []
+  },
+  {
+    "name": "increment text file when default name already exists",
+    "templateID": "plain-text",
+    "requestedFileName": null,
+    "existingFileNames": ["Untitled.txt"],
+    "expectedFileName": "Untitled 2.txt",
+    "expectedContentContains": []
+  },
+  {
+    "name": "create markdown file with rendered title",
+    "templateID": "markdown",
+    "requestedFileName": null,
+    "existingFileNames": [],
+    "expectedFileName": "Untitled.md",
+    "expectedContentContains": ["# Untitled.md"]
+  },
+  {
+    "name": "sanitize requested filename separators",
+    "templateID": "json",
+    "requestedFileName": "api/config.json",
+    "existingFileNames": [],
+    "expectedFileName": "api-config.json",
+    "expectedContentContains": ["{}"]
+  },
+  {
+    "name": "increment custom swift filename",
+    "templateID": "swift",
+    "requestedFileName": "Model.swift",
+    "existingFileNames": ["Model.swift", "Model 2.swift"],
+    "expectedFileName": "Model 3.swift",
+    "expectedContentContains": ["import Foundation"]
+  }
+]

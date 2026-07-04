@@ -1,0 +1,70 @@
+FileMint Non-Commercial Source License
+Version 1.0
+
+Copyright (c) 2026 FileMint contributors
+
+This license is a source-available non-commercial license. It is not the MIT
+License and it is not an Open Source Initiative approved open source license.
+
+1. Permission
+
+You may use, copy, fork, modify, and distribute this software and modified
+versions of this software only for Non-Commercial Purposes, subject to the
+terms below.
+
+2. Non-Commercial Purposes
+
+Non-Commercial Purposes means personal, educational, research, evaluation,
+or other uses that do not generate revenue, support a revenue-generating
+product or service, provide paid access, or create commercial advantage for
+an individual, company, organization, or client.
+
+3. Commercial Use Is Not Permitted
+
+Without separate prior written permission from the copyright holders, you may
+not use, copy, modify, distribute, host, sublicense, sell, lease, provide,
+or make available this software or any derivative work for commercial
+purposes.
+
+Commercial purposes include, but are not limited to:
+
+- selling or licensing this software or a derivative work;
+- including this software or a derivative work in a paid product;
+- offering this software or a derivative work as part of a paid service;
+- using this software or a derivative work for client work or consulting;
+- using this software or a derivative work inside a business workflow where
+  the use supports commercial operations;
+- redistributing this software or a derivative work in a commercial package,
+  marketplace, app store, or hosted service.
+
+4. Forks And Derivative Works
+
+Forks and derivative works are allowed only for Non-Commercial Purposes. Any
+fork or derivative work must preserve this license, the copyright notice, and
+all license notices in source form and in any distributed materials.
+
+You may not relicense this software or a derivative work under MIT, Apache,
+BSD, GPL, or any other license that permits commercial use without separate
+written permission from the copyright holders.
+
+5. Trademarks
+
+This license does not grant permission to use the FileMint name, logo, icon,
+or other project marks for commercial purposes or in a way that suggests
+endorsement by the copyright holders.
+
+6. No Warranty
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY CLAIM, DAMAGES,
+OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE,
+ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+
+7. Separate Commercial Permission
+
+For commercial licensing, commercial derivative work, commercial
+redistribution, or other permissions not granted by this license, obtain
+separate written permission from the copyright holders before use.

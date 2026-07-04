@@ -1,0 +1,127 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag, for example v0.1.0"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build, notarize, and publish
+    runs-on: macos-15
+
+    env:
+      RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Check local toolchain
+        run: make doctor
+
+      - name: Resolve release version
+        id: version
+        run: |
+          set -euo pipefail
+          TAG="$RELEASE_TAG"
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Release tag must look like v0.1.0."
+            exit 2
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Verify deterministic core behavior
+        run: make verify
+
+      - name: Import Developer ID certificate
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.APPLE_DEVELOPER_ID_CERTIFICATE_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.APPLE_BUILD_KEYCHAIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$CERTIFICATE_BASE64" || -z "$CERTIFICATE_PASSWORD" || -z "$KEYCHAIN_PASSWORD" ]]; then
+            echo "::error::Missing Developer ID certificate secrets."
+            exit 2
+          fi
+
+          CERTIFICATE_PATH="$RUNNER_TEMP/developer-id.p12"
+          KEYCHAIN_PATH="$RUNNER_TEMP/filemint-signing.keychain-db"
+
+          echo "$CERTIFICATE_BASE64" | base64 --decode > "$CERTIFICATE_PATH"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERTIFICATE_PATH" -P "$CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH"
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+
+      - name: Package signed and notarized DMG
+        id: package
+        env:
+          APP_VERSION: ${{ steps.version.outputs.version }}
+          BUILD_NUMBER: ${{ github.run_number }}
+          RELEASE_REQUIRE_SIGNING: "1"
+          NOTARIZE: "1"
+          APPLE_CODESIGN_IDENTITY: ${{ secrets.APPLE_CODESIGN_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: ./scripts/package_release.sh
+
+      - name: Generate release notes
+        id: notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          NOTES_FILE="$RUNNER_TEMP/release-notes.md"
+          gh api "repos/${GITHUB_REPOSITORY}/releases/generate-notes" \
+            -f tag_name="$TAG" \
+            --jq .body > "$NOTES_FILE"
+          echo "notes_file=$NOTES_FILE" >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          TITLE: FileMint ${{ steps.version.outputs.version }}
+          NOTES_FILE: ${{ steps.notes.outputs.notes_file }}
+          DMG_PATH: ${{ steps.package.outputs.dmg_path }}
+          CHECKSUM_PATH: ${{ steps.package.outputs.checksum_path }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$DMG_PATH" "$CHECKSUM_PATH" --clobber
+            gh release edit "$TAG" --title "$TITLE" --notes-file "$NOTES_FILE"
+          else
+            gh release create "$TAG" "$DMG_PATH" "$CHECKSUM_PATH" \
+              --title "$TITLE" \
+              --notes-file "$NOTES_FILE" \
+              --verify-tag
+          fi
