@@ -9,7 +9,7 @@ test:
 	swift test --package-path CorePackage
 
 harness:
-	swift run --package-path CorePackage filemint-harness CorePackage/Tests/FileMintCoreTests/Fixtures/file_creation_cases.json
+	swift run --package-path CorePackage filemint-harness specs/harness/cases/file_creation_cases.json
 
 project:
 	./scripts/bootstrap_project.sh

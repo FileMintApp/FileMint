@@ -12,19 +12,45 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
     public var collisionStrategy: NameCollisionStrategy
     public var revealAfterCreation: Bool
     public var favoritesFirst: Bool
+    public var language: AppLanguage
 
     public init(
         templates: [FileTemplate],
         monitoredFolderURLs: [URL],
         collisionStrategy: NameCollisionStrategy,
         revealAfterCreation: Bool,
-        favoritesFirst: Bool
+        favoritesFirst: Bool,
+        language: AppLanguage = .english
     ) {
         self.templates = templates
         self.monitoredFolderURLs = monitoredFolderURLs
         self.collisionStrategy = collisionStrategy
         self.revealAfterCreation = revealAfterCreation
         self.favoritesFirst = favoritesFirst
+        self.language = language
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case templates
+        case monitoredFolderURLs
+        case collisionStrategy
+        case revealAfterCreation
+        case favoritesFirst
+        case language
+    }
+
+    public init(from decoder: Decoder) throws {
+        let defaults = FileMintPreferences.default
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        templates = (try? container.decode([FileTemplate].self, forKey: .templates)) ?? defaults.templates
+        monitoredFolderURLs = (try? container.decode([URL].self, forKey: .monitoredFolderURLs)) ?? defaults.monitoredFolderURLs
+        collisionStrategy = (try? container.decode(NameCollisionStrategy.self, forKey: .collisionStrategy))
+            ?? defaults.collisionStrategy
+        revealAfterCreation = (try? container.decode(Bool.self, forKey: .revealAfterCreation))
+            ?? defaults.revealAfterCreation
+        favoritesFirst = (try? container.decode(Bool.self, forKey: .favoritesFirst)) ?? defaults.favoritesFirst
+        language = (try? container.decode(AppLanguage.self, forKey: .language)) ?? defaults.language
     }
 
     public static var `default`: FileMintPreferences {
@@ -33,7 +59,8 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
             monitoredFolderURLs: DefaultFolders.urls(),
             collisionStrategy: .increment,
             revealAfterCreation: true,
-            favoritesFirst: true
+            favoritesFirst: true,
+            language: .english
         )
     }
 }

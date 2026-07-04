@@ -9,9 +9,7 @@ FileMint.xcodeproj/
 *.app
 .local/
 
-# Local agent and product-planning workspace. Do not publish these to GitHub.
-AGENTS.md
-specs/
-docs/AI_PLAYBOOK.md
+# Local private agent workspace. Public agent guidance lives in AGENTS.md,
+# specs/, and docs/AI_PLAYBOOK.md.
 .agents/
 .codex/

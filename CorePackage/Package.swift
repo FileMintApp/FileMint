@@ -19,10 +19,7 @@ let package = Package(
         ),
         .testTarget(
             name: "FileMintCoreTests",
-            dependencies: ["FileMintCore"],
-            resources: [
-                .process("Fixtures")
-            ]
+            dependencies: ["FileMintCore"]
         )
     ]
 )

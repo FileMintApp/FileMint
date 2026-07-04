@@ -92,14 +92,50 @@ public enum TemplateCatalog {
         templates.first { $0.id == id }
     }
 
+    public static func sortedTemplates(from templates: [FileTemplate]) -> [FileTemplate] {
+        templates.sorted(by: menuRankSort)
+    }
+
     public static func enabledTemplates(from templates: [FileTemplate]) -> [FileTemplate] {
-        templates
-            .filter(\.isEnabled)
-            .sorted { left, right in
-                if left.rank == right.rank {
-                    return left.displayName.localizedStandardCompare(right.displayName) == .orderedAscending
-                }
-                return left.rank < right.rank
-            }
+        sortedTemplates(from: templates.filter(\.isEnabled))
+    }
+
+    public static func reorderedTemplates(
+        _ templates: [FileTemplate],
+        moving sourceIndexes: IndexSet,
+        to destination: Int
+    ) -> [FileTemplate] {
+        var ordered = sortedTemplates(from: templates)
+        let sources = sourceIndexes.sorted()
+
+        guard !sources.isEmpty, sources.allSatisfy({ ordered.indices.contains($0) }) else {
+            return normalizedRanks(for: ordered)
+        }
+
+        let movedTemplates = sources.map { ordered[$0] }
+        for index in sources.reversed() {
+            ordered.remove(at: index)
+        }
+
+        let removedBeforeDestination = sources.filter { $0 < destination }.count
+        let insertionIndex = max(0, min(destination - removedBeforeDestination, ordered.count))
+        ordered.insert(contentsOf: movedTemplates, at: insertionIndex)
+
+        return normalizedRanks(for: ordered)
+    }
+
+    public static func normalizedRanks(for templates: [FileTemplate]) -> [FileTemplate] {
+        templates.enumerated().map { offset, template in
+            var rankedTemplate = template
+            rankedTemplate.rank = (offset + 1) * 10
+            return rankedTemplate
+        }
+    }
+
+    private static func menuRankSort(_ left: FileTemplate, _ right: FileTemplate) -> Bool {
+        if left.rank == right.rank {
+            return left.displayName.localizedStandardCompare(right.displayName) == .orderedAscending
+        }
+        return left.rank < right.rank
     }
 }

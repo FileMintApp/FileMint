@@ -16,6 +16,7 @@ final class FinderSync: FIFinderSync {
     private let store = FileMintPreferencesStore()
     private var preferences: FileMintPreferences
     private let creationService = FileCreationService()
+    private var language: AppLanguage { preferences.language }
 
     override init() {
         self.preferences = store.load()
@@ -39,7 +40,7 @@ final class FinderSync: FIFinderSync {
     }
 
     override var toolbarItemToolTip: String {
-        "Create a new file"
+        FileMintStrings.text(.createNewFileTooltip, language: language)
     }
 
     override var toolbarItemImage: NSImage {
@@ -56,17 +57,26 @@ final class FinderSync: FIFinderSync {
         let templates = TemplateCatalog.enabledTemplates(from: preferences.templates)
 
         guard !templates.isEmpty else {
-            let emptyItem = NSMenuItem(title: "No Templates Enabled", action: nil, keyEquivalent: "")
+            let emptyItem = NSMenuItem(
+                title: FileMintStrings.text(.noTemplatesEnabled, language: language),
+                action: nil,
+                keyEquivalent: ""
+            )
             emptyItem.isEnabled = false
             menu.addItem(emptyItem)
             return menu
         }
 
-        let rootItem = NSMenuItem(title: "New File", action: nil, keyEquivalent: "")
-        let submenu = NSMenu(title: "New File")
+        let newFileTitle = FileMintStrings.text(.newFile, language: language)
+        let rootItem = NSMenuItem(title: newFileTitle, action: nil, keyEquivalent: "")
+        let submenu = NSMenu(title: newFileTitle)
 
         for template in templates {
-            let item = NSMenuItem(title: template.displayName, action: #selector(createFile(_:)), keyEquivalent: "")
+            let item = NSMenuItem(
+                title: FileMintStrings.templateDisplayName(for: template, language: language),
+                action: #selector(createFile(_:)),
+                keyEquivalent: ""
+            )
             item.target = self
             item.representedObject = CreateMenuAction(folderURL: folderURL, templateID: template.id)
             submenu.addItem(item)
@@ -133,10 +143,11 @@ final class FinderSync: FIFinderSync {
 
     private func showError(_ error: Error) {
         let message = error.localizedDescription
+        let title = FileMintStrings.text(.createFileErrorTitle, language: language)
 
         Task { @MainActor in
             let alert = NSAlert()
-            alert.messageText = "FileMint could not create the file."
+            alert.messageText = title
             alert.informativeText = message
             alert.alertStyle = .warning
             alert.runModal()

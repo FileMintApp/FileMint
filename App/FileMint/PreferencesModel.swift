@@ -10,11 +10,29 @@ final class PreferencesModel: ObservableObject {
     private let store = FileMintPreferencesStore()
 
     init() {
-        self.preferences = store.load()
+        var loadedPreferences = store.load()
+        loadedPreferences.templates = TemplateCatalog.sortedTemplates(from: loadedPreferences.templates)
+        self.preferences = loadedPreferences
     }
 
     var enabledTemplates: [FileTemplate] {
         TemplateCatalog.enabledTemplates(from: preferences.templates)
+    }
+
+    var permissionGuideSteps: [PermissionGuideStep] {
+        PermissionGuide.steps(language: preferences.language)
+    }
+
+    func text(_ key: FileMintTextKey) -> String {
+        FileMintStrings.text(key, language: preferences.language)
+    }
+
+    func templateDisplayName(for template: FileTemplate) -> String {
+        FileMintStrings.templateDisplayName(for: template, language: preferences.language)
+    }
+
+    func templateGroupName(for template: FileTemplate) -> String {
+        FileMintStrings.templateGroupName(for: template, language: preferences.language)
     }
 
     func save() {
@@ -33,6 +51,39 @@ final class PreferencesModel: ObservableObject {
     func resetTemplates() {
         preferences.templates = TemplateCatalog.builtInTemplates
         save()
+    }
+
+    func moveTemplates(fromOffsets source: IndexSet, toOffset destination: Int) {
+        preferences.templates = TemplateCatalog.reorderedTemplates(
+            preferences.templates,
+            moving: source,
+            to: destination
+        )
+        save()
+    }
+
+    func moveTemplate(id: String, by offset: Int) {
+        let orderedTemplates = TemplateCatalog.sortedTemplates(from: preferences.templates)
+        guard let sourceIndex = orderedTemplates.firstIndex(where: { $0.id == id }) else {
+            return
+        }
+
+        let destinationIndex = sourceIndex + offset
+        guard orderedTemplates.indices.contains(destinationIndex) else {
+            return
+        }
+
+        let destinationOffset = offset > 0 ? destinationIndex + 1 : destinationIndex
+        moveTemplates(fromOffsets: IndexSet(integer: sourceIndex), toOffset: destinationOffset)
+    }
+
+    func canMoveTemplate(id: String, by offset: Int) -> Bool {
+        let orderedTemplates = TemplateCatalog.sortedTemplates(from: preferences.templates)
+        guard let sourceIndex = orderedTemplates.firstIndex(where: { $0.id == id }) else {
+            return false
+        }
+
+        return orderedTemplates.indices.contains(sourceIndex + offset)
     }
 
     func addMonitoredFolder() {

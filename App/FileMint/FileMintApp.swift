@@ -34,18 +34,18 @@ private struct FileMintMenuBarMenu: View {
     @EnvironmentObject private var model: PreferencesModel
 
     var body: some View {
-        Button("Open FileMint") {
+        Button(model.text(.openFileMint)) {
             openWindow(id: "main")
             NSApp.activate(ignoringOtherApps: true)
         }
 
-        Button("Open Extension Settings") {
+        Button(model.text(.openExtensionSettings)) {
             model.openExtensionSettings()
         }
 
         Divider()
 
-        Button("Quit FileMint") {
+        Button(model.text(.quitFileMint)) {
             NSApp.terminate(nil)
         }
     }

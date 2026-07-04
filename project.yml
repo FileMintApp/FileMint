@@ -41,8 +41,14 @@ targets:
         embed: true
     info:
       path: Config/AppInfo.plist
+      properties:
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
     entitlements:
       path: Config/FileMint.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.io.github.daigua.filemint
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: io.github.daigua.filemint
@@ -60,8 +66,21 @@ targets:
       - package: FileMintCore
     info:
       path: FinderSyncExtension/FileMintFinderSync/Info.plist
+      properties:
+        CFBundleDisplayName: FileMint Finder Extension
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSUIElement: true
+        NSExtension:
+          NSExtensionAttributes: {}
+          NSExtensionPointIdentifier: com.apple.FinderSync
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).FinderSync
+        NSPrincipalClass: NSApplication
     entitlements:
       path: Config/FileMintFinderSync.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.io.github.daigua.filemint
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: io.github.daigua.filemint.findersync

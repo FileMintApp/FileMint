@@ -56,6 +56,18 @@ jobs:
       - name: Verify deterministic core behavior
         run: make verify
 
+      - name: Check release secrets
+        env:
+          RELEASE_CHECK: "1"
+          APPLE_DEVELOPER_ID_CERTIFICATE_BASE64: ${{ secrets.APPLE_DEVELOPER_ID_CERTIFICATE_BASE64 }}
+          APPLE_DEVELOPER_ID_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_CERTIFICATE_PASSWORD }}
+          APPLE_BUILD_KEYCHAIN_PASSWORD: ${{ secrets.APPLE_BUILD_KEYCHAIN_PASSWORD }}
+          APPLE_CODESIGN_IDENTITY: ${{ secrets.APPLE_CODESIGN_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: make doctor
+
       - name: Import Developer ID certificate
         env:
           CERTIFICATE_BASE64: ${{ secrets.APPLE_DEVELOPER_ID_CERTIFICATE_BASE64 }}
