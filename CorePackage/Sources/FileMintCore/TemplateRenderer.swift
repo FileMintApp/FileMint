@@ -14,15 +14,16 @@ public enum TemplateRenderer {
     public static func render(_ template: FileTemplate, context: TemplateContext) -> String {
         var output = template.content
         output = output.replacingOccurrences(of: "{{fileName}}", with: context.fileName)
-        output = output.replacingOccurrences(of: "{{date}}", with: formattedDate(context.createdAt))
-        output = output.replacingOccurrences(of: "{{isoDate}}", with: isoDate(context.createdAt))
-        output = output.replacingOccurrences(of: "{{year}}", with: year(context.createdAt))
+        if output.contains("{{date}}") { output = output.replacingOccurrences(of: "{{date}}", with: formattedDate(context.createdAt)) }
+        if output.contains("{{isoDate}}") { output = output.replacingOccurrences(of: "{{isoDate}}", with: isoDate(context.createdAt)) }
+        if output.contains("{{year}}") { output = output.replacingOccurrences(of: "{{year}}", with: year(context.createdAt)) }
         return output
     }
 
     private static func formattedDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter.string(from: date)
     }
@@ -34,7 +35,8 @@ public enum TemplateRenderer {
     }
 
     private static func year(_ date: Date) -> String {
-        let calendar = Calendar(identifier: .gregorian)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         return String(calendar.component(.year, from: date))
     }
 }

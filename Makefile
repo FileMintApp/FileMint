@@ -1,7 +1,10 @@
+-include .local/signing.mk
+
 .PHONY: verify test harness project build dmg package doctor icon clean
 
 DEVELOPER_DIR ?= /Applications/Xcode.app/Contents/Developer
 export DEVELOPER_DIR
+export DEVELOPMENT_TEAM
 
 verify: test harness
 

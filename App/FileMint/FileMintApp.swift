@@ -1,5 +1,5 @@
-import FileMintCore
 import AppKit
+import FileMintCore
 import SwiftUI
 
 @main
@@ -7,46 +7,36 @@ struct FileMintApp: App {
     @StateObject private var model = PreferencesModel()
 
     var body: some Scene {
-        WindowGroup("FileMint", id: "main") {
-            ContentView()
-                .environmentObject(model)
-                .frame(minWidth: 760, minHeight: 500)
+        Window("FileMint", id: "main") {
+            ContentView().environmentObject(model)
+                .onOpenURL { model.handle(url: $0) }
         }
-        .windowStyle(.titleBar)
-
-        Settings {
-            ContentView()
-                .environmentObject(model)
-                .frame(width: 760, height: 500)
+        .windowResizability(.contentSize)
+        .commands {
+            CommandGroup(replacing: .newItem) {
+                Button(model.text(.customNewFile)) { model.newFile() }.keyboardShortcut("n")
+                Button(model.preferences.language == .english ? "Import Settings…" : "导入设置…") { model.importSettings() }
+            }
         }
-
         MenuBarExtra {
-            FileMintMenuBarMenu()
-                .environmentObject(model)
+            FileMintMenu().environmentObject(model)
         } label: {
             Label("FileMint", image: "MenuBarIcon")
         }
     }
 }
 
-private struct FileMintMenuBarMenu: View {
+private struct FileMintMenu: View {
     @Environment(\.openWindow) private var openWindow
     @EnvironmentObject private var model: PreferencesModel
 
     var body: some View {
+        Button(model.text(.customNewFile)) { model.newFile() }.keyboardShortcut("n")
         Button(model.text(.openFileMint)) {
             openWindow(id: "main")
             NSApp.activate(ignoringOtherApps: true)
-        }
-
-        Button(model.text(.openExtensionSettings)) {
-            model.openExtensionSettings()
-        }
-
+        }.keyboardShortcut(",")
         Divider()
-
-        Button(model.text(.quitFileMint)) {
-            NSApp.terminate(nil)
-        }
+        Button(model.text(.quitFileMint)) { NSApp.terminate(nil) }.keyboardShortcut("q")
     }
 }

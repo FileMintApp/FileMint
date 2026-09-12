@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(Darwin)
+import Darwin
+#endif
 
 public enum FileMintAppGroup {
     public static let identifier = "group.io.github.daigua.filemint"
@@ -9,6 +12,7 @@ public enum FileMintAppGroup {
 public struct FileMintPreferences: Codable, Equatable, Sendable {
     public var templates: [FileTemplate]
     public var monitoredFolderURLs: [URL]
+    public var monitoredFolderBookmarks: [String: Data]
     public var collisionStrategy: NameCollisionStrategy
     public var revealAfterCreation: Bool
     public var favoritesFirst: Bool
@@ -24,6 +28,7 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
     ) {
         self.templates = templates
         self.monitoredFolderURLs = monitoredFolderURLs
+        self.monitoredFolderBookmarks = [:]
         self.collisionStrategy = collisionStrategy
         self.revealAfterCreation = revealAfterCreation
         self.favoritesFirst = favoritesFirst
@@ -33,6 +38,7 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case templates
         case monitoredFolderURLs
+        case monitoredFolderBookmarks
         case collisionStrategy
         case revealAfterCreation
         case favoritesFirst
@@ -44,9 +50,12 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         templates = (try? container.decode([FileTemplate].self, forKey: .templates)) ?? defaults.templates
+        templates = TemplateCatalog.migratingTemplates(templates)
+        monitoredFolderBookmarks = (try? container.decode([String: Data].self, forKey: .monitoredFolderBookmarks)) ?? [:]
         monitoredFolderURLs = (try? container.decode([URL].self, forKey: .monitoredFolderURLs)) ?? defaults.monitoredFolderURLs
         collisionStrategy = (try? container.decode(NameCollisionStrategy.self, forKey: .collisionStrategy))
             ?? defaults.collisionStrategy
+        if collisionStrategy == .replace { collisionStrategy = .increment }
         revealAfterCreation = (try? container.decode(Bool.self, forKey: .revealAfterCreation))
             ?? defaults.revealAfterCreation
         favoritesFirst = (try? container.decode(Bool.self, forKey: .favoritesFirst)) ?? defaults.favoritesFirst
@@ -67,39 +76,65 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
 
 public enum DefaultFolders {
     public static func urls(fileManager: FileManager = .default) -> [URL] {
-        let searchPaths: [FileManager.SearchPathDirectory] = [
-            .desktopDirectory,
-            .documentDirectory,
-            .downloadsDirectory
-        ]
+        urls(homeDirectory: resolvedUserHomeDirectory(fileManager: fileManager))
+    }
 
-        return searchPaths.compactMap { directory in
-            fileManager.urls(for: directory, in: .userDomainMask).first
+    public static func urls(homeDirectory: URL) -> [URL] {
+        ["Desktop", "Documents", "Downloads"].map {
+            homeDirectory.appendingPathComponent($0, isDirectory: true)
         }
+    }
+
+    public static func resolvedUserHomeDirectory(fileManager: FileManager) -> URL {
+        #if canImport(Darwin)
+        if let passwordEntry = getpwuid(getuid()),
+           let homePath = passwordEntry.pointee.pw_dir {
+            return URL(fileURLWithPath: String(cString: homePath), isDirectory: true)
+        }
+        #endif
+
+        return fileManager.homeDirectoryForCurrentUser
     }
 }
 
 public final class FileMintPreferencesStore {
-    private let defaults: UserDefaults
+    private let fileURL: URL?
 
-    public init(defaults: UserDefaults? = UserDefaults(suiteName: FileMintAppGroup.identifier)) {
-        self.defaults = defaults ?? .standard
+    public init(fileURL: URL? = nil) {
+        self.fileURL = fileURL ?? FileMintStorage.directory.appendingPathComponent("preferences.json")
+    }
+
+    public static func decode(_ data: Data) throws -> FileMintPreferences {
+        if let value = try? JSONDecoder().decode(FileMintPreferences.self, from: data) { return value }
+        let plist = try PropertyListSerialization.propertyList(from: data, format: nil)
+        guard let dictionary = plist as? [String: Any], let payload = dictionary[FileMintAppGroup.preferencesKey] as? Data else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        return try JSONDecoder().decode(FileMintPreferences.self, from: payload)
     }
 
     public func load() -> FileMintPreferences {
-        guard let data = defaults.data(forKey: FileMintAppGroup.preferencesKey) else {
-            return .default
-        }
-
-        do {
-            return try JSONDecoder().decode(FileMintPreferences.self, from: data)
-        } catch {
-            return .default
-        }
+        if let fileURL, let data = try? Data(contentsOf: fileURL),
+           let preferences = try? JSONDecoder().decode(FileMintPreferences.self, from: data) { return preferences }
+        return .default
     }
 
     public func save(_ preferences: FileMintPreferences) throws {
+        guard let fileURL else {
+            throw NSError(domain: "FileMintPreferences", code: 1, userInfo: [NSLocalizedDescriptionKey:
+                "FileMint could not access its shared settings folder. Reinstall the app and try again."])
+        }
+        let directory = fileURL.deletingLastPathComponent()
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         let data = try JSONEncoder().encode(preferences)
-        defaults.set(data, forKey: FileMintAppGroup.preferencesKey)
+        try data.write(to: fileURL, options: .atomic)
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: fileURL.path)
+    }
+}
+
+public enum FileMintStorage {
+    public static var directory: URL {
+        DefaultFolders.resolvedUserHomeDirectory(fileManager: .default)
+            .appendingPathComponent("Library/Application Support/FileMint", isDirectory: true)
     }
 }

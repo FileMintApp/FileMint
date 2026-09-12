@@ -1,8 +1,8 @@
-# FileMint Icon Source
+# FileMint icon
 
-This folder contains editable icon source PNGs.
+The editable vector master is `scripts/generate_app_icon.swift`.
+A folded sheet and one plus sign express file creation. The dark mint tile
+remains distinct in the Dock; toolbar glyphs use the system tint.
 
-- `FileMint-AppIcon-1024.png` is the master app icon source for Dock, Finder, app bundle, and extension icons.
-- `FileMint-MenuBarIcon-54.png` is the master template icon source for the macOS menu bar/status item. It should stay simple and brand-like at small sizes.
-
-After editing either source file, run `make icon` from the repository root to regenerate `Resources/Assets.xcassets`.
+Run `make icon` to render every size directly from the vector master.
+Finder menu rows and the creation panel intentionally have no icons.

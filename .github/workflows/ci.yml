@@ -1,32 +1,30 @@
 name: CI
-
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
   workflow_dispatch:
-
+permissions:
+  contents: read
 jobs:
   verify:
-    name: Verify and build
+    name: Verify and build universal app
     runs-on: macos-15
-
+    timeout-minutes: 25
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - name: Install XcodeGen
         run: brew install xcodegen
-
-      - name: Check local toolchain
-        run: make doctor
-
-      - name: Verify deterministic core behavior
+      - name: Verify deterministic behavior
         run: make verify
-
-      - name: Build unsigned app bundle
+      - name: Build both architectures
+        env:
+          CODE_SIGNING_ALLOWED: "NO"
+          CODE_SIGNING_REQUIRED: "NO"
         run: make build
+      - name: Sign and verify bundle integrity
+        run: |
+          ./scripts/sign_app.sh
+          ./scripts/verify_bundle.sh

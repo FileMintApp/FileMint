@@ -1,54 +1,33 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
 cd "$(dirname "$0")/.."
-
-VERSION="${APP_VERSION:-${MARKETING_VERSION:-0.1.0}}"
-BUILD_NUMBER="${BUILD_NUMBER:-${CURRENT_PROJECT_VERSION:-1}}"
+VERSION="${APP_VERSION:-0.2.0}"
+BUILD_NUMBER="${BUILD_NUMBER:-2}"
 APP_PATH="$PWD/build/DerivedData/Build/Products/Release/FileMint.app"
 DMG_PATH="$PWD/build/FileMint-$VERSION.dmg"
 CHECKSUM_PATH="$DMG_PATH.sha256"
-IDENTITY="${APPLE_CODESIGN_IDENTITY:-${CODESIGN_IDENTITY:-}}"
-
-if [[ "${RELEASE_REQUIRE_SIGNING:-0}" == "1" && -z "$IDENTITY" ]]; then
-  echo "Release packaging requires APPLE_CODESIGN_IDENTITY or CODESIGN_IDENTITY."
+IDENTITY="${APPLE_CODESIGN_IDENTITY:-${CODESIGN_IDENTITY:--}}"
+[[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid release version"; exit 2; }
+if [[ "${NOTARIZE:-0}" == "1" && "$IDENTITY" == "-" ]]; then
+  echo "Notarization needs a Developer ID identity; ad-hoc signing is not Apple certification."
   exit 2
 fi
-
-export MARKETING_VERSION="$VERSION"
-export CURRENT_PROJECT_VERSION="$BUILD_NUMBER"
-export CODE_SIGNING_ALLOWED="${CODE_SIGNING_ALLOWED:-NO}"
-export CODE_SIGNING_REQUIRED="${CODE_SIGNING_REQUIRED:-NO}"
-
+export MARKETING_VERSION="$VERSION" CURRENT_PROJECT_VERSION="$BUILD_NUMBER"
+export CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
 ./scripts/build_release.sh
-
-if [[ -n "$IDENTITY" ]]; then
-  ./scripts/sign_app.sh "$APP_PATH"
-else
-  echo "Skipping code signing; the DMG will be suitable for development only."
-fi
-
+./scripts/sign_app.sh "$APP_PATH"
+./scripts/verify_bundle.sh "$APP_PATH"
 DMG_PATH="$DMG_PATH" ./scripts/make_dmg.sh "$APP_PATH"
-
-if [[ -n "$IDENTITY" ]]; then
-  codesign --force --timestamp --sign "$IDENTITY" "$DMG_PATH"
-fi
-
-if [[ "${NOTARIZE:-0}" == "1" ]]; then
-  ./scripts/notarize_dmg.sh "$DMG_PATH"
-fi
-
-shasum -a 256 "$DMG_PATH" > "$CHECKSUM_PATH"
-
+if [[ "$IDENTITY" != "-" ]]; then codesign --force --timestamp --sign "$IDENTITY" "$DMG_PATH"; fi
+if [[ "${NOTARIZE:-0}" == "1" ]]; then ./scripts/notarize_dmg.sh "$DMG_PATH"; fi
+# Basename-only checksums work in any user's download directory.
+(cd "$(dirname "$DMG_PATH")" && shasum -a 256 "$(basename "$DMG_PATH")") > "$CHECKSUM_PATH"
+hdiutil verify "$DMG_PATH"
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   {
     echo "dmg_path=$DMG_PATH"
     echo "checksum_path=$CHECKSUM_PATH"
     echo "version=$VERSION"
-    echo "build_number=$BUILD_NUMBER"
   } >> "$GITHUB_OUTPUT"
 fi
-
-echo "Packaged release:"
-echo "$DMG_PATH"
-echo "$CHECKSUM_PATH"
+echo "Packaged $DMG_PATH"

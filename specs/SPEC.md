@@ -1,192 +1,135 @@
 # FileMint SPEC
 
-## Product Promise
+## Product promise — 0.2
 
-FileMint lets macOS users create common files from Finder's native right-click menu with minimal friction.
+A small, native macOS utility that creates a file where the user is already working.
+Fast Finder actions, a compact keyboard-friendly creation panel, and no account,
+network client, analytics, folder crawling, or clipboard monitoring.
 
-The experience should feel like a small missing Finder feature, not a separate productivity suite.
+## The two creation paths
 
-## Product Presentation
+- Finder → New File → a file type creates immediately in the captured target
+  directory. Menu labels include the extension. Every menu row is text only.
+- Finder → New File → New File… opens one compact persistent native panel.
+  Name, editable extension selector, destination, optional plain-text content,
+  Cancel and Create are the whole flow. The main app owns this single panel;
+  Finder forwards only the target directory for drafts, so requests from either entry point
+  focus the same draft. A draft route never writes a file without Create.
+  Quick actions instead enqueue an expiring, single-use local request and pass
+  its random identifier to the app. The app consumes it only for an enabled
+  template and a configured folder; a bare deep link cannot create a file.
+- The app and its menu bar also offer New File… with a native folder picker,
+  so creation remains useful without Finder integration.
+- Return creates from single-line fields; Return in the content editor inserts a
+  newline; Command-Return creates anywhere; Escape cancels; Tab moves focus.
+- The editor supports standard copy/paste, select-all and undo. A visible Paste
+  button inserts clipboard text at the selection. Clipboard is read only at the
+  user's explicit paste action. Non-text clipboard data produces a short message.
+- Typed/pasted content is written as exact UTF-8, including whitespace, Unicode,
+  and literal `{{fileName}}` or `{{year}}`. Changing the extension preserves it.
+- Until content is edited, known formats seed their saved template content and
+  render supported placeholders (`{{fileName}}`, `{{date}}`, `{{isoDate}}`, `{{year}}`).
+- The extension selector searches preset names, aliases and saved custom types.
+  Its menu can always show all choices, even after a format has been selected.
+- A full filename typed or pasted into Name is authoritative: `demo.js` is saved
+  as exactly `demo.js`, and synchronizes the extension selector to `js`, even if
+  that type is disabled or not saved. Selecting another format then updates the
+  displayed filename. Typing just `demo` appends the currently selected suffix.
+- Custom extensions are text-file suffixes, not converters for binary formats.
+  Empty suffixes, whitespace, controls, path separators, trailing dots and empty
+  extension components are invalid. Surrounding whitespace and leading dots are
+  normalized. The most recently edited name or suffix wins; changing a compound suffix
+  replaces the entire prior suffix. File names cannot escape the destination.
+- Drafts are not stored. Cancelling never creates a file or changes the destination.
 
-The repository README is a product introduction entry first and an engineering
-reference second.
+## File types
 
-- Chinese is the default README language.
-- English is available from the top-level `中文 | English` switch.
-- Engineering setup, harness, and distribution details may appear after the
-  product overview, but should not be the first impression.
+- Presets: txt, md, swift, json, html, css, sh, csv, yaml, xml, js, ts, py, sql.
+  The original seven are visible by default; additional presets can be enabled.
+- Settings → File Types can add/edit/remove saved custom types, including a
+  display name, suffix and optional initial template content. Duplicate suffixes
+  are rejected case-insensitively. Changes persist and refresh Finder without
+  restarting the app. Enabled types are shared by quick actions and the picker.
+- Users can enable/disable and reorder types. Built-in templates have stable IDs.
+  Restoring built-ins preserves custom types and requires a confirmation.
+- Older preferences retain language, folder selection, template customizations,
+  enabled state and order; newly added presets are appended disabled.
+- Do not expose nonfunctional favorites, icon toggles, themes or dashboards.
 
-## Name
+## Safe creation and performance
 
-The product name is **FileMint**.
+- Normal creation uses exclusive filesystem creation, never check-then-overwrite.
+  Racing creations retry the next incremented name without overwriting data.
+- Default collision names: `Untitled.txt`, `Untitled 2.txt`, `Untitled 3.txt`.
+- Quick creation supports increment or fail. Replace is never a stored default.
+- Custom creation asks before replacement, with Cancel as the default button.
+  A directory is never replaced. Replacement atomically replaces the directory
+  entry, not the content of a symlink's target.
+- Finder captures the destination with the menu action, rather than resolving a
+  potentially different target later. No path or clipboard content is logged.
+- Preference refresh is notification-driven. No timers or background directory
+  enumeration. File I/O runs away from the main thread, and duplicate submission
+  is disabled until it completes. An actionable error keeps the draft intact.
 
-Rationale: short, memorable, English-friendly for GitHub distribution, and expressive of "minting" a fresh file.
+## Folders and permissions
 
-## Branding And Icons
+- Finder Sync monitors Desktop, Documents and Downloads by default, plus folders
+  explicitly added by the user. It does not scan their contents or badge files.
+- Folder selection uses NSOpenPanel. Persist security-scoped bookmarks alongside
+  paths, restore access on launch, and release access when folders are removed.
+- Preferences are an atomically replaced private JSON file in
+  `~/Library/Application Support/FileMint`. Both sandboxed targets have an
+  exception scoped only to this application-owned directory. No App Group or
+  broad filesystem entitlement is required by the GitHub provenance channel.
+  Only the main app writes preferences and destination files. Finder writes
+  short-lived request tickets, not user files. Old development App Group data
+  is left untouched; users can explicitly import an old JSON/plist settings file
+  via the app's File menu. Never silently read a protected legacy container.
+- Existing preferences without bookmarks still load. If a write lacks permission,
+  hand the draft to the main app, authorize the destination using a directory
+  picker there, and retry after the user chooses Create. All creation and
+  authorization panels belong to the main app, not Finder extension processes.
+- Settings give short instructions for enabling the extension (macOS 15+:
+  General → Login Items & Extensions → Finder; older systems: Privacy & Security
+  → Extensions). Show actual extension status when the system API is available.
+- Finder APIs remain in FinderSyncExtension; deterministic rules in CorePackage;
+  SwiftUI settings remain in App/FileMint. Shared AppKit creation UI may be
+  compiled into both app and extension.
 
-FileMint ships with one coherent icon family across visible macOS entry points.
+## Appearance
 
-- Dock, Finder, app bundle, and extension entries use the generated `AppIcon`
-  asset catalog.
-- Top menu bar status entry points use a simplified generated `MenuBarIcon`
-  template asset.
-- Editable source icon files live under `Resources/IconSource`.
-- Generated app and menu bar icon assets live under
-  `Resources/Assets.xcassets`.
-- After changing an icon source file, run `make icon` to rebuild generated icon
-  assets.
+- Native controls and system colors. Compact settings with General, File Types
+  and Folders. No decorative cards. English default, Chinese available.
+- Finder menus, format choices and creation controls use text only. The Finder
+  toolbar and macOS menu bar retain the small template glyph those entry points
+  require. No icon preference.
+- App logo: a simple folded document with a clear plus, mint accent, readable at
+  small sizes. App assets are generated from editable Swift drawing source via
+  `make icon`; generated Xcode project is never edited directly.
 
-## License
+## Distribution and product presentation
 
-FileMint is source-available for non-commercial use.
+- macOS 13+; universal arm64 + x86_64 Release app and DMG on GitHub Releases.
+- This release uses ad-hoc code signatures for bundle integrity and GitHub
+  artifact attestations for build provenance, plus a portable SHA-256 checksum.
+  Neither claims Apple developer identity or notarization. Disclose Gatekeeper
+  and Finder extension approval requirements before download. Never tell users
+  to disable Gatekeeper globally.
+- A later Developer ID release may add Apple signing and notarization when the
+  owner has a paid developer account. Do not gate the explicitly authorized
+  GitHub provenance release on absent Apple credentials.
+- CI verifies the core, builds both architectures, validates nested code and
+  creates the DMG. Attestation refers to the final bytes uploaded to the release.
+- README leads with the pain solved, actual features, screenshots, download and
+  a brief install guide. Chinese first, English separate. Developer instructions
+  live in docs. Optional donations link the supplied ReceivePayment images.
+- Keep the existing non-commercial source-available license and privacy policy.
+  Do not promise valid Office/PDF/image output from a custom suffix.
 
-- Users may fork and modify the code for personal, educational, research, or
-  other non-commercial purposes.
-- Commercial use, commercial redistribution, commercial hosting, and commercial
-  derivative products require separate written permission.
-- The project must not use a permissive license that allows unrestricted
-  commercial derivative work by default.
+## Completion evidence
 
-## Technical Base
-
-- Native macOS app.
-- Swift-first implementation.
-- SwiftUI for settings UI where it gives native controls quickly.
-- AppKit/FinderSync for Finder integration.
-- No Electron, React Native, Flutter, Tauri, or other multi-platform runtime.
-- Distribution target: Developer ID signed `.app` packaged into `.dmg` for GitHub releases.
-
-## Finder Integration
-
-FileMint uses a Finder Sync extension.
-
-Important Apple constraint: Finder Sync extensions work against registered monitored folders. FileMint therefore exposes monitored locations in settings and defaults to common user folders.
-
-Expected menu behavior:
-
-- Right-click Finder folder background inside a monitored location.
-- Show `New File` submenu.
-- Create the selected template in the current folder.
-- If a file already exists, use a predictable incrementing name.
-- Optionally reveal/select the created file after creation.
-
-MVP monitored locations:
-
-- Desktop
-- Documents
-- Downloads
-
-Future monitored location options:
-
-- Add custom folder.
-- Remove custom folder.
-- Enable broader Home-folder coverage with an explicit performance note.
-
-## Core Features
-
-### Templates
-
-Built-in templates:
-
-- Plain Text: `Untitled.txt`
-- Markdown: `Untitled.md`
-- Swift: `Untitled.swift`
-- JSON: `Untitled.json`
-- HTML: `Untitled.html`
-- CSS: `Untitled.css`
-- Shell Script: `Untitled.sh`
-
-Template rules:
-
-- Templates have stable IDs.
-- Templates can be enabled or disabled.
-- Templates have a menu rank.
-- Template contents may use simple placeholders.
-
-Supported placeholders:
-
-- `{{fileName}}`
-- `{{date}}`
-- `{{isoDate}}`
-- `{{year}}`
-
-### Naming
-
-Default strategy is safe auto-increment:
-
-- `Untitled.txt`
-- `Untitled 2.txt`
-- `Untitled 3.txt`
-
-No silent overwrite in MVP.
-
-Invalid path separators are sanitized before writing.
-
-### Settings
-
-Settings should be compact and operational:
-
-- Extension status and quick action to open macOS extension settings.
-- Finder permission setup guidance that tells users where to enable the Finder
-  Sync extension, which folders are monitored by default, and when to relaunch
-  Finder after changing extension permissions.
-- Monitored locations.
-- Template enablement and ordering.
-- Collision behavior.
-- Reveal after creation.
-- App language switching between English and Chinese, with English as the
-  default language.
-
-Do not add dashboards, decorative cards, themes, or onboarding tours unless a later SPEC explicitly asks for them.
-
-Language behavior:
-
-- The app stores a language preference in shared preferences so the main app,
-  menu bar commands, and Finder Sync menu labels use the same language.
-- English is the default for new installs and for older saved preferences that
-  do not yet contain a language field.
-- Built-in UI labels, Finder menu labels, permission guidance, and built-in
-  template display names are localized.
-- File naming remains stable across languages; built-in suggested filenames
-  stay English, for example `Untitled.txt`.
-
-### Premium-Inspired Ideas To Keep In Scope
-
-Borrowed from common paid file-manager/new-file utilities, but reduced to useful essentials:
-
-- Favorite templates at top of menu.
-- Custom templates.
-- Create from existing file as template.
-- Hotkey for "create most-used template".
-- Recent destination memory.
-- Per-folder preferred template.
-
-These are not MVP unless a Harness case is added.
-
-## Non-Goals
-
-- Replacing Finder.
-- Building a dual-pane file manager.
-- Cloud sync.
-- AI file generation.
-- Heavy visual customization.
-- Cross-platform support.
-
-## UX Principles
-
-- Native first.
-- One menu level for common actions.
-- Predictable names.
-- No destructive overwrite defaults.
-- Settings are for behavior, not decoration.
-- Failures should be explainable in one sentence.
-
-## AI Development Contract
-
-Every behavior change should follow this order:
-
-1. Update `specs/SPEC.md` if product behavior changes.
-2. Add or update a Harness case in `specs/harness/cases`.
-3. Implement core logic in `CorePackage`.
-4. Connect UI or Finder extension only after core behavior passes.
-5. Run `make verify`.
+Update SPEC before behavior, cover naming/templates/creation/preferences in
+CorePackage tests or the public JSON harness, run `make verify` before and after,
+build Release, inspect the native UI, test Finder where the host allows it,
+verify packaged binaries and release checksums, and report any remaining runtime
+or installation limitation honestly in docs/ACCEPTANCE.md.

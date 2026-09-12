@@ -1,10 +1,19 @@
 # Privacy
 
-FileMint is designed as a local macOS utility.
+FileMint creates files locally. It has no analytics, account system, network
+client, cloud sync or advertising.
 
-- FileMint does not include analytics or telemetry.
-- FileMint does not upload file names, folder paths, template contents, or usage data.
-- Preferences are stored locally in the app group container so the main app and Finder Sync extension can share settings.
-- FileMint only creates files in folders selected through Finder context menus or configured monitored locations.
-
-If this changes in a future release, update this document before shipping.
+- File names, paths and contents are not uploaded or logged.
+- The clipboard is read only when you invoke Paste or a standard paste shortcut.
+  It is never watched or saved as a clipboard history.
+- Preferences contain enabled file types, custom template content, language,
+  folder paths and security-scoped bookmarks needed to remember folder access.
+  They are stored privately in ~/Library/Application Support/FileMint. The
+  Finder extension uses single-use request files there; requests expire after
+  60 seconds and are removed when consumed.
+- Draft filenames and pasted contents are not persisted by FileMint. Creating a
+  file writes the requested content to the destination you selected.
+- GitHub hosts source, releases, build attestations and issue reports. Opening a
+  GitHub link in your browser is subject to GitHub's own privacy policy.
+- Donation images are supplied by the project owner. Payment is optional and
+  processed by the payment service you choose, not by FileMint.

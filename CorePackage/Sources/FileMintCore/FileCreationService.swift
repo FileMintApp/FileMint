@@ -1,21 +1,34 @@
 import Foundation
+#if canImport(Darwin)
+import Darwin
+#else
+import Glibc
+#endif
+
+public enum FileContentMode: Sendable {
+    case template
+    case verbatim
+}
 
 public struct FileCreationRequest: Sendable {
     public var destinationDirectory: URL
     public var template: FileTemplate
     public var requestedFileName: String?
     public var collisionStrategy: NameCollisionStrategy
+    public var contentMode: FileContentMode
 
     public init(
         destinationDirectory: URL,
         template: FileTemplate,
         requestedFileName: String? = nil,
-        collisionStrategy: NameCollisionStrategy = .increment
+        collisionStrategy: NameCollisionStrategy = .increment,
+        contentMode: FileContentMode = .template
     ) {
         self.destinationDirectory = destinationDirectory
         self.template = template
         self.requestedFileName = requestedFileName
         self.collisionStrategy = collisionStrategy
+        self.contentMode = contentMode
     }
 }
 
@@ -63,35 +76,59 @@ public final class FileCreationService {
             FilenamePolicy.sanitizedFileName(requestedName),
             isDirectory: false
         )
-        let targetURL = try FilenamePolicy.resolvedURL(
-            in: request.destinationDirectory,
-            requestedFileName: requestedName,
-            strategy: request.collisionStrategy,
-            fileManager: fileManager
-        )
+        var index = 1
+        while true {
+            let targetURL = FilenamePolicy.candidateURL(for: naiveURL, index: index)
+            let content = request.contentMode == .verbatim ? request.template.content : TemplateRenderer.render(
+                request.template,
+                context: TemplateContext(fileName: targetURL.lastPathComponent, createdAt: now)
+            )
+            let data = Data(content.utf8)
 
-        let rendered = TemplateRenderer.render(
-            request.template,
-            context: TemplateContext(fileName: targetURL.lastPathComponent, createdAt: now)
-        )
-
-        guard !fileManager.fileExists(atPath: targetURL.path) else {
-            throw FileMintError.fileAlreadyExists(targetURL)
+            if request.collisionStrategy == .replace {
+                // Atomic rename replaces a symlink itself, never follows its target.
+                if let type = try? fileManager.attributesOfItem(atPath: targetURL.path)[.type] as? FileAttributeType,
+                   type == .typeDirectory {
+                    throw FileMintError.destinationIsNotDirectory(targetURL)
+                }
+                try data.write(to: targetURL, options: .atomic)
+            } else {
+                // O_EXCL is the collision decision. A separate existence check cannot
+                // prevent another process from creating the same name before this one.
+                let descriptor = targetURL.withUnsafeFileSystemRepresentation { path in
+                    path.map { open($0, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, mode_t(0o666)) } ?? -1
+                }
+                if descriptor == -1 {
+                    if errno == EEXIST {
+                        if request.collisionStrategy == .increment {
+                            index += 1
+                            continue
+                        }
+                        throw FileMintError.fileAlreadyExists(targetURL)
+                    }
+                    throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno),
+                                  userInfo: [NSFilePathErrorKey: targetURL.path])
+                }
+                var completed = false
+                defer {
+                    close(descriptor)
+                    if !completed { try? fileManager.removeItem(at: targetURL) }
+                }
+                try data.withUnsafeBytes { bytes in
+                    var offset = 0
+                    while offset < bytes.count {
+                        let count = write(descriptor, bytes.baseAddress!.advanced(by: offset), bytes.count - offset)
+                        if count < 0 && errno == EINTR { continue }
+                        guard count > 0 else {
+                            throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno),
+                                          userInfo: [NSFilePathErrorKey: targetURL.path])
+                        }
+                        offset += count
+                    }
+                }
+                completed = true
+            }
+            return FileCreationResult(createdURL: targetURL, usedCollisionFallback: index > 1)
         }
-
-        let didCreate = fileManager.createFile(
-            atPath: targetURL.path,
-            contents: rendered.data(using: .utf8),
-            attributes: nil
-        )
-
-        guard didCreate else {
-            throw FileMintError.writeFailed(targetURL)
-        }
-
-        return FileCreationResult(
-            createdURL: targetURL,
-            usedCollisionFallback: targetURL.lastPathComponent != naiveURL.lastPathComponent
-        )
     }
 }

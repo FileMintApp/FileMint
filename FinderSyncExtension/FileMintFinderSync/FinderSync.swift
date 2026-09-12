@@ -2,155 +2,129 @@ import Cocoa
 import FileMintCore
 import FinderSync
 
-private final class CreateMenuAction: NSObject {
-    let folderURL: URL
-    let templateID: String
-
-    init(folderURL: URL, templateID: String) {
-        self.folderURL = folderURL
-        self.templateID = templateID
-    }
-}
-
+// Finder invokes these callbacks on its XPC queue, not necessarily the main
+// thread. Keep this adapter stateless and copy values before dispatching UI.
 final class FinderSync: FIFinderSync {
-    private let store = FileMintPreferencesStore()
-    private var preferences: FileMintPreferences
-    private let creationService = FileCreationService()
-    private var language: AppLanguage { preferences.language }
-
+    private let actions = LockedMenuActions()
     override init() {
-        self.preferences = store.load()
         super.init()
-
-        reloadMonitoredFolders()
-        DistributedNotificationCenter.default().addObserver(
-            self,
-            selector: #selector(preferencesChanged),
-            name: Notification.Name(FileMintAppGroup.preferencesDidChangeNotification),
-            object: nil
-        )
+        reloadPreferences()
+        DistributedNotificationCenter.default().addObserver(self, selector: #selector(reloadPreferences),
+            name: Notification.Name(FileMintAppGroup.preferencesDidChangeNotification), object: nil)
     }
-
-    deinit {
-        DistributedNotificationCenter.default().removeObserver(self)
-    }
-
-    override var toolbarItemName: String {
-        "FileMint"
-    }
-
+    deinit { DistributedNotificationCenter.default().removeObserver(self) }
+    override var toolbarItemName: String { "FileMint" }
     override var toolbarItemToolTip: String {
-        FileMintStrings.text(.createNewFileTooltip, language: language)
+        FileMintStrings.text(.createNewFileTooltip, language: FileMintPreferencesStore().load().language)
     }
-
     override var toolbarItemImage: NSImage {
-        NSImage(systemSymbolName: "doc.badge.plus", accessibilityDescription: "FileMint")
-            ?? NSImage()
+        let image = Bundle(for: Self.self).image(forResource: "FinderMenuIcon")?.copy() as? NSImage ?? NSImage()
+        image.size = NSSize(width: 18, height: 18)
+        image.isTemplate = true
+        return image
     }
 
     override func menu(for menuKind: FIMenuKind) -> NSMenu? {
-        guard let folderURL = targetFolderURL(for: menuKind) else {
-            return nil
+        let preferences = FileMintPreferencesStore().load()
+        func text(_ key: FileMintTextKey) -> String {
+            FileMintStrings.text(key, language: preferences.language)
         }
-
+        guard let target = FIFinderSyncController.default().targetedURL() else { return nil }
+        var isDirectory: ObjCBool = false
+        let directory = FileManager.default.fileExists(atPath: target.path, isDirectory: &isDirectory) && isDirectory.boolValue
+            ? target : target.deletingLastPathComponent()
         let menu = NSMenu(title: "FileMint")
+        let root = NSMenuItem(title: text(.newFile), action: nil, keyEquivalent: "")
+        let submenu = NSMenu(title: text(.newFile))
+        let custom = NSMenuItem(title: text(.customNewFile), action: #selector(showCustomFile(_:)), keyEquivalent: "")
         let templates = TemplateCatalog.enabledTemplates(from: preferences.templates)
-
-        guard !templates.isEmpty else {
-            let emptyItem = NSMenuItem(
-                title: FileMintStrings.text(.noTemplatesEnabled, language: language),
-                action: nil,
-                keyEquivalent: ""
-            )
-            emptyItem.isEnabled = false
-            menu.addItem(emptyItem)
-            return menu
-        }
-
-        let newFileTitle = FileMintStrings.text(.newFile, language: language)
-        let rootItem = NSMenuItem(title: newFileTitle, action: nil, keyEquivalent: "")
-        let submenu = NSMenu(title: newFileTitle)
-
-        for template in templates {
-            let item = NSMenuItem(
-                title: FileMintStrings.templateDisplayName(for: template, language: language),
-                action: #selector(createFile(_:)),
-                keyEquivalent: ""
-            )
-            item.target = self
-            item.representedObject = CreateMenuAction(folderURL: folderURL, templateID: template.id)
+        let tags = actions.register([FileMenuAction(directory: directory, templateID: nil)] + templates.map {
+            FileMenuAction(directory: directory, templateID: $0.id)
+        })
+        custom.tag = tags[0]
+        submenu.addItem(custom)
+        if !templates.isEmpty { submenu.addItem(.separator()) }
+        for (index, template) in templates.enumerated() {
+            let suffix = template.suggestedFileName.replacingOccurrences(of: "Untitled", with: "")
+            let title = "\(FileMintStrings.templateDisplayName(for: template, language: preferences.language)) (\(suffix))"
+            let item = NSMenuItem(title: title, action: #selector(createFile(_:)), keyEquivalent: "")
+            item.tag = tags[index + 1]
             submenu.addItem(item)
         }
-
-        rootItem.submenu = submenu
-        menu.addItem(rootItem)
+        root.submenu = submenu
+        menu.addItem(root)
         return menu
     }
 
-    @objc private func preferencesChanged() {
-        preferences = store.load()
-        reloadMonitoredFolders()
-    }
-
-    @objc private func createFile(_ sender: NSMenuItem) {
-        guard let action = sender.representedObject as? CreateMenuAction,
-              let template = TemplateCatalog.template(withID: action.templateID, in: preferences.templates) else {
-            return
-        }
-
-        do {
-            let result = try creationService.createFile(
-                FileCreationRequest(
-                    destinationDirectory: action.folderURL,
-                    template: template,
-                    collisionStrategy: preferences.collisionStrategy
-                )
-            )
-
-            if preferences.revealAfterCreation {
-                NSWorkspace.shared.activateFileViewerSelecting([result.createdURL])
-            }
-        } catch {
-            showError(error)
-        }
-    }
-
-    private func reloadMonitoredFolders() {
+    @objc private func reloadPreferences() {
+        let preferences = FileMintPreferencesStore().load()
         FIFinderSyncController.default().directoryURLs = Set(preferences.monitoredFolderURLs)
     }
 
-    private func targetFolderURL(for menuKind: FIMenuKind) -> URL? {
-        let controller = FIFinderSyncController.default()
+    @objc private func showCustomFile(_ item: NSMenuItem) {
+        guard let action = actions.take(item.tag) else { return }
+        let directory = action.directory
+        Task { @MainActor in FinderActions.shared.openPanel(in: directory) }
+    }
 
-        switch menuKind {
-        case .contextualMenuForContainer, .contextualMenuForSidebar, .toolbarItemMenu:
-            return controller.targetedURL()
-        case .contextualMenuForItems:
-            guard let targetURL = controller.targetedURL() else {
-                return nil
-            }
+    @objc private func createFile(_ item: NSMenuItem) {
+        guard let action = actions.take(item.tag), let id = action.templateID else { return }
+        let directory = action.directory
+        Task { @MainActor in FinderActions.shared.create(templateID: id, in: directory) }
+    }
+}
 
-            var isDirectory: ObjCBool = false
-            if FileManager.default.fileExists(atPath: targetURL.path, isDirectory: &isDirectory),
-               isDirectory.boolValue {
-                return targetURL
-            }
-            return targetURL.deletingLastPathComponent()
-        @unknown default:
-            return controller.targetedURL()
+@MainActor
+private final class FinderActions {
+    static let shared = FinderActions()
+
+    func openPanel(in directory: URL) {
+        guard let url = CreationRoute.url(for: directory) else { return }
+        open(url, activate: true)
+    }
+
+    func create(templateID: String, in directory: URL) {
+        Task {
+            do {
+                let url = try await Task.detached(priority: .userInitiated) {
+                    try QuickCreationTicketStore().enqueue(directory: directory, templateID: templateID)
+                }.value
+                open(url, activate: false)
+            } catch { showError(error) }
+        }
+    }
+
+    private func open(_ url: URL, activate: Bool) {
+        let appURL = Bundle(for: FinderSync.self).bundleURL
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = activate
+        NSWorkspace.shared.open([url], withApplicationAt: appURL, configuration: configuration) { _, error in
+            if let error { Task { @MainActor in FinderActions.shared.showError(error) } }
         }
     }
 
     private func showError(_ error: Error) {
-        let message = error.localizedDescription
-        let title = FileMintStrings.text(.createFileErrorTitle, language: language)
+        let alert = NSAlert()
+        let language = FileMintPreferencesStore().load().language
+        alert.messageText = FileMintStrings.text(.createFileErrorTitle, language: language)
+        alert.informativeText = error.localizedDescription
+        NSApp.activate(ignoringOtherApps: true)
+        alert.runModal()
+    }
+}
 
-        Task { @MainActor in
-            let alert = NSAlert()
-            alert.messageText = title
-            alert.informativeText = message
-            alert.alertStyle = .warning
-            alert.runModal()
-        }
+// Finder's XPC callbacks may overlap. The lock guards every registry access;
+// only Sendable value snapshots leave it, never NSMenu or NSMenuItem instances.
+private final class LockedMenuActions: @unchecked Sendable {
+    private let lock = NSLock()
+    private var registry = FileMenuActionRegistry()
+    func register(_ actions: [FileMenuAction]) -> [Int] {
+        lock.lock(); defer { lock.unlock() }
+        return registry.register(actions)
+    }
+    func take(_ tag: Int) -> FileMenuAction? {
+        lock.lock(); defer { lock.unlock() }
+        return registry.takeAction(for: tag)
     }
 }

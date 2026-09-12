@@ -13,12 +13,15 @@ packages:
 settings:
   base:
     SWIFT_VERSION: 6.0
+    ARCHS: "arm64 x86_64"
+    ONLY_ACTIVE_ARCH: "NO"
+    ENABLE_HARDENED_RUNTIME: "YES"
     MACOSX_DEPLOYMENT_TARGET: 13.0
     DEVELOPMENT_TEAM: ""
     CODE_SIGN_STYLE: Automatic
     ENABLE_USER_SCRIPT_SANDBOXING: "NO"
-    MARKETING_VERSION: 0.1.0
-    CURRENT_PROJECT_VERSION: 1
+    MARKETING_VERSION: 0.2.0
+    CURRENT_PROJECT_VERSION: 2
     ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
 
 schemes:
@@ -34,6 +37,8 @@ targets:
     platform: macOS
     sources:
       - App/FileMint
+      - FinderSyncExtension/FileMintFinderSync/FinderIntegrationStatus.swift
+      - SharedUI
       - Resources/Assets.xcassets
     dependencies:
       - package: FileMintCore
@@ -42,13 +47,19 @@ targets:
     info:
       path: Config/AppInfo.plist
       properties:
+        CFBundleURLTypes:
+          - CFBundleURLName: io.github.daigua.filemint.create
+            CFBundleURLSchemes: [filemint]
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
     entitlements:
       path: Config/FileMint.entitlements
       properties:
-        com.apple.security.application-groups:
-          - group.io.github.daigua.filemint
+        com.apple.security.app-sandbox: true
+        com.apple.security.temporary-exception.files.home-relative-path.read-write:
+          - /Library/Application Support/FileMint/
+        com.apple.security.files.user-selected.read-write: true
+        com.apple.security.files.bookmarks.app-scope: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: io.github.daigua.filemint
@@ -61,6 +72,8 @@ targets:
     platform: macOS
     sources:
       - FinderSyncExtension/FileMintFinderSync
+      - path: SharedUI
+        excludes: [CustomFileSavePanelController.swift]
       - Resources/Assets.xcassets
     dependencies:
       - package: FileMintCore
@@ -79,8 +92,11 @@ targets:
     entitlements:
       path: Config/FileMintFinderSync.entitlements
       properties:
-        com.apple.security.application-groups:
-          - group.io.github.daigua.filemint
+        com.apple.security.app-sandbox: true
+        com.apple.security.temporary-exception.files.home-relative-path.read-write:
+          - /Library/Application Support/FileMint/
+        com.apple.security.files.user-selected.read-write: true
+        com.apple.security.files.bookmarks.app-scope: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: io.github.daigua.filemint.findersync

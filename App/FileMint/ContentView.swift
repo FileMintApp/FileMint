@@ -1,248 +1,205 @@
+import AppKit
 import FileMintCore
 import SwiftUI
 
-private enum SettingsSection: CaseIterable, Identifiable {
-    case status
-    case locations
-    case templates
-    case behavior
-
-    var id: Self { self }
-
-    var titleKey: FileMintTextKey {
-        switch self {
-        case .status:
-            return .status
-        case .locations:
-            return .locations
-        case .templates:
-            return .templates
-        case .behavior:
-            return .behavior
-        }
-    }
-}
-
 struct ContentView: View {
     @EnvironmentObject private var model: PreferencesModel
-    @State private var selection: SettingsSection? = .status
 
     var body: some View {
-        NavigationSplitView {
-            List(SettingsSection.allCases, selection: $selection) { section in
-                Text(model.text(section.titleKey))
-                    .tag(section)
+        VStack(spacing: 0) {
+            TabView {
+                GeneralPane().tabItem { Text(model.text(.general)) }
+                TypesPane().tabItem { Text(model.text(.fileTypes)) }
+                FoldersPane().tabItem { Text(model.text(.folders)) }
             }
-            .navigationSplitViewColumnWidth(min: 160, ideal: 180, max: 220)
-        } detail: {
-            detailView
-                .padding(24)
-        }
-    }
-
-    @ViewBuilder
-    private var detailView: some View {
-        switch selection ?? .status {
-        case .status:
-            StatusPane()
-        case .locations:
-            LocationsPane()
-        case .templates:
-            TemplatesPane()
-        case .behavior:
-            BehaviorPane()
-        }
-    }
-}
-
-private struct StatusPane: View {
-    @EnvironmentObject private var model: PreferencesModel
-
-    var body: some View {
-        Form {
-            Section(model.text(.finder)) {
-                LabeledContent(model.text(.integration)) {
-                    Text(model.text(.finderSyncExtension))
-                }
-            }
-
-            Section(model.text(.permissionSetup)) {
-                ForEach(Array(model.permissionGuideSteps.enumerated()), id: \.element.id) { offset, step in
-                    PermissionStepRow(number: offset + 1, step: step)
-                }
-
-                Button(model.text(.openExtensionSettings)) {
-                    model.openExtensionSettings()
-                }
-            }
-
-            Section(model.text(.activeMenu)) {
-                LabeledContent(model.text(.templates)) {
-                    Text("\(model.enabledTemplates.count)")
-                }
-
-                LabeledContent(model.text(.locations)) {
-                    Text("\(model.preferences.monitoredFolderURLs.count)")
-                }
-            }
-
+            .padding(20)
             if let error = model.lastError {
-                Section(model.text(.lastError)) {
-                    Text(error)
-                        .foregroundStyle(.red)
-                        .textSelection(.enabled)
-                }
+                Text(error).foregroundStyle(.red).font(.callout).textSelection(.enabled)
+                    .padding([.horizontal, .bottom], 20)
             }
         }
-        .formStyle(.grouped)
-        .navigationTitle("FileMint")
+        .frame(width: 640, height: 490)
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            model.refreshStatus()
+        }
     }
 }
 
-private struct PermissionStepRow: View {
-    let number: Int
-    let step: PermissionGuideStep
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Text("\(number)")
-                .font(.caption)
-                .monospacedDigit()
-                .foregroundStyle(.secondary)
-                .frame(width: 18, alignment: .trailing)
-                .padding(.top, 2)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(step.title)
-                Text(step.detail)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.vertical, 2)
-    }
-}
-
-private struct LocationsPane: View {
+private struct GeneralPane: View {
     @EnvironmentObject private var model: PreferencesModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            List {
-                ForEach(model.preferences.monitoredFolderURLs, id: \.self) { url in
-                    Text(url.path)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                }
-                .onDelete { offsets in
-                    model.removeMonitoredFolders(at: offsets)
-                }
-            }
-
-            HStack {
-                Button(model.text(.addFolder)) {
-                    model.addMonitoredFolder()
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(spacing: 14) {
+                Image(nsImage: NSApplication.shared.applicationIconImage).resizable().frame(width: 60, height: 60)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("FileMint").font(.title2.weight(.semibold))
+                    Text(model.text(.productTagline)).foregroundStyle(.secondary)
                 }
                 Spacer()
+                Button(model.text(.customNewFile)) { model.newFile() }
+                    .keyboardShortcut("n").controlSize(.large)
             }
-        }
-        .navigationTitle(model.text(.locations))
-    }
-}
-
-private struct TemplatesPane: View {
-    @EnvironmentObject private var model: PreferencesModel
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            List {
-                ForEach($model.preferences.templates) { $template in
-                    HStack {
-                        Toggle("", isOn: $template.isEnabled)
-                            .labelsHidden()
-                            .onChange(of: template.isEnabled) { _ in model.save() }
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(model.templateDisplayName(for: template))
-                            Text(template.suggestedFileName)
-                                .foregroundStyle(.secondary)
-                                .font(.caption)
-                        }
-
-                        Spacer()
-
-                        Text(model.templateGroupName(for: template))
-                            .foregroundStyle(.secondary)
-
-                        HStack(spacing: 4) {
-                            Button {
-                                model.moveTemplate(id: template.id, by: -1)
-                            } label: {
-                                Image(systemName: "chevron.up")
-                            }
-                            .buttonStyle(.borderless)
-                            .disabled(!model.canMoveTemplate(id: template.id, by: -1))
-                            .help(model.text(.moveUp))
-
-                            Button {
-                                model.moveTemplate(id: template.id, by: 1)
-                            } label: {
-                                Image(systemName: "chevron.down")
-                            }
-                            .buttonStyle(.borderless)
-                            .disabled(!model.canMoveTemplate(id: template.id, by: 1))
-                            .help(model.text(.moveDown))
-                        }
-                    }
-                    .padding(.vertical, 4)
-                }
-                .onMove { offsets, destination in
-                    model.moveTemplates(fromOffsets: offsets, toOffset: destination)
-                }
-            }
-
+            Text(model.text(.productDetail)).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            Divider()
             HStack {
-                Button(model.text(.resetBuiltIns)) {
-                    model.resetTemplates()
-                }
+                Text(model.text(.language))
                 Spacer()
+                Picker("", selection: $model.preferences.language) {
+                    ForEach(AppLanguage.allCases) { Text($0.displayName).tag($0) }
+                }.labelsHidden().frame(width: 160)
+                    .onChange(of: model.preferences.language) { _ in model.save() }
             }
-        }
-        .navigationTitle(model.text(.templates))
-    }
-}
-
-private struct BehaviorPane: View {
-    @EnvironmentObject private var model: PreferencesModel
-
-    var body: some View {
-        Form {
-            Section(model.text(.language)) {
-                Picker(model.text(.language), selection: $model.preferences.language) {
-                    ForEach(AppLanguage.allCases) { language in
-                        Text(language.displayName).tag(language)
-                    }
-                }
-                .onChange(of: model.preferences.language) { _ in model.save() }
-            }
-
-            Section(model.text(.naming)) {
-                Picker(model.text(.whenFileExists), selection: $model.preferences.collisionStrategy) {
+            Toggle(model.text(.revealCreatedFile), isOn: $model.preferences.revealAfterCreation)
+                .onChange(of: model.preferences.revealAfterCreation) { _ in model.save() }
+            HStack {
+                Text(model.text(.whenFileExists))
+                Spacer()
+                Picker("", selection: $model.preferences.collisionStrategy) {
                     Text(model.text(.autoIncrement)).tag(NameCollisionStrategy.increment)
                     Text(model.text(.fail)).tag(NameCollisionStrategy.fail)
-                }
-                .onChange(of: model.preferences.collisionStrategy) { _ in model.save() }
+                }.labelsHidden().frame(width: 160)
+                    .onChange(of: model.preferences.collisionStrategy) { _ in model.save() }
             }
-
-            Section(model.text(.afterCreation)) {
-                Toggle(model.text(.revealCreatedFile), isOn: $model.preferences.revealAfterCreation)
-                    .onChange(of: model.preferences.revealAfterCreation) { _ in model.save() }
-
-                Toggle(model.text(.favoritesFirst), isOn: $model.preferences.favoritesFirst)
-                    .onChange(of: model.preferences.favoritesFirst) { _ in model.save() }
+            Divider()
+            HStack {
+                Text("Finder").fontWeight(.medium)
+                Text(model.extensionEnabled ? model.text(.ready) : model.text(.permissionSetup))
+                    .font(.callout).foregroundStyle(.secondary)
+                Spacer()
+                Button(model.text(.openExtensionSettings)) { model.openExtensionSettings() }
             }
-        }
-        .formStyle(.grouped)
-        .navigationTitle(model.text(.behavior))
+            Text(model.text(.finderSetup)).font(.callout).foregroundStyle(.secondary)
+            Spacer(minLength: 0)
+            HStack {
+                Text(model.text(.sourceAvailable)).font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                Text(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")
+                    .font(.caption).foregroundStyle(.tertiary)
+            }
+        }.padding(18)
+    }
+}
+
+private struct TypesPane: View {
+    @EnvironmentObject private var model: PreferencesModel
+    @State private var selection: String?
+    @State private var editor: TypeEditorDraft?
+    @State private var restoring = false
+    @State private var removing = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(model.text(.fileTypeHint)).font(.callout).foregroundStyle(.secondary)
+            List(selection: $selection) {
+                ForEach($model.preferences.templates) { $template in
+                    HStack(spacing: 12) {
+                        Toggle(model.templateDisplayName(for: template), isOn: $template.isEnabled)
+                            .toggleStyle(.checkbox)
+                            .onChange(of: template.isEnabled) { _ in model.save() }
+                        Spacer()
+                        Text(template.suggestedFileName.replacingOccurrences(of: "Untitled", with: ""))
+                            .font(.system(.callout, design: .monospaced)).foregroundStyle(.secondary)
+                    }.padding(.vertical, 4).tag(template.id)
+                }.onMove { model.moveTemplates(fromOffsets: $0, toOffset: $1) }
+            }.listStyle(.bordered(alternatesRowBackgrounds: true))
+            HStack(spacing: 8) {
+                Button(model.text(.addType)) { editor = TypeEditorDraft() }
+                Button(model.text(.editType)) {
+                    if let type = model.preferences.templates.first(where: { $0.id == selection }) { editor = TypeEditorDraft(type) }
+                }.disabled(selection == nil || !model.isCustom(selection ?? ""))
+                Button(model.text(.remove)) { removing = true }
+                    .disabled(selection == nil || !model.isCustom(selection ?? ""))
+                Spacer()
+                Button(model.text(.moveUp)) { if let selection { model.moveTemplate(id: selection, by: -1) } }
+                    .disabled(!model.canMoveTemplate(id: selection ?? "", by: -1))
+                Button(model.text(.moveDown)) { if let selection { model.moveTemplate(id: selection, by: 1) } }
+                    .disabled(!model.canMoveTemplate(id: selection ?? "", by: 1))
+            }
+            Button(model.text(.resetBuiltIns)) { restoring = true }.font(.callout)
+        }.padding(16)
+            .sheet(item: $editor) { TypeEditor(draft: $0).environmentObject(model) }
+            .alert(model.text(.restoreConfirm), isPresented: $restoring) {
+                Button(model.text(.cancel), role: .cancel) {}
+                Button(model.text(.restore)) { model.resetTemplates() }
+            }
+            .alert(model.text(.deleteTypeConfirm), isPresented: $removing) {
+                Button(model.text(.cancel), role: .cancel) {}
+                Button(model.text(.remove), role: .destructive) { if let selection { model.removeType(selection) } }
+            }
+    }
+}
+
+private struct TypeEditorDraft: Identifiable {
+    let id = UUID()
+    var templateID: String?
+    var name = ""
+    var suffix = ""
+    var content = ""
+    init() {}
+    init(_ type: FileTemplate) {
+        templateID = type.id
+        name = type.displayName
+        suffix = String(type.suggestedFileName.dropFirst("Untitled.".count))
+        content = type.content
+    }
+}
+
+private struct TypeEditor: View {
+    @EnvironmentObject private var model: PreferencesModel
+    @Environment(\.dismiss) private var dismiss
+    @State var draft: TypeEditorDraft
+    @State private var error: String?
+    @FocusState private var nameFocused: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text(model.text(draft.templateID == nil ? .addType : .editType)).font(.headline)
+            TextField(model.text(.displayName), text: $draft.name).focused($nameFocused)
+            TextField(model.text(.extensionLabel), text: $draft.suffix)
+            Text(model.text(.initialContent)).font(.callout)
+            TextEditor(text: $draft.content).font(.system(.body, design: .monospaced))
+                .frame(height: 120).border(Color(nsColor: .separatorColor))
+            Text(model.text(.customTypeHint)).font(.caption).foregroundStyle(.secondary)
+            if let error { Text(error).foregroundStyle(.red).font(.callout) }
+            HStack {
+                Spacer()
+                Button(model.text(.cancel)) { dismiss() }.keyboardShortcut(.cancelAction)
+                Button(model.text(.save)) { save() }.keyboardShortcut(.defaultAction)
+            }
+        }.padding(24).frame(width: 430).onAppear { nameFocused = true }
+    }
+
+    private func save() {
+        do {
+            try model.saveType(name: draft.name, suffix: draft.suffix, content: draft.content, id: draft.templateID)
+            if let error = model.lastError { self.error = error } else { dismiss() }
+        } catch TemplateValidationError.duplicateExtension { error = model.text(.duplicateType) }
+        catch TemplateValidationError.emptyName { error = model.text(.emptyTypeName) }
+        catch { self.error = model.text(.invalidFileExtension) }
+    }
+}
+
+private struct FoldersPane: View {
+    @EnvironmentObject private var model: PreferencesModel
+    @State private var selection: URL?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(model.text(.folderHint)).font(.callout).foregroundStyle(.secondary)
+            List(model.preferences.monitoredFolderURLs, id: \.self, selection: $selection) { url in
+                VStack(alignment: .leading, spacing: 3) {
+                    Text((url.path as NSString).abbreviatingWithTildeInPath).lineLimit(1).truncationMode(.middle)
+                    Text(model.preferences.monitoredFolderBookmarks[url.path] == nil ? model.text(.needsAccess) : model.text(.ready))
+                        .font(.caption).foregroundStyle(.secondary)
+                }.padding(.vertical, 5).tag(url)
+            }.listStyle(.bordered(alternatesRowBackgrounds: true))
+            HStack {
+                Button(model.text(.addFolder)) { model.addMonitoredFolder() }
+                Button(model.text(.authorize)) { model.addMonitoredFolder(initial: selection) }.disabled(selection == nil)
+                Button(model.text(.remove)) { if let selection { model.removeFolder(selection) } }.disabled(selection == nil)
+                Spacer()
+            }
+        }.padding(16)
     }
 }

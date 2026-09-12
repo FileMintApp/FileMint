@@ -86,7 +86,18 @@ public enum TemplateCatalog {
             content: "#!/usr/bin/env bash\nset -euo pipefail\n\n",
             rank: 70
         )
-    ]
+    ] + [
+        ("csv", "CSV", "Data", ""),
+        ("yaml", "YAML", "Data", ""),
+        ("xml", "XML", "Data", "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"),
+        ("js", "JavaScript", "Code", ""),
+        ("ts", "TypeScript", "Code", ""),
+        ("py", "Python", "Code", ""),
+        ("sql", "SQL", "Data", "")
+    ].enumerated().map { index, item in
+        FileTemplate(id: item.0, displayName: item.1, suggestedFileName: "Untitled.\(item.0)",
+                     group: item.2, content: item.3, isEnabled: false, rank: 80 + index * 10)
+    }
 
     public static func template(withID id: String, in templates: [FileTemplate] = builtInTemplates) -> FileTemplate? {
         templates.first { $0.id == id }
@@ -137,5 +148,54 @@ public enum TemplateCatalog {
             return left.displayName.localizedStandardCompare(right.displayName) == .orderedAscending
         }
         return left.rank < right.rank
+    }
+}
+
+public enum TemplateValidationError: Error, LocalizedError {
+    case emptyName
+    case invalidExtension
+    case duplicateExtension
+
+    public var errorDescription: String? {
+        switch self {
+        case .emptyName: "Enter a name for this file type."
+        case .invalidExtension: "Enter a valid text-file extension."
+        case .duplicateExtension: "This extension is already in your file types."
+        }
+    }
+}
+
+extension TemplateCatalog {
+    public static func customTemplate(name: String, fileExtension: String, content: String,
+                                      id: String? = nil, in templates: [FileTemplate]) throws -> FileTemplate {
+        let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { throw TemplateValidationError.emptyName }
+        guard let suffix = FilenamePolicy.normalizedFileExtension(fileExtension)?.lowercased() else {
+            throw TemplateValidationError.invalidExtension
+        }
+        guard !templates.contains(where: {
+            $0.id != id && $0.suggestedFileName.lowercased() == "untitled.\(suffix)"
+        }) else { throw TemplateValidationError.duplicateExtension }
+        let existing = templates.first { $0.id == id }
+        return FileTemplate(id: id ?? "custom-\(UUID().uuidString)", displayName: name,
+                            suggestedFileName: "Untitled.\(suffix)", group: "Custom", content: content,
+                            isEnabled: existing?.isEnabled ?? true,
+                            rank: existing?.rank ?? ((templates.map(\.rank).max() ?? 0) + 10))
+    }
+
+    public static func migratingTemplates(_ templates: [FileTemplate]) -> [FileTemplate] {
+        let ids = Set(templates.map(\.id))
+        var result = sortedTemplates(from: templates)
+        for var template in builtInTemplates where !ids.contains(template.id) {
+            template.rank = (result.map(\.rank).max() ?? 0) + 10
+            template.isEnabled = false
+            result.append(template)
+        }
+        return result
+    }
+
+    public static func restoringBuiltIns(in templates: [FileTemplate]) -> [FileTemplate] {
+        let builtInIDs = Set(builtInTemplates.map(\.id))
+        return normalizedRanks(for: builtInTemplates + sortedTemplates(from: templates).filter { !builtInIDs.contains($0.id) })
     }
 }

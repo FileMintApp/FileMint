@@ -1,34 +1,50 @@
-# Finder QA
+# Finder and native UI acceptance
 
-Headless tests prove the deterministic core. Finder integration still needs a manual pass before a public release.
+Use a disposable folder and the same ad-hoc signatures shipped in the DMG.
+Do not treat a menu click or a successful build as evidence of a created file.
+Record actual results in ACCEPTANCE.md.
 
-## Local Build
+## Creation
 
-```sh
-make doctor
-make project
-make build
-```
+- Enter `demo.js`, paste multiline Unicode including `{{year}}`, create with
+  Command-Return; inspect the resulting filename and exact UTF-8 bytes.
+- Change a selected format; verify filename synchronization and preserved edits.
+- Type an unknown suffix; verify it is used verbatim without being registered.
+- Cancel the destination picker; verify the previous location and draft remain.
+- Return in the editor inserts a newline; paste, select-all and undo work.
+- Existing-name confirmation defaults to Cancel. Cancelling preserves the file;
+  confirming replaces only the selected file.
 
-Install `build/DerivedData/Build/Products/Release/FileMint.app` into `/Applications`.
+## Types and preferences
 
-## Checklist
+- Add `.toml` with starter content; verify it appears in the selector and Finder.
+- Edit, disable, reorder and remove that custom type. Built-ins remain intact.
+- Restore built-ins; verify custom types remain after explicit confirmation.
+- Choose a working folder once, relaunch, and verify access is remembered.
+- Switch English/Chinese; verify settings, Finder menus and panel labels agree.
+- Confirm no file-icon setting or inactive favorites setting is exposed.
+- Legacy development JSON/plist settings import through the File menu; protected
+  App Group directories are never accessed automatically.
 
-- Open FileMint and confirm the settings window launches.
-- Enable the Finder Sync extension in macOS Extension settings.
-- Confirm Desktop, Documents, and Downloads are listed as monitored locations.
-- Open Desktop in Finder.
-- Right-click the folder background and confirm `New File` appears.
-- Create a text file and confirm `Untitled.txt` appears.
-- Repeat and confirm `Untitled 2.txt` appears.
-- Create Markdown, JSON, Swift, HTML, CSS, and Shell Script files.
-- Disable a template in FileMint and confirm it disappears from the Finder menu.
-- Toggle reveal-after-creation and confirm Finder selection behavior changes.
-- Remove a monitored folder and confirm the menu no longer appears there after Finder reload.
+## Finder
 
-## Troubleshooting
+- Confirm the extension is listed and enabled in macOS settings.
+- Background and file context menus within monitored folders show text-only
+  New File actions. Other apps may contribute similarly named menus.
+- Verify each quick action creates on disk, then verify automatic name increments.
+- Move to another Finder folder after opening a menu: its action must keep its
+  captured destination, not pick up the later selection.
+- New File… opens the same main-app panel; repeated requests focus the same draft.
+- No Finder callback invokes main-actor UI directly on the XPC callback queue.
+- Quick routes require a matching single-use, unexpired local ticket. The app
+  validates enabled templates and monitored paths before creating anything.
+- Check no temporary request tickets remain after successful consumption.
 
-- Relaunch Finder with `killall Finder` after changing extension settings.
-- Confirm the app and extension share the same App Group entitlement.
-- Confirm the current folder is inside one of the monitored locations.
-- Rebuild the Xcode project after changing `project.yml`.
+## Distribution
+
+- `make verify`, Release build, nested signatures, both architectures, matching
+  app/extension versions, DMG verification and portable checksum all pass.
+- Launch the copied DMG app, not only the DerivedData app.
+- Repeat Gatekeeper approval and extension activation on a clean Mac when one
+  is available. A development Mac cannot prove clean-install trust behavior.
+- Final GitHub asset checksum and attestation match the exact uploaded DMG.

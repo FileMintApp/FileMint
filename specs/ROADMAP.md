@@ -1,25 +1,15 @@
-# Roadmap
+# FileMint roadmap
 
-## 0.1 MVP
+## 0.2 — focused file creation
 
-- Built-in templates.
-- Finder Sync contextual menu.
-- Monitored folder settings.
-- Collision-safe file creation.
-- Reveal after creation.
-- GitHub DMG packaging script.
+1. Exclusive writes, exact pasted content, safe names and preference migration.
+2. Persistent custom types, simple native settings and creation panel.
+3. Text-only Finder menus, captured destinations, persistent folder access.
+4. A simpler document-plus icon and product-first bilingual README with donations.
+5. Universal DMG, GitHub build attestations and explicit installation limits.
 
-## 0.2 Power User Basics
+## Later, with evidence from real use
 
-- Custom templates.
-- Reorder templates.
-- Import current file as template.
-- Optional global hotkey.
-
-## 0.3 Polish
-
-- Extension enablement detection.
-- Menu usage ranking.
-- Per-folder template preference.
-- Signed and notarized release workflow.
-
+- Apple Developer ID signing and notarization when credentials are available.
+- Optional global hotkey, only if Finder and Command-N entry points are insufficient.
+- Binary templates imported from real files; changing a suffix is not conversion.
