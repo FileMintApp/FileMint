@@ -28,15 +28,26 @@ Host: macOS 26.6.2, Apple silicon. Build: universal arm64 + x86_64, macOS 13 min
   path exception and main-app-owned creation instead. It does not access the
   old protected container.
 
+## GitHub build provenance
+
+[CI run 34701708737](https://github.com/FileMintApp/FileMint/actions/runs/34701708737)
+passed both universal packaging and trusted-branch provenance verification for
+commit `6075d1dcadde40315b295f2b5d901c2a9df90053`.
+
+The downloaded GitHub DMG was independently checked locally:
+
+- SHA-256 file verification passed.
+- `gh attestation verify --repo FileMintApp/FileMint` passed, with a matching
+  `https://slsa.dev/provenance/v1` subject.
+- DMG SHA-256: `3995eb61b3af90d7a258c01f1ada81502a02c87a2a12e07d7906c05c58d8cb77`.
+- Read-only mounted app: both architectures, matching versions and nested
+  ad-hoc signatures passed verification.
+
+This is GitHub source/build authentication, not Apple notarization.
+
 ## Remaining release gate
 
-Final native regression after the storage/IPC change is awaiting the owner's
-at-action approval to launch the locally built, non-notarized app. Automatic
-computer-use approval rejected that launch; it has not been bypassed.
-
-GitHub CI passed for the implementation commit (be5fe48). The subsequent folded-F
-icon refresh updates branding assets. CI now packages a DMG and verifies GitHub
-provenance for trusted main-branch builds in a separate job. GitHub Release
-publication and final downloaded-asset verification have not yet run.
+Final native regression after the storage/IPC change is not complete. A public
+GitHub Release has not been published; complete that regression before tagging.
 Intel execution and a clean-Mac first-install check are unavailable on this host;
 universal compilation is not evidence of those runtime checks.

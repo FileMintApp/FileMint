@@ -154,3 +154,30 @@ for name in ["MenuBarIcon", "FinderMenuIcon"] {
     try png(54, to: sources.appendingPathComponent("FileMint-\(name)-54.png"), glyph: true)
 }
 print("Generated FileMint app, menu bar and Finder toolbar icons.")
+
+// A native-size light/dark proof of the independently drawn template glyph.
+let proof = NSImage(size: NSSize(width: 360, height: 90))
+proof.lockFocus()
+for (offset, background, foreground, label) in [
+    (CGFloat(0), NSColor.white, NSColor.black, "18 pt · Light"),
+    (CGFloat(180), color(28, 29, 31), NSColor.white, "18 pt · Dark")
+] {
+    background.setFill(); NSBezierPath(rect: NSRect(x: offset, y: 0, width: 180, height: 90)).fill()
+    let mark = foldedF()
+    let scale = CGFloat(18) / 1024
+    let placement = AffineTransform(m11: 1.42 * scale, m12: 0, m21: 0, m22: 1.42 * scale,
+                                   tX: offset + 81 - 246 * scale, tY: 48 - 215 * scale)
+    mark.transform(using: placement)
+    foreground.setFill(); mark.fill()
+    let cut = NSBezierPath()
+    cut.move(to: NSPoint(x: 636, y: 778)); cut.line(to: NSPoint(x: 636, y: 703))
+    cut.line(to: NSPoint(x: 711, y: 703)); cut.close(); cut.transform(using: placement)
+    background.setFill(); cut.fill()
+    (label as NSString).draw(at: NSPoint(x: offset + 51, y: 20), withAttributes: [
+        .font: NSFont.systemFont(ofSize: 12), .foregroundColor: foreground.withAlphaComponent(0.65)
+    ])
+}
+proof.unlockFocus()
+let proofRep = NSBitmapImageRep(data: proof.tiffRepresentation!)!
+try proofRep.representation(using: .png, properties: [:])!
+    .write(to: sources.appendingPathComponent("FileMint-GlyphPreview.png"))
