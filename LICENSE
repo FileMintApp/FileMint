@@ -1,5 +1,5 @@
 FileMint Non-Commercial Source License
-Version 1.0
+Version 1.1
 
 Copyright (c) 2026 FileMint contributors
 
@@ -8,9 +8,13 @@ License and it is not an Open Source Initiative approved open source license.
 
 1. Permission
 
-You may use, copy, fork, modify, and distribute this software and modified
-versions of this software only for Non-Commercial Purposes, subject to the
-terms below.
+The "Software" includes the FileMint source code, executable applications,
+project-provided assets, documentation, and modified versions of these items.
+
+Permission is granted to everyone, free of charge and without royalties, to
+use, copy, fork, modify, and distribute the Software for Non-Commercial
+Purposes, subject to the terms below. No payment or donation is required for
+such permitted use.
 
 2. Non-Commercial Purposes
 
@@ -19,12 +23,16 @@ or other uses that do not generate revenue, support a revenue-generating
 product or service, provide paid access, or create commercial advantage for
 an individual, company, organization, or client.
 
-3. Commercial Use Is Not Permitted
+3. Commercial Use Requires A Separate License
 
-Without separate prior written permission from the copyright holders, you may
-not use, copy, modify, distribute, host, sublicense, sell, lease, provide,
-or make available this software or any derivative work for commercial
-purposes.
+Before any commercial use, obtain either prior written commercial permission
+from the copyright holders or their authorized representative, or a separate
+paid commercial license issued by them. The written authorization or commercial
+agreement defines the permitted scope, duration, and any fees.
+
+Without such authorization, you may not use, copy, modify, distribute, host,
+sublicense, sell, lease, provide, or make available the Software or any
+derivative work for commercial purposes.
 
 Commercial purposes include, but are not limited to:
 
@@ -66,5 +74,13 @@ DEALINGS IN THE SOFTWARE.
 7. Separate Commercial Permission
 
 For commercial licensing, commercial derivative work, commercial
-redistribution, or other permissions not granted by this license, obtain
-separate written permission from the copyright holders before use.
+redistribution, or other permissions not granted by this license, contact the
+project maintainers and obtain a separate written grant before use.
+
+A donation, payment receipt, download, or possession of the source code does
+not by itself grant commercial rights. Payment is effective as a commercial
+license only under a separately agreed and issued commercial license. All
+rights not expressly granted are reserved.
+
+Third-party components, if any, remain subject to their own license notices;
+this license does not claim rights the copyright holders do not own.

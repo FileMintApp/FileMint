@@ -198,10 +198,10 @@ struct FileCreationHarnessTests {
         ])
     }
 
-    @Test("preferences default to English")
-    func preferencesDefaultToEnglish() {
-        #expect(FileMintPreferences.default.language == .english)
-        #expect(AppLanguage.allCases == [.english, .chinese])
+    @Test("preferences default to the system language")
+    func preferencesDefaultToSystemLanguage() {
+        #expect(FileMintPreferences.default.language == .system)
+        #expect(AppLanguage.allCases == [.system, .english, .chinese])
     }
 
     @Test("default monitored folders use the real user home")
@@ -215,8 +215,8 @@ struct FileCreationHarnessTests {
         ])
     }
 
-    @Test("legacy preferences without language decode as English")
-    func legacyPreferencesWithoutLanguageDecodeAsEnglish() throws {
+    @Test("legacy preferences without language follow the system")
+    func legacyPreferencesWithoutLanguageFollowSystem() throws {
         let data = """
         {
           "templates": [],
@@ -229,7 +229,7 @@ struct FileCreationHarnessTests {
 
         let preferences = try JSONDecoder().decode(FileMintPreferences.self, from: data)
 
-        #expect(preferences.language == .english)
+        #expect(preferences.language == .system)
         #expect(preferences.collisionStrategy == .fail)
         #expect(preferences.revealAfterCreation == false)
         #expect(preferences.favoritesFirst == false)

@@ -11,13 +11,31 @@ public struct TemplateContext: Sendable {
 }
 
 public enum TemplateRenderer {
+    private static let tokenPattern = try! NSRegularExpression(pattern: #"\{\{(fileName|date|isoDate|year)\}\}"#)
+
     public static func render(_ template: FileTemplate, context: TemplateContext) -> String {
-        var output = template.content
-        output = output.replacingOccurrences(of: "{{fileName}}", with: context.fileName)
-        if output.contains("{{date}}") { output = output.replacingOccurrences(of: "{{date}}", with: formattedDate(context.createdAt)) }
-        if output.contains("{{isoDate}}") { output = output.replacingOccurrences(of: "{{isoDate}}", with: isoDate(context.createdAt)) }
-        if output.contains("{{year}}") { output = output.replacingOccurrences(of: "{{year}}", with: year(context.createdAt)) }
-        return output
+        guard template.content.contains("{{") else { return template.content }
+        let source = template.content as NSString
+        let matches = tokenPattern.matches(in: template.content, range: NSRange(location: 0, length: source.length))
+        guard !matches.isEmpty else { return template.content }
+        let output = NSMutableString(string: template.content)
+        var replacements: [String: String] = [:]
+        for match in matches.reversed() {
+            let token = source.substring(with: match.range(at: 1))
+            let replacement: String
+            if let cached = replacements[token] { replacement = cached }
+            else {
+                switch token {
+                case "fileName": replacement = context.fileName
+                case "date": replacement = formattedDate(context.createdAt)
+                case "isoDate": replacement = isoDate(context.createdAt)
+                default: replacement = year(context.createdAt)
+                }
+                replacements[token] = replacement
+            }
+            output.replaceCharacters(in: match.range, with: replacement)
+        }
+        return output as String
     }
 
     private static func formattedDate(_ date: Date) -> String {

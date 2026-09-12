@@ -37,6 +37,8 @@ targets:
     platform: macOS
     sources:
       - App/FileMint
+      - path: LICENSE
+        buildPhase: resources
       - FinderSyncExtension/FileMintFinderSync/FinderIntegrationStatus.swift
       - SharedUI
       - Resources/Assets.xcassets
@@ -47,6 +49,7 @@ targets:
     info:
       path: Config/AppInfo.plist
       properties:
+        CFBundleLocalizations: [en, zh-Hans]
         CFBundleURLTypes:
           - CFBundleURLName: io.github.daigua.filemint.create
             CFBundleURLSchemes: [filemint]
@@ -80,6 +83,7 @@ targets:
     info:
       path: FinderSyncExtension/FileMintFinderSync/Info.plist
       properties:
+        CFBundleLocalizations: [en, zh-Hans]
         CFBundleDisplayName: FileMint Finder Extension
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)

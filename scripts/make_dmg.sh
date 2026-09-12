@@ -4,7 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 APP_PATH="${1:-$PWD/build/DerivedData/Build/Products/Release/FileMint.app}"
-DMG_ROOT="$PWD/build/dmg-root"
+DMG_ROOT="$PWD/build/dmg-stage.noindex"
 DMG_PATH="${DMG_PATH:-$PWD/build/FileMint.dmg}"
 
 if [[ ! -d "$APP_PATH" ]]; then
@@ -15,8 +15,10 @@ fi
 
 rm -rf "$DMG_ROOT" "$DMG_PATH"
 mkdir -p "$DMG_ROOT"
+trap 'rm -rf "$DMG_ROOT"' EXIT
 ditto "$APP_PATH" "$DMG_ROOT/FileMint.app"
 ln -s /Applications "$DMG_ROOT/Applications"
+cp LICENSE "$DMG_ROOT/LICENSE.txt"
 
 hdiutil create \
   -volname "FileMint" \

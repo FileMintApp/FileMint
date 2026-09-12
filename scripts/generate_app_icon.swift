@@ -49,7 +49,7 @@ func paperFold() -> NSBezierPath {
     return p
 }
 
-func draw(pixels: Int, glyph: Bool = false) -> NSBitmapImageRep {
+func draw(pixels: Int, glyph: Bool = false, tinted: Bool = false) -> NSBitmapImageRep {
     let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: pixels, pixelsHigh: pixels,
         bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
         colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
@@ -62,7 +62,7 @@ func draw(pixels: Int, glyph: Bool = false) -> NSBitmapImageRep {
         // Fit the actual silhouette into 15 points of an 18-point toolbar asset.
         let placement = AffineTransform(m11: 1.42, m12: 0, m21: 0, m22: 1.42, tX: -246, tY: -215)
         shape.transform(using: placement)
-        NSColor.black.setFill(); shape.fill()
+        (tinted ? color(24, 154, 115) : NSColor.black).setFill(); shape.fill()
         let foldCut = NSBezierPath()
         foldCut.move(to: NSPoint(x: 636, y: 778))
         foldCut.line(to: NSPoint(x: 636, y: 703))
@@ -119,8 +119,8 @@ func draw(pixels: Int, glyph: Bool = false) -> NSBitmapImageRep {
     return rep
 }
 
-func png(_ pixels: Int, to url: URL, glyph: Bool = false) throws {
-    try draw(pixels: pixels, glyph: glyph).representation(using: .png, properties: [:])!.write(to: url)
+func png(_ pixels: Int, to url: URL, glyph: Bool = false, tinted: Bool = false) throws {
+    try draw(pixels: pixels, glyph: glyph, tinted: tinted).representation(using: .png, properties: [:])!.write(to: url)
 }
 func manifest(_ images: [[String: String]], at directory: URL, glyph: Bool = false) throws {
     var data: [String: Any] = ["images": images, "info": ["author": "xcode", "version": 1]]
@@ -181,3 +181,14 @@ proof.unlockFocus()
 let proofRep = NSBitmapImageRep(data: proof.tiffRepresentation!)!
 try proofRep.representation(using: .png, properties: [:])!
     .write(to: sources.appendingPathComponent("FileMint-GlyphPreview.png"))
+
+let rootMenuDirectory = assets.appendingPathComponent("FinderRootMenuIcon.imageset")
+try fm.createDirectory(at: rootMenuDirectory, withIntermediateDirectories: true)
+var rootMenuImages: [[String: String]] = []
+for scale in [1, 2] {
+    let name = "FileMint-FinderRootMenuIcon-16x16@\(scale)x.png"
+    try png(16 * scale, to: rootMenuDirectory.appendingPathComponent(name), glyph: true, tinted: true)
+    rootMenuImages.append(["filename": name, "idiom": "mac", "scale": "\(scale)x"])
+}
+try manifest(rootMenuImages, at: rootMenuDirectory)
+try png(48, to: sources.appendingPathComponent("FileMint-FinderRootMenuIcon-48.png"), glyph: true, tinted: true)

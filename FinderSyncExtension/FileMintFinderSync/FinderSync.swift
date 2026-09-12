@@ -26,8 +26,9 @@ final class FinderSync: FIFinderSync {
 
     override func menu(for menuKind: FIMenuKind) -> NSMenu? {
         let preferences = FileMintPreferencesStore().load()
+        let language = preferences.language.resolved()
         func text(_ key: FileMintTextKey) -> String {
-            FileMintStrings.text(key, language: preferences.language)
+            FileMintStrings.text(key, language: language)
         }
         guard let target = FIFinderSyncController.default().targetedURL() else { return nil }
         var isDirectory: ObjCBool = false
@@ -35,6 +36,12 @@ final class FinderSync: FIFinderSync {
             ? target : target.deletingLastPathComponent()
         let menu = NSMenu(title: "FileMint")
         let root = NSMenuItem(title: text(.newFile), action: nil, keyEquivalent: "")
+        if let source = Bundle(for: Self.self).image(forResource: "FinderRootMenuIcon"),
+           let logo = source.copy() as? NSImage {
+            logo.size = NSSize(width: 16, height: 16)
+            logo.isTemplate = false
+            root.image = logo
+        }
         let submenu = NSMenu(title: text(.newFile))
         let custom = NSMenuItem(title: text(.customNewFile), action: #selector(showCustomFile(_:)), keyEquivalent: "")
         let templates = TemplateCatalog.enabledTemplates(from: preferences.templates)
@@ -46,7 +53,7 @@ final class FinderSync: FIFinderSync {
         if !templates.isEmpty { submenu.addItem(.separator()) }
         for (index, template) in templates.enumerated() {
             let suffix = template.suggestedFileName.replacingOccurrences(of: "Untitled", with: "")
-            let title = "\(FileMintStrings.templateDisplayName(for: template, language: preferences.language)) (\(suffix))"
+            let title = "\(FileMintStrings.templateDisplayName(for: template, language: language)) (\(suffix))"
             let item = NSMenuItem(title: title, action: #selector(createFile(_:)), keyEquivalent: "")
             item.tag = tags[index + 1]
             submenu.addItem(item)

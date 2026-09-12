@@ -17,6 +17,9 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
     public var revealAfterCreation: Bool
     public var favoritesFirst: Bool
     public var language: AppLanguage
+    public var launchAtLogin: Bool
+    public var showMenuBar: Bool
+    public var hasAttemptedLoginItemSetup: Bool
 
     public init(
         templates: [FileTemplate],
@@ -24,7 +27,10 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         collisionStrategy: NameCollisionStrategy,
         revealAfterCreation: Bool,
         favoritesFirst: Bool,
-        language: AppLanguage = .english
+        language: AppLanguage = .system,
+        launchAtLogin: Bool = true,
+        showMenuBar: Bool = true,
+        hasAttemptedLoginItemSetup: Bool = false
     ) {
         self.templates = templates
         self.monitoredFolderURLs = monitoredFolderURLs
@@ -33,6 +39,9 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         self.revealAfterCreation = revealAfterCreation
         self.favoritesFirst = favoritesFirst
         self.language = language
+        self.launchAtLogin = launchAtLogin
+        self.showMenuBar = showMenuBar
+        self.hasAttemptedLoginItemSetup = hasAttemptedLoginItemSetup
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -43,6 +52,9 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         case revealAfterCreation
         case favoritesFirst
         case language
+        case launchAtLogin
+        case showMenuBar
+        case hasAttemptedLoginItemSetup
     }
 
     public init(from decoder: Decoder) throws {
@@ -60,6 +72,9 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
             ?? defaults.revealAfterCreation
         favoritesFirst = (try? container.decode(Bool.self, forKey: .favoritesFirst)) ?? defaults.favoritesFirst
         language = (try? container.decode(AppLanguage.self, forKey: .language)) ?? defaults.language
+        launchAtLogin = (try? container.decode(Bool.self, forKey: .launchAtLogin)) ?? true
+        showMenuBar = (try? container.decode(Bool.self, forKey: .showMenuBar)) ?? true
+        hasAttemptedLoginItemSetup = (try? container.decode(Bool.self, forKey: .hasAttemptedLoginItemSetup)) ?? false
     }
 
     public static var `default`: FileMintPreferences {
@@ -69,7 +84,7 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
             collisionStrategy: .increment,
             revealAfterCreation: true,
             favoritesFirst: true,
-            language: .english
+            language: .system
         )
     }
 }

@@ -9,7 +9,8 @@ network client, analytics, folder crawling, or clipboard monitoring.
 ## The two creation paths
 
 - Finder → New File → a file type creates immediately in the captured target
-  directory. Menu labels include the extension. Every menu row is text only.
+  directory. Menu labels include the extension. The top-level entry shows the
+  FileMint logo plus localized “New File” / “新建文件”; submenu rows remain text only.
 - Finder → New File → New File… opens one compact persistent native panel.
   Name, editable extension selector, destination, optional plain-text content,
   Cancel and Create are the whole flow. The main app owns this single panel;
@@ -27,8 +28,12 @@ network client, analytics, folder crawling, or clipboard monitoring.
   user's explicit paste action. Non-text clipboard data produces a short message.
 - Typed/pasted content is written as exact UTF-8, including whitespace, Unicode,
   and literal `{{fileName}}` or `{{year}}`. Changing the extension preserves it.
+- All code/content editors disable smart quotes, dashes and text replacement.
+  Template token expansion is a single pass; tokens inside a substituted filename
+  are literal data and are never expanded again.
 - Until content is edited, known formats seed their saved template content and
   render supported placeholders (`{{fileName}}`, `{{date}}`, `{{isoDate}}`, `{{year}}`).
+  Date placeholders use UTC for deterministic output.
 - The extension selector searches preset names, aliases and saved custom types.
   Its menu can always show all choices, even after a format has been selected.
 - A full filename typed or pasted into Name is authoritative: `demo.js` is saved
@@ -96,11 +101,46 @@ network client, analytics, folder crawling, or clipboard monitoring.
   SwiftUI settings remain in App/FileMint. Shared AppKit creation UI may be
   compiled into both app and extension.
 
+## Startup and menu bar
+
+- Launch at login and Show in menu bar default to enabled. Both have persistent
+  switches in General. A saved off value must survive upgrades and relaunches.
+- Use macOS 13+ SMAppService.mainApp for login registration. Request the default
+  once after the app has been placed in /Applications or ~/Applications and
+  launched. Do not register development builds or a mounted DMG as login items.
+- Display actual service status: active, off, awaiting system approval, unavailable
+  or failed. A stored preference alone is never proof of successful registration.
+- Respect changes in macOS Login Items; do not silently re-register after the
+  user disables/removes the item there. Offer an explicit retry/settings action.
+- Hiding the menu bar item takes effect immediately and persists. The Dock/app
+  settings remain reachable. Finder URL actions continue to work when the
+  settings window is closed or the menu bar item is hidden.
+- New preferences follow the system's supported language; explicit saved English
+  or Chinese choices remain authoritative. Users can also select Follow System.
+- Folder settings include an optional Full Disk Access guide and a button to
+  open its macOS privacy pane: add the installed FileMint.app, enable it, then
+  quit and reopen FileMint. Never silently change this system permission.
+- Explain the difference between privacy access and sandbox folder access:
+  Full Disk Access does not remove sandbox requirements; folder bookmarks are
+  remembered so normal use should not require repeated folder selection.
+
+## Local extension maintenance
+
+- Remove only confirmed obsolete FileMint application/extension registrations
+  and their disposable old build bundles. Do not reset global LaunchServices,
+  PluginKit, background-item or privacy databases.
+- Preserve source, user preferences and created files. Keep one installed current
+  FileMint.app; remove staging bundles after DMG packaging to avoid duplicate
+  registration from a packaging directory. Verify registrations after cleanup.
+
 ## Appearance
 
 - Native controls and system colors. Compact settings with General, File Types
-  and Folders. No decorative cards. English default, Chinese available.
-- Finder menus, format choices and creation controls use text only. The Finder
+  and Folders. No decorative cards. Follow system language by default; English
+  and Chinese can be selected explicitly.
+- Only the top-level Finder entry has the small FileMint logo; its label maps
+  to the resolved app language. Format choices, submenu rows and creation
+  controls use text only. The Finder
   toolbar and macOS menu bar retain the small template glyph those entry points
   require. No icon preference.
 - App logo: a distinctive folded-paper F in fresh mint on a warm porcelain
@@ -125,7 +165,12 @@ network client, analytics, folder crawling, or clipboard monitoring.
 - README leads with the pain solved, actual features, screenshots, download and
   a brief install guide. Chinese first, English separate. Developer instructions
   live in docs. Optional donations link the supplied ReceivePayment images.
-- Keep the existing non-commercial source-available license and privacy policy.
+- Non-commercial use is free for everyone, including personal, educational and
+  research use. Commercial use, commercial redistribution and commercial
+  derivatives require prior written authorization or a separately issued paid
+  commercial license. Donations alone grant no commercial rights. Include the
+  license in the app and DMG; do not label this as MIT or OSI open source.
+- Keep the privacy policy.
   Do not promise valid Office/PDF/image output from a custom suffix.
 
 ## Completion evidence

@@ -10,6 +10,15 @@ struct FocusedCreationTests {
         return url
     }
 
+    @Test("placeholder-looking filenames stay literal during template expansion")
+    func templateExpansionIsSinglePass() {
+        var template = TemplateCatalog.builtInTemplates[0]
+        template.content = "{{fileName}} / {{year}} / {{unknown}}"
+        let value = TemplateRenderer.render(template, context: .init(
+            fileName: "{{year}}.md", createdAt: Date(timeIntervalSince1970: 1_704_067_200)))
+        #expect(value == "{{year}}.md / 2024 / {{unknown}}")
+    }
+
     @Test("pasted text is byte-for-byte literal, including placeholders and CRLF")
     func literalContent() throws {
         let folder = try workspace()

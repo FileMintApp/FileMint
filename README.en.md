@@ -1,7 +1,7 @@
 <p align="center"><img src="Resources/IconSource/FileMint-AppIcon-1024.png" width="112" alt="FileMint"></p>
 <h1 align="center">FileMint</h1>
 <p align="center"><strong>A new file. Right here.</strong><br>A small, native macOS file creation utility.</p>
-<p align="center"><a href="README.md">中文</a> · <strong>English</strong></p>
+<p align="center"><a href="README.md"><strong>← 简体中文</strong></a> ｜ <strong>English</strong></p>
 <p align="center"><a href="https://github.com/FileMintApp/FileMint/releases/latest">Download for macOS</a> · <a href="docs/INSTALL.md">Installation help</a> · <a href="https://github.com/FileMintApp/FileMint/issues">Report an issue</a></p>
 
 Creating a file should not require opening an editor, choosing Save As, and finding your folder again.
@@ -13,6 +13,8 @@ Creating a file should not require opening an editor, choosing Save As, and find
 - **One-click presets.** Text, Markdown, JSON, Swift, HTML, CSS and Shell; enable CSV, YAML, XML, JavaScript, TypeScript, Python and SQL when needed.
 - **Your own types.** Save suffixes such as `.toml`, `.vue` and `.log`, optional starter content, and your preferred menu order.
 - **Paste before creating.** Notes, code and configuration go straight into the creation panel. Edited content, including Unicode, line breaks and literal template tokens, is saved verbatim.
+- **Ready when you log in.** Launch at login and the menu bar item are enabled by default after installation and first launch. Both can be disabled in General.
+- **Your language.** Follow the system language or choose English / Chinese. The Finder entry combines the FileMint logo with the localized New File label; type rows remain text only.
 - **Native and focused.** Swift, AppKit and SwiftUI. Text-only menus, native editing, no web runtime, account, network client or background scanning.
 - **Safe collisions.** Quick creation increments names; custom creation asks before replacement. Concurrent requests never silently overwrite one another.
 
@@ -42,7 +44,7 @@ No telemetry or uploads of filenames, paths or content. Clipboard access happens
 
 ## Buy me a coffee
 
-If FileMint saves you a few interruptions, optional donations are welcome. All features remain available regardless of donations. Thank you!
+If FileMint saves you a few interruptions, optional donations are welcome. Non-commercial use is free and all features remain available regardless of donations. A donation does not purchase commercial rights. Thank you!
 
 <p align="center">
   <img src="ReceivePayment/wx.JPG" width="220" alt="WeChat Pay donation QR code">&nbsp;&nbsp;
@@ -51,5 +53,14 @@ If FileMint saves you a few interruptions, optional donations are welcome. All f
 
 ## Source and license
 
-Source is available under a [non-commercial license](LICENSE). Commercial use requires separate permission.
+**Personal and non-commercial use is free. Commercial use requires prior written authorization or a separately issued paid commercial license.**
+
+| Use | Permission |
+| --- | --- |
+| Personal, educational and research use without commercial purpose | Free |
+| Non-commercial forks, modifications and redistribution | Free; retain license and copyright notices |
+| Business workflows, client work and paid services | Separate written authorization or paid commercial license |
+| Commercial derivatives, paid distribution or product integration | Separate written authorization or paid commercial license |
+
+FileMint uses its own [Non-Commercial Source License](LICENSE), **not MIT**. Source availability does not grant unrestricted commercial rights. See [commercial licensing](docs/COMMERCIAL_LICENSE.md).
 Contributors can start with [development](docs/DEVELOPMENT.md), the [SPEC](specs/SPEC.md) and [acceptance evidence](docs/ACCEPTANCE.md).

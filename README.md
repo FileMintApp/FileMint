@@ -1,7 +1,7 @@
 <p align="center"><img src="Resources/IconSource/FileMint-AppIcon-1024.png" width="112" alt="FileMint"></p>
 <h1 align="center">FileMint</h1>
 <p align="center"><strong>新文件，就在此刻。</strong><br>一个干净、直接的原生 macOS 文件创建工具。</p>
-<p align="center"><strong>中文</strong> · <a href="README.en.md">English</a></p>
+<p align="center"><strong>简体中文</strong> ｜ <a href="README.en.md"><strong>English →</strong></a></p>
 <p align="center"><a href="https://github.com/FileMintApp/FileMint/releases/latest">下载 macOS 版</a> · <a href="docs/INSTALL.md">安装帮助</a> · <a href="https://github.com/FileMintApp/FileMint/issues">反馈问题</a></p>
 
 想建一个文件，却要先打开编辑器、另存为、再找回刚才的文件夹？
@@ -15,6 +15,8 @@ FileMint 把这件事放回 Finder：**右键，选一种类型，文件就在�
 - **常用类型，一次点击。** 文本、Markdown、JSON、Swift、HTML、CSS、Shell 随手可用；CSV、YAML、XML、JavaScript、TypeScript、Python、SQL 可按需启用。
 - **你的后缀，你来定义。** 添加自己的 `.toml`、`.vue`、`.log` 等类型，保存常用初始内容，调整顺序，让右键菜单只留下需要的选项。
 - **粘贴，然后创建。** 直接在创建面板粘贴代码、笔记或配置。不必先创建空文件再打开编辑器。多行、中文、空格和模板符号都按原文保存。
+- **打开电脑就能用。** 首次安装启动后，默认开启登录时启动与菜单栏入口；两个开关都可在“通用”设置中关闭。
+- **跟随你的语言。** 默认跟随系统显示“新建文件 / New File”，也可手动选择中文或 English。右键主入口显示 FileMint Logo，类型列表保持纯文字。
 - **干净，也足够快。** Swift + AppKit + SwiftUI；原生菜单、原生文本编辑、纯文字选项。没有网页运行时、账号、联网服务或后台扫描。
 - **同名也放心。** 快速创建自动递增名称；自定义创建在替换前询问。并发创建也不会悄悄覆盖已有文件。
 
@@ -34,7 +36,7 @@ FileMint 把这件事放回 Finder：**右键，选一种类型，文件就在�
 支持 **macOS 13 及以上**，同一个安装包兼容 Apple 芯片与 Intel Mac。
 
 1. [下载最新 DMG](https://github.com/FileMintApp/FileMint/releases/latest)，把 FileMint 拖入“应用程序”。
-2. 启动 FileMint，按应用内提示启用 Finder 扩展并授权常用文件夹。
+2. 启动 FileMint，按应用内提示启用 Finder 扩展并授权常用文件夹。“文件夹”页也提供完全磁盘访问权限指引；它与沙盒文件夹授权相互独立。
 3. 回到 Finder，开始创建。
 
 **分发与来源认证：** FileMint 默认统一通过 GitHub Releases 分发，在 GitHub Actions 构建，提供 GitHub 构建来源认证和 SHA-256 校验。它尚未使用付费 Apple Developer ID 签名，也没有 Apple 公证，因此首次启动可能被 macOS 拦截，Finder 扩展也可能需要额外启用。GitHub 来源认证不等于 Apple 安全认证。请先阅读[首次安装与限制](docs/INSTALL.md)。
@@ -45,7 +47,7 @@ FileMint 把这件事放回 Finder：**右键，选一种类型，文件就在�
 
 ## 请我喝杯咖啡
 
-如果 FileMint 少打断了你几次，欢迎随缘打赏。功能不因打赏与否而区别对待，谢谢支持。
+如果 FileMint 少打断了你几次，欢迎随缘打赏。非商业使用无需付费，功能不因打赏与否而区别对待。打赏不等于购买商业授权，谢谢支持。
 
 <p align="center">
   <img src="ReceivePayment/wx.JPG" width="220" alt="微信收款码">&nbsp;&nbsp;
@@ -54,6 +56,15 @@ FileMint 把这件事放回 Finder：**右键，选一种类型，文件就在�
 
 ## 源码与许可
 
-代码以[非商业许可](LICENSE)公开，允许个人、教育、研究等非商业用途的修改与再分发；商业使用需另行取得许可。
+**个人及非商业使用免费；商业使用须获得授权或单独购买商业许可。**
+
+| 使用方式 | 授权要求 |
+| --- | --- |
+| 个人、学习、教育、研究等非商业使用 | 免费使用 |
+| 非商业 fork、修改与再分发 | 免费，须保留许可和版权声明 |
+| 企业商业流程、客户项目、收费服务 | 事先取得书面商业授权或付费商业许可 |
+| 商业二次开发、收费分发或集成销售 | 事先取得书面商业授权或付费商业许可 |
+
+本项目使用自定义[非商业源码许可](LICENSE)，**不采用 MIT**。源码公开不代表允许无授权商用。详见[商业授权说明](docs/COMMERCIAL_LICENSE.md)。
 
 想参与改进？从[开发说明](docs/DEVELOPMENT.md)、[产品规范](specs/SPEC.md)和[验收记录](docs/ACCEPTANCE.md)开始。

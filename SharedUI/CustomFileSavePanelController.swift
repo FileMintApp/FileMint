@@ -175,7 +175,7 @@ final class CustomFileSavePanelController: NSObject {
         scrollView.backgroundColor = .textBackgroundColor
         scrollView.translatesAutoresizingMaskIntoConstraints = false
 
-        let textView = LiteralTextView(frame: NSRect(x: 0, y: 0, width: 500, height: 118))
+        let textView = FileMintTextView(frame: NSRect(x: 0, y: 0, width: 500, height: 118))
         textView.setAccessibilityLabel(FileMintStrings.text(.initialContent, language: language))
         textView.isEditable = true
         textView.isSelectable = true
@@ -411,7 +411,7 @@ final class CustomFileSavePanelController: NSObject {
     }
 
     @objc private func createRequestedFile(_ sender: Any?) {
-        guard !isCreating else { return }
+        guard !isCreating, panel?.attachedSheet == nil, directoryPicker == nil else { return }
         guard let directoryURL = locationSelection?.directoryURL,
               let fileName = resolvedFileName() else {
             showError(invalidExtensionError())
@@ -518,6 +518,12 @@ final class CustomFileSavePanelController: NSObject {
         )
         alert.addButton(withTitle: FileMintStrings.text(.cancel, language: language))
         alert.addButton(withTitle: FileMintStrings.text(.replace, language: language))
+        // NSAlert recognizes Cancel and otherwise gives Return to the next
+        // button. Pin the non-destructive default explicitly after loading it.
+        alert.window.defaultButtonCell = alert.buttons[0].cell as? NSButtonCell
+        alert.buttons[0].keyEquivalent = "\r"
+        alert.buttons[0].keyEquivalentModifierMask = []
+        alert.buttons[1].keyEquivalent = ""
         alert.beginSheetModal(for: panel) { [weak self] response in
             guard response == .alertSecondButtonReturn else {
                 return
@@ -622,6 +628,15 @@ extension CustomFileSavePanelController: NSComboBoxDataSource, NSComboBoxDelegat
 
     func comboBox(_ comboBox: NSComboBox, completedString string: String) -> String? {
         FileFormatCatalog.matching(string, in: allOptions).first?.fileExtension
+    }
+
+    func comboBoxWillPopUp(_ notification: Notification) {
+        guard let comboBox = notification.object as? NSComboBox else { return }
+        let query = comboBox.stringValue
+        if FileFormatCatalog.option(forFileExtension: query, in: allOptions) != nil
+            || FileFormatCatalog.matching(query, in: allOptions).isEmpty {
+            updateSuggestions(for: "")
+        }
     }
 
     func comboBoxSelectionDidChange(_ notification: Notification) {
@@ -731,7 +746,7 @@ private final class CreationPanel: NSPanel {
 }
 
 @MainActor
-private final class LiteralTextView: NSTextView {
+final class FileMintTextView: NSTextView {
     override func paste(_ sender: Any?) { pasteAsPlainText(sender) }
     override func pasteAsPlainText(_ sender: Any?) {
         guard let text = NSPasteboard.general.string(forType: .string) else { NSSound.beep(); return }

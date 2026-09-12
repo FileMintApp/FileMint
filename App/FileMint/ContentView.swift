@@ -29,7 +29,8 @@ private struct GeneralPane: View {
     @EnvironmentObject private var model: PreferencesModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        ScrollView {
+        VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: 14) {
                 Image(nsImage: NSApplication.shared.applicationIconImage).resizable().frame(width: 60, height: 60)
                 VStack(alignment: .leading, spacing: 4) {
@@ -46,10 +47,31 @@ private struct GeneralPane: View {
                 Text(model.text(.language))
                 Spacer()
                 Picker("", selection: $model.preferences.language) {
-                    ForEach(AppLanguage.allCases) { Text($0.displayName).tag($0) }
+                    ForEach(AppLanguage.allCases) { language in
+                        Text(language == .system ? model.text(.followSystem) : language.displayName).tag(language)
+                    }
                 }.labelsHidden().frame(width: 160)
                     .onChange(of: model.preferences.language) { _ in model.save() }
             }
+            Toggle(model.text(.launchAtLogin), isOn: Binding(
+                get: { model.preferences.launchAtLogin },
+                set: { value in Task { await model.setLaunchAtLogin(value) } }
+            )).disabled(model.isUpdatingLoginItem)
+            if let hint = model.loginItemHint {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(hint).font(.caption).foregroundStyle(.secondary)
+                    HStack {
+                        Button(model.text(.openLoginSettings)) { model.openLoginSettings() }
+                        if model.loginItemError != nil {
+                            Button(model.text(.retry)) { Task { await model.setLaunchAtLogin(true) } }
+                                .disabled(model.isUpdatingLoginItem)
+                        }
+                    }.font(.caption)
+                }
+            }
+            Toggle(model.text(.showMenuBar), isOn: Binding(
+                get: { model.preferences.showMenuBar }, set: { model.setShowMenuBar($0) }
+            ))
             Toggle(model.text(.revealCreatedFile), isOn: $model.preferences.revealAfterCreation)
                 .onChange(of: model.preferences.revealAfterCreation) { _ in model.save() }
             HStack {
@@ -78,6 +100,7 @@ private struct GeneralPane: View {
                     .font(.caption).foregroundStyle(.tertiary)
             }
         }.padding(18)
+        }
     }
 }
 
@@ -158,7 +181,7 @@ private struct TypeEditor: View {
             TextField(model.text(.displayName), text: $draft.name).focused($nameFocused)
             TextField(model.text(.extensionLabel), text: $draft.suffix)
             Text(model.text(.initialContent)).font(.callout)
-            TextEditor(text: $draft.content).font(.system(.body, design: .monospaced))
+            PlainTextEditor(text: $draft.content, label: model.text(.initialContent))
                 .frame(height: 120).border(Color(nsColor: .separatorColor))
             Text(model.text(.customTypeHint)).font(.caption).foregroundStyle(.secondary)
             if let error { Text(error).foregroundStyle(.red).font(.callout) }
@@ -187,6 +210,16 @@ private struct FoldersPane: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(model.text(.folderHint)).font(.callout).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text(model.text(.fullDiskAccess)).fontWeight(.medium)
+                    Spacer()
+                    Button(model.text(.openFullDiskAccess)) { model.openFullDiskAccessSettings() }
+                }
+                Text(model.text(.fullDiskAccessHint)).font(.caption).foregroundStyle(.secondary)
+                Text(model.text(.folderAccessReminder)).font(.caption).foregroundStyle(.secondary)
+            }
+            Divider()
             List(model.preferences.monitoredFolderURLs, id: \.self, selection: $selection) { url in
                 VStack(alignment: .leading, spacing: 3) {
                     Text((url.path as NSString).abbreviatingWithTildeInPath).lineLimit(1).truncationMode(.middle)

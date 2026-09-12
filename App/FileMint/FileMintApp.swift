@@ -4,21 +4,24 @@ import SwiftUI
 
 @main
 struct FileMintApp: App {
-    @StateObject private var model = PreferencesModel()
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
+    @StateObject private var model = PreferencesModel.shared
 
     var body: some Scene {
         Window("FileMint", id: "main") {
             ContentView().environmentObject(model)
-                .onOpenURL { model.handle(url: $0) }
         }
         .windowResizability(.contentSize)
         .commands {
             CommandGroup(replacing: .newItem) {
                 Button(model.text(.customNewFile)) { model.newFile() }.keyboardShortcut("n")
-                Button(model.preferences.language == .english ? "Import Settings…" : "导入设置…") { model.importSettings() }
+                Button(model.text(.importSettings)) { model.importSettings() }
             }
         }
-        MenuBarExtra {
+        MenuBarExtra(isInserted: Binding(
+            get: { model.preferences.showMenuBar },
+            set: { visible in Task { @MainActor in model.setShowMenuBar(visible) } }
+        )) {
             FileMintMenu().environmentObject(model)
         } label: {
             Label("FileMint", image: "MenuBarIcon")

@@ -1,6 +1,7 @@
 import Foundation
 
 public enum AppLanguage: String, Codable, CaseIterable, Identifiable, Sendable {
+    case system = "system"
     case english = "en"
     case chinese = "zh-Hans"
 
@@ -8,15 +9,41 @@ public enum AppLanguage: String, Codable, CaseIterable, Identifiable, Sendable {
 
     public var displayName: String {
         switch self {
+        case .system:
+            return "Follow System"
         case .english:
             return "English"
         case .chinese:
             return "中文"
         }
     }
+    public func resolved(preferredLanguages: [String]? = nil) -> AppLanguage {
+        guard self == .system else { return self }
+        for language in preferredLanguages ?? Locale.preferredLanguages {
+            let prefix = language.lowercased().split(whereSeparator: { $0 == "-" || $0 == "_" }).first
+            if prefix == "zh" { return .chinese }
+            if prefix == "en" { return .english }
+        }
+        return .english
+    }
+
 }
 
 public enum FileMintTextKey: String, CaseIterable, Sendable {
+    case followSystem
+    case launchAtLogin
+    case showMenuBar
+    case loginNeedsApproval
+    case loginInstallFirst
+    case loginRegistrationFailed
+    case openLoginSettings
+    case retry
+    case fullDiskAccess
+    case openFullDiskAccess
+    case fullDiskAccessHint
+    case folderAccessReminder
+    case importSettings
+
     case general
     case fileTypes
     case folders
@@ -99,6 +126,20 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
 
 public enum FileMintStrings {
     private static let focused: [FileMintTextKey: (String, String)] = [
+        .followSystem: ("Follow System", "跟随系统"),
+        .launchAtLogin: ("Launch at login", "开机自动启动"),
+        .showMenuBar: ("Show in menu bar", "显示在菜单栏"),
+        .loginNeedsApproval: ("Allow FileMint in macOS Login Items to finish enabling startup.", "请在 macOS 登录项中允许 FileMint，完成开机启动设置。"),
+        .loginInstallFirst: ("Move FileMint to Applications to enable launch at login.", "将 FileMint 移到“应用程序”后启用开机启动。"),
+        .loginRegistrationFailed: ("Launch at login could not be enabled. Retry or check macOS Login Items.", "未能启用开机启动，可重试或检查 macOS 登录项设置。"),
+        .openLoginSettings: ("Login Items Settings…", "打开登录项设置…"),
+        .retry: ("Retry", "重试"),
+        .fullDiskAccess: ("Full Disk Access", "完全磁盘访问权限"),
+        .openFullDiskAccess: ("Open Full Disk Access…", "打开完全磁盘访问权限…"),
+        .fullDiskAccessHint: ("For protected locations: System Settings → Privacy & Security → Full Disk Access. Add the installed FileMint.app, enable it, then quit and reopen FileMint.", "如需访问受保护的位置：系统设置 → 隐私与安全性 → 完全磁盘访问权限，添加已安装的 FileMint.app 并开启，然后退出并重新打开 FileMint。"),
+        .folderAccessReminder: ("Folder access is remembered after you choose a folder. Full Disk Access is separate from sandbox access; a folder may still need authorization once.", "选择文件夹后会记住授权。完全磁盘访问与沙盒授权相互独立，文件夹可能仍需首次授权。"),
+        .importSettings: ("Import Settings…", "导入设置…"),
+
         .general: ("General", "通用"),
         .fileTypes: ("File Types", "文件类型"),
         .folders: ("Folders", "文件夹"),
@@ -135,9 +176,10 @@ public enum FileMintStrings {
     ]
 
     public static func text(_ key: FileMintTextKey, language: AppLanguage) -> String {
+        let language = language.resolved()
         if let pair = focused[key] { return language == .english ? pair.0 : pair.1 }
         switch language {
-        case .english:
+        case .english, .system:
             return englishText(key)
         case .chinese:
             return chineseText(key)
@@ -145,8 +187,8 @@ public enum FileMintStrings {
     }
 
     public static func templateDisplayName(for template: FileTemplate, language: AppLanguage) -> String {
-        switch language {
-        case .english:
+        switch language.resolved() {
+        case .english, .system:
             return template.displayName
         case .chinese:
             switch template.id {
@@ -171,8 +213,8 @@ public enum FileMintStrings {
     }
 
     public static func templateGroupName(for template: FileTemplate, language: AppLanguage) -> String {
-        switch language {
-        case .english:
+        switch language.resolved() {
+        case .english, .system:
             return template.group
         case .chinese:
             switch template.group {
@@ -198,7 +240,7 @@ public enum FileMintStrings {
     ) -> String {
         String(
             format: text(.replaceExistingFileMessage, language: language),
-            locale: Locale(identifier: language.rawValue),
+            locale: Locale(identifier: language.resolved().rawValue),
             fileName
         )
     }
@@ -400,8 +442,8 @@ public struct PermissionGuideStep: Equatable, Identifiable, Sendable {
 
 public enum PermissionGuide {
     public static func steps(language: AppLanguage) -> [PermissionGuideStep] {
-        switch language {
-        case .english:
+        switch language.resolved() {
+        case .english, .system:
             return [
                 PermissionGuideStep(
                     id: "open-settings",

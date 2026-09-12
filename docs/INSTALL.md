@@ -41,6 +41,19 @@ gh attestation verify FileMint-0.2.0.dmg --repo FileMintApp/FileMint
 校验和证明文件完整性；GitHub attestation 证明构建来自该仓库的 Actions。
 二者都不等同于 Apple 开发者身份认证或恶意软件审查。
 
+## 登录启动、菜单栏与完全磁盘访问
+
+安装到“应用程序”并首次启动后，FileMint 会请求注册为 macOS 原生登录项。
+“通用”中的“开机自动启动”和“显示在菜单栏”默认开启，关闭后会保存选择。
+若 macOS 要求确认或拒绝登录项，应用会显示真实状态并提供设置入口。开发构建
+和 DMG 内的副本不会自动注册为登录项。隐藏菜单栏后仍可从 Dock 或应用程序打开。
+
+需要访问受保护的位置时，在“文件夹”页点击“打开完全磁盘访问权限…”，在
+系统设置 → 隐私与安全性 → 完全磁盘访问权限中添加 `/Applications/FileMint.app`
+并开启，随后退出并重新打开 FileMint。此权限由你在 macOS 中选择，应用不会代为启用。
+完全磁盘访问和 App Sandbox 授权是独立机制；文件夹可能仍需首次选择授权，
+FileMint 会用书签记住它，而不是每次创建都重新选择。
+
 ## 旧开发版设置
 
 此版本使用 FileMint 自己的配置目录，不会自动访问旧 App Group 容器。旧文件

@@ -4,9 +4,14 @@ import Foundation
 
 @MainActor
 final class PreferencesModel: ObservableObject {
+    static let shared = PreferencesModel()
     @Published var preferences: FileMintPreferences
     @Published var lastError: String?
     @Published var extensionEnabled = false
+    @Published var loginItemState: LoginItemState = .notRegistered
+    @Published var loginItemError: String?
+    @Published var isUpdatingLoginItem = false
+    private let loginItemService = LoginItemService()
     private let store = FileMintPreferencesStore()
     private let folderAccess = FolderAccess()
     private var preferenceObserver: NSObjectProtocol?
@@ -33,7 +38,74 @@ final class PreferencesModel: ObservableObject {
     func templateDisplayName(for template: FileTemplate) -> String {
         FileMintStrings.templateDisplayName(for: template, language: preferences.language)
     }
-    func refreshStatus() { extensionEnabled = FinderIntegrationStatus.isEnabled }
+    func refreshStatus() {
+        extensionEnabled = FinderIntegrationStatus.isEnabled
+        loginItemState = loginItemService.state
+        guard loginItemService.isInstalled, preferences.hasAttemptedLoginItemSetup,
+              !isUpdatingLoginItem, loginItemError == nil else { return }
+        let actual = loginItemState == .enabled || loginItemState == .requiresApproval
+        if preferences.launchAtLogin != actual {
+            preferences.launchAtLogin = actual
+            save()
+        }
+    }
+
+    var loginItemHint: String? {
+        if !loginItemService.isInstalled { return text(.loginInstallFirst) }
+        if loginItemError != nil { return text(.loginRegistrationFailed) }
+        if loginItemState == .requiresApproval { return text(.loginNeedsApproval) }
+        return nil
+    }
+
+    func prepareLoginItemIfNeeded() async {
+        guard loginItemService.isInstalled, !preferences.hasAttemptedLoginItemSetup else { return }
+        let state = loginItemService.state
+        if LoginItemPolicy.shouldRegisterInitially(wantsEnabled: preferences.launchAtLogin,
+            attempted: false, status: state, installed: true) {
+            await setLaunchAtLogin(true)
+        } else if !preferences.launchAtLogin && (state == .enabled || state == .requiresApproval) {
+            await setLaunchAtLogin(false)
+        } else {
+            preferences.hasAttemptedLoginItemSetup = true
+            refreshStatus()
+            save()
+        }
+    }
+
+    func setLaunchAtLogin(_ enabled: Bool) async {
+        guard !isUpdatingLoginItem else { return }
+        guard loginItemService.isInstalled else {
+            preferences.launchAtLogin = enabled
+            preferences.hasAttemptedLoginItemSetup = !enabled
+            save()
+            return
+        }
+        isUpdatingLoginItem = true
+        preferences.hasAttemptedLoginItemSetup = true
+        do {
+            try await loginItemService.setEnabled(enabled)
+            loginItemError = nil
+        } catch { loginItemError = error.localizedDescription }
+        loginItemState = loginItemService.state
+        preferences.launchAtLogin = loginItemState == .enabled || loginItemState == .requiresApproval
+        save()
+        isUpdatingLoginItem = false
+    }
+
+    func setShowMenuBar(_ visible: Bool) {
+        guard preferences.showMenuBar != visible else { return }
+        preferences.showMenuBar = visible
+        save()
+    }
+
+    func openLoginSettings() { loginItemService.openSettings() }
+
+    func openFullDiskAccessSettings() {
+        let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles")!
+        if !NSWorkspace.shared.open(url) {
+            NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/System Settings.app"))
+        }
+    }
 
     func save() {
         do {
@@ -130,9 +202,13 @@ final class PreferencesModel: ObservableObject {
         panel.canChooseDirectories = false
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
+            let attemptedHere = preferences.hasAttemptedLoginItemSetup
             preferences = try FileMintPreferencesStore.decode(Data(contentsOf: url))
+            preferences.hasAttemptedLoginItemSetup = attemptedHere
+            let launchAtLogin = preferences.launchAtLogin
             save()
             folderAccess.restore(preferences)
+            Task { await setLaunchAtLogin(launchAtLogin) }
         } catch { lastError = error.localizedDescription }
     }
 

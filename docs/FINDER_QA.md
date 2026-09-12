@@ -21,7 +21,13 @@ Record actual results in ACCEPTANCE.md.
 - Edit, disable, reorder and remove that custom type. Built-ins remain intact.
 - Restore built-ins; verify custom types remain after explicit confirmation.
 - Choose a working folder once, relaunch, and verify access is remembered.
-- Switch English/Chinese; verify settings, Finder menus and panel labels agree.
+- Switch Follow System/English/Chinese; verify settings, Finder menus and panel labels agree.
+- Toggle Show in menu bar off/on, relaunch, and verify the choice survives.
+- Install in Applications; verify default login registration and the actual
+  ServiceManagement status. Disable/re-enable through both app and macOS
+  settings; confirm the app never silently re-registers an externally disabled item.
+- With settings closed and the menu bar hidden, test both Finder creation routes.
+- Open the Full Disk Access guide; verify it explains sandbox folder authorization separately.
 - Confirm no file-icon setting or inactive favorites setting is exposed.
 - Legacy development JSON/plist settings import through the File menu; protected
   App Group directories are never accessed automatically.
@@ -30,7 +36,7 @@ Record actual results in ACCEPTANCE.md.
 
 - Confirm the extension is listed and enabled in macOS settings.
 - Background and file context menus within monitored folders show text-only
-  New File actions. Other apps may contribute similarly named menus.
+  New File actions; the root entry has the FileMint logo. Other apps may contribute similarly named menus.
 - Verify each quick action creates on disk, then verify automatic name increments.
 - Move to another Finder folder after opening a menu: its action must keep its
   captured destination, not pick up the later selection.

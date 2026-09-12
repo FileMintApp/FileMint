@@ -10,4 +10,5 @@ icons are independently constructed from vector geometry in
 precise. `make icon` rebuilds all PNGs from that native master.
 
 The concept prompt and production decisions are in `BRIEF.md`.
-Finder menus and creation controls remain text only.
+The top-level Finder entry uses a small mint F plus a localized function label.
+Submenu rows and creation controls remain text only.
