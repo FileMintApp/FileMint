@@ -11,6 +11,10 @@ An ad-hoc signature validates bundle integrity but does not identify a trusted
 Apple developer. GitHub provenance identifies a repository/workflow/source
 commit; it does not grant Gatekeeper or Finder extension trust.
 
+CI also retains a reviewable DMG and attests trusted main-branch builds.
+The attestation job never runs for pull requests and has its own narrowly scoped
+OIDC/attestation permissions. Ordinary test/build jobs cannot mint attestations.
+
 The Release workflow checks out the version tag, verifies behavior, builds both
 architectures, signs nested code first, packages and verifies the DMG, attests
 its final bytes, verifies that attestation and only then publishes the assets.
@@ -26,18 +30,17 @@ git push origin main v0.2.0
 Release evidence should include the Actions URL, downloaded asset checksum,
 attestation verification and actual runtime results, not just build success.
 
-## Future Apple channel
+## Standing release policy
 
-When the owner obtains a Developer ID Application certificate, configure the
-app and extension for that team. The current distribution uses a sandbox
-exception limited to the application-owned FileMint support directory, so it
-does not require App Group provisioning. The main app owns destination folder
-bookmarks and writes; Finder uses expiring local request tickets.
+GitHub Releases and GitHub artifact attestations remain the default for all
+future distribution. Apple Developer credentials are not a release prerequisite.
+Any change of channel needs a new owner decision. The optional low-level Apple
+signing helpers are not used by the default workflow and confer no Apple trust
+on the GitHub provenance build.
 
-The signing and notarization scripts support Developer ID identities through
-environment variables. Supply credentials through a local keychain or GitHub
-Secrets; never commit private keys or passwords. Do not use an Apple Development
-certificate as public release certification.
+The sandbox exception is limited to the application-owned FileMint support
+directory. The main app owns destination bookmarks and writes. Finder uses
+expiring local request tickets, with no dependency on App Group provisioning.
 
 ## Primary references
 

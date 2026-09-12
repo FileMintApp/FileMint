@@ -13,17 +13,38 @@ func color(_ r: CGFloat, _ g: CGFloat, _ b: CGFloat) -> NSColor {
     NSColor(srgbRed: r / 255, green: g / 255, blue: b / 255, alpha: 1)
 }
 
-func document() -> NSBezierPath {
+func foldedF() -> NSBezierPath {
     let p = NSBezierPath()
-    p.move(to: NSPoint(x: 324, y: 212))
-    p.line(to: NSPoint(x: 680, y: 212))
-    p.curve(to: NSPoint(x: 724, y: 256), controlPoint1: NSPoint(x: 708, y: 212), controlPoint2: NSPoint(x: 724, y: 230))
-    p.line(to: NSPoint(x: 724, y: 624))
-    p.line(to: NSPoint(x: 556, y: 808))
-    p.line(to: NSPoint(x: 324, y: 808))
-    p.curve(to: NSPoint(x: 280, y: 764), controlPoint1: NSPoint(x: 296, y: 808), controlPoint2: NSPoint(x: 280, y: 790))
-    p.line(to: NSPoint(x: 280, y: 256))
-    p.curve(to: NSPoint(x: 324, y: 212), controlPoint1: NSPoint(x: 280, y: 230), controlPoint2: NSPoint(x: 296, y: 212))
+    p.move(to: NSPoint(x: 354, y: 208))
+    p.line(to: NSPoint(x: 438, y: 208))
+    p.curve(to: NSPoint(x: 484, y: 254), controlPoint1: NSPoint(x: 467, y: 208), controlPoint2: NSPoint(x: 484, y: 225))
+    p.line(to: NSPoint(x: 484, y: 438))
+    p.line(to: NSPoint(x: 654, y: 438))
+    p.curve(to: NSPoint(x: 696, y: 480), controlPoint1: NSPoint(x: 682, y: 438), controlPoint2: NSPoint(x: 696, y: 452))
+    p.line(to: NSPoint(x: 696, y: 520))
+    p.curve(to: NSPoint(x: 654, y: 562), controlPoint1: NSPoint(x: 696, y: 548), controlPoint2: NSPoint(x: 682, y: 562))
+    p.line(to: NSPoint(x: 484, y: 562))
+    p.line(to: NSPoint(x: 484, y: 630))
+    p.line(to: NSPoint(x: 718, y: 630))
+    p.curve(to: NSPoint(x: 764, y: 674), controlPoint1: NSPoint(x: 751, y: 630), controlPoint2: NSPoint(x: 764, y: 647))
+    p.line(to: NSPoint(x: 622, y: 816))
+    p.line(to: NSPoint(x: 378, y: 816))
+    p.curve(to: NSPoint(x: 304, y: 742), controlPoint1: NSPoint(x: 333, y: 816), controlPoint2: NSPoint(x: 304, y: 787))
+    p.line(to: NSPoint(x: 304, y: 258))
+    p.curve(to: NSPoint(x: 354, y: 208), controlPoint1: NSPoint(x: 304, y: 226), controlPoint2: NSPoint(x: 322, y: 208))
+    p.close()
+    return p
+}
+
+func paperFold() -> NSBezierPath {
+    let p = NSBezierPath()
+    p.move(to: NSPoint(x: 622, y: 816))
+    p.curve(to: NSPoint(x: 644, y: 788), controlPoint1: NSPoint(x: 639, y: 816), controlPoint2: NSPoint(x: 644, y: 805))
+    p.line(to: NSPoint(x: 644, y: 720))
+    p.curve(to: NSPoint(x: 680, y: 682), controlPoint1: NSPoint(x: 644, y: 693), controlPoint2: NSPoint(x: 655, y: 682))
+    p.line(to: NSPoint(x: 720, y: 682))
+    p.curve(to: NSPoint(x: 758, y: 653), controlPoint1: NSPoint(x: 742, y: 682), controlPoint2: NSPoint(x: 758, y: 670))
+    p.curve(to: NSPoint(x: 764, y: 674), controlPoint1: NSPoint(x: 763, y: 659), controlPoint2: NSPoint(x: 764, y: 668))
     p.close()
     return p
 }
@@ -36,39 +57,63 @@ func draw(pixels: Int, glyph: Bool = false) -> NSBitmapImageRep {
     NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
     let transform = AffineTransform(scale: CGFloat(pixels) / 1024)
     (transform as NSAffineTransform).concat()
+    let shape = foldedF()
     if glyph {
-        let shape = document()
-        NSColor.black.setStroke()
-        shape.lineWidth = 66
-        shape.lineJoinStyle = .round
-        shape.stroke()
-        let plus = NSBezierPath()
-        plus.move(to: NSPoint(x: 394, y: 448)); plus.line(to: NSPoint(x: 610, y: 448))
-        plus.move(to: NSPoint(x: 502, y: 340)); plus.line(to: NSPoint(x: 502, y: 556))
-        plus.lineWidth = 66; plus.lineCapStyle = .round; plus.stroke()
+        // Fit the actual silhouette into 15 points of an 18-point toolbar asset.
+        let placement = AffineTransform(m11: 1.42, m12: 0, m21: 0, m22: 1.42, tX: -246, tY: -215)
+        shape.transform(using: placement)
+        NSColor.black.setFill(); shape.fill()
+        let foldCut = NSBezierPath()
+        foldCut.move(to: NSPoint(x: 636, y: 778))
+        foldCut.line(to: NSPoint(x: 636, y: 703))
+        foldCut.line(to: NSPoint(x: 711, y: 703))
+        foldCut.close()
+        foldCut.transform(using: placement)
+        NSGraphicsContext.current?.compositingOperation = .clear
+        foldCut.fill()
     } else {
-        let tile = NSBezierPath(roundedRect: NSRect(x: 72, y: 72, width: 880, height: 880), xRadius: 194, yRadius: 194)
+        let tile = NSBezierPath(roundedRect: NSRect(x: 80, y: 80, width: 864, height: 864), xRadius: 188, yRadius: 188)
         NSGraphicsContext.saveGraphicsState()
-        let shadow = NSShadow(); shadow.shadowColor = NSColor.black.withAlphaComponent(0.18)
-        shadow.shadowBlurRadius = 24; shadow.shadowOffset = NSSize(width: 0, height: -10); shadow.set()
-        color(19, 69, 64).setFill(); tile.fill()
+        let tileShadow = NSShadow()
+        tileShadow.shadowColor = NSColor.black.withAlphaComponent(0.10)
+        tileShadow.shadowBlurRadius = 12
+        tileShadow.shadowOffset = NSSize(width: 0, height: -5)
+        tileShadow.set()
+        color(247, 246, 240).setFill(); tile.fill()
         NSGraphicsContext.restoreGraphicsState()
-        NSGradient(starting: color(32, 98, 85), ending: color(14, 48, 49))!.draw(in: tile, angle: -75)
+        NSGradient(starting: color(255, 254, 250), ending: color(232, 231, 224))!.draw(in: tile, angle: -85)
+        NSColor.white.withAlphaComponent(0.85).setStroke(); tile.lineWidth = 2; tile.stroke()
+
         NSGraphicsContext.saveGraphicsState()
-        let paperShadow = NSShadow(); paperShadow.shadowColor = NSColor.black.withAlphaComponent(0.14)
-        paperShadow.shadowBlurRadius = 16; paperShadow.shadowOffset = NSSize(width: 0, height: -10); paperShadow.set()
-        color(241, 255, 248).setFill(); document().fill()
+        let paperShadow = NSShadow()
+        paperShadow.shadowColor = color(39, 67, 47).withAlphaComponent(0.28)
+        paperShadow.shadowBlurRadius = 22
+        paperShadow.shadowOffset = NSSize(width: 6, height: -16)
+        paperShadow.set()
+        color(22, 159, 123).setFill(); shape.fill()
         NSGraphicsContext.restoreGraphicsState()
-        let fold = NSBezierPath()
-        fold.move(to: NSPoint(x: 556, y: 808)); fold.line(to: NSPoint(x: 556, y: 664))
-        fold.curve(to: NSPoint(x: 596, y: 624), controlPoint1: NSPoint(x: 556, y: 636), controlPoint2: NSPoint(x: 568, y: 624))
-        fold.line(to: NSPoint(x: 724, y: 624)); fold.close()
-        color(165, 226, 205).setFill(); fold.fill()
-        let plus = NSBezierPath()
-        plus.move(to: NSPoint(x: 394, y: 440)); plus.line(to: NSPoint(x: 610, y: 440))
-        plus.move(to: NSPoint(x: 502, y: 332)); plus.line(to: NSPoint(x: 502, y: 548))
-        plus.lineWidth = 60; plus.lineCapStyle = .round
-        color(25, 131, 101).setStroke(); plus.stroke()
+        NSGradient(colors: [color(21, 154, 122), color(68, 195, 151), color(169, 255, 212)])!
+            .draw(in: shape, angle: 82)
+        color(30, 137, 105).withAlphaComponent(0.42).setStroke()
+        shape.lineWidth = 2; shape.stroke()
+
+        // Subtle sheet overlap; all geometry remains vector-native at small sizes.
+        NSGraphicsContext.saveGraphicsState()
+        shape.addClip()
+        let middle = NSBezierPath(roundedRect: NSRect(x: 484, y: 438, width: 212, height: 124), xRadius: 38, yRadius: 38)
+        NSGradient(starting: color(134, 237, 190), ending: color(60, 187, 146))!.draw(in: middle, angle: -80)
+        NSGraphicsContext.restoreGraphicsState()
+
+        NSGraphicsContext.saveGraphicsState()
+        shape.addClip()
+        let foldShadow = NSShadow()
+        foldShadow.shadowColor = color(5, 96, 64).withAlphaComponent(0.38)
+        foldShadow.shadowBlurRadius = 12
+        foldShadow.shadowOffset = NSSize(width: 0, height: -12)
+        foldShadow.set()
+        color(180, 255, 218).setFill(); paperFold().fill()
+        NSGraphicsContext.restoreGraphicsState()
+        NSGradient(starting: color(221, 255, 235), ending: color(153, 239, 193))!.draw(in: paperFold(), angle: -65)
     }
     NSGraphicsContext.restoreGraphicsState()
     return rep

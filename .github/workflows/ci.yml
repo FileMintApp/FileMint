@@ -8,7 +8,7 @@ permissions:
   contents: read
 jobs:
   verify:
-    name: Verify and build universal app
+    name: Verify and package universal app
     runs-on: macos-15
     timeout-minutes: 25
     steps:
@@ -19,12 +19,37 @@ jobs:
         run: brew install xcodegen
       - name: Verify deterministic behavior
         run: make verify
-      - name: Build both architectures
+      - name: Package and verify both architectures
         env:
-          CODE_SIGNING_ALLOWED: "NO"
-          CODE_SIGNING_REQUIRED: "NO"
-        run: make build
-      - name: Sign and verify bundle integrity
-        run: |
-          ./scripts/sign_app.sh
-          ./scripts/verify_bundle.sh
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: make package
+      - name: Keep reviewable DMG
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: FileMint-${{ github.sha }}
+          path: |
+            build/FileMint-*.dmg
+            build/FileMint-*.dmg.sha256
+  provenance:
+    name: Attest trusted branch build
+    needs: verify
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: FileMint-${{ github.sha }}
+          path: dist
+      - name: Attest final DMG
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: dist/*.dmg
+      - name: Verify GitHub provenance
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh attestation verify dist/*.dmg --repo "$GITHUB_REPOSITORY"

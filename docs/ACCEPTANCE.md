@@ -34,6 +34,9 @@ Final native regression after the storage/IPC change is awaiting the owner's
 at-action approval to launch the locally built, non-notarized app. Automatic
 computer-use approval rejected that launch; it has not been bypassed.
 
-GitHub publication and final downloaded-asset verification have not yet run.
+GitHub CI passed for the implementation commit (be5fe48). The subsequent folded-F
+icon refresh updates branding assets. CI now packages a DMG and verifies GitHub
+provenance for trusted main-branch builds in a separate job. GitHub Release
+publication and final downloaded-asset verification have not yet run.
 Intel execution and a clean-Mac first-install check are unavailable on this host;
 universal compilation is not evidence of those runtime checks.

@@ -10,6 +10,6 @@
 
 ## Later, with evidence from real use
 
-- Apple Developer ID signing and notarization when credentials are available.
+- Keep GitHub Releases and GitHub provenance as the default distribution policy.
 - Optional global hotkey, only if Finder and Command-N entry points are insufficient.
 - Binary templates imported from real files; changing a suffix is not conversion.

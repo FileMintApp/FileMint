@@ -34,7 +34,7 @@ Custom suffixes produce **UTF-8 text**. Renaming a suffix does not create a vali
 2. Launch it, enable the Finder extension and authorize your working folders.
 3. Create from Finder.
 
-**Distribution notice:** GitHub Actions builds the DMG and publishes verifiable build provenance plus a SHA-256 checksum. This version has ad-hoc bundle signatures, **no Apple Developer ID signature and no Apple notarization**. macOS may block the first launch or require additional Finder extension approval. GitHub provenance does not replace Apple's trust checks. Read [installation and limitations](docs/INSTALL.md) first.
+**Distribution and provenance:** GitHub Releases is FileMint’s default distribution channel. GitHub Actions builds the DMG and publishes verifiable build provenance plus a SHA-256 checksum. This version has ad-hoc bundle signatures, **no Apple Developer ID signature and no Apple notarization**. macOS may block the first launch or require additional Finder extension approval. GitHub provenance does not replace Apple's trust checks. Read [installation and limitations](docs/INSTALL.md) first.
 
 ## Private by design
 

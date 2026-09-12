@@ -103,9 +103,11 @@ network client, analytics, folder crawling, or clipboard monitoring.
 - Finder menus, format choices and creation controls use text only. The Finder
   toolbar and macOS menu bar retain the small template glyph those entry points
   require. No icon preference.
-- App logo: a simple folded document with a clear plus, mint accent, readable at
-  small sizes. App assets are generated from editable Swift drawing source via
-  `make icon`; generated Xcode project is never edited directly.
+- App logo: a distinctive folded-paper F in fresh mint on a warm porcelain
+  macOS tile. Dock/application assets use the image master; menu bar and Finder
+  toolbar use a separately drawn crisp monochrome F silhouette. No medical-style
+  plus badge. `make icon` regenerates the asset catalog from the masters.
+  The generated Xcode project is never edited directly.
 
 ## Distribution and product presentation
 
@@ -115,9 +117,9 @@ network client, analytics, folder crawling, or clipboard monitoring.
   Neither claims Apple developer identity or notarization. Disclose Gatekeeper
   and Finder extension approval requirements before download. Never tell users
   to disable Gatekeeper globally.
-- A later Developer ID release may add Apple signing and notarization when the
-  owner has a paid developer account. Do not gate the explicitly authorized
-  GitHub provenance release on absent Apple credentials.
+- GitHub Releases and GitHub build provenance are the standing default for
+  future releases, not a temporary fallback. Do not switch channels or make
+  Apple credentials a release prerequisite without a new owner request.
 - CI verifies the core, builds both architectures, validates nested code and
   creates the DMG. Attestation refers to the final bytes uploaded to the release.
 - README leads with the pain solved, actual features, screenshots, download and

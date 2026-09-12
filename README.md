@@ -37,7 +37,7 @@ FileMint 把这件事放回 Finder：**右键，选一种类型，文件就在�
 2. 启动 FileMint，按应用内提示启用 Finder 扩展并授权常用文件夹。
 3. 回到 Finder，开始创建。
 
-**当前版本的认证说明：** 安装包在 GitHub Actions 构建，提供 GitHub 构建来源认证和 SHA-256 校验。它尚未使用付费 Apple Developer ID 签名，也没有 Apple 公证，因此首次启动可能被 macOS 拦截，Finder 扩展也可能需要额外启用。GitHub 来源认证不等于 Apple 安全认证。请先阅读[首次安装与限制](docs/INSTALL.md)。
+**分发与来源认证：** FileMint 默认统一通过 GitHub Releases 分发，在 GitHub Actions 构建，提供 GitHub 构建来源认证和 SHA-256 校验。它尚未使用付费 Apple Developer ID 签名，也没有 Apple 公证，因此首次启动可能被 macOS 拦截，Finder 扩展也可能需要额外启用。GitHub 来源认证不等于 Apple 安全认证。请先阅读[首次安装与限制](docs/INSTALL.md)。
 
 ## 本地运行，内容属于你
 

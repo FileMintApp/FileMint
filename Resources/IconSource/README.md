@@ -1,8 +1,13 @@
-# FileMint icon
+# Folded F identity
 
-The editable vector master is `scripts/generate_app_icon.swift`.
-A folded sheet and one plus sign express file creation. The dark mint tile
-remains distinct in the Dock; toolbar glyphs use the system tint.
+The icon combines FileMint's F with the folded corner of a fresh sheet of paper.
+A porcelain tile and mint material form the Dock/app icon; a separately fitted
+monochrome F serves the menu bar and Finder toolbar at 18 points.
 
-Run `make icon` to render every size directly from the vector master.
-Finder menu rows and the creation panel intentionally have no icons.
+`FileMint-Concept.png` is the built-in ImageGen concept reference. The production
+icons are independently constructed from vector geometry in
+`scripts/generate_app_icon.swift`, so the alpha boundary and small glyphs stay
+precise. `make icon` rebuilds all PNGs from that native master.
+
+The concept prompt and production decisions are in `BRIEF.md`.
+Finder menus and creation controls remain text only.
