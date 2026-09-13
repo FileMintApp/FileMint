@@ -376,3 +376,27 @@ These checks supersede the earlier assumption that non-sandboxed update smoke
 tests could validate the installed application's download-to-launch behavior.
 The old 0.3.0–0.5.0 updater cannot acquire this fix before replacing itself;
 release/install instructions require a fresh browser download for that upgrade.
+
+## Published 0.5.1 installation verification
+
+- [Release v0.5.1](https://github.com/FileMintApp/FileMint/releases/tag/v0.5.1)
+  was published from `47ae1ebcd7d2ed81c1f21a530cdb229dac906287` by the successful
+  [Release workflow](https://github.com/FileMintApp/FileMint/actions/runs/34760784869).
+  Its public DMG is 4,288,842 bytes with SHA-256
+  `e03889baa63f62653ed098ef61a1d3dc835e5451d0d71599aefd7d59e029aa08`.
+- The actual sandbox regression client downloaded that public release through
+  a confirmed system save dialog into `Downloads/FileMint-0.5.1.dmg`. Quarantine
+  was `0283`. The public checksum and an attestation constrained to the exact
+  release tag, commit and Release workflow passed.
+- Strict nested signatures, universal architectures and app/extension versions
+  passed on the mounted public bundle. Finder then replaced the installed app;
+  the installed executable matched the mounted original bytes. The volume was
+  ejected before launch. No quarantine flag was removed or rewritten.
+- The installed app retained normal internet quarantine (`0383`, then `03c3`
+  after launch). The running LaunchServices record reported 0.5.1 (build 5),
+  the process finished launching, and its native creation panel was visible.
+  A user-owned draft in that panel was left untouched.
+- PluginKit listed one enabled 0.5.1 extension under `/Applications/FileMint.app`.
+  Diagnostic processes had exited; their temporary builds, unpublished 0.4.99
+  installers and test caches were cleaned up. The public 0.5.1 installer remains
+  in Downloads. Existing app settings were not reset.
