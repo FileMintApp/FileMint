@@ -1,6 +1,6 @@
 # FileMint SPEC
 
-## Product promise — 0.4
+## Product promise — 0.5
 
 A small, native macOS utility that creates a file where the user is already working.
 Fast Finder actions, a compact keyboard-friendly creation panel, and no account,

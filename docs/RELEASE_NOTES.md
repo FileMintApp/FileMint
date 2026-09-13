@@ -1,17 +1,20 @@
-FileMint 0.4 — 稳定常驻的 Finder 工具 / Stable Finder workflow
+FileMint 0.5.0 — 更新安装指引与打包副本清理 / Update handoff and packaging cleanup
 
-- 修复创建文件后 Finder 扩展意外退出的问题：连续创建后重新右键，FileMint 菜单
-  仍会保留，文件名继续自动递增。
-- FileMint 默认作为后台 Finder 工具运行。显式打开设置或“关于”时，Dock 图标才会
-  显示；最小化设置后仍可从 Dock 恢复，关闭设置后则隐藏。
-- Finder 的快速创建和“新建文件…”不会打开设置页，也不会让 Dock 常驻；冷启动时
-  仅显示所需的创建面板。
+- 更新安装指引补齐“推出安装磁盘”步骤：安装包打开后，退出旧版，将新版拖入
+  “应用程序”替换，推出“FileMint”安装磁盘，再从“应用程序”重新打开。
+- 本地打包使用独立临时目录；无论成功或失败，都会清除自身的临时应用、扩展和
+  注册记录，避免打包副本与已安装的 Finder 扩展冲突。
+- 保留 0.4.0 的 Finder 回调崩溃修复、连续创建和设置窗口专属 Dock 行为。
 
-English: Finder creation no longer terminates the extension after an app launch.
-The context menu remains available across repeated creations. FileMint shows a
-Dock icon only while settings or About is open; Finder creation keeps the app in
-its background-tool mode and opens only the creation panel. macOS 13+, Apple
-silicon and Intel.
+English: Update instructions now include ejecting the installer volume and
+reopening FileMint from Applications after replacing the old app. Packaging uses
+an isolated temporary build and removes its app, extension and registrations on
+success or failure, preventing leftover packaging copies from competing with an
+installed Finder extension. The Finder callback and Dock fixes from 0.4.0 remain.
+
+升级仍需手动完成应用替换；下载并打开安装包不代表安装完成。
+Updates still require manual app replacement; downloading and opening the DMG
+does not complete installation. macOS 13+, Apple silicon and Intel.
 
 **来源认证 / Provenance:** GitHub Actions builds the universal DMG and publishes
 GitHub artifact attestations plus SHA-256 checksums. This release uses ad-hoc
@@ -25,6 +28,6 @@ separate written authorization or a paid commercial license. Donations do not
 grant commercial rights. [License](https://github.com/FileMintApp/FileMint/blob/main/LICENSE).
 
 ```sh
-shasum -a 256 -c FileMint-0.4.0.dmg.sha256
-gh attestation verify FileMint-0.4.0.dmg --repo FileMintApp/FileMint
+shasum -a 256 -c FileMint-0.5.0.dmg.sha256
+gh attestation verify FileMint-0.5.0.dmg --repo FileMintApp/FileMint
 ```

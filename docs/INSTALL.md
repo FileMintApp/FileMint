@@ -1,6 +1,6 @@
 # 安装 / Installation
 
-FileMint 0.4 支持 macOS 13+，兼容 Apple 芯片与 Intel。请从
+FileMint 0.5 支持 macOS 13+，兼容 Apple 芯片与 Intel。请从
 [FileMintApp/FileMint Releases](https://github.com/FileMintApp/FileMint/releases/latest)
 下载 DMG，而不是第三方重新打包的文件。
 
@@ -34,8 +34,8 @@ FileMint 0.4 支持 macOS 13+，兼容 Apple 芯片与 Intel。请从
 同一 Release 中下载 DMG 和 `.sha256` 文件，在下载目录执行：
 
 ```sh
-shasum -a 256 -c FileMint-0.4.0.dmg.sha256
-gh attestation verify FileMint-0.4.0.dmg --repo FileMintApp/FileMint
+shasum -a 256 -c FileMint-0.5.0.dmg.sha256
+gh attestation verify FileMint-0.5.0.dmg --repo FileMintApp/FileMint
 ```
 
 校验和证明文件完整性；GitHub attestation 证明构建来自该仓库的 Actions。

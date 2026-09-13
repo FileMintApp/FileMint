@@ -1,4 +1,4 @@
-# FileMint 0.4 acceptance
+# FileMint 0.5 acceptance
 
 Checked on 2026-09-13, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
@@ -277,3 +277,22 @@ The installed and tested app remains the original published 0.4.0. These build
 workflow and instruction changes do not replace existing GitHub release assets
 or claim to add an automatic installer. The updated in-app text will ship with
 the next application release.
+
+## 0.5.0 release preparation
+
+Prepared on 2026-09-13:
+
+- The application version and local packaging defaults are now `0.5.0` (build 5).
+  The Release workflow continues to use its run number for the published build.
+  This release includes the isolated packaging cleanup and bilingual installer
+  ejection guidance described above; installation still requires manual app
+  replacement.
+- `make verify` passed before and after the version update: 47 Swift tests and
+  all 5 public harness cases. `APP_VERSION=0.5.0 BUILD_NUMBER=5 make package`
+  passed universal build, nested ad-hoc signatures, bundle checks and DMG
+  verification. Its local checksum is
+  `5b4acae4d6bb06f8127870cb717607f75f67b9987e56a09b4787c27286915e91`.
+- Packaging removed its temporary directory and extension registration.
+  PluginKit still listed only `/Applications/FileMint.app` version `0.4.0`.
+  The installed main-app and extension executable SHA-256 hashes were unchanged,
+  preserving the user's requested baseline for testing the online update.
