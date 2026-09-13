@@ -46,6 +46,10 @@ Record actual results in ACCEPTANCE.md.
 - Background and file context menus within monitored folders show text-only
   New File actions; the root entry has the FileMint logo. Other apps may contribute similarly named menus.
 - Verify each quick action creates on disk, then verify automatic name increments.
+- Create at least three files consecutively from fresh context menus. After each
+  completed creation/reveal, right-click again and confirm FileMint is still
+  present. Repeat New File… and cancellation. Check that the extension process
+  survives app-launch completions and no new crash report appears.
 - Move to another Finder folder after opening a menu: its action must keep its
   captured destination, not pick up the later selection.
 - New File… opens the same main-app panel; repeated requests focus the same draft.
@@ -72,5 +76,10 @@ Record actual results in ACCEPTANCE.md.
   focused with its contents preserved.
 - Open the app explicitly or choose Open FileMint / About. Settings should still
   be reachable. About and the update commands should use the same settings window.
+- Explicitly open settings and confirm FileMint appears in the Dock; minimizing
+  keeps it reachable there. Close settings and confirm the Dock item disappears.
+  Both Finder creation routes, including a cold launch and a creation panel on
+  its own, must leave settings closed and add no Dock item. With the menu bar
+  hidden, reopening from Applications or Spotlight must still open settings.
 - When automating this check, do not treat an inspection tool's explicit app
   reopen as part of the Finder URL action. Observe the URL and reopen separately.

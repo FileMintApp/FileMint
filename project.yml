@@ -20,8 +20,8 @@ settings:
     DEVELOPMENT_TEAM: ""
     CODE_SIGN_STYLE: Automatic
     ENABLE_USER_SCRIPT_SANDBOXING: "NO"
-    MARKETING_VERSION: 0.3.0
-    CURRENT_PROJECT_VERSION: 3
+    MARKETING_VERSION: 0.4.0
+    CURRENT_PROJECT_VERSION: 4
     ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
 
 schemes:
@@ -55,6 +55,7 @@ targets:
             CFBundleURLSchemes: [filemint]
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSUIElement: true
         NSHumanReadableCopyright: "Copyright © XiaoDaiGua-Ray"
     entitlements:
       path: Config/FileMint.entitlements

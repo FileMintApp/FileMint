@@ -106,7 +106,10 @@ private final class FinderActions {
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.activates = activate
-        NSWorkspace.shared.open([url], withApplicationAt: appURL, configuration: configuration) { _, error in
+        // LaunchServices calls this even after a successful launch, on its own
+        // queue. Do not inherit FinderActions' MainActor isolation here: that
+        // would trap before reaching the Task and terminate the extension.
+        NSWorkspace.shared.open([url], withApplicationAt: appURL, configuration: configuration) { @Sendable _, error in
             if let error { Task { @MainActor in FinderActions.shared.showError(error) } }
         }
     }

@@ -1,11 +1,11 @@
-# FileMint 0.3 acceptance
+# FileMint 0.4 acceptance
 
 Checked on 2026-09-13, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
 ## Automated verification
 
-- 46 Swift Testing tests pass, including update validation and bilingual About
+- 47 Swift Testing tests pass, including repeated menu creation, update validation and bilingual About
   text, plus the permission-copy tests and all 5 public JSON harness cases.
 - Coverage includes 40 simultaneous creations with distinct payloads, exact
   custom filenames, verbatim UTF-8 and CRLF, dangling symlinks, atomic replacement,
@@ -143,3 +143,73 @@ final uploaded bytes before publishing. No clean-Mac install, Intel execution or
 macOS 13 runtime was performed in this follow-up; universal compilation targets
 macOS 13+. The end-to-end update check used a test version number rather than
 publishing a fake remote update.
+
+## Dock lifetime and Finder menu disappearance
+
+Checked locally on 2026-09-13 after the user's clarification that the Dock icon
+belongs only to the settings window:
+
+- The installed app's crash report at 14:05:22 showed `EXC_BREAKPOINT` in
+  `FinderActions.open(_:activate:)` on `com.apple.launchservices.open-queue`.
+  The callback inherited main-actor isolation and trapped even on success,
+  terminating the extension after it had handed the request to the app. It is
+  now explicitly `@Sendable`; only error presentation hops to the main actor.
+  Apple's [NSWorkspace callback contract](https://developer.apple.com/documentation/appkit/nsworkspace/open(_:withapplicationat:configuration:completionhandler:))
+  documents execution on a concurrent queue.
+- The main app now launches with `LSUIElement = true`. Opening settings or About
+  switches to `.regular`, and closing the settings window switches back to
+  `.accessory`. Minimizing keeps `.regular` so settings remains reachable.
+  A creation panel on its own does not change the policy or open settings.
+- `make verify` passed before the change (46 tests) and after it (47 tests),
+  plus all 5 public harness cases. The new test runs five independent menu
+  snapshots through ticket consumption and actual file creation, checking
+  incremented names, no replay and request cleanup. Universal Release build,
+  ad-hoc nested signatures and `verify_bundle.sh` passed; bundle verification
+  now requires the main app's accessory-launch flag.
+- Native Finder background and file context menus were inspected through the
+  accessibility tree. A disposable directory required its first folder
+  authorization; the creation panel handled that flow without opening settings.
+  Subsequent quick actions created `Untitled 2.txt` through `Untitled 5.txt`.
+  All five files were checked on disk, each with the expected empty content.
+  Fresh context menus continued to show FileMint after each action, and the
+  same Finder extension process survived all app-launch completions.
+- The live macOS `NSRunningApplication.activationPolicy` was `.accessory` after
+  quick creation, with only the custom creation panel, and after closing
+  settings. It was `.regular` with settings open and minimized. Creating again
+  after closing settings kept `.accessory`. This is system runtime state
+  evidence, not a captured Dock screenshot.
+- Both quick and custom Finder routes were exercised from a cold main-app
+  launch. Custom cold launch showed only the creation panel; cancellation kept
+  settings closed. For this check the app process was confirmed absent first,
+  and its activation policy was read before selecting it in the UI driver:
+  inspecting a stale app handle while launch is pending can itself reopen
+  settings and must not be attributed to the Finder request.
+- No new Finder extension crash report appeared. The verified bundle replaced
+  `/Applications/FileMint.app`; PluginKit reported one enabled registration,
+  from that installed app. The temporary test-folder authorization was removed,
+  and decoded preferences exactly matched their pre-test values, including the
+  hidden menu bar, enabled login item, language and original folder bookmarks.
+
+This follow-up updates the local app and source. Existing DMG files and published
+GitHub release assets were not rebuilt or republished. The native checks ran on
+this Apple silicon host; no Intel, macOS 13 or clean-Mac runtime claim is made.
+
+## 0.4.0 release preparation
+
+Checked locally on 2026-09-13 for the 0.4.0 release:
+
+- The source defaults are `MARKETING_VERSION = 0.4.0` and
+  `CURRENT_PROJECT_VERSION = 4`. The main app and Finder extension generated
+  from the Release build both report version `0.4.0`.
+- `make verify` passed: 47 Swift tests across four suites, including repeated
+  Finder menu creation, and all five public JSON harness cases.
+- `APP_VERSION=0.4.0 BUILD_NUMBER=4 make package` built a universal,
+  ad-hoc-signed DMG. Nested-code verification, both architecture checks and
+  the `LSUIElement` bundle assertion passed. `hdiutil verify` accepted the
+  DMG, and its portable checksum was
+  `12077691867d094f18b64f563f090183cc5303e2ad33bdde372264886019f654`.
+- The release tag workflow rebuilds from this committed source, creates and
+  verifies a distinct final DMG, creates a GitHub artifact attestation, and
+  publishes the final checksum. The published asset's checksum and attestation
+  are verified after that workflow completes; local and CI DMG bytes are not
+  expected to match.

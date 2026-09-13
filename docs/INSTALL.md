@@ -1,6 +1,6 @@
 # 安装 / Installation
 
-FileMint 0.3 支持 macOS 13+，兼容 Apple 芯片与 Intel。请从
+FileMint 0.4 支持 macOS 13+，兼容 Apple 芯片与 Intel。请从
 [FileMintApp/FileMint Releases](https://github.com/FileMintApp/FileMint/releases/latest)
 下载 DMG，而不是第三方重新打包的文件。
 
@@ -34,8 +34,8 @@ FileMint 0.3 支持 macOS 13+，兼容 Apple 芯片与 Intel。请从
 同一 Release 中下载 DMG 和 `.sha256` 文件，在下载目录执行：
 
 ```sh
-shasum -a 256 -c FileMint-0.3.0.dmg.sha256
-gh attestation verify FileMint-0.3.0.dmg --repo FileMintApp/FileMint
+shasum -a 256 -c FileMint-0.4.0.dmg.sha256
+gh attestation verify FileMint-0.4.0.dmg --repo FileMintApp/FileMint
 ```
 
 校验和证明文件完整性；GitHub attestation 证明构建来自该仓库的 Actions。
@@ -46,7 +46,8 @@ gh attestation verify FileMint-0.3.0.dmg --repo FileMintApp/FileMint
 安装到“应用程序”并首次启动后，FileMint 会请求注册为 macOS 原生登录项。
 “通用”中的“开机自动启动”和“显示在菜单栏”默认开启，关闭后会保存选择。
 若 macOS 要求确认或拒绝登录项，应用会显示真实状态并提供设置入口。开发构建
-和 DMG 内的副本不会自动注册为登录项。隐藏菜单栏后仍可从 Dock 或应用程序打开。
+和 DMG 内的副本不会自动注册为登录项。隐藏菜单栏后仍可从应用程序打开；打开
+设置时会显示在 Dock，关闭设置后会回到后台工具状态。
 
 需要确认完全磁盘访问时，在“文件夹”页点击“在系统设置中确认…”，在
 系统设置 → 隐私与安全性 → 完全磁盘访问权限中添加 `/Applications/FileMint.app`

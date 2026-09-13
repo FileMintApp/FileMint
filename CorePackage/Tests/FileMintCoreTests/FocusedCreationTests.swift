@@ -150,6 +150,32 @@ struct FocusedCreationTests {
         #expect(registry.takeAction(for: stale) == nil)
     }
 
+    @Test("reopening the Finder menu after creation keeps creating distinct files")
+    func repeatedMenuCreation() throws {
+        let folder = try workspace()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let store = QuickCreationTicketStore(directory: folder.appendingPathComponent("requests"))
+        var preferences = FileMintPreferences.default
+        preferences.monitoredFolderURLs = [folder]
+        let template = try #require(TemplateCatalog.template(withID: "plain-text", in: preferences.templates))
+        var registry = FileMenuActionRegistry(retainingMenus: 2)
+
+        for attempt in 1...5 {
+            let tags = registry.register([FileMenuAction(directory: folder, templateID: template.id)])
+            let selectedAction = registry.takeAction(for: tags[0])
+            let action = try #require(selectedAction)
+            let route = try store.enqueue(directory: action.directory, templateID: try #require(action.templateID))
+            let ticket = try #require(try store.consume(route, preferences: preferences))
+            let created = try FileCreationService().createFile(.init(
+                destinationDirectory: ticket.directory, template: template))
+            #expect(created.createdURL.lastPathComponent == (attempt == 1 ? "Untitled.txt" : "Untitled \(attempt).txt"))
+            #expect(try Data(contentsOf: created.createdURL).isEmpty)
+            #expect(registry.takeAction(for: tags[0]) == nil)
+            #expect(try store.consume(route, preferences: preferences) == nil)
+        }
+        #expect(try FileManager.default.contentsOfDirectory(atPath: folder.appendingPathComponent("requests").path).isEmpty)
+    }
+
     @Test("Finder routes preserve Unicode locations and cannot contain write instructions")
     func route() throws {
         let directory = URL(fileURLWithPath: "/tmp/工作 & notes #1", isDirectory: true)

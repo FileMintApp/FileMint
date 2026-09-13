@@ -2,7 +2,7 @@
 
 ## Current channel: GitHub provenance
 
-The owner does not currently have a paid Apple Developer account. Release 0.3
+The owner does not currently have a paid Apple Developer account. Release 0.4
 therefore uses GitHub-hosted builds, universal ad-hoc-signed app bundles, a DMG,
 a portable SHA-256 checksum and GitHub artifact attestations. Installation
 limitations must remain visible in README, release notes and INSTALL.md.
@@ -21,10 +21,10 @@ its final bytes, verifies that attestation and only then publishes the assets.
 It never replaces existing release assets; use a fresh version for corrections.
 
 ```sh
-APP_VERSION=0.3.0 make package
+APP_VERSION=0.4.0 make package
 # After reviewing docs/ACCEPTANCE.md and committing the version:
-git tag v0.3.0
-git push origin main v0.3.0
+git tag v0.4.0
+git push origin main v0.4.0
 ```
 
 Release evidence should include the Actions URL, downloaded asset checksum,

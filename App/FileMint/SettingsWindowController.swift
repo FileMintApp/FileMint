@@ -3,7 +3,7 @@ import SwiftUI
 
 /// Settings is opened explicitly, so a URL launch never creates a primary window.
 @MainActor
-final class SettingsWindowController: NSWindowController {
+final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     static let shared = SettingsWindowController()
 
     private init() {
@@ -16,14 +16,20 @@ final class SettingsWindowController: NSWindowController {
             .environmentObject(PreferencesModel.shared).environmentObject(UpdateModel.shared))
         window.center()
         super.init(window: window)
+        window.delegate = self
     }
 
     required init?(coder: NSCoder) { nil }
 
     func show(pane: PreferencesModel.Pane? = nil) {
         if let pane { PreferencesModel.shared.selectedPane = pane }
+        NSApp.setActivationPolicy(.regular)
         if window?.isMiniaturized == true { window?.deminiaturize(nil) }
         window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        NSApp.setActivationPolicy(.accessory)
     }
 }

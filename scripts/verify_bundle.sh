@@ -11,6 +11,7 @@ for executable in "$APP/Contents/MacOS/FileMint" "$EXT/Contents/MacOS/FileMintFi
 done
 POINT="$(/usr/libexec/PlistBuddy -c 'Print :NSExtension:NSExtensionPointIdentifier' "$EXT/Contents/Info.plist")"
 [[ "$POINT" == "com.apple.FinderSync" ]]
+[[ "$(/usr/libexec/PlistBuddy -c 'Print :LSUIElement' "$APP/Contents/Info.plist")" == "true" ]]
 APP_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Contents/Info.plist")"
 EXT_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$EXT/Contents/Info.plist")"
 [[ "$APP_VERSION" == "$EXT_VERSION" ]]

@@ -1,6 +1,6 @@
 # FileMint SPEC
 
-## Product promise — 0.3
+## Product promise — 0.4
 
 A small, native macOS utility that creates a file where the user is already working.
 Fast Finder actions, a compact keyboard-friendly creation panel, and no account,
@@ -25,7 +25,7 @@ only user-requested update checks and downloads use the network.
 - Creation requests open or focus only the single creation panel. A Finder URL
   must not open or restore settings, including a cold launch or a request after
   settings was closed. Closing/cancelling the panel leaves settings closed.
-  Settings is a separately owned native window, shown by an ordinary app/Dock
+  Settings is a separately owned native window, shown by an ordinary app
   launch or explicit Open FileMint / About / Settings actions, with no automatic
   SwiftUI primary-window creation or restoration during URL handling.
 - Return creates from single-line fields; Return in the content editor inserts a
@@ -79,6 +79,10 @@ only user-requested update checks and downloads use the network.
   entry, not the content of a symlink's target.
 - Finder captures the destination with the menu action, rather than resolving a
   potentially different target later. No path or clipboard content is logged.
+- After either creation route, the Finder extension remains available for the
+  next context menu and creation. App-launch completion callbacks may run on a
+  background queue; they must not inherit main-actor isolation. Error UI is
+  dispatched explicitly to the main actor.
 - Preference refresh is notification-driven. No timers or background directory
   enumeration. File I/O runs away from the main thread, and duplicate submission
   is disabled until it completes. An actionable error keeps the draft intact.
@@ -110,6 +114,11 @@ only user-requested update checks and downloads use the network.
 
 ## Startup and menu bar
 
+- FileMint starts as an accessory app. Explicitly opening settings (including
+  About or an ordinary Applications/Spotlight launch) shows its Dock icon for
+  that window's lifetime, including while minimized. Closing settings removes
+  the Dock icon and keeps Finder integration available. Finder creation never
+  opens settings or adds a Dock icon; the creation panel alone stays accessory.
 - Launch at login and Show in menu bar default to enabled. Both have persistent
   switches in General. A saved off value must survive upgrades and relaunches.
 - Use macOS 13+ SMAppService.mainApp for login registration. Request the default
@@ -119,8 +128,8 @@ only user-requested update checks and downloads use the network.
   or failed. A stored preference alone is never proof of successful registration.
 - Respect changes in macOS Login Items; do not silently re-register after the
   user disables/removes the item there. Offer an explicit retry/settings action.
-- Hiding the menu bar item takes effect immediately and persists. The Dock/app
-  settings remain reachable. Finder URL actions continue to work when the
+- Hiding the menu bar item takes effect immediately and persists. Opening the app
+  from Applications or Spotlight keeps settings reachable. Finder URL actions continue to work when the
   settings window is closed or the menu bar item is hidden.
 - New preferences follow the system's supported language; explicit saved English
   or Chinese choices remain authoritative. Users can also select Follow System.

@@ -44,6 +44,14 @@ A change is complete only when:
 - `make verify` passes locally.
 - Finder-specific behavior has a manual verification note when it cannot run headlessly.
 
+`FocusedCreationTests.repeatedMenuCreation` exercises five fresh menu actions
+through single-use tickets and filesystem creation, including name increments
+after older snapshots are evicted. The native LaunchServices callback/thread and
+repeated visible Finder menus require the checks in `docs/FINDER_QA.md`.
+`scripts/verify_bundle.sh` also verifies the main app's accessory-launch
+`LSUIElement` setting in the built bundle. Native checks cover showing the Dock
+icon only for the settings window's lifetime.
+
 ## Update coverage
 
 `AppUpdateTests` covers numeric stable-version comparison, no downgrades, release

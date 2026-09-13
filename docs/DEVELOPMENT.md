@@ -7,7 +7,7 @@ make verify
 make project
 make build
 make icon
-APP_VERSION=0.3.0 make package
+APP_VERSION=0.4.0 make package
 ```
 
 `make verify` runs unit tests plus the public JSON harness. `make build` generates
