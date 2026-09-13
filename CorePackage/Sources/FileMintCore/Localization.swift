@@ -202,7 +202,7 @@ public enum FileMintStrings {
         .updateDownloading: ("Downloading the installer…", "正在下载安装包…"),
         .updateVerifying: ("Verifying the installer…", "正在校验安装包…"),
         .updateReady: ("Installer verified and opened. Finish installing in Finder.", "安装包已校验并打开，请在 Finder 中完成安装。"),
-        .updateInstallHint: ("After the installer opens, quit FileMint, drag the new app into Applications to replace it, then reopen FileMint. macOS may ask you to approve the app or Finder extension again.", "安装包打开后，请退出 FileMint，将新版拖入“应用程序”替换旧版，再重新打开。macOS 可能需要再次确认应用或启用 Finder 扩展。"),
+        .updateInstallHint: ("After the installer opens, quit FileMint and drag the new app into Applications to replace it. Eject the FileMint installer volume, then reopen FileMint from Applications. macOS may ask you to approve the app or Finder extension again.", "安装包打开后，请退出 FileMint，将新版拖入“应用程序”替换旧版。推出“FileMint”安装磁盘，再从“应用程序”重新打开 FileMint。macOS 可能需要再次确认应用或启用 Finder 扩展。"),
         .updateNetworkFailed: ("Could not connect to GitHub. Check your connection and retry, or visit the release page.", "无法连接 GitHub，请检查网络后重试，或前往发布页面。"),
         .updateChecksumFailed: ("Installer verification failed. Nothing was opened. Retry the download or visit the release page.", "安装包校验失败，未打开文件。请重新下载或前往发布页面。"),
         .updateMissingAssets: ("This release is missing a ready installer or checksum. Try again later or visit the release page.", "此版本尚无完整的安装包与校验文件，请稍后重试或前往发布页面。"),

@@ -227,3 +227,53 @@ Verified after publication on 2026-09-13:
   A fresh release download passed `shasum -a 256 -c` and `hdiutil verify`.
 - `gh attestation verify FileMint-0.4.0.dmg --repo FileMintApp/FileMint`
   completed successfully against that downloaded DMG.
+
+## GitHub 0.4.0 reinstall and competing development registrations
+
+Investigated on 2026-09-13 after a report that the GitHub DMG still lost its
+Finder menu after creation:
+
+- The user-provided `Downloads/FileMint-0.4.0.dmg` and a fresh GitHub download
+  both matched the published SHA-256 above. The release was built with Xcode
+  16.4 and reports build 3; the earlier local build used the newer local Xcode
+  and build 4. Version labels alone do not identify the active extension copy.
+- At 14:41:04, `launchd` explicitly reported an attempt to bootstrap the same
+  Finder extension from two paths: an existing `build/DerivedData/.../FileMint.app`
+  and a conflicting `/Applications/FileMint.app`. It retained the development
+  path. At 14:41:12, PluginKit removed the extension instances and Finder logged
+  an interrupted connection. There was no new Swift crash report for this event.
+- The release preparation had created and registered another development app
+  after the previous cleanup. Both that app and the standalone build extension
+  were saved as ZIP backups, unregistered where present, and removed from the
+  discoverable build directory. The installed app was restored from the exact
+  published DMG; main-app and extension executable bytes were compared with it.
+- Real Finder checks with the GitHub app created `Untitled.txt` through
+  `Untitled 10.txt`, plus a custom file containing exact Unicode and literal
+  `{{year}}` text. Background and file context menus remained available after
+  creation. All processes inspected pointed to `/Applications/FileMint.app`,
+  and PluginKit listed one installed registration. No new extension crash
+  report appeared. The same installed extension instances survived the checks.
+- Packaging now owns a fresh temporary build under `build/package-work.noindex`.
+  Its exit handler unregisters only those temporary app/extension paths and
+  removes the temporary directory. `make build` retains its separate development
+  output. A full successful package and a deliberately failing signing attempt
+  both left no temporary bundle or registration, while the installed app kept
+  working through five more consecutive quick creations. The failure test used
+  a nonexistent signing identity and failed at signing as intended.
+- `make verify` passed before and after: 47 tests and 5 public harness cases.
+  Release compilation and successful DMG packaging passed. Test folder access
+  was removed afterwards; the decoded preferences matched the values before
+  this round's folder authorization. Preferences had been removed during the
+  user's uninstall, so this round began with fresh application defaults.
+- In-app updates download and verify a DMG, then open it for manual replacement.
+  They do not copy an app into the development directory. Their old handoff text
+  omitted ejecting the installer volume; the revised Chinese and English text
+  adds ejecting it and reopening the installed copy from Applications. Cache
+  deletion is not an eject operation, and an open installer is not proof of a
+  completed installation. This is a separate handoff gap, not the development
+  path conflict proven by the system log.
+
+The installed and tested app remains the original published 0.4.0. These build
+workflow and instruction changes do not replace existing GitHub release assets
+or claim to add an automatic installer. The updated in-app text will ship with
+the next application release.

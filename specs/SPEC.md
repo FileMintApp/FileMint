@@ -157,6 +157,12 @@ only user-requested update checks and downloads use the network.
 - Preserve source, user preferences and created files. Keep one installed current
   FileMint.app; remove staging bundles after DMG packaging to avoid duplicate
   registration from a packaging directory. Verify registrations after cleanup.
+- Packaging uses a separate temporary build directory. On success or failure,
+  unregister only its own temporary app/extension and remove that directory, so
+  a packaged development copy cannot compete with an installed release. Keep
+  ordinary development builds, installed apps, preferences and DMGs outside
+  that cleanup. Validate the downloaded release itself in Finder when checking
+  a user-reported installation regression.
 
 ## About and online updates
 
@@ -189,6 +195,10 @@ only user-requested update checks and downloads use the network.
   next download. Downloaded release notes are never rendered as executable HTML.
 - Opening the DMG is not installation completion. Explain that the user must quit
   FileMint, drag the new app into Applications to replace it, then reopen it.
+  The installation handoff must also tell users to eject the FileMint installer
+  volume after copying, then reopen the installed app from Applications. A
+  downloaded DMG cache is not an installed app, and removing that cache is not
+  proof that an installer volume has been ejected.
   Report disk-image opening failures and offer reopening or the release page.
   Do not replace the running app, alter user preferences, or quit automatically.
 

@@ -41,7 +41,8 @@ FileMint 把这件事放回 Finder：**右键，选一种类型，文件就在�
 3. 回到 Finder，开始创建。
 
 后续更新：**关于 → 检查更新 → 下载更新**。安装包校验并打开后，退出 FileMint，
-将新版拖入“应用程序”替换旧版，再重新打开。也可通过应用菜单或菜单栏检查更新。
+将新版拖入“应用程序”替换旧版，推出“FileMint”安装磁盘，再从“应用程序”重新打开。
+也可通过应用菜单或菜单栏检查更新。
 
 **分发与来源认证：** FileMint 默认统一通过 GitHub Releases 分发，在 GitHub Actions 构建，提供 GitHub 构建来源认证和 SHA-256 校验。它尚未使用付费 Apple Developer ID 签名，也没有 Apple 公证，因此首次启动可能被 macOS 拦截，Finder 扩展也可能需要额外启用。GitHub 来源认证不等于 Apple 安全认证。请先阅读[首次安装与限制](docs/INSTALL.md)。
 

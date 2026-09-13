@@ -6,7 +6,7 @@ FileMint 0.4 支持 macOS 13+，兼容 Apple 芯片与 Intel。请从
 
 ## 首次启动
 
-1. 打开 DMG，把 FileMint 拖入“应用程序”，再从“应用程序”打开。
+1. 打开 DMG，把 FileMint 拖入“应用程序”，推出“FileMint”安装磁盘，再从“应用程序”打开。
 2. 当前版本没有 Apple Developer ID 签名和 Apple 公证。如果系统阻止启动，
    确认来源后，在“系统设置 → 隐私与安全性”中找到 FileMint 的阻止记录，
    选择“仍要打开”，再确认。不要全局关闭 Gatekeeper。
@@ -67,7 +67,8 @@ FileMint 会用书签记住它，而不是每次创建都重新选择。下方�
 
 ## English
 
-Drag FileMint from the DMG into Applications. This release uses ad-hoc bundle
+Drag FileMint from the DMG into Applications, eject the FileMint installer volume,
+then open FileMint from Applications. This release uses ad-hoc bundle
 signatures and GitHub build provenance; it is **not Apple notarized**. If blocked,
 review System Settings → Privacy & Security → Open Anyway for this specific app.
 Do not disable Gatekeeper globally. Managed devices may prohibit this build.
@@ -87,13 +88,15 @@ Use the checksum and `gh attestation verify` commands above to verify the downlo
 ## 应用内更新 / Updating from FileMint
 
 打开 **关于 → 检查更新 → 下载更新**。安装包校验并打开后，退出 FileMint，
-将新版拖入“应用程序”替换旧版，再重新打开。可随时取消下载并重试；
+将新版拖入“应用程序”替换旧版，推出“FileMint”安装磁盘，再从“应用程序”重新打开。
+可随时取消下载并重试；
 检查和下载都需要主动操作。macOS 可能需要再次确认应用或启用 Finder 扩展。
 
 Open **About / 关于 → Check for Updates / 检查更新**. A new stable version offers
 **Download Update / 下载更新** and its release notes. FileMint checks the installer
 size and SHA-256 before opening it. After it opens, quit FileMint, drag the new app
-into Applications to replace the existing app, then reopen FileMint. macOS may
+into Applications to replace the existing app, eject the FileMint installer
+volume, then reopen FileMint from Applications. macOS may
 ask you to approve the app or Finder extension again. Existing installation
 requirements in this guide still apply.
 

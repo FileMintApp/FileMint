@@ -20,6 +20,12 @@ architectures, signs nested code first, packages and verifies the DMG, attests
 its final bytes, verifies that attestation and only then publishes the assets.
 It never replaces existing release assets; use a fresh version for corrections.
 
+Local packaging also uses a temporary build directory and unregisters/removes
+its own app and extension on exit. Xcode automatically registers macOS products;
+leaving that development copy discoverable can make Finder load it instead of
+the installed release. Do not leave packaging or mounted-image registrations
+behind after installation checks.
+
 ```sh
 APP_VERSION=0.4.0 make package
 # After reviewing docs/ACCEPTANCE.md and committing the version:
@@ -53,7 +59,9 @@ rename or replace assets after publication. Drafts and prereleases are excluded.
 The app downloads only on request, validates the exact version's asset URLs,
 restricts redirects to GitHub release hosts, checks the size and SHA-256, and
 compares the GitHub asset digest when present. It preserves macOS quarantine.
-Users quit the app and replace it through the opened DMG themselves. This is
+Users quit the app and replace it through the opened DMG themselves, eject the
+installer volume, then reopen the copy in Applications. Cached DMG cleanup does
+not eject a mounted volume. This is
 download integrity verification; the app does not automatically verify artifact
 attestations or claim Apple notarization. A newly published version needs a
 higher marketing version before existing installations offer it as an update.

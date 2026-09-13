@@ -5,7 +5,7 @@ cd "$(dirname "$0")/.."
 
 ./scripts/bootstrap_project.sh
 
-DERIVED_DATA="$PWD/build/DerivedData"
+DERIVED_DATA="${FILEMINT_DERIVED_DATA_PATH:-$PWD/build/DerivedData}"
 
 if [[ -n "${DEVELOPMENT_TEAM:-}" ]]; then
   DEFAULT_CODE_SIGNING_ALLOWED=YES
