@@ -213,3 +213,17 @@ Checked locally on 2026-09-13 for the 0.4.0 release:
   publishes the final checksum. The published asset's checksum and attestation
   are verified after that workflow completes; local and CI DMG bytes are not
   expected to match.
+
+## 0.4.0 published release
+
+Verified after publication on 2026-09-13:
+
+- [GitHub Release v0.4.0](https://github.com/FileMintApp/FileMint/releases/tag/v0.4.0)
+  is a non-draft, non-prerelease latest release for commit `9f663ea`.
+- The [Release workflow](https://github.com/FileMintApp/FileMint/actions/runs/34743063797)
+  completed its build, attestation and publication job successfully in 2m15s.
+- The published `FileMint-0.4.0.dmg` is 4,263,439 bytes and its published
+  SHA-256 is `6e6595c213e0d628c2cf3834ec41c2c9b50dc237f90349061f741c2368728031`.
+  A fresh release download passed `shasum -a 256 -c` and `hdiutil verify`.
+- `gh attestation verify FileMint-0.4.0.dmg --repo FileMintApp/FileMint`
+  completed successfully against that downloaded DMG.
