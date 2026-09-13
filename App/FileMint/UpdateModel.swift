@@ -1,6 +1,7 @@
 import AppKit
 import FileMintCore
 import Foundation
+import UniformTypeIdentifiers
 
 @MainActor
 final class UpdateModel: ObservableObject {
@@ -18,8 +19,10 @@ final class UpdateModel: ObservableObject {
     let currentVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
     let buildNumber = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
     private let client = UpdateClient()
+    private var verifiedInstaller: VerifiedInstaller?
     private var operation: Task<Void, Never>?
     private var operationID = UUID()
+    private var isChoosingDownloadLocation = false
 
     var isBusy: Bool { state == .checking || state == .downloading || state == .verifying }
     var canDownload: Bool { update != nil && installerURL == nil && !isBusy }
@@ -39,11 +42,12 @@ final class UpdateModel: ObservableObject {
     }
 
     func checkForUpdates() {
-        guard !isBusy else { return }
+        guard !isBusy, !isChoosingDownloadLocation else { return }
         let id = UUID()
         operationID = id
         update = nil
         installerURL = nil
+        verifiedInstaller = nil
         state = .checking
         operation = Task {
             defer { if operationID == id { operation = nil } }
@@ -60,15 +64,30 @@ final class UpdateModel: ObservableObject {
     }
 
     func downloadUpdate() {
-        guard canDownload, let update else { return }
+        guard canDownload, !isChoosingDownloadLocation, let update else { return }
+        let panel = NSSavePanel()
+        panel.title = PreferencesModel.shared.text(.downloadUpdate)
+        panel.message = PreferencesModel.shared.text(.updateSaveHint)
+        panel.allowedContentTypes = [.diskImage]
+        panel.nameFieldStringValue = update.fileName
+        panel.canCreateDirectories = true
+        panel.directoryURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
+        isChoosingDownloadLocation = true
+        let response = panel.runModal()
+        isChoosingDownloadLocation = false
+        guard response == .OK, let destination = panel.url else { return }
+        let accessing = destination.startAccessingSecurityScopedResource()
         let id = UUID()
         operationID = id
         state = .downloading
         progress = 0
         operation = Task {
-            defer { if operationID == id { operation = nil } }
+            defer {
+                if accessing { destination.stopAccessingSecurityScopedResource() }
+                if operationID == id { operation = nil }
+            }
             do {
-                let url = try await client.download(update, progress: { [weak self] value in
+                let installer = try await client.download(update, to: destination, progress: { [weak self] value in
                     Task { @MainActor in
                         guard let self, self.operationID == id, self.state == .downloading else { return }
                         self.progress = value
@@ -79,11 +98,11 @@ final class UpdateModel: ObservableObject {
                         self.state = .verifying
                     }
                 })
-                guard operationID == id, !Task.isCancelled else {
-                    await client.removeInstaller(at: url)
-                    return
-                }
-                installerURL = url
+                // A fully saved file belongs to the user even if UI cancellation
+                // wins the race with this callback; stale callbacks never open it.
+                guard operationID == id, !Task.isCancelled else { return }
+                verifiedInstaller = installer
+                installerURL = installer.url
                 openInstaller()
             } catch {
                 guard operationID == id, !Task.isCancelled else { return }
@@ -102,12 +121,26 @@ final class UpdateModel: ObservableObject {
     }
 
     func openInstaller() {
-        guard let installerURL else { return }
-        if !FileManager.default.fileExists(atPath: installerURL.path) {
-            self.installerURL = nil
-            state = .failed(.updateDownloadFailed)
-        } else {
-            state = NSWorkspace.shared.open(installerURL) ? .ready : .failed(.updateOpenFailed)
+        guard let installer = verifiedInstaller else { return }
+        let id = UUID()
+        operationID = id
+        state = .verifying
+        let accessing = installer.url.startAccessingSecurityScopedResource()
+        operation = Task {
+            defer {
+                if accessing { installer.url.stopAccessingSecurityScopedResource() }
+                if operationID == id { operation = nil }
+            }
+            do {
+                try await client.validateInstaller(installer)
+                guard operationID == id, !Task.isCancelled else { return }
+                state = NSWorkspace.shared.open(installer.url) ? .ready : .failed(.updateOpenFailed)
+            } catch {
+                guard operationID == id, !Task.isCancelled else { return }
+                verifiedInstaller = nil
+                installerURL = nil
+                state = .failed(errorKey(error))
+            }
         }
     }
 
@@ -124,6 +157,7 @@ final class UpdateModel: ObservableObject {
             case .noRelease: return .updateNoRelease
             case .rateLimited: return .updateRateLimited
             case .invalidResponse: return .updateInvalidRelease
+            case .installerAuthorizationFailed: return .updateInstallerAuthorizationFailed
             }
         }
         if error is URLError { return .updateNetworkFailed }

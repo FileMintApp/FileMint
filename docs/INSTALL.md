@@ -1,6 +1,6 @@
 # 安装 / Installation
 
-FileMint 0.5 支持 macOS 13+，兼容 Apple 芯片与 Intel。请从
+FileMint 0.5.1 支持 macOS 13+，兼容 Apple 芯片与 Intel。请从
 [FileMintApp/FileMint Releases](https://github.com/FileMintApp/FileMint/releases/latest)
 下载 DMG，而不是第三方重新打包的文件。
 
@@ -34,8 +34,8 @@ FileMint 0.5 支持 macOS 13+，兼容 Apple 芯片与 Intel。请从
 同一 Release 中下载 DMG 和 `.sha256` 文件，在下载目录执行：
 
 ```sh
-shasum -a 256 -c FileMint-0.5.0.dmg.sha256
-gh attestation verify FileMint-0.5.0.dmg --repo FileMintApp/FileMint
+shasum -a 256 -c FileMint-0.5.1.dmg.sha256
+gh attestation verify FileMint-0.5.1.dmg --repo FileMintApp/FileMint
 ```
 
 校验和证明文件完整性；GitHub attestation 证明构建来自该仓库的 Actions。
@@ -87,13 +87,24 @@ The folder list describes saved folder access separately from Full Disk Access.
 Use the checksum and `gh attestation verify` commands above to verify the download.
 ## 应用内更新 / Updating from FileMint
 
-打开 **关于 → 检查更新 → 下载更新**。安装包校验并打开后，退出 FileMint，
+从 0.3.0–0.5.0 升级时，本次请用浏览器从 GitHub Release 下载新版 DMG。旧版
+内置下载器可能让安装包带上沙盒禁止执行标记，出现“应用程序无法打开”；仅重复
+拷贝同一个旧下载包无法修复该标记。重新下载并替换即可，无需删除偏好设置。
+
+0.5.1 起，打开 **关于 → 检查更新 → 下载更新**，在系统保存窗口中确认安装包
+位置。取消保存窗口不会开始下载。安装包校验并打开后，退出 FileMint，
 将新版拖入“应用程序”替换旧版，推出“FileMint”安装磁盘，再从“应用程序”重新打开。
 可随时取消下载并重试；
 检查和下载都需要主动操作。macOS 可能需要再次确认应用或启用 Finder 扩展。
 
-Open **About / 关于 → Check for Updates / 检查更新**. A new stable version offers
-**Download Update / 下载更新** and its release notes. FileMint checks the installer
+For this upgrade from versions 0.3.0–0.5.0, download the new DMG using a browser.
+Their old in-app downloader can add a sandbox execution block; recopying that
+same download does not repair it. Download afresh and replace the app without
+deleting your preferences.
+
+From 0.5.1 onward, open **About / 关于 → Check for Updates / 检查更新**. A new stable version offers
+**Download Update / 下载更新** and its release notes. Confirm the destination in
+the system save dialog. FileMint checks the installer
 size and SHA-256 before opening it. After it opens, quit FileMint, drag the new app
 into Applications to replace the existing app, eject the FileMint installer
 volume, then reopen FileMint from Applications. macOS may

@@ -181,18 +181,34 @@ only user-requested update checks and downloads use the network.
   `FileMint-VERSION.dmg.sha256` assets. Only HTTPS release URLs from this exact
   repository are accepted; redirects are limited to GitHub's release hosts.
 - Show the available version and release notes link before downloading. Download
-  only after the user chooses it, with progress, cancellation and retry. Network
+  only after the user chooses it and confirms a destination in the system save
+  panel. Cancelling that panel starts no download. Downloads retain progress,
+  cancellation and retry. Network
   work and file hashing run away from the main thread. Duplicate operations and
   stale callbacks must not replace the current state.
 - Check the downloaded size and SHA-256 against the matching checksum file,
   also checking GitHub's asset digest when provided. Missing, malformed or
   mismatched checksums prevent opening. This checks download integrity; it does
   not claim Apple notarization or automatically verify a GitHub attestation.
-- Keep downloads in the app's private cache, mark the DMG as quarantined and open
-  it only after successful verification. Never disable or strip Gatekeeper.
-  Retain a verified installer for reopening during the session; cancelled or
-  failed downloads are removed, and old update cache files are cleared on the
-  next download. Downloaded release notes are never rendered as executable HTML.
+- Use the private cache only for partial downloads and verification. After all
+  checks pass, atomically write fresh bytes to the exact save-panel-authorized
+  URL, preserving existing destination content until verification succeeds.
+  Never open or move a private-cache DMG directly into the installation flow:
+  sandbox-created cache files can carry a no-user-consent execution block.
+- Mark the saved DMG as an internet download and check that quarantine is
+  present without the sandbox no-user-consent execution block before opening it.
+  Never clear quarantine, disable the sandbox, or strip Gatekeeper protections.
+  Keep the saved URL accessible for reopening during the session. Temporary
+  downloads are removed on success, cancellation and failure; completed files
+  in the user's chosen location are theirs and are not automatically removed.
+  Old update cache files are cleared on the next download. Downloaded release
+  notes are never rendered as executable HTML.
+- Revalidate the saved installer's size, checksum and quarantine before every
+  open, including reopening it later in the session; changed or replaced files
+  must not be opened as previously verified downloads.
+- Run the update client from a real sandboxed app with the system save panel
+  when verifying download-to-install behavior. Command-line network/checksum
+  tests alone do not prove that macOS will allow the saved installer to run.
 - Opening the DMG is not installation completion. Explain that the user must quit
   FileMint, drag the new app into Applications to replace it, then reopen it.
   The installation handoff must also tell users to eject the FileMint installer

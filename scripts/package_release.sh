@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
-VERSION="${APP_VERSION:-0.5.0}"
-BUILD_NUMBER="${BUILD_NUMBER:-5}"
+VERSION="${APP_VERSION:-0.5.1}"
+BUILD_NUMBER="${BUILD_NUMBER:-6}"
 DMG_PATH="$PWD/build/FileMint-$VERSION.dmg"
 CHECKSUM_PATH="$DMG_PATH.sha256"
 IDENTITY="${APPLE_CODESIGN_IDENTITY:-${CODESIGN_IDENTITY:--}}"

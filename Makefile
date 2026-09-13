@@ -1,6 +1,6 @@
 -include .local/signing.mk
 
-.PHONY: verify verify-updates test harness project build dmg package doctor icon clean
+.PHONY: verify verify-updates update-sandbox-harness test harness project build dmg package doctor icon clean
 
 DEVELOPER_DIR ?= /Applications/Xcode.app/Contents/Developer
 export DEVELOPER_DIR
@@ -10,6 +10,9 @@ verify: test harness
 
 verify-updates:
 	bash scripts/verify_updates.sh
+
+update-sandbox-harness:
+	bash scripts/build_update_sandbox_harness.sh
 
 test:
 	swift test --package-path CorePackage

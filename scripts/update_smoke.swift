@@ -8,16 +8,22 @@ struct UpdateSmoke {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("filemint-update-smoke-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: directory) }
-        let client = UpdateClient(cacheDirectory: directory)
+        let cache = directory.appendingPathComponent("cache", isDirectory: true)
+        let client = UpdateClient(cacheDirectory: cache)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         guard let update = try await client.check(currentVersion: "0.0.0") else {
             throw Failure("Expected a published stable release newer than 0.0.0")
         }
         print("PASS live release: \(update.version), \(update.fileName), \(update.size) bytes")
         try require(try await client.check(currentVersion: update.version.description) == nil, "same-version check")
 
+        let destination = directory.appendingPathComponent(update.fileName)
+        let previousContent = Data("existing installer must survive cancellation".utf8)
+        try previousContent.write(to: destination)
+
         let cancellation = CancelOnProgress()
         let cancelled = Task {
-            try await client.download(update, progress: { value in
+            try await client.download(update, to: destination, progress: { value in
                 if value > 0 { cancellation.cancel() }
             }, verifying: {})
         }
@@ -29,18 +35,30 @@ struct UpdateSmoke {
         } catch let error as URLError where error.code == .cancelled {
         }
         try require(cancellation.didRequestCancellation, "cancellation after receiving download bytes")
-        let remaining = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
+        let remaining = try FileManager.default.contentsOfDirectory(at: cache, includingPropertiesForKeys: nil)
         try require(remaining.isEmpty, "cancelled installer cleanup")
+        try require(try Data(contentsOf: destination) == previousContent, "existing destination survives cancellation")
 
         let observations = TransferObservations()
-        let url = try await client.download(update, progress: { observations.record(progress: $0) },
+        let installer = try await client.download(update, to: destination, progress: { observations.record(progress: $0) },
                                             verifying: { observations.recordVerification() })
+        let url = installer.url
+        try await client.validateInstaller(installer)
         try require(observations.receivedProgress, "download progress callbacks")
         try require(observations.verified, "verification phase")
         let values = try url.resourceValues(forKeys: [.fileSizeKey, .quarantinePropertiesKey])
         try require(Int64(values.fileSize ?? 0) == update.size, "verified installer size")
         try require(values.quarantineProperties != nil, "macOS quarantine preserved")
-        await client.removeInstaller(at: url)
+        let cacheContents = try FileManager.default.contentsOfDirectory(at: cache, includingPropertiesForKeys: nil)
+        try require(cacheContents.isEmpty, "verified download cache cleanup")
+        try Data("changed after download".utf8).write(to: url)
+        do {
+            try await client.validateInstaller(installer)
+            throw Failure("Modified saved installer unexpectedly passed reopening validation")
+        } catch UpdateValidationError.checksumMismatch {
+            print("PASS modified saved installer is rejected before reopening")
+        }
+        try FileManager.default.removeItem(at: url)
         try require(!FileManager.default.fileExists(atPath: url.path), "installer cleanup")
         print("PASS retry: downloaded and verified the published installer; no app was installed")
     }
@@ -58,11 +76,11 @@ struct UpdateSmoke {
 
 private final class CancelOnProgress: @unchecked Sendable {
     private let lock = NSLock()
-    private var task: Task<URL, Error>?
+    private var task: Task<VerifiedInstaller, Error>?
     private var requested = false
     var didRequestCancellation: Bool { lock.withLock { requested } }
 
-    func attach(_ task: Task<URL, Error>) {
+    func attach(_ task: Task<VerifiedInstaller, Error>) {
         let shouldCancel = lock.withLock { self.task = task; return requested }
         if shouldCancel { task.cancel() }
     }

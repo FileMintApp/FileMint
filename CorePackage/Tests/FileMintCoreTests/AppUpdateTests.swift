@@ -164,7 +164,8 @@ struct AppUpdateTests {
         let keys: [FileMintTextKey] = [.about, .aboutFileMint, .version, .copyright, .developers, .projectPage,
             .privacyPolicy, .license, .updates, .checkForUpdates, .downloadUpdate, .openInstaller, .releaseNotes,
             .availableVersion, .updateIdle, .updateChecking, .updateCurrent, .updateAvailable, .updateDownloading,
-            .updateVerifying, .updateReady, .updateInstallHint, .updateNetworkFailed, .updateChecksumFailed,
+            .updateVerifying, .updateReady, .updateInstallHint, .updateSaveHint, .updateInstallerAuthorizationFailed,
+            .updateNetworkFailed, .updateChecksumFailed,
             .updateMissingAssets, .updateInvalidRelease, .updateNoRelease, .updateRateLimited, .updateDownloadFailed,
             .updateOpenFailed]
         for key in keys {
@@ -173,6 +174,17 @@ struct AppUpdateTests {
             #expect(english != key.rawValue && chinese != key.rawValue)
             #expect(english != chinese)
         }
+    }
+
+    @Test("installer quarantine keeps internet checks and rejects sandbox execution blocks")
+    func installerQuarantineConsent() {
+        for value in ["0083;time;FileMint;event", "0283;time;FileMint;event", "0383;time;;event", "0081;time;Browser;"] {
+            #expect(InstallerQuarantinePolicy.allowsGatekeeperAssessment(value))
+        }
+        for value in ["0086;time;FileMint;", "0087;time;FileMint;", "0287;time;FileMint;", "0387;time;FileMint;", "0082;time;FileMint;", "0000", "", "not-hex", ";missing"] {
+            #expect(!InstallerQuarantinePolicy.allowsGatekeeperAssessment(value))
+        }
+        #expect(!InstallerQuarantinePolicy.allowsGatekeeperAssessment(nil))
     }
 
     private func release(tag: String = "v0.3.0", change: (inout [String: Any]) -> Void = { _ in }) throws -> Data {

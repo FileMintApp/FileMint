@@ -27,10 +27,10 @@ the installed release. Do not leave packaging or mounted-image registrations
 behind after installation checks.
 
 ```sh
-APP_VERSION=0.5.0 make package
+APP_VERSION=0.5.1 make package
 # After reviewing docs/ACCEPTANCE.md and committing the version:
-git tag v0.5.0
-git push origin main v0.5.0
+git tag v0.5.1
+git push origin main v0.5.1
 ```
 
 Release evidence should include the Actions URL, downloaded asset checksum,
@@ -56,15 +56,26 @@ or additional update server are required. Continue publishing stable tags in
 `FileMint-VERSION.dmg.sha256`, as the existing packaging workflow does. Do not
 rename or replace assets after publication. Drafts and prereleases are excluded.
 
-The app downloads only on request, validates the exact version's asset URLs,
+The app downloads only after the user confirms a destination in NSSavePanel,
+validates the exact version's asset URLs,
 restricts redirects to GitHub release hosts, checks the size and SHA-256, and
-compares the GitHub asset digest when present. It preserves macOS quarantine.
+compares the GitHub asset digest when present. The private cache is used only
+for verification; verified bytes are atomically saved to the authorized URL.
+It preserves internet quarantine and rejects sandbox no-user-consent execution
+blocks. Saved installers are revalidated before each open. The quarantine
+attribute is never removed or patched to bypass a system block.
 Users quit the app and replace it through the opened DMG themselves, eject the
 installer volume, then reopen the copy in Applications. Cached DMG cleanup does
 not eject a mounted volume. This is
 download integrity verification; the app does not automatically verify artifact
 attestations or claim Apple notarization. A newly published version needs a
 higher marketing version before existing installations offer it as an update.
+
+Versions 0.3.0 through 0.5.0 downloaded into a private sandbox cache and could
+produce a no-user-consent execution block. Upgrading those versions requires
+downloading the 0.5.1 installer through a browser; their old download code cannot
+repair itself before installation. The fixed save-panel flow applies to later
+downloads from 0.5.1 and newer.
 
 The update client follows the [GitHub Releases API](https://docs.github.com/en/rest/releases/releases#get-the-latest-release)
 and adds Apple's [outbound network entitlement](https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.security.network.client)

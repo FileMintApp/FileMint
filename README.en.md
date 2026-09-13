@@ -37,11 +37,16 @@ Custom suffixes produce **UTF-8 text**. Renaming a suffix does not create a vali
 2. Launch it, enable the Finder extension and authorize your working folders.
 3. Create from Finder.
 
-For later updates, choose **About → Check for Updates → Download Update**. After
+For later updates, choose **About → Check for Updates → Download Update** and
+confirm the destination in the system save dialog. After
 the verified installer opens, quit FileMint, drag the new app into Applications
 to replace the old copy, eject the FileMint installer volume, then reopen FileMint
 from Applications. The app and menu bar menus also offer
 Check for Updates.
+
+When upgrading from 0.3.0–0.5.0, download the new installer in your browser first:
+the old in-app downloader can produce a sandbox execution block. See the
+[update instructions](docs/INSTALL.md).
 
 **Distribution and provenance:** GitHub Releases is FileMint’s default distribution channel. GitHub Actions builds the DMG and publishes verifiable build provenance plus a SHA-256 checksum. This version has ad-hoc bundle signatures, **no Apple Developer ID signature and no Apple notarization**. macOS may block the first launch or require additional Finder extension approval. GitHub provenance does not replace Apple's trust checks. Read [installation and limitations](docs/INSTALL.md) first.
 

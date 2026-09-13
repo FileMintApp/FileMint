@@ -1,16 +1,25 @@
-FileMint 0.5.0 — 更新安装指引与打包副本清理 / Update handoff and packaging cleanup
+FileMint 0.5.1 — 修复更新后无法打开 / Fix downloaded updates that cannot open
 
-- 更新安装指引补齐“推出安装磁盘”步骤：安装包打开后，退出旧版，将新版拖入
-  “应用程序”替换，推出“FileMint”安装磁盘，再从“应用程序”重新打开。
-- 本地打包使用独立临时目录；无论成功或失败，都会清除自身的临时应用、扩展和
-  注册记录，避免打包副本与已安装的 Finder 扩展冲突。
-- 保留 0.4.0 的 Finder 回调崩溃修复、连续创建和设置窗口专属 Dock 行为。
+从 0.3.0–0.5.0 升级的用户，本次请通过浏览器下载此页面的 DMG；旧版内置下载器
+尚不包含本修复。退出旧版后替换到“应用程序”，推出安装磁盘，再重新打开。
 
-English: Update instructions now include ejecting the installer volume and
-reopening FileMint from Applications after replacing the old app. Packaging uses
-an isolated temporary build and removes its app, extension and registrations on
-success or failure, preventing leftover packaging copies from competing with an
-installed Finder extension. The Finder callback and Dock fixes from 0.4.0 remain.
+- 修复应用内更新下载到沙盒缓存后，安装的应用被系统禁止运行的问题。下载前
+  通过系统保存窗口确认位置，校验通过后才原子保存到该位置。
+- 保留正常的互联网隔离检查，发现沙盒禁止执行标记时拒绝打开安装包；无需关闭
+  App Sandbox 或 Gatekeeper，也不清除隔离属性。
+- 取消下载保留原有目标文件，保存后每次打开安装包都会重新校验，防止文件被修改
+  后仍按已验证版本打开。新增真实沙盒更新回归工具。
+- 保留 Finder 连续创建、设置窗口专属 Dock 行为，以及临时打包副本自动清理。
+
+When upgrading from 0.3.0–0.5.0, download this DMG using a browser first. The old
+in-app downloader does not yet contain the fix. Quit, replace the app in
+Applications, eject the installer volume, then reopen the installed app.
+
+Updates now use the system save dialog and atomically save verified bytes to the
+authorized location. Internet quarantine remains enabled; sandbox execution
+blocks prevent opening. Cancellation preserves an existing destination, saved
+installers are revalidated before opening, and a real sandbox regression harness
+covers the download path. Finder and packaging cleanup fixes remain included.
 
 升级仍需手动完成应用替换；下载并打开安装包不代表安装完成。
 Updates still require manual app replacement; downloading and opening the DMG
@@ -28,6 +37,6 @@ separate written authorization or a paid commercial license. Donations do not
 grant commercial rights. [License](https://github.com/FileMintApp/FileMint/blob/main/LICENSE).
 
 ```sh
-shasum -a 256 -c FileMint-0.5.0.dmg.sha256
-gh attestation verify FileMint-0.5.0.dmg --repo FileMintApp/FileMint
+shasum -a 256 -c FileMint-0.5.1.dmg.sha256
+gh attestation verify FileMint-0.5.1.dmg --repo FileMintApp/FileMint
 ```

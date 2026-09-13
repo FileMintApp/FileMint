@@ -7,7 +7,7 @@ make verify
 make project
 make build
 make icon
-APP_VERSION=0.5.0 make package
+APP_VERSION=0.5.1 make package
 ```
 
 `make verify` runs unit tests plus the public JSON harness. `make build` generates
@@ -20,6 +20,11 @@ and removes its app/extension registrations and build products when it finishes
 or fails. The final DMG and checksum remain in `build/`. `make build` still keeps
 its runnable app in `build/DerivedData`; avoid leaving that development app
 registered alongside an installed release with the same bundle identifiers.
+
+For updater changes, also run `make verify-updates` and the interactive
+`make update-sandbox-harness` flow in `specs/HARNESS.md`. A non-sandboxed CLI
+download can pass checksums while the installed sandboxed app produces an
+installer macOS refuses to execute.
 
 - CorePackage: deterministic naming, templates, preferences and file writes.
 - SharedUI: native creation panel and sandbox folder access.

@@ -1,5 +1,6 @@
 import CoreServices
 import CryptoKit
+import Darwin
 import FileMintCore
 import Foundation
 
@@ -7,6 +8,13 @@ enum UpdateClientError: Error {
     case invalidResponse
     case noRelease
     case rateLimited
+    case installerAuthorizationFailed
+}
+
+struct VerifiedInstaller: Sendable {
+    let url: URL
+    let size: Int64
+    let checksum: String
 }
 
 /// This actor owns network and disk work; neither runs on the UI executor.
@@ -26,9 +34,15 @@ actor UpdateClient {
         return try AppUpdatePolicy.availableUpdate(from: data, currentVersion: currentVersion)
     }
 
-    func download(_ update: AppUpdate, progress: @escaping @Sendable (Double) -> Void,
-                  verifying: @escaping @Sendable () -> Void) async throws -> URL {
+    func download(_ update: AppUpdate, to destination: URL, progress: @escaping @Sendable (Double) -> Void,
+                  verifying: @escaping @Sendable () -> Void) async throws -> VerifiedInstaller {
         try Task.checkCancellation()
+        let cachePath = cacheDirectory.standardizedFileURL.path
+        let destinationPath = destination.standardizedFileURL.path
+        guard destination.isFileURL, destinationPath != cachePath,
+              !destinationPath.hasPrefix(cachePath + "/") else {
+            throw CocoaError(.fileWriteInvalidFileName)
+        }
         // Each attempt owns a unique directory, including while a cancelled task unwinds.
         if FileManager.default.fileExists(atPath: cacheDirectory.path) {
             try FileManager.default.removeItem(at: cacheDirectory)
@@ -36,8 +50,7 @@ actor UpdateClient {
         let directory = cacheDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true,
                                                attributes: [.posixPermissions: 0o700])
-        var keepInstaller = false
-        defer { if !keepInstaller { try? FileManager.default.removeItem(at: directory) } }
+        defer { try? FileManager.default.removeItem(at: directory) }
         let session = makeSession(delegate: UpdateSessionDelegate())
         defer { session.invalidateAndCancel() }
 
@@ -54,8 +67,12 @@ actor UpdateClient {
         try AppUpdatePolicy.verifyChecksum(hash, expected: expected, assetDigest: update.digest)
         try Task.checkCancellation()
 
-        var destination = directory.appendingPathComponent(update.fileName)
-        try FileManager.default.moveItem(at: temporaryURL, to: destination)
+        // Copy verified bytes, not the cache file's sandbox quarantine metadata.
+        // Only the system save-panel URL carries the user's save authorization.
+        let contents = try Data(contentsOf: temporaryURL, options: .mappedIfSafe)
+        try Task.checkCancellation()
+        var destination = destination
+        try contents.write(to: destination, options: .atomic)
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: destination.path)
         var values = URLResourceValues()
         values.quarantineProperties = [
@@ -66,14 +83,32 @@ actor UpdateClient {
             kLSQuarantineOriginURLKey as String: update.releaseURL
         ]
         try destination.setResourceValues(values)
-        try Task.checkCancellation()
-        keepInstaller = true
-        return destination
+        guard InstallerQuarantinePolicy.allowsGatekeeperAssessment(quarantineAttribute(at: destination)) else {
+            throw UpdateClientError.installerAuthorizationFailed
+        }
+        return VerifiedInstaller(url: destination, size: update.size, checksum: expected)
     }
 
-    func removeInstaller(at url: URL) {
-        guard url.deletingLastPathComponent().deletingLastPathComponent() == cacheDirectory else { return }
-        try? FileManager.default.removeItem(at: url.deletingLastPathComponent())
+    /// User-saved files can change outside the app. Check them again before
+    /// every open, including Reopen Installer, without another network request.
+    func validateInstaller(_ installer: VerifiedInstaller) throws {
+        try Task.checkCancellation()
+        let values = try installer.url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey])
+        guard values.isRegularFile == true, values.isSymbolicLink != true,
+              Int64(values.fileSize ?? -1) == installer.size else {
+            throw UpdateValidationError.checksumMismatch
+        }
+        try AppUpdatePolicy.verifyChecksum(sha256(of: installer.url), expected: installer.checksum, assetDigest: nil)
+        guard InstallerQuarantinePolicy.allowsGatekeeperAssessment(quarantineAttribute(at: installer.url)) else {
+            throw UpdateClientError.installerAuthorizationFailed
+        }
+    }
+
+    private func quarantineAttribute(at url: URL) -> String? {
+        var bytes = [UInt8](repeating: 0, count: 4096)
+        let count = getxattr(url.path, "com.apple.quarantine", &bytes, bytes.count, 0, 0)
+        guard count > 0 else { return nil }
+        return String(decoding: bytes.prefix(count), as: UTF8.self)
     }
 
     private func makeSession(delegate: UpdateSessionDelegate) -> URLSession {

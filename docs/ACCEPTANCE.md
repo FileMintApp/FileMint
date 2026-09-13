@@ -5,7 +5,7 @@ macOS 13. Release bundles contain arm64 and x86_64 executables.
 
 ## Automated verification
 
-- 47 Swift Testing tests pass, including repeated menu creation, update validation and bilingual About
+- 48 Swift Testing tests pass, including installer quarantine preflight, repeated menu creation, update validation and bilingual About
   text, plus the permission-copy tests and all 5 public JSON harness cases.
 - Coverage includes 40 simultaneous creations with distinct payloads, exact
   custom filenames, verbatim UTF-8 and CRLF, dangling symlinks, atomic replacement,
@@ -324,3 +324,55 @@ Verified on 2026-09-13:
   extension remain the user's baseline for their manual online-update test.
   These client and artifact checks do not claim completion of the user's
   Finder replacement/ejection/relaunch flow.
+
+## 0.5.1 sandbox download authorization fix
+
+Investigated and checked on 2026-09-13 after the user completed a real in-app
+0.4.0 → 0.5.0 download and Finder replacement:
+
+- The installed app was version 0.5.0 (build 4), executable permissions were
+  correct, and strict nested code-signature verification passed. The cached DMG
+  matched the published 4,263,537-byte artifact and SHA-256. The failure was not
+  damaged download bytes: the installed executable had quarantine `0387`, and
+  the kernel denied execution as created without user consent. `spctl` reported
+  “File created by an AppSandbox, exec/open not allowed”.
+- A real sandboxed diagnostic reproduced `0086` after writing into private
+  cache and `0287` after adding download metadata. Selecting the destination
+  through NSSavePanel instead produced `0082` after writing and `0283` after
+  download metadata, including with atomic writes. Apple's [DTS explanation](https://developer.apple.com/forums/thread/767612)
+  identifies the sandbox no-user-consent bit as an execution block separate
+  from ordinary Gatekeeper approval.
+- The user installation was recovered by downloading the same public artifact
+  with system save authorization, copying it with Finder and ejecting the
+  installer. The recovered app retained internet quarantine (`0383`), matched
+  the source executable bytes and opened normally. No quarantine attributes,
+  sandbox restrictions or Gatekeeper protections were removed.
+- The production updater now gets a save-panel destination before downloading,
+  uses cache only for partial download and verification, and atomically writes
+  fresh verified bytes to the authorized URL. It does not move cache quarantine
+  into the user's installer. Saved installers retain their checksum proof and
+  are revalidated before every open. A known execution block or changed saved
+  file prevents opening; completed user-saved files are not automatically deleted.
+- `make verify` passed before the change (47 tests) and after it (48 tests), plus
+  all five harness cases. `make verify-updates` passed cancellation after bytes
+  arrived, preservation of an existing destination, cache cleanup, full retry,
+  normal quarantine and rejection of a modified saved installer on reopening.
+- The new interactive sandbox harness uses the actual production UpdateClient.
+  It rejected an unapproved container save, started no download after cancelling
+  the system save panel, and saved/validated the public installer with quarantine
+  `0283` after save-panel confirmation. It has the existing sandbox/network/
+  user-selected-file permissions, with no executable-writing entitlement.
+- A temporary, unpublished build numbered 0.4.99 (600) then exercised the full
+  FileMint About interface against public 0.5.0. Cancelling the save panel left
+  the available update intact. Confirming a destination showed progress, verified
+  and opened the DMG, and offered Reopen Installer. The on-disk installer matched
+  the public hash and had quarantine `0283`. Both temporary test volumes were
+  ejected after the test; the 0.4.99 build is not a release.
+- Local 0.5.1 (build 6) universal packaging and nested signatures passed, with
+  DMG SHA-256 `c3e5ef7d7204fd77ba90ac07270d364f45b8dffcac5e90be6d5575d3b88ea783`.
+  Build and staging app registrations were cleaned by the packaging exit handler.
+
+These checks supersede the earlier assumption that non-sandboxed update smoke
+tests could validate the installed application's download-to-launch behavior.
+The old 0.3.0–0.5.0 updater cannot acquire this fix before replacing itself;
+release/install instructions require a fresh browser download for that upgrade.
