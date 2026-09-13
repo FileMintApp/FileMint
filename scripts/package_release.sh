@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
-VERSION="${APP_VERSION:-0.2.0}"
-BUILD_NUMBER="${BUILD_NUMBER:-2}"
+VERSION="${APP_VERSION:-0.3.0}"
+BUILD_NUMBER="${BUILD_NUMBER:-3}"
 APP_PATH="$PWD/build/DerivedData/Build/Products/Release/FileMint.app"
 DMG_PATH="$PWD/build/FileMint-$VERSION.dmg"
 CHECKSUM_PATH="$DMG_PATH.sha256"

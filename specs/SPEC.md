@@ -1,10 +1,11 @@
 # FileMint SPEC
 
-## Product promise — 0.2
+## Product promise — 0.3
 
 A small, native macOS utility that creates a file where the user is already working.
 Fast Finder actions, a compact keyboard-friendly creation panel, and no account,
-network client, analytics, folder crawling, or clipboard monitoring.
+analytics, folder crawling, or clipboard monitoring. File creation works offline;
+only user-requested update checks and downloads use the network.
 
 ## The two creation paths
 
@@ -21,6 +22,12 @@ network client, analytics, folder crawling, or clipboard monitoring.
   template and a configured folder; a bare deep link cannot create a file.
 - The app and its menu bar also offer New File… with a native folder picker,
   so creation remains useful without Finder integration.
+- Creation requests open or focus only the single creation panel. A Finder URL
+  must not open or restore settings, including a cold launch or a request after
+  settings was closed. Closing/cancelling the panel leaves settings closed.
+  Settings is a separately owned native window, shown by an ordinary app/Dock
+  launch or explicit Open FileMint / About / Settings actions, with no automatic
+  SwiftUI primary-window creation or restoration during URL handling.
 - Return creates from single-line fields; Return in the content editor inserts a
   newline; Command-Return creates anywhere; Escape cancels; Tab moves focus.
 - The editor supports standard copy/paste, select-all and undo. A visible Paste
@@ -120,6 +127,15 @@ network client, analytics, folder crawling, or clipboard monitoring.
 - Folder settings include an optional Full Disk Access guide and a button to
   open its macOS privacy pane: add the installed FileMint.app, enable it, then
   quit and reopen FileMint. Never silently change this system permission.
+- The Full Disk Access guide explicitly says that FileMint cannot automatically
+  read the system switch, and that the guide remaining visible does not mean
+  access is denied. System Settings is the authority: an enabled FileMint switch
+  means permission was granted; quit and reopen after enabling, without adding
+  the app again. Explain the off/missing-entry case separately. Never infer this
+  permission from folder access, saved preferences, or opening System Settings.
+- Folder rows describe only their own saved folder authorization, using
+  “Folder access saved” or “Choose this folder once”; neither label represents
+  Full Disk Access or guarantees a future write will succeed.
 - Explain the difference between privacy access and sandbox folder access:
   Full Disk Access does not remove sandbox requirements; folder bookmarks are
   remembered so normal use should not require repeated folder selection.
@@ -133,10 +149,44 @@ network client, analytics, folder crawling, or clipboard monitoring.
   FileMint.app; remove staging bundles after DMG packaging to avoid duplicate
   registration from a packaging directory. Verify registrations after cleanup.
 
+## About and online updates
+
+- Settings includes an About / 关于 page with the app icon, installed version
+  and build, copyright `XiaoDaiGua-Ray`, and developers `XiaoDaiGua-Ray` and
+  `GPT-Astra`. Names are preserved verbatim in both languages. The application
+  About menu opens this same page. Project, license and privacy links are visible.
+- About, the application menu and the menu bar offer Check for Updates. Checking
+  is explicit: no launch-time requests, periodic polling, account or analytics.
+  Only the main app has the outbound-network entitlement; Finder stays offline.
+- Use the public latest stable release of `FileMintApp/FileMint` on GitHub.
+  Compare the three numeric version components, never lexicographically. Equal
+  or older versions do not offer a download; malformed versions and responses
+  show an error rather than claiming the app is current.
+- A newer release must contain the matching `FileMint-VERSION.dmg` and
+  `FileMint-VERSION.dmg.sha256` assets. Only HTTPS release URLs from this exact
+  repository are accepted; redirects are limited to GitHub's release hosts.
+- Show the available version and release notes link before downloading. Download
+  only after the user chooses it, with progress, cancellation and retry. Network
+  work and file hashing run away from the main thread. Duplicate operations and
+  stale callbacks must not replace the current state.
+- Check the downloaded size and SHA-256 against the matching checksum file,
+  also checking GitHub's asset digest when provided. Missing, malformed or
+  mismatched checksums prevent opening. This checks download integrity; it does
+  not claim Apple notarization or automatically verify a GitHub attestation.
+- Keep downloads in the app's private cache, mark the DMG as quarantined and open
+  it only after successful verification. Never disable or strip Gatekeeper.
+  Retain a verified installer for reopening during the session; cancelled or
+  failed downloads are removed, and old update cache files are cleared on the
+  next download. Downloaded release notes are never rendered as executable HTML.
+- Opening the DMG is not installation completion. Explain that the user must quit
+  FileMint, drag the new app into Applications to replace it, then reopen it.
+  Report disk-image opening failures and offer reopening or the release page.
+  Do not replace the running app, alter user preferences, or quit automatically.
+
 ## Appearance
 
-- Native controls and system colors. Compact settings with General, File Types
-  and Folders. No decorative cards. Follow system language by default; English
+- Native controls and system colors. Compact settings with General, File Types,
+  Folders and About. No decorative cards. Follow system language by default; English
   and Chinese can be selected explicitly.
 - Only the top-level Finder entry has the small FileMint logo; its label maps
   to the resolved app language. Format choices, submenu rows and creation

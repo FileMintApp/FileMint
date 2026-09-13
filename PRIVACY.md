@@ -1,7 +1,7 @@
 # Privacy
 
-FileMint creates files locally. It has no analytics, account system, network
-client, cloud sync or advertising.
+FileMint creates files locally. It has no analytics, account system, cloud sync
+or advertising. File creation does not require a network connection.
 
 - File names, paths and contents are not uploaded or logged.
 - The clipboard is read only when you invoke Paste or a standard paste shortcut.
@@ -18,5 +18,18 @@ client, cloud sync or advertising.
   remove the registration. FileMint never enables Full Disk Access itself.
 - GitHub hosts source, releases, build attestations and issue reports. Opening a
   GitHub link in your browser is subject to GitHub's own privacy policy.
+- Checking for updates is manual, from About or the app/menu bar menu. FileMint
+  requests the public latest release from api.github.com. Choosing Download
+  Update fetches the installer and its SHA-256 checksum from GitHub and its
+  release asset CDN. These requests expose ordinary connection information,
+  such as your IP address and a generic FileMint update-checker User-Agent, to
+  GitHub. They do not include filenames, folder paths, templates, clipboard
+  contents, an account token, device identifier or usage analytics. The current
+  app version is compared locally. No startup or periodic requests are made.
+- Installers are kept in FileMint's private cache. Cancelled or failed downloads
+  are removed; the next download clears previous update cache files. A verified
+  installer is marked as downloaded from the internet and opened in macOS.
+  FileMint does not replace the installed app or quit automatically. The Finder
+  extension has no network entitlement and does not check for updates.
 - Donation images are supplied by the project owner. Payment is optional and
   processed by the payment service you choose, not by FileMint.

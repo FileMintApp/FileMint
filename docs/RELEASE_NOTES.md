@@ -1,17 +1,19 @@
-FileMint 0.2 — 原生 macOS 文件创建工具 / Native macOS file creation
+FileMint 0.3 — 关于、在线更新与更专注的创建体验 / About, verified updates and focused creation
 
-- 输入 `demo.js` 就保存为 `demo.js`，文件名与后缀选择器联动。
-- 创建前粘贴文本，保留中文、多行、空格和原始占位符。
-- 常用文件类型、自定义后缀与模板内容、开关及排序。
-- 右键主入口为折页 F Logo + 本地化“新建文件 / New File”，子菜单保持纯文字。
-- 默认登录时启动、显示菜单栏，两个开关可关闭并记住选择。
-- 文件夹授权记忆与完全磁盘访问权限指引。
-- 原子排他创建防止并发覆盖，替换确认默认取消。
-- README 默认中文，顶部一键跳转 English。
+- 新增“关于”页：显示版本、版权 `XiaoDaiGua-Ray`，以及开发者
+  `XiaoDaiGua-Ray · GPT-Astra`，并提供项目、许可和隐私链接。
+- 可从“关于”、应用菜单或菜单栏手动检查 GitHub 正式版本；不会自动检查或下载。
+- 下载更新前展示版本、大小和发布说明；安装包下载后校验大小、SHA-256 和 GitHub
+  release asset digest，再保留 macOS 隔离标记并打开 DMG。
+- 下载可取消、重试；校验失败时不会打开安装包。安装仍由用户完成：退出 FileMint，
+  将新 app 拖入“应用程序”，再重新打开。
+- Finder 的“新建文件…”现在只打开或聚焦创建面板，不再连带打开设置页；冷启动和
+  设置页关闭后的创建路径也适用。
+- 完全磁盘访问说明现在明确区分系统权限和已保存的文件夹授权。
 
-English: exact custom filenames, paste-before-create, saved custom file types,
-localized Finder entry, a redesigned Folded F identity, persistent startup/menu
-bar switches, and safe collision handling. macOS 13+, Apple silicon and Intel.
+English: a bilingual About page with credits, explicit GitHub Release update
+checks, verified/cancellable DMG downloads, and Finder creation that opens only
+the creation panel. macOS 13+, Apple silicon and Intel.
 
 **来源认证 / Provenance:** GitHub Actions builds the universal DMG and publishes
 GitHub artifact attestations plus SHA-256 checksums. This release uses ad-hoc
@@ -25,6 +27,6 @@ separate written authorization or a paid commercial license. Donations do not
 grant commercial rights. [License](https://github.com/FileMintApp/FileMint/blob/main/LICENSE).
 
 ```sh
-shasum -a 256 -c FileMint-0.2.0.dmg.sha256
-gh attestation verify FileMint-0.2.0.dmg --repo FileMintApp/FileMint
+shasum -a 256 -c FileMint-0.3.0.dmg.sha256
+gh attestation verify FileMint-0.3.0.dmg --repo FileMintApp/FileMint
 ```

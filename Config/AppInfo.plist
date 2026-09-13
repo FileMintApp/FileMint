@@ -34,5 +34,7 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © XiaoDaiGua-Ray</string>
 </dict>
 </plist>

@@ -7,10 +7,11 @@ struct ContentView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            TabView {
-                GeneralPane().tabItem { Text(model.text(.general)) }
-                TypesPane().tabItem { Text(model.text(.fileTypes)) }
-                FoldersPane().tabItem { Text(model.text(.folders)) }
+            TabView(selection: $model.selectedPane) {
+                GeneralPane().tabItem { Text(model.text(.general)) }.tag(PreferencesModel.Pane.general)
+                TypesPane().tabItem { Text(model.text(.fileTypes)) }.tag(PreferencesModel.Pane.fileTypes)
+                FoldersPane().tabItem { Text(model.text(.folders)) }.tag(PreferencesModel.Pane.folders)
+                AboutPane().tabItem { Text(model.text(.about)) }.tag(PreferencesModel.Pane.about)
             }
             .padding(20)
             if let error = model.lastError {
@@ -216,14 +217,21 @@ private struct FoldersPane: View {
                     Spacer()
                     Button(model.text(.openFullDiskAccess)) { model.openFullDiskAccessSettings() }
                 }
-                Text(model.text(.fullDiskAccessHint)).font(.caption).foregroundStyle(.secondary)
-                Text(model.text(.folderAccessReminder)).font(.caption).foregroundStyle(.secondary)
+                Text(model.text(.fullDiskAccessStatus)).font(.callout.weight(.medium))
+                Text(model.text(.fullDiskAccessStatusHint))
+                    .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                Text(model.text(.fullDiskAccessEnabledHint))
+                    .font(.caption).fixedSize(horizontal: false, vertical: true)
+                Text(model.text(.fullDiskAccessHint))
+                    .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
             Divider()
+            Text(model.text(.folderAccessReminder))
+                .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             List(model.preferences.monitoredFolderURLs, id: \.self, selection: $selection) { url in
                 VStack(alignment: .leading, spacing: 3) {
                     Text((url.path as NSString).abbreviatingWithTildeInPath).lineLimit(1).truncationMode(.middle)
-                    Text(model.preferences.monitoredFolderBookmarks[url.path] == nil ? model.text(.needsAccess) : model.text(.ready))
+                    Text(model.preferences.monitoredFolderBookmarks[url.path] == nil ? model.text(.needsAccess) : model.text(.folderAccessSaved))
                         .font(.caption).foregroundStyle(.secondary)
                 }.padding(.vertical, 5).tag(url)
             }.listStyle(.bordered(alternatesRowBackgrounds: true))

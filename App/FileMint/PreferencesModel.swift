@@ -5,6 +5,8 @@ import Foundation
 @MainActor
 final class PreferencesModel: ObservableObject {
     static let shared = PreferencesModel()
+    enum Pane { case general, fileTypes, folders, about }
+    @Published var selectedPane: Pane = .general
     @Published var preferences: FileMintPreferences
     @Published var lastError: String?
     @Published var extensionEnabled = false

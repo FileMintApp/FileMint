@@ -61,4 +61,34 @@ struct StartupPreferencesTests {
             #expect(FileMintStrings.text(key, language: .chinese) != FileMintStrings.text(key, language: .english))
         }
     }
+
+    @Test("permission guidance explains granted, off and unreadable status in both languages",
+          arguments: [AppLanguage.english, .chinese])
+    func permissionGuidance(language: AppLanguage) {
+        let status = FileMintStrings.text(.fullDiskAccessStatus, language: language)
+        let explanation = FileMintStrings.text(.fullDiskAccessStatusHint, language: language)
+        let enabled = FileMintStrings.text(.fullDiskAccessEnabledHint, language: language)
+        let disabled = FileMintStrings.text(.fullDiskAccessHint, language: language)
+        let folder = FileMintStrings.text(.folderAccessSaved, language: language)
+        let reminder = FileMintStrings.text(.folderAccessReminder, language: language)
+
+        if language == .chinese {
+            #expect(status.contains("以系统设置开关为准"))
+            #expect(explanation.contains("无法自动读取") && explanation.contains("不代表你尚未授权"))
+            #expect(enabled.contains("开关已开启：已授予权限") && enabled.contains("重新打开"))
+            #expect(enabled.contains("无需重复"))
+            #expect(disabled.contains("开关关闭或没有 FileMint"))
+            #expect(folder.contains("文件夹") && folder.contains("已保存"))
+            #expect(reminder.contains("即使已开启完全磁盘访问"))
+        } else {
+            #expect(status.contains("system switch"))
+            #expect(explanation.contains("cannot read") && explanation.contains("does not mean access is denied"))
+            #expect(enabled.contains("Switch on: permission is granted") && enabled.contains("reopen"))
+            #expect(enabled.contains("no need to add it again"))
+            #expect(disabled.contains("Switch off or FileMint missing"))
+            #expect(folder.contains("Folder") && folder.contains("saved"))
+            #expect(reminder.contains("Even with Full Disk Access"))
+        }
+        #expect(folder != FileMintStrings.text(.ready, language: language))
+    }
 }

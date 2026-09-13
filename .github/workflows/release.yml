@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Existing version tag, for example v0.2.0"
+        description: "Existing version tag, for example v0.3.0"
         required: true
         type: string
 permissions:
@@ -64,5 +64,5 @@ jobs:
           set -euo pipefail
           gh attestation verify "$DMG" --repo "$GITHUB_REPOSITORY"
           gh release create "$RELEASE_TAG" "$DMG" "$CHECKSUM" \
-            --verify-tag --title "FileMint $VERSION" \
+            --verify-tag --latest --title "FileMint $VERSION" \
             --notes-file docs/RELEASE_NOTES.md

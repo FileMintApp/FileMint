@@ -40,13 +40,47 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case retry
     case fullDiskAccess
     case openFullDiskAccess
+    case fullDiskAccessStatus
+    case fullDiskAccessStatusHint
+    case fullDiskAccessEnabledHint
     case fullDiskAccessHint
     case folderAccessReminder
+    case folderAccessSaved
     case importSettings
 
     case general
     case fileTypes
     case folders
+    case about
+    case aboutFileMint
+    case version
+    case copyright
+    case developers
+    case projectPage
+    case privacyPolicy
+    case license
+    case updates
+    case checkForUpdates
+    case downloadUpdate
+    case openInstaller
+    case releaseNotes
+    case availableVersion
+    case updateIdle
+    case updateChecking
+    case updateCurrent
+    case updateAvailable
+    case updateDownloading
+    case updateVerifying
+    case updateReady
+    case updateInstallHint
+    case updateNetworkFailed
+    case updateChecksumFailed
+    case updateMissingAssets
+    case updateInvalidRelease
+    case updateNoRelease
+    case updateRateLimited
+    case updateDownloadFailed
+    case updateOpenFailed
     case addType
     case editType
     case remove
@@ -135,14 +169,48 @@ public enum FileMintStrings {
         .openLoginSettings: ("Login Items Settings…", "打开登录项设置…"),
         .retry: ("Retry", "重试"),
         .fullDiskAccess: ("Full Disk Access", "完全磁盘访问权限"),
-        .openFullDiskAccess: ("Open Full Disk Access…", "打开完全磁盘访问权限…"),
-        .fullDiskAccessHint: ("For protected locations: System Settings → Privacy & Security → Full Disk Access. Add the installed FileMint.app, enable it, then quit and reopen FileMint.", "如需访问受保护的位置：系统设置 → 隐私与安全性 → 完全磁盘访问权限，添加已安装的 FileMint.app 并开启，然后退出并重新打开 FileMint。"),
-        .folderAccessReminder: ("Folder access is remembered after you choose a folder. Full Disk Access is separate from sandbox access; a folder may still need authorization once.", "选择文件夹后会记住授权。完全磁盘访问与沙盒授权相互独立，文件夹可能仍需首次授权。"),
+        .openFullDiskAccess: ("Check in System Settings…", "在系统设置中确认…"),
+        .fullDiskAccessStatus: ("Status: check the system switch", "授权状态：以系统设置开关为准"),
+        .fullDiskAccessStatusHint: ("FileMint cannot read this switch automatically. This guide remaining visible does not mean access is denied.", "FileMint 无法自动读取此开关。此说明仍然显示，不代表你尚未授权。"),
+        .fullDiskAccessEnabledHint: ("Switch on: permission is granted. Quit and reopen FileMint after enabling it; no need to add it again.", "开关已开启：已授予权限。开启后退出并重新打开 FileMint，无需重复添加或授权。"),
+        .fullDiskAccessHint: ("Switch off or FileMint missing: add the installed FileMint.app in Privacy & Security → Full Disk Access, then turn it on.", "开关关闭或没有 FileMint：在“隐私与安全性 → 完全磁盘访问权限”中添加已安装的 FileMint.app 并开启。"),
+        .folderAccessReminder: ("The list below shows saved folder access only. Even with Full Disk Access, choose each working folder once to let FileMint remember access.", "下方仅显示各文件夹的授权记录。即使已开启完全磁盘访问，仍需首次选择工作文件夹以记住访问权限。"),
+        .folderAccessSaved: ("Folder access saved", "已保存此文件夹的授权"),
         .importSettings: ("Import Settings…", "导入设置…"),
 
         .general: ("General", "通用"),
         .fileTypes: ("File Types", "文件类型"),
         .folders: ("Folders", "文件夹"),
+        .about: ("About", "关于"),
+        .aboutFileMint: ("About FileMint", "关于 FileMint"),
+        .version: ("Version", "版本"),
+        .copyright: ("Copyright", "版权"),
+        .developers: ("Developers", "开发者"),
+        .projectPage: ("Project", "项目主页"),
+        .privacyPolicy: ("Privacy", "隐私说明"),
+        .license: ("License", "使用许可"),
+        .updates: ("Software Update", "软件更新"),
+        .checkForUpdates: ("Check for Updates…", "检查更新…"),
+        .downloadUpdate: ("Download Update", "下载更新"),
+        .openInstaller: ("Reopen Installer", "重新打开安装包"),
+        .releaseNotes: ("Release Notes", "查看发布说明"),
+        .availableVersion: ("Available version", "可用版本"),
+        .updateIdle: ("Check GitHub for a new version when you choose. No automatic checks or downloads.", "主动检查 GitHub 上的新版本，不会自动检查或下载。"),
+        .updateChecking: ("Checking for updates…", "正在检查更新…"),
+        .updateCurrent: ("You're up to date. No newer stable release is available.", "当前已是最新版本，暂无更新的正式版本。"),
+        .updateAvailable: ("A new version is available. Download it when you're ready.", "发现新版本，可下载更新。"),
+        .updateDownloading: ("Downloading the installer…", "正在下载安装包…"),
+        .updateVerifying: ("Verifying the installer…", "正在校验安装包…"),
+        .updateReady: ("Installer verified and opened. Finish installing in Finder.", "安装包已校验并打开，请在 Finder 中完成安装。"),
+        .updateInstallHint: ("After the installer opens, quit FileMint, drag the new app into Applications to replace it, then reopen FileMint. macOS may ask you to approve the app or Finder extension again.", "安装包打开后，请退出 FileMint，将新版拖入“应用程序”替换旧版，再重新打开。macOS 可能需要再次确认应用或启用 Finder 扩展。"),
+        .updateNetworkFailed: ("Could not connect to GitHub. Check your connection and retry, or visit the release page.", "无法连接 GitHub，请检查网络后重试，或前往发布页面。"),
+        .updateChecksumFailed: ("Installer verification failed. Nothing was opened. Retry the download or visit the release page.", "安装包校验失败，未打开文件。请重新下载或前往发布页面。"),
+        .updateMissingAssets: ("This release is missing a ready installer or checksum. Try again later or visit the release page.", "此版本尚无完整的安装包与校验文件，请稍后重试或前往发布页面。"),
+        .updateInvalidRelease: ("The update response could not be verified. Retry or visit the release page.", "更新信息无法验证，请重试或前往发布页面。"),
+        .updateNoRelease: ("No published release was found. Try again later or visit the release page.", "暂未找到已发布版本，请稍后重试或前往发布页面。"),
+        .updateRateLimited: ("GitHub is limiting requests. Try again later or visit the release page.", "GitHub 暂时限制了请求频率，请稍后重试或前往发布页面。"),
+        .updateDownloadFailed: ("Could not save the installer. Check available disk space and retry the download.", "无法保存安装包，请检查磁盘剩余空间后重新下载。"),
+        .updateOpenFailed: ("The verified installer could not be opened. Try reopening it or visit the release page.", "已校验安装包，但未能打开。请重新打开或前往发布页面。"),
         .addType: ("Add Type…", "添加类型…"),
         .editType: ("Edit…", "编辑…"),
         .remove: ("Remove", "移除"),
@@ -158,7 +226,7 @@ public enum FileMintStrings {
         .folderHint: ("Add the folders where you create files. Access is remembered after you choose a folder.", "添加常用文件夹，选择后会记住访问权限。"),
         .authorize: ("Authorize…", "授权访问…"),
         .ready: ("Ready", "已就绪"),
-        .needsAccess: ("Choose once to grant access", "选择一次以授权访问"),
+        .needsAccess: ("Choose this folder once", "需首次选择此文件夹以授权"),
         .productTagline: ("A new file. Right here.", "新文件，就在此刻。"),
         .productDetail: ("Right-click in Finder to create a file. Use New File… when you want to name it or paste content first.", "在 Finder 右键创建文件。需要命名或粘贴内容时，选择“新建文件…”。"),
         .finderSetup: ("Enable FileMint in macOS Finder extensions, then add your working folders.", "在 macOS 中启用 FileMint Finder 扩展，再添加常用文件夹。"),

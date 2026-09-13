@@ -1,6 +1,6 @@
 # 安装 / Installation
 
-FileMint 0.2 支持 macOS 13+，兼容 Apple 芯片与 Intel。请从
+FileMint 0.3 支持 macOS 13+，兼容 Apple 芯片与 Intel。请从
 [FileMintApp/FileMint Releases](https://github.com/FileMintApp/FileMint/releases/latest)
 下载 DMG，而不是第三方重新打包的文件。
 
@@ -34,8 +34,8 @@ FileMint 0.2 支持 macOS 13+，兼容 Apple 芯片与 Intel。请从
 同一 Release 中下载 DMG 和 `.sha256` 文件，在下载目录执行：
 
 ```sh
-shasum -a 256 -c FileMint-0.2.0.dmg.sha256
-gh attestation verify FileMint-0.2.0.dmg --repo FileMintApp/FileMint
+shasum -a 256 -c FileMint-0.3.0.dmg.sha256
+gh attestation verify FileMint-0.3.0.dmg --repo FileMintApp/FileMint
 ```
 
 校验和证明文件完整性；GitHub attestation 证明构建来自该仓库的 Actions。
@@ -48,11 +48,15 @@ gh attestation verify FileMint-0.2.0.dmg --repo FileMintApp/FileMint
 若 macOS 要求确认或拒绝登录项，应用会显示真实状态并提供设置入口。开发构建
 和 DMG 内的副本不会自动注册为登录项。隐藏菜单栏后仍可从 Dock 或应用程序打开。
 
-需要访问受保护的位置时，在“文件夹”页点击“打开完全磁盘访问权限…”，在
+需要确认完全磁盘访问时，在“文件夹”页点击“在系统设置中确认…”，在
 系统设置 → 隐私与安全性 → 完全磁盘访问权限中添加 `/Applications/FileMint.app`
 并开启，随后退出并重新打开 FileMint。此权限由你在 macOS 中选择，应用不会代为启用。
+如果 FileMint 的开关已经开启，就表示已授予权限，无需重复添加或授权。
+FileMint 无法自动读取此系统开关，因此应用内的说明会保留；说明仍然显示不代表
+授权失败或尚未授权，实际状态以系统设置为准。
 完全磁盘访问和 App Sandbox 授权是独立机制；文件夹可能仍需首次选择授权，
-FileMint 会用书签记住它，而不是每次创建都重新选择。
+FileMint 会用书签记住它，而不是每次创建都重新选择。下方“已保存此文件夹的授权”
+仅说明此文件夹的授权记录已保存，不表示完全磁盘访问状态，也不保证任何位置都可写入。
 
 ## 旧开发版设置
 
@@ -72,4 +76,27 @@ or Privacy & Security → Extensions on older systems. Authorize your working
 folders in FileMint. Finder extension loading remains subject to macOS policy.
 The app's New File… action works independently of Finder integration.
 
+In Folders, use “Check in System Settings…” to confirm Full Disk Access. An
+enabled FileMint switch means permission is granted; quit and reopen after
+enabling it, without adding the app again. FileMint cannot automatically read
+this switch, so the guide remaining visible does not mean access is denied.
+The folder list describes saved folder access separately from Full Disk Access.
+
 Use the checksum and `gh attestation verify` commands above to verify the download.
+## 应用内更新 / Updating from FileMint
+
+打开 **关于 → 检查更新 → 下载更新**。安装包校验并打开后，退出 FileMint，
+将新版拖入“应用程序”替换旧版，再重新打开。可随时取消下载并重试；
+检查和下载都需要主动操作。macOS 可能需要再次确认应用或启用 Finder 扩展。
+
+Open **About / 关于 → Check for Updates / 检查更新**. A new stable version offers
+**Download Update / 下载更新** and its release notes. FileMint checks the installer
+size and SHA-256 before opening it. After it opens, quit FileMint, drag the new app
+into Applications to replace the existing app, then reopen FileMint. macOS may
+ask you to approve the app or Finder extension again. Existing installation
+requirements in this guide still apply.
+
+Update checks and downloads are manual. A failed check is shown as an error;
+it does not mean your version is current. Check or download again, or use the
+release-page link if GitHub is unavailable. A verified installer can be reopened
+from About during the same session. Opening it does not replace the running app.

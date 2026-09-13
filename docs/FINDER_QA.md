@@ -27,7 +27,15 @@ Record actual results in ACCEPTANCE.md.
   ServiceManagement status. Disable/re-enable through both app and macOS
   settings; confirm the app never silently re-registers an externally disabled item.
 - With settings closed and the menu bar hidden, test both Finder creation routes.
-- Open the Full Disk Access guide; verify it explains sandbox folder authorization separately.
+- Open the Full Disk Access guide in Chinese and English. Confirm it explicitly
+  says the system switch is authoritative and that a visible guide does not mean
+  access is denied. Both the enabled and off/missing-entry instructions must be
+  readable, with the folder list and its action buttons still usable.
+- “Check in System Settings…” must open Full Disk Access. Observe the existing
+  FileMint switch without changing it; returning to FileMint must not claim that
+  merely visiting settings granted or revoked access.
+- Folder labels must describe only a saved folder authorization or a request to
+  choose that folder once, separately from the Full Disk Access guide.
 - Confirm no file-icon setting or inactive favorites setting is exposed.
 - Legacy development JSON/plist settings import through the File menu; protected
   App Group directories are never accessed automatically.
@@ -54,3 +62,15 @@ Record actual results in ACCEPTANCE.md.
 - Repeat Gatekeeper approval and extension activation on a clean Mac when one
   is available. A development Mac cannot prove clean-install trust behavior.
 - Final GitHub asset checksum and attestation match the exact uploaded DMG.
+## Creation window isolation
+
+- Close settings, then Finder → New File → New File…. Only the creation panel
+  should appear. Cancel it; settings must remain closed.
+- Quit FileMint completely and repeat from Finder. The URL launch should open
+  only the creation panel, including when Show in menu bar is disabled.
+- Type a draft name, then invoke New File again. The existing draft should be
+  focused with its contents preserved.
+- Open the app explicitly or choose Open FileMint / About. Settings should still
+  be reachable. About and the update commands should use the same settings window.
+- When automating this check, do not treat an inspection tool's explicit app
+  reopen as part of the Finder URL action. Observe the URL and reopen separately.

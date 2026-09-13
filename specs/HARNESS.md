@@ -44,3 +44,17 @@ A change is complete only when:
 - `make verify` passes locally.
 - Finder-specific behavior has a manual verification note when it cannot run headlessly.
 
+## Update coverage
+
+`AppUpdateTests` covers numeric stable-version comparison, no downgrades, release
+and asset validation, trusted download/redirect URLs, exact checksum filenames,
+digest mismatches, and bilingual About/update text. Network and native installer
+opening remain app responsibilities; record live checks, download/cancel/retry
+and installation handoff evidence in `docs/ACCEPTANCE.md`.
+
+`make verify-updates` is an opt-in network smoke check using the real app client.
+It queries the public release, verifies the equal-version result, cancels after
+download bytes arrive, checks cleanup, retries the complete download, and checks
+SHA-256, size and macOS quarantine. It removes temporary artifacts and never
+opens the DMG or installs an app. This command requires macOS and GitHub access;
+ordinary `make verify` stays offline.

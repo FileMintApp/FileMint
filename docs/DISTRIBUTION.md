@@ -2,7 +2,7 @@
 
 ## Current channel: GitHub provenance
 
-The owner does not currently have a paid Apple Developer account. Release 0.2
+The owner does not currently have a paid Apple Developer account. Release 0.3
 therefore uses GitHub-hosted builds, universal ad-hoc-signed app bundles, a DMG,
 a portable SHA-256 checksum and GitHub artifact attestations. Installation
 limitations must remain visible in README, release notes and INSTALL.md.
@@ -21,10 +21,10 @@ its final bytes, verifies that attestation and only then publishes the assets.
 It never replaces existing release assets; use a fresh version for corrections.
 
 ```sh
-APP_VERSION=0.2.0 make package
+APP_VERSION=0.3.0 make package
 # After reviewing docs/ACCEPTANCE.md and committing the version:
-git tag v0.2.0
-git push origin main v0.2.0
+git tag v0.3.0
+git push origin main v0.3.0
 ```
 
 Release evidence should include the Actions URL, downloaded asset checksum,
@@ -41,6 +41,26 @@ on the GitHub provenance build.
 The sandbox exception is limited to the application-owned FileMint support
 directory. The main app owns destination bookmarks and writes. Finder uses
 expiring local request tickets, with no dependency on App Group provisioning.
+
+## In-app updates
+
+About and both app menus use the public GitHub latest-release API. No credentials
+or additional update server are required. Continue publishing stable tags in
+`vMAJOR.MINOR.PATCH` format with both `FileMint-VERSION.dmg` and
+`FileMint-VERSION.dmg.sha256`, as the existing packaging workflow does. Do not
+rename or replace assets after publication. Drafts and prereleases are excluded.
+
+The app downloads only on request, validates the exact version's asset URLs,
+restricts redirects to GitHub release hosts, checks the size and SHA-256, and
+compares the GitHub asset digest when present. It preserves macOS quarantine.
+Users quit the app and replace it through the opened DMG themselves. This is
+download integrity verification; the app does not automatically verify artifact
+attestations or claim Apple notarization. A newly published version needs a
+higher marketing version before existing installations offer it as an update.
+
+The update client follows the [GitHub Releases API](https://docs.github.com/en/rest/releases/releases#get-the-latest-release)
+and adds Apple's [outbound network entitlement](https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.security.network.client)
+to the main app only. Finder remains offline.
 
 ## Primary references
 
