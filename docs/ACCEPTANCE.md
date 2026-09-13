@@ -296,3 +296,31 @@ Prepared on 2026-09-13:
   PluginKit still listed only `/Applications/FileMint.app` version `0.4.0`.
   The installed main-app and extension executable SHA-256 hashes were unchanged,
   preserving the user's requested baseline for testing the online update.
+
+## 0.5.0 published release and update-client verification
+
+Verified on 2026-09-13:
+
+- [Release v0.5.0](https://github.com/FileMintApp/FileMint/releases/tag/v0.5.0)
+  is the latest non-draft, non-prerelease release. Tag `v0.5.0` points to
+  `ca9c2a9578fe96f96c88afa2fa105657493e768c`.
+- The [Release workflow](https://github.com/FileMintApp/FileMint/actions/runs/34757935781)
+  completed successfully in 1m46s. The published app is `0.5.0` (build 4).
+- The public DMG is 4,263,537 bytes with SHA-256
+  `7b6d2d72cc95c4f09a6bf65ac72e0335ffc0faffe10a47dde9e89591d5136969`.
+  A fresh download matched its checksum file and the GitHub asset digest.
+  Attestation verification passed with the exact release source digest,
+  `refs/tags/v0.5.0` and the repository's Release workflow as constraints.
+- The downloaded DMG was mounted read-only without opening Finder or running
+  its app. `verify_bundle.sh` passed the nested signatures, universal binaries,
+  matching app/extension versions and accessory-launch flag. The volume was
+  ejected immediately after inspection.
+- The same `UpdateClient` and update policy used in 0.4.0 returned the public
+  0.5.0 update when checked with current version `0.4.0`. `make verify-updates`
+  then passed the live same-version check, cancellation after receiving bytes,
+  partial-download cleanup, full retry, checksum/size verification, quarantine
+  preservation and installer cleanup.
+- No app was installed during these checks. The local GitHub 0.4.0 app and its
+  extension remain the user's baseline for their manual online-update test.
+  These client and artifact checks do not claim completion of the user's
+  Finder replacement/ejection/relaunch flow.
