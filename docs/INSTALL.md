@@ -1,20 +1,20 @@
 # 安装 / Installation
 
-FileMint 0.5.1 支持 macOS 13+，兼容 Apple 芯片与 Intel。请从
+FileMint 支持 macOS 13+，兼容 Apple 芯片与 Intel。请从
 [FileMintApp/FileMint Releases](https://github.com/FileMintApp/FileMint/releases/latest)
 下载 DMG，而不是第三方重新打包的文件。
 
 ## 首次启动
 
 1. 打开 DMG，把 FileMint 拖入“应用程序”，推出“FileMint”安装磁盘，再从“应用程序”打开。
-2. 当前版本没有 Apple Developer ID 签名和 Apple 公证。如果系统阻止启动，
+2. 已发布的 0.5.1 及更早版本没有 Apple Developer ID 签名和 Apple 公证。如果系统阻止启动，
    确认来源后，在“系统设置 → 隐私与安全性”中找到 FileMint 的阻止记录，
    选择“仍要打开”，再确认。不要全局关闭 Gatekeeper。
 3. 应用中的“新建文件…”可以独立使用。选择一个文件夹，输入名称和后缀，
    按需粘贴内容，再创建。
 
-系统策略或组织管理的 Mac 可能不允许打开未公证应用。如果没有“仍要打开”
-选项，请遵守设备策略。此版本不能承诺在所有设备上免拦截启动。
+系统策略或组织管理的 Mac 可能不允许打开旧版未公证应用。如果没有“仍要打开”
+选项，请遵守设备策略。后续经 Apple 公证的版本也可能显示正常的来源确认窗口。
 
 ## 启用 Finder 右键入口
 
@@ -25,21 +25,22 @@ FileMint 0.5.1 支持 macOS 13+，兼容 Apple 芯片与 Intel。请从
   文稿和下载；也可以添加项目文件夹。文件夹访问授权会保留。
 - 在该文件夹的空白处右键。如果启用后尚未刷新，可自行重新启动 Finder。
 
-未公证的 Finder 扩展是否被加载由 macOS 决定。若扩展没有出现，先确认应用
-位于“应用程序”、已手动允许启动。应用内的新建功能仍可使用。请在反馈中
+Finder 扩展是否被加载由 macOS 决定。若扩展没有出现，先确认应用
+位于“应用程序”、已手动允许启动并在系统设置中启用扩展。应用内的新建功能仍可使用。请在反馈中
 附上 macOS 版本、处理器类型、安装方式和具体错误，勿附带私人文件内容。
 
 ## 验证下载来源（可选）
 
-同一 Release 中下载 DMG 和 `.sha256` 文件，在下载目录执行：
+同一 Release 中下载 DMG 和 `.sha256` 文件，在下载目录执行（将 VERSION
+替换为下载的版本号）：
 
 ```sh
-shasum -a 256 -c FileMint-0.5.1.dmg.sha256
-gh attestation verify FileMint-0.5.1.dmg --repo FileMintApp/FileMint
+shasum -a 256 -c FileMint-VERSION.dmg.sha256
 ```
 
-校验和证明文件完整性；GitHub attestation 证明构建来自该仓库的 Actions。
-二者都不等同于 Apple 开发者身份认证或恶意软件审查。
+校验和用于检查下载完整性。0.5.1 及更早版本另有 GitHub Actions
+构建认证；后续本机构建的版本没有该认证，但应有 Developer ID 签名与
+Apple 公证。两种认证对应不同的构建与分发流程。
 
 ## 登录启动、菜单栏与完全磁盘访问
 
@@ -68,8 +69,8 @@ FileMint 会用书签记住它，而不是每次创建都重新选择。下方�
 ## English
 
 Drag FileMint from the DMG into Applications, eject the FileMint installer volume,
-then open FileMint from Applications. This release uses ad-hoc bundle
-signatures and GitHub build provenance; it is **not Apple notarized**. If blocked,
+then open FileMint from Applications. Published versions through 0.5.1 use
+ad-hoc signatures and are **not Apple notarized**. If one of those versions is blocked,
 review System Settings → Privacy & Security → Open Anyway for this specific app.
 Do not disable Gatekeeper globally. Managed devices may prohibit this build.
 
@@ -84,7 +85,8 @@ enabling it, without adding the app again. FileMint cannot automatically read
 this switch, so the guide remaining visible does not mean access is denied.
 The folder list describes saved folder access separately from Full Disk Access.
 
-Use the checksum and `gh attestation verify` commands above to verify the download.
+Use the checksum command above to verify the download. GitHub build attestations
+apply to published versions through 0.5.1, not to future locally built releases.
 ## 应用内更新 / Updating from FileMint
 
 从 0.3.0–0.5.0 升级时，本次请用浏览器从 GitHub Release 下载新版 DMG。旧版

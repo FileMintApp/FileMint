@@ -7,6 +7,11 @@ FileMint.xcodeproj/
 *.xcuserstate
 *.dmg
 *.app
+*.p12
+*.p8
+*.key
+*.certSigningRequest
+Config/Signing/*.cer
 .local/
 
 # Local private agent workspace. Public agent guidance lives in AGENTS.md,

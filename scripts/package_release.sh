@@ -3,10 +3,12 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 VERSION="${APP_VERSION:-0.5.1}"
 BUILD_NUMBER="${BUILD_NUMBER:-6}"
-DMG_PATH="$PWD/build/FileMint-$VERSION.dmg"
+OUTPUT_DIR="${FILEMINT_OUTPUT_DIR:-$PWD/build}"
+DMG_PATH="$OUTPUT_DIR/FileMint-$VERSION.dmg"
 CHECKSUM_PATH="$DMG_PATH.sha256"
 IDENTITY="${APPLE_CODESIGN_IDENTITY:-${CODESIGN_IDENTITY:--}}"
 [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid release version"; exit 2; }
+mkdir -p "$OUTPUT_DIR"
 if [[ "${NOTARIZE:-0}" == "1" && "$IDENTITY" == "-" ]]; then
   echo "Notarization needs a Developer ID identity; ad-hoc signing is not Apple certification."
   exit 2
@@ -61,8 +63,15 @@ export CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
 ./scripts/build_release.sh
 ./scripts/sign_app.sh "$APP_PATH"
 ./scripts/verify_bundle.sh "$APP_PATH"
+if [[ "$IDENTITY" != "-" ]]; then
+  bash ./scripts/verify_developer_id_signature.sh "$APP_PATH/Contents/PlugIns/FileMintFinderSync.appex"
+  bash ./scripts/verify_developer_id_signature.sh "$APP_PATH"
+fi
 DMG_PATH="$DMG_PATH" ./scripts/make_dmg.sh "$APP_PATH"
-if [[ "$IDENTITY" != "-" ]]; then codesign --force --timestamp --sign "$IDENTITY" "$DMG_PATH"; fi
+if [[ "$IDENTITY" != "-" ]]; then
+  codesign --force --timestamp --sign "$IDENTITY" "$DMG_PATH"
+  bash ./scripts/verify_developer_id_signature.sh "$DMG_PATH"
+fi
 if [[ "${NOTARIZE:-0}" == "1" ]]; then ./scripts/notarize_dmg.sh "$DMG_PATH"; fi
 # Basename-only checksums work in any user's download directory.
 (cd "$(dirname "$DMG_PATH")" && shasum -a 256 "$(basename "$DMG_PATH")") > "$CHECKSUM_PATH"

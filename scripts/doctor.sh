@@ -53,22 +53,30 @@ else
 fi
 
 if [[ "${RELEASE_CHECK:-0}" == "1" ]]; then
-  for name in \
-    APPLE_DEVELOPER_ID_CERTIFICATE_BASE64 \
-    APPLE_DEVELOPER_ID_CERTIFICATE_PASSWORD \
-    APPLE_BUILD_KEYCHAIN_PASSWORD \
-    APPLE_CODESIGN_IDENTITY \
-    APPLE_ID \
-    APPLE_APP_SPECIFIC_PASSWORD \
-    APPLE_TEAM_ID
-  do
-    if [[ -n "${!name:-}" ]]; then
-      echo "OK release secret env: $name"
+  check_required 'jq' jq
+  check_required 'codesign' codesign
+  check_required 'hdiutil' hdiutil
+  check_required 'GitHub CLI' gh
+  certificate_path="$PWD/Config/Signing/DeveloperIDApplication-8S66M2ZLD5.cer"
+  if [[ -f "$certificate_path" ]]; then
+    identity_sha1="$(openssl x509 -inform DER -in "$certificate_path" -noout -fingerprint -sha1 | cut -d= -f2 | tr -d : | tr '[:lower:]' '[:upper:]')"
+    identities="$(security find-identity -v -p codesigning 2>/dev/null || true)"
+    if [[ "$identities" == *"$identity_sha1"* ]]; then
+      echo 'OK release Developer ID identity in local Keychain'
     else
-      echo "MISSING release secret env: $name"
+      echo 'MISSING release Developer ID identity in local Keychain'
       FAILED=1
     fi
-  done
+  else
+    echo 'MISSING release Developer ID public certificate'
+    FAILED=1
+  fi
+  if xcrun notarytool history --keychain-profile "${APPLE_NOTARY_KEYCHAIN_PROFILE:-FileMint}" --output-format json > /dev/null 2>&1; then
+    echo 'OK release notarization Keychain profile'
+  else
+    echo 'MISSING or invalid release notarization Keychain profile'
+    FAILED=1
+  fi
 fi
 
 exit "$FAILED"

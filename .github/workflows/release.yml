@@ -1,68 +1,33 @@
-name: Release
+name: Verify published release
 on:
-  push:
-    tags: ["v*.*.*"]
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: "Existing version tag, for example v0.5.0"
-        required: true
-        type: string
-permissions:
-  contents: write
-  id-token: write
-  attestations: write
-concurrency:
-  group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
-  cancel-in-progress: false
-jobs:
   release:
-    name: Build, attest and publish
+    types: [published]
+permissions:
+  contents: read
+jobs:
+  verify:
+    name: Verify uploaded notarized DMG
     runs-on: macos-15
-    timeout-minutes: 30
+    timeout-minutes: 15
     env:
-      RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ github.event.release.tag_name }}
+      APPLE_TEAM_ID: 8S66M2ZLD5
+      APPLE_CODESIGN_IDENTITY: 'Developer ID Application: Guangzhou Guangbei Vertex Technology co.,Ltd (8S66M2ZLD5)'
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+          ref: ${{ github.event.release.tag_name }}
           persist-credentials: false
-      - name: Resolve version
-        id: version
+      - name: Download published assets
         run: |
           set -euo pipefail
           [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 2
-          echo "value=${RELEASE_TAG#v}" >> "$GITHUB_OUTPUT"
-      - name: Install XcodeGen
-        run: brew install xcodegen
-      - name: Verify core behavior
-        run: make verify
-      - name: Build universal DMG with ad-hoc bundle signatures
-        id: package
-        env:
-          APP_VERSION: ${{ steps.version.outputs.value }}
-          BUILD_NUMBER: ${{ github.run_number }}
-        run: make package
-      - name: Attest final DMG provenance
-        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
-        with:
-          subject-path: ${{ steps.package.outputs.dmg_path }}
-      - name: Keep build artifacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: FileMint-${{ steps.version.outputs.value }}
-          path: |
-            ${{ steps.package.outputs.dmg_path }}
-            ${{ steps.package.outputs.checksum_path }}
-      - name: Publish GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.version.outputs.value }}
-          DMG: ${{ steps.package.outputs.dmg_path }}
-          CHECKSUM: ${{ steps.package.outputs.checksum_path }}
-        run: |
-          set -euo pipefail
-          gh attestation verify "$DMG" --repo "$GITHUB_REPOSITORY"
-          gh release create "$RELEASE_TAG" "$DMG" "$CHECKSUM" \
-            --verify-tag --latest --title "FileMint $VERSION" \
-            --notes-file docs/RELEASE_NOTES.md
+          version="${RELEASE_TAG#v}"
+          mkdir -p dist
+          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+            --pattern "FileMint-$version.dmg" --pattern "FileMint-$version.dmg.sha256" \
+            --dir dist
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+      - name: Verify checksum, signatures and Apple ticket
+        run: bash scripts/verify_release_artifact.sh "dist/FileMint-$VERSION.dmg" "$VERSION"

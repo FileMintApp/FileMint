@@ -59,14 +59,40 @@ service evidence rather than claiming a captured Dock/menu screenshot.
 
 ## Distribution limits
 
-GitHub workflows build, verify and attest the final DMG before publishing. GitHub
-build provenance is not Apple notarization. First-launch and Finder extension
-approval remain subject to macOS policy and are explained in INSTALL.md.
+For published version 0.5.1, GitHub workflows built, verified and attested the
+DMG; that provenance is not Apple notarization. Future public versions use
+local Developer ID signing and Apple notarization, then upload the validated
+DMG to GitHub. First-launch and Finder extension approval remain subject to
+macOS policy and are explained in INSTALL.md.
 
 Intel execution, reboot/login execution and a clean-Mac first install were not
 performed on this host. Universal compilation, native login registration/status,
 and the actual runtime checks above are the evidence available here. The final
-release download and its attestation are verified separately after publication.
+0.5.1 release download and its attestation were verified separately after publication.
+
+## Developer ID release preparation (2026-09-14)
+
+- The supplied Developer ID Application certificate for team `8S66M2ZLD5`
+  matches the public key in the locally generated FileMint CSR. macOS Keychain
+  reports a valid code-signing identity for this certificate and its private key.
+- The local `.cer` in `Config/Signing` has the same SHA-256 as the supplied file
+  and is ignored by Git. It is not a signing private key.
+- `make verify` passed before the distribution workflow change: 48 Swift tests
+  and all 5 public harness cases.
+- A disposable `0.5.99` Release package built both architectures and passed
+  `verify_bundle.sh`. The Finder extension, main app and DMG each passed strict
+  Developer ID signature checks for the intended identity and team, hardened
+  runtime where applicable, and secure timestamps. `hdiutil verify` accepted
+  the DMG. It was submitted to Apple as `fb386d9a-0ac0-4491-9c2a-1236c2c403c9`;
+  at 2026-09-14 16:44 China time, Apple still reported `In Progress`. This test
+  DMG is not a public release, and its notarization has not yet been verified.
+- The exact identity was exported to an encrypted local `.p12`; its generated
+  password is stored in the login Keychain. No signing identity was uploaded to
+  GitHub. The empty `release-signing` environment created during exploration was
+  removed after the decision to build locally; it had no secrets or deployments.
+- The supplied Apple Team API key was parsed locally and validated by Apple's
+  notary service, then stored in a local `notarytool` Keychain profile named
+  `FileMint`. No notarization credential was added to GitHub.
 
 ## Full Disk Access guidance follow-up
 

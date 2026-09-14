@@ -48,7 +48,7 @@ When upgrading from 0.3.0–0.5.0, download the new installer in your browser fi
 the old in-app downloader can produce a sandbox execution block. See the
 [update instructions](docs/INSTALL.md).
 
-**Distribution and provenance:** GitHub Releases is FileMint’s default distribution channel. GitHub Actions builds the DMG and publishes verifiable build provenance plus a SHA-256 checksum. This version has ad-hoc bundle signatures, **no Apple Developer ID signature and no Apple notarization**. macOS may block the first launch or require additional Finder extension approval. GitHub provenance does not replace Apple's trust checks. Read [installation and limitations](docs/INSTALL.md) first.
+**Distribution and provenance:** FileMint is distributed through GitHub Releases with a SHA-256 checksum. Published versions through 0.5.1 were built by GitHub Actions with GitHub build attestations, but use ad-hoc signatures and have no Apple notarization. Future stable versions are signed with Developer ID and notarized locally before upload; a locally built release does not claim GitHub Actions build provenance. The Finder extension still needs to be enabled in System Settings. Read [installation and limitations](docs/INSTALL.md) first.
 
 ## Private by design
 

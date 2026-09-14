@@ -237,16 +237,27 @@ only user-requested update checks and downloads use the network.
 ## Distribution and product presentation
 
 - macOS 13+; universal arm64 + x86_64 Release app and DMG on GitHub Releases.
-- This release uses ad-hoc code signatures for bundle integrity and GitHub
-  artifact attestations for build provenance, plus a portable SHA-256 checksum.
-  Neither claims Apple developer identity or notarization. Disclose Gatekeeper
-  and Finder extension approval requirements before download. Never tell users
-  to disable Gatekeeper globally.
-- GitHub Releases and GitHub build provenance are the standing default for
-  future releases, not a temporary fallback. Do not switch channels or make
-  Apple credentials a release prerequisite without a new owner request.
-- CI verifies the core, builds both architectures, validates nested code and
-  creates the DMG. Attestation refers to the final bytes uploaded to the release.
+- Future public stable releases use the authorized Developer ID Application
+  identity for the app, Finder extension and DMG, with hardened runtime, secure
+  timestamps and Apple notarization on the owner's Mac. Staple and validate the
+  DMG ticket before computing its portable SHA-256 checksum. Only the validated
+  local DMG and checksum are uploaded to GitHub Releases. Missing credentials,
+  rejected notarization or failed validation must stop publication.
+- GitHub Releases remain the distribution channel. GitHub CI verifies the core
+  without holding Apple signing assets or rebuilding the public DMG. A locally
+  built release is not represented as a GitHub Actions build or GitHub build
+  attestation. Existing published versions retain their original ad-hoc trust
+  limitations; documentation must distinguish them from the first notarized
+  release. Never tell users to disable Gatekeeper globally. Finder extension
+  enablement remains a separate system action.
+- The Developer ID certificate stays in the project's ignored local signing
+  directory. The certificate, private key, exported signing identity and Apple
+  notarization credentials must remain local and never be committed, uploaded
+  to GitHub Actions secrets or bundled in the app.
+- Before publishing, local release checks verify the source tag, clean checkout,
+  both architectures, nested signatures, Apple notarization ticket, DMG integrity
+  and final checksum. A published-release GitHub job may re-check the uploaded
+  bytes without building them or claiming build provenance.
 - README leads with the pain solved, actual features, screenshots, download and
   a brief install guide. Chinese first, English separate. Developer instructions
   live in docs. Optional donations link the supplied ReceivePayment images.

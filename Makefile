@@ -1,6 +1,6 @@
 -include .local/signing.mk
 
-.PHONY: verify verify-updates update-sandbox-harness test harness project build dmg package doctor icon clean
+.PHONY: verify verify-updates update-sandbox-harness test harness project build dmg package release-local publish-local doctor icon clean
 
 DEVELOPER_DIR ?= /Applications/Xcode.app/Contents/Developer
 export DEVELOPER_DIR
@@ -31,6 +31,12 @@ dmg:
 
 package:
 	./scripts/package_release.sh
+
+release-local:
+	bash scripts/release_local.sh
+
+publish-local:
+	bash scripts/publish_local.sh
 
 doctor:
 	./scripts/doctor.sh
