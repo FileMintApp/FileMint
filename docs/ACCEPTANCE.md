@@ -110,6 +110,40 @@ and the actual runtime checks above are the evidence available here. The final
 - About and both READMEs retain the verified Special Thanks / 特别感谢 to 阿逼,
   linking to https://github.com/bibinocode for signing and notarization help.
 
+## 0.5.3 early signed GitHub release (2026-09-14)
+
+- The owner explicitly requested publication before Apple finished processing
+  the existing `notarytool` submission `11ed351a-020e-4107-bfae-72d0a8daec52`.
+  Apple reported `In Progress` immediately before publication and again after
+  the release checks. The published DMG has no stapled notarization ticket.
+  The release title, notes, README and install guide identify this limitation;
+  Gatekeeper may block the download. SHA-256 is not notarization evidence.
+- The published `FileMint-0.5.3.dmg` is the exact 4,177,677-byte submitted DMG
+  from binary source commit `c3d924a81eeb5e2efdb0b637eefe405947593dde`,
+  SHA-256 `712219fe3e3b163baf0fabfec16a78b305ac09311d1eba51a71010ea04c0f6ae`.
+  Annotated tag `v0.5.3` points to `ab4f8096c8f3796d3f3f4a1ee6c0ef8d3e83eab9`,
+  which adds only release documentation and verification scripts; no app or
+  package code changed. A local manifest records both commits separately.
+- `make verify` passed before and after the release-description change: 54
+  Swift tests and 5 public harness cases. The published DMG checksum, disk-image
+  integrity, universal app/Finder extension, version/build `0.5.3 (11)`, nested
+  Developer ID signatures, hardened runtime and secure timestamps passed local
+  checks. The one-time 0.5.3 path explicitly detects the absence of a stapled
+  ticket; later release verification still requires one.
+- [GitHub Release](https://github.com/FileMintApp/FileMint/releases/tag/v0.5.3)
+  is public, stable and Latest with only the DMG and portable `.sha256` assets.
+  The downloaded assets matched the local bytes exactly. `make verify-updates`
+  passed against the live 0.5.3 release, covering the latest-version response,
+  cancellation, retry, size, SHA-256, quarantine and cleanup. It did not install
+  or launch the published app.
+- [Verify uploaded DMG](https://github.com/FileMintApp/FileMint/actions/runs/34835141335)
+  passed after publication, checking the uploaded checksum, universal bundle and
+  Developer ID signatures. The job did not claim a notarization ticket or a
+  GitHub Actions build attestation. Clean-device Gatekeeper behavior and actual
+  user-folder file creation remain unverified. The former automatic
+  Accepted-only publisher is paused so the 0.5.3 assets cannot be silently
+  replaced after Apple finishes; a newly stapled public build needs a new version.
+
 ## Developer ID release preparation (2026-09-14)
 
 - The supplied Developer ID Application certificate for team `8S66M2ZLD5`
