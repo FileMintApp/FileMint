@@ -48,7 +48,7 @@ When upgrading from 0.3.0–0.5.0, download the new installer in your browser fi
 the old in-app downloader can produce a sandbox execution block. See the
 [update instructions](docs/INSTALL.md).
 
-**Distribution and provenance:** FileMint is distributed through GitHub Releases with a SHA-256 checksum. Stable versions starting with 0.5.2 are signed with Developer ID and notarized locally before upload. Versions through 0.5.1 were built by GitHub Actions with GitHub build attestations, but use ad-hoc signatures and have no Apple notarization; locally built releases do not claim GitHub Actions build provenance. The Finder extension still needs to be enabled in System Settings. Read [installation and limitations](docs/INSTALL.md) first.
+**Distribution and provenance:** FileMint is distributed through GitHub Releases with a SHA-256 checksum. Stable versions starting with 0.5.3 are signed with Developer ID and notarized locally before upload. Versions through 0.5.1 were built by GitHub Actions with GitHub build attestations, but use ad-hoc signatures and have no Apple notarization; locally built releases do not claim GitHub Actions build provenance. The Finder extension still needs to be enabled in System Settings. Read [installation and limitations](docs/INSTALL.md) first.
 
 ## Private by design
 

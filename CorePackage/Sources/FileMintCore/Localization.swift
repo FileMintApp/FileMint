@@ -231,7 +231,7 @@ public enum FileMintStrings {
         .creating: ("Creating…", "正在创建…"),
         .allowFolder: ("Allow Folder", "允许访问"),
         .authorizeFolderHint: ("Select this folder to let FileMint create files here.", "选择此文件夹，允许 FileMint 在这里创建文件。"),
-        .folderHint: ("Add the folders where you create files. Access is remembered after you choose a folder.", "添加常用文件夹，选择后会记住访问权限。"),
+        .folderHint: ("Menus include your home folder and its subfolders by default. Add other locations here; access is remembered after you choose a folder.", "默认包含当前用户主目录及其子目录的菜单。可在这里添加其他位置，选择后会记住访问权限。"),
         .authorize: ("Authorize…", "授权访问…"),
         .ready: ("Ready", "已就绪"),
         .needsAccess: ("Choose this folder once", "需首次选择此文件夹以授权"),

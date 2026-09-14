@@ -209,6 +209,7 @@ struct FileCreationHarnessTests {
         let home = URL(fileURLWithPath: "/Users/example", isDirectory: true)
 
         #expect(DefaultFolders.urls(homeDirectory: home).map(\.path) == [
+            "/Users/example",
             "/Users/example/Desktop",
             "/Users/example/Documents",
             "/Users/example/Downloads"

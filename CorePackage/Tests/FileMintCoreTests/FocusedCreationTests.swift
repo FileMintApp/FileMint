@@ -10,26 +10,49 @@ struct FocusedCreationTests {
         let downloads = URL(fileURLWithPath: "/Users/test/Downloads", isDirectory: true)
         for target in [desktop, downloads, downloads.appendingPathComponent("中文", isDirectory: true)] {
             #expect(FileMenuDestination.directory(target: target, isContainer: true,
-                targetIsDirectory: false, desktop: desktop, monitoredFolders: [desktop, downloads]) == target)
+                targetIsDirectory: false, monitoredFolders: [desktop, downloads]) == target)
         }
     }
 
-    @Test("only a targetless background menu can use a configured Desktop")
-    func desktopMenuFallback() {
+    @Test("missing or out-of-scope menu targets never guess a destination")
+    func missingMenuDestination() {
         let desktop = URL(fileURLWithPath: "/Users/test/Desktop", isDirectory: true)
-        #expect(FileMenuDestination.directory(target: nil, isContainer: true,
-            targetIsDirectory: false, desktop: desktop, monitoredFolders: [desktop]) == desktop)
-        #expect(FileMenuDestination.directory(target: nil, isContainer: false,
-            targetIsDirectory: false, desktop: desktop, monitoredFolders: [desktop]) == nil)
+        for isContainer in [true, false] {
+            #expect(FileMenuDestination.directory(target: nil, isContainer: isContainer,
+                targetIsDirectory: false, monitoredFolders: [desktop]) == nil)
+        }
         for folders in [[], [URL(fileURLWithPath: "/Users/test/Desk", isDirectory: true)]] {
-            #expect(FileMenuDestination.directory(target: nil, isContainer: true,
-                targetIsDirectory: false, desktop: desktop, monitoredFolders: folders) == nil)
+            #expect(FileMenuDestination.directory(target: desktop, isContainer: true,
+                targetIsDirectory: false, monitoredFolders: folders) == nil)
         }
         #expect(FileMenuDestination.directory(target: URL(string: "https://example.com"), isContainer: true,
-            targetIsDirectory: false, desktop: desktop, monitoredFolders: [desktop]) == nil)
+            targetIsDirectory: false, monitoredFolders: [desktop]) == nil)
         let file = desktop.appendingPathComponent("note.txt")
         #expect(FileMenuDestination.directory(target: file, isContainer: false,
-            targetIsDirectory: false, desktop: desktop, monitoredFolders: [desktop]) == desktop)
+            targetIsDirectory: false, monitoredFolders: [desktop]) == desktop)
+    }
+
+    @Test("observing the parent of protected folders does not expand menu scope")
+    func protectedFolderObservation() {
+        let home = URL(fileURLWithPath: "/Users/test", isDirectory: true)
+        let desktop = home.appendingPathComponent("Desktop", isDirectory: true)
+        let documents = home.appendingPathComponent("Documents", isDirectory: true)
+        let downloads = home.appendingPathComponent("Downloads", isDirectory: true)
+        let pictures = home.appendingPathComponent("Pictures", isDirectory: true)
+        let folders = [desktop, documents, downloads]
+        #expect(FolderScope.observationRoots(for: folders, home: home) == Set(folders + [home]))
+        #expect(FolderScope.observationRoots(for: [downloads], home: home) == [downloads])
+        #expect(FolderScope.observationRoots(for: [], home: home).isEmpty)
+        #expect(FolderScope.observationRoots(for: [desktop], home: home) == [desktop, home])
+        #expect(FileMenuDestination.directory(target: documents, isContainer: true,
+            targetIsDirectory: false, monitoredFolders: [desktop]) == nil)
+        for target in [home, pictures, home.appendingPathComponent("Documents 2", isDirectory: true)] {
+            #expect(!FolderScope.contains(target, in: folders))
+            #expect(FileMenuDestination.directory(target: target, isContainer: true,
+                targetIsDirectory: false, monitoredFolders: folders) == nil)
+        }
+        #expect(FolderScope.contains(documents.appendingPathComponent("Work", isDirectory: true), in: folders))
+        #expect(!FolderScope.contains(documents, in: [URL(string: "https://example.com/")!]))
     }
 
     @Test("a desktop background action creates in Desktop through the existing single-use ticket flow")
@@ -40,8 +63,8 @@ struct FocusedCreationTests {
         try FileManager.default.createDirectory(at: desktop, withIntermediateDirectories: true)
         var preferences = FileMintPreferences.default
         preferences.monitoredFolderURLs = [desktop]
-        let destination = try #require(FileMenuDestination.directory(target: nil, isContainer: true,
-            targetIsDirectory: false, desktop: desktop, monitoredFolders: preferences.monitoredFolderURLs))
+        let destination = try #require(FileMenuDestination.directory(target: desktop, isContainer: true,
+            targetIsDirectory: false, monitoredFolders: preferences.monitoredFolderURLs))
         let store = QuickCreationTicketStore(directory: parent.appendingPathComponent("requests"))
         let template = TemplateCatalog.builtInTemplates[0]
         let route = try store.enqueue(directory: destination, templateID: template.id)

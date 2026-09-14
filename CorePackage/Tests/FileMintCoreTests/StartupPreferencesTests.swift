@@ -4,6 +4,44 @@ import Testing
 
 @Suite("Startup preferences and localization")
 struct StartupPreferencesTests {
+    @Test("home menus follow different usernames and relocated home directories")
+    func dynamicHomeScope() {
+        for path in ["/Users/alex", "/Volumes/People/改名用户"] {
+            let home = URL(fileURLWithPath: path, isDirectory: true)
+            let defaults = DefaultFolders.urls(homeDirectory: home)
+            #expect(defaults.first == home)
+            #expect(FileMenuDestination.directory(target: home, isContainer: true,
+                targetIsDirectory: false, monitoredFolders: defaults) == home)
+            #expect(FileMenuDestination.directory(target: home.appendingPathComponent("note.txt"), isContainer: false,
+                targetIsDirectory: false, monitoredFolders: defaults) == home)
+            let legacy = Array(defaults.dropFirst())
+            #expect(DefaultFolders.migratingHomeScope(legacy, homeDirectory: home) == defaults)
+            #expect(DefaultFolders.migratingHomeScope([legacy[0]], homeDirectory: home) == [legacy[0]])
+        }
+    }
+
+    @Test("old default folders gain home once while saved removals and restricted scopes survive")
+    func homeScopeMigration() throws {
+        let home = DefaultFolders.resolvedUserHomeDirectory(fileManager: .default)
+        var preferences = FileMintPreferences.default
+        preferences.monitoredFolderURLs = Array(DefaultFolders.urls(homeDirectory: home).dropFirst())
+        preferences.monitoredFolderBookmarks[preferences.monitoredFolderURLs[0].path] = Data([1, 2, 3])
+        preferences.language = .chinese
+        preferences.showMenuBar = false
+        var old = try #require(try JSONSerialization.jsonObject(with: JSONEncoder().encode(preferences)) as? [String: Any])
+        old.removeValue(forKey: "folderScopeVersion")
+        var migrated = try JSONDecoder().decode(FileMintPreferences.self, from: JSONSerialization.data(withJSONObject: old))
+        #expect(migrated.monitoredFolderURLs.first == home)
+        #expect(migrated.monitoredFolderBookmarks == preferences.monitoredFolderBookmarks)
+        #expect(migrated.language == .chinese && !migrated.showMenuBar)
+        migrated.monitoredFolderURLs.removeAll { $0 == home }
+        let removed = try JSONDecoder().decode(FileMintPreferences.self, from: JSONEncoder().encode(migrated))
+        #expect(removed.monitoredFolderURLs == preferences.monitoredFolderURLs)
+        old["monitoredFolderURLs"] = [preferences.monitoredFolderURLs[0].absoluteString]
+        let restricted = try JSONDecoder().decode(FileMintPreferences.self, from: JSONSerialization.data(withJSONObject: old))
+        #expect(restricted.monitoredFolderURLs == [preferences.monitoredFolderURLs[0]])
+    }
+
     @Test("startup and menu bar default on while explicit off survives persistence")
     func defaultsAndSavedChoices() throws {
         let defaults = FileMintPreferences.default

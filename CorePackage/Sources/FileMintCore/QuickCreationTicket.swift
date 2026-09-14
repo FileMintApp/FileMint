@@ -43,11 +43,7 @@ public struct QuickCreationTicketStore: Sendable {
         let ticket = try JSONDecoder().decode(QuickCreationTicket.self, from: data)
         guard (0...60).contains(now.timeIntervalSince(ticket.issuedAt)), ticket.directory.isFileURL,
               preferences.templates.contains(where: { $0.id == ticket.templateID && $0.isEnabled }) else { return nil }
-        let target = ticket.directory.standardizedFileURL.path
-        guard preferences.monitoredFolderURLs.contains(where: {
-            let root = $0.standardizedFileURL.path
-            return target == root || target.hasPrefix(root.hasSuffix("/") ? root : root + "/")
-        }) else { return nil }
+        guard FolderScope.contains(ticket.directory, in: preferences.monitoredFolderURLs) else { return nil }
         return ticket
     }
 }

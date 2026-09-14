@@ -20,6 +20,7 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
     public var launchAtLogin: Bool
     public var showMenuBar: Bool
     public var hasAttemptedLoginItemSetup: Bool
+    private var folderScopeVersion = 2
 
     public init(
         templates: [FileTemplate],
@@ -55,6 +56,7 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         case launchAtLogin
         case showMenuBar
         case hasAttemptedLoginItemSetup
+        case folderScopeVersion
     }
 
     public init(from decoder: Decoder) throws {
@@ -65,6 +67,12 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         templates = TemplateCatalog.migratingTemplates(templates)
         monitoredFolderBookmarks = (try? container.decode([String: Data].self, forKey: .monitoredFolderBookmarks)) ?? [:]
         monitoredFolderURLs = (try? container.decode([URL].self, forKey: .monitoredFolderURLs)) ?? defaults.monitoredFolderURLs
+        let savedFolderScopeVersion = (try? container.decode(Int.self, forKey: .folderScopeVersion)) ?? 1
+        if savedFolderScopeVersion < 2 {
+            monitoredFolderURLs = DefaultFolders.migratingHomeScope(monitoredFolderURLs,
+                homeDirectory: DefaultFolders.resolvedUserHomeDirectory(fileManager: .default))
+        }
+        folderScopeVersion = max(2, savedFolderScopeVersion)
         collisionStrategy = (try? container.decode(NameCollisionStrategy.self, forKey: .collisionStrategy))
             ?? defaults.collisionStrategy
         if collisionStrategy == .replace { collisionStrategy = .increment }
@@ -95,9 +103,17 @@ public enum DefaultFolders {
     }
 
     public static func urls(homeDirectory: URL) -> [URL] {
-        ["Desktop", "Documents", "Downloads"].map {
+        [homeDirectory] + ["Desktop", "Documents", "Downloads"].map {
             homeDirectory.appendingPathComponent($0, isDirectory: true)
         }
+    }
+
+    public static func migratingHomeScope(_ folders: [URL], homeDirectory: URL) -> [URL] {
+        let paths = Set(folders.filter(\.isFileURL).map { $0.standardizedFileURL.path })
+        let defaults = urls(homeDirectory: homeDirectory)
+        guard !paths.contains(homeDirectory.standardizedFileURL.path),
+              defaults.dropFirst().allSatisfy({ paths.contains($0.standardizedFileURL.path) }) else { return folders }
+        return [homeDirectory] + folders
     }
 
     public static func resolvedUserHomeDirectory(fileManager: FileManager) -> URL {

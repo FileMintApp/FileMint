@@ -5,20 +5,11 @@ public enum FileMenuDestination {
     /// probe, which can fail inside the Finder extension's sandbox.
     public static func directory(
         target: URL?, isContainer: Bool, targetIsDirectory: Bool,
-        desktop: URL, monitoredFolders: [URL]
+        monitoredFolders: [URL]
     ) -> URL? {
-        if let target {
-            guard target.isFileURL else { return nil }
-            return isContainer || targetIsDirectory ? target : target.deletingLastPathComponent()
-        }
-        guard isContainer, desktop.isFileURL else { return nil }
-        let path = desktop.standardizedFileURL.path
-        guard monitoredFolders.contains(where: {
-            guard $0.isFileURL else { return false }
-            let root = $0.standardizedFileURL.path
-            return path == root || path.hasPrefix(root.hasSuffix("/") ? root : root + "/")
-        }) else { return nil }
-        return desktop
+        guard let target, target.isFileURL else { return nil }
+        let directory = isContainer || targetIsDirectory ? target : target.deletingLastPathComponent()
+        return FolderScope.contains(directory, in: monitoredFolders) ? directory : nil
     }
 }
 

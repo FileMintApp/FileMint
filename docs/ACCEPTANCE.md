@@ -5,7 +5,7 @@ macOS 13. Release bundles contain arm64 and x86_64 executables.
 
 ## Automated verification
 
-- 51 Swift Testing tests pass, including Desktop menu destinations, installer quarantine preflight, repeated menu creation, update validation and bilingual About
+- 54 Swift Testing tests pass, including Desktop menu destinations, installer quarantine preflight, repeated menu creation, update validation and bilingual About
   text, plus the permission-copy tests and all 5 public JSON harness cases.
 - Coverage includes 40 simultaneous creations with distinct payloads, exact
   custom filenames, verbatim UTF-8 and CRLF, dangling symlinks, atomic replacement,
@@ -70,29 +70,43 @@ performed on this host. Universal compilation, native login registration/status,
 and the actual runtime checks above are the evidence available here. The final
 0.5.1 release download and its attestation were verified separately after publication.
 
-## 0.5.2 Desktop menu and special thanks (2026-09-14)
+## 0.5.3 protected-folder menus and dynamic home scope (2026-09-14)
 
-- Before changes, `make verify` passed 48 Swift tests and all 5 public harness
-  cases. After changes, all 51 tests and all 5 harness cases passed.
-- The installed 0.5.1 extension was enabled with one PluginKit registration.
-  A native Finder window opened to Desktop showed the FileMint submenu, while
-  the user's screenshot of the actual wallpaper background showed other
-  extensions but no FileMint entry. These are separate checks.
-- Background menu resolution now preserves the container URL without a sandbox
-  filesystem probe. A missing background target falls back only to configured
-  real-user Desktop; known targets and targetless non-background menus do not
-  take that fallback. Tests also consume the resulting ticket and verify that
-  the file is created in Desktop rather than its parent.
-- A universal Release build of 0.5.2 (7) passed, as did nested Developer ID
-  signature checks and `verify_bundle.sh`. Native About inspection showed the
-  version, Special Thanks / 特别感谢, the exact nickname 阿逼, the requested
-  `github.com/bibinocode` destination and the complete Chinese acknowledgement.
-- The computer-use interface cannot click Finder's wallpaper when it reports
-  `noWindowsAvailable`. The desktop-background menu and clean-Mac installation
-  still require the user's installation check; unit coverage and a Finder
-  folder-window menu are not represented as that runtime proof.
-- Signed/notarized package and publication results are recorded after the
-  release completes. Signing checks alone do not establish Apple notarization.
+- The first 0.5.2 candidate passed 51 core tests but failed user acceptance:
+  Documents and the actual desktop background still had no FileMint menu. Its
+  targetless-Desktop fallback did not address the cause and has been removed.
+  That candidate is not approved for publication, regardless of its Apple result.
+- Temporary native diagnostics confirmed that the running extension registered
+  Desktop, Documents and Downloads, but only received Downloads observation
+  events. A real Documents context menu never called FileMint's menu function.
+- Adding the dynamically resolved user home as an observation ancestor produced
+  Documents observation and container-menu callbacks. The native Documents menu
+  then displayed New File and all enabled types. The user also confirmed that
+  desktop, Documents and Downloads menus appeared; they explicitly did not test
+  actual file creation. All temporary diagnostics were removed afterwards.
+- Menu and quick-ticket validation share the configured folder scope, separate
+  from observation roots. A native check with home excluded confirmed that its
+  background did not receive a FileMint menu merely because it was observed.
+- The user subsequently required menus in their home directory itself. Default
+  scope now includes the OS-resolved real user home, using the existing user-ID
+  lookup rather than a username, Finder display label or fixed /Users path.
+  Old three-folder defaults gain home once; restricted scopes, later removal,
+  language and saved bookmarks survive migration.
+- The original three-folder JSON was restored before testing the migration.
+  Installed 0.5.3 (11) then showed New File both on the home background and on
+  a file in home without manually adding a home entry to that legacy JSON.
+- Documents → New File… opened the native panel with Documents as its exact
+  destination. The test draft was cancelled without writing a file. No additional
+  system privacy or folder-bookmark permission was granted during these checks.
+- All 54 Swift tests and 5 public harness cases passed. Tests cover different
+  usernames, a relocated /Volumes home, old-settings migration and saved removal,
+  out-of-scope targets, and ticket-to-file creation in a temporary Desktop.
+- The universal Release build, nested Developer ID signatures and bundle checks
+  passed. The installed copy is 0.5.3 (11) with one enabled PluginKit registration.
+  Clean-Mac notarized-install trust and actual user-folder file creation remain
+  separate acceptance items. Public release waits for Apple notarization.
+- About and both READMEs retain the verified Special Thanks / 特别感谢 to 阿逼,
+  linking to https://github.com/bibinocode for signing and notarization help.
 
 ## Developer ID release preparation (2026-09-14)
 

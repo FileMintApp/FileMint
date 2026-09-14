@@ -35,11 +35,9 @@ final class FinderSync: FIFinderSync {
         let targetIsDirectory = target.map {
             $0.hasDirectoryPath || (!isContainer && (try? $0.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true)
         } ?? false
-        let desktop = DefaultFolders.resolvedUserHomeDirectory(fileManager: .default)
-            .appendingPathComponent("Desktop", isDirectory: true)
         guard let directory = FileMenuDestination.directory(
             target: target, isContainer: isContainer, targetIsDirectory: targetIsDirectory,
-            desktop: desktop, monitoredFolders: preferences.monitoredFolderURLs
+            monitoredFolders: preferences.monitoredFolderURLs
         ) else { return nil }
         let menu = NSMenu(title: "FileMint")
         let root = NSMenuItem(title: text(.newFile), action: nil, keyEquivalent: "")
@@ -72,7 +70,10 @@ final class FinderSync: FIFinderSync {
 
     @objc private func reloadPreferences() {
         let preferences = FileMintPreferencesStore().load()
-        FIFinderSyncController.default().directoryURLs = Set(preferences.monitoredFolderURLs)
+        FIFinderSyncController.default().directoryURLs = FolderScope.observationRoots(
+            for: preferences.monitoredFolderURLs,
+            home: DefaultFolders.resolvedUserHomeDirectory(fileManager: .default)
+        )
     }
 
     @objc private func showCustomFile(_ item: NSMenuItem) {

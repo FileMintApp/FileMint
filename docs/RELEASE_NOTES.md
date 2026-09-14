@@ -1,19 +1,24 @@
-FileMint 0.5.2 — 桌面右键与签名公证 / Desktop menus and notarized distribution
+FileMint 0.5.3 — 桌面右键与签名公证 / Desktop menus and notarized distribution
 
-- 修复桌面背景右键没有“新建文件”的目标解析问题：空白处菜单保留 Finder
-  提供的目录；未提供目标时，仅在桌面仍位于配置范围内才回退到真实桌面。
-  普通文件夹、文件、侧边栏与工具栏不会因该回退误用桌面。
+- 修复桌面和文稿目录不显示“新建文件”的问题：补齐 Finder 对受保护目录的
+  观察注册，同时保留已配置文件夹的菜单范围。未配置的目录不会出现 FileMint 菜单。
+- 默认支持系统动态识别的用户主目录及子目录，旧版默认目录配置会自动补齐。
+  不按用户名或 Finder 显示名称匹配，保留自定义范围及后续移除操作。
+- 新建操作使用菜单打开时的确切目录，缺失目标时不会猜测桌面；目录元数据
+  不可读时，不会把空白处右键的新文件误放到上一级。
 - “关于”与中英文 README 新增特别感谢：
   [阿逼（@bibinocode）](https://github.com/bibinocode)，感谢为 FileMint 的
   Developer ID 签名与 Apple 公证提供帮助。
 - 首次采用本地 Developer ID 签名与 Apple 公证分发。主应用、Finder 扩展和
   DMG 均有签名；安装包附带 Apple 公证票据和 SHA-256 校验文件。
 
-Desktop background menus now preserve Finder's container destination and use the
-real Desktop for a missing background target only while Desktop is configured.
-Known folder targets stay unchanged; targetless item, sidebar and toolbar menus
-do not fall back to Desktop. About and both READMEs thank
-[阿逼 (@bibinocode)](https://github.com/bibinocode) for signing and notarization help.
+Desktop and Documents menus now receive Finder callbacks through an observation
+ancestor while menu and creation scope remains limited to configured folders.
+The default scope also includes the OS-resolved user home, with migration of
+old default-folder settings and preservation of saved removals. Missing targets
+are never guessed, and background menus retain their exact
+container even when directory metadata is unavailable. About and both READMEs
+thank [阿逼 (@bibinocode)](https://github.com/bibinocode) for signing and notarization help.
 
 This is the first release built locally with Developer ID signatures for the
 app, Finder extension and DMG, and a stapled Apple notarization ticket. The
@@ -37,5 +42,5 @@ separate written authorization or a paid commercial license. Donations do not
 grant commercial rights. [License](https://github.com/FileMintApp/FileMint/blob/main/LICENSE).
 
 ```sh
-shasum -a 256 -c FileMint-0.5.2.dmg.sha256
+shasum -a 256 -c FileMint-0.5.3.dmg.sha256
 ```

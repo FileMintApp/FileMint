@@ -81,9 +81,7 @@ only user-requested update checks and downloads use the network.
   potentially different target later. No path or clipboard content is logged.
 - A background context menu uses Finder's container URL directly, including
   Desktop; missing sandbox metadata must never turn that directory into its
-  parent. If a background menu supplies no target, use the real user's Desktop
-  only when it is within the configured menu scope. Known targets always win.
-  Item, sidebar and toolbar menus without a target never fall back to Desktop.
+  parent. Missing targets never guess another destination.
 - After either creation route, the Finder extension remains available for the
   next context menu and creation. App-launch completion callbacks may run on a
   background queue; they must not inherit main-actor isolation. Error UI is
@@ -94,8 +92,18 @@ only user-requested update checks and downloads use the network.
 
 ## Folders and permissions
 
-- Finder Sync monitors Desktop, Documents and Downloads by default, plus folders
-  explicitly added by the user. It does not scan their contents or badge files.
+- Finder menus include the current user's real home directory and its children
+  by default, plus folders explicitly added by the user. Resolve the home URL
+  from the operating system, never by a username, display label or fixed
+  `/Users/...` path. Keep Desktop, Documents and Downloads as separate folder
+  authorization entries. Older settings retaining all three original defaults
+  gain the dynamic home entry once; restricted folder selections and subsequent
+  removal of the home entry remain authoritative. When Desktop or Documents is in
+  scope, register the real user's home as a Finder observation ancestor so
+  protected-folder callbacks can arrive. This registration grants no filesystem
+  access. Both menus and quick requests must still check the configured folder
+  scope; unrelated home folders receive no FileMint menu. Never scan directory
+  contents or badge files, and do not request broad filesystem entitlements.
 - Folder selection uses NSOpenPanel. Persist security-scoped bookmarks alongside
   paths, restore access on launch, and release access when folders are removed.
 - Preferences are an atomically replaced private JSON file in
@@ -245,7 +253,7 @@ only user-requested update checks and downloads use the network.
 ## Distribution and product presentation
 
 - macOS 13+; universal arm64 + x86_64 Release app and DMG on GitHub Releases.
-- Public stable releases starting with 0.5.2 use the authorized Developer ID Application
+- Public stable releases starting with 0.5.3 use the authorized Developer ID Application
   identity for the app, Finder extension and DMG, with hardened runtime, secure
   timestamps and Apple notarization on the owner's Mac. Staple and validate the
   DMG ticket before computing its portable SHA-256 checksum. Only the validated

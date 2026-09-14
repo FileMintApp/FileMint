@@ -1,6 +1,6 @@
 # Distribution
 
-## Developer ID releases from 0.5.2
+## Developer ID releases from 0.5.3
 
 The historical 0.5.1 release uses GitHub-hosted builds, universal ad-hoc-signed
 app bundles, a DMG, a portable SHA-256 checksum and GitHub artifact attestations.
@@ -14,7 +14,7 @@ commit; it does not grant Gatekeeper or Finder extension trust.
 The published 0.5.1 GitHub attestation refers only to that historical Actions
 build. A locally built release cannot claim GitHub Actions build provenance.
 
-Public releases starting with 0.5.2 are built on the owner's Mac from a clean, tagged commit.
+Public releases starting with 0.5.3 are built on the owner's Mac from a clean, tagged commit.
 That Mac signs the Finder extension, app and DMG with Developer ID Application,
 submits the DMG to Apple, staples its ticket, verifies the mounted app and final
 checksum, then uploads only the DMG and checksum to GitHub Releases. The release
@@ -54,7 +54,7 @@ checksum, published-release verification job and actual runtime results.
 ## Standing release policy
 
 GitHub Releases remain the distribution channel. Public stable releases from
-0.5.2 require local Developer ID signing and Apple notarization.
+0.5.3 require local Developer ID signing and Apple notarization.
 Ordinary CI runs deterministic tests only; local development may still produce
 ad-hoc bundles, but they are not public stable releases.
 

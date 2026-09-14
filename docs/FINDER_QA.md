@@ -1,7 +1,7 @@
 # Finder and native UI acceptance
 
 Use a disposable folder and the exact signatures shipped in the DMG (Developer
-ID and Apple notarization starting with 0.5.2).
+ID and Apple notarization starting with 0.5.3).
 Do not treat a menu click or a successful build as evidence of a created file.
 Record actual results in ACCEPTANCE.md.
 
@@ -47,9 +47,11 @@ Record actual results in ACCEPTANCE.md.
 - Test the actual desktop wallpaper background separately from opening Desktop
   in a Finder window. Both must show New File, and both creation routes must use
   Desktop, including when no Finder window is open. Repeat after relaunch.
-- With Desktop removed from configured folders, a targetless background menu
-  must not offer Desktop creation. Missing toolbar/item/sidebar targets must not
-  become Desktop requests. A known Downloads target must remain Downloads.
+- With home removed and scope restricted to Desktop, Documents must not receive
+  a menu merely because the shared observation ancestor is registered. Missing
+  targets must never become Desktop requests. A known Downloads target must
+  remain Downloads. Default settings must show menus for the dynamically resolved
+  home background and files, including after upgrading the old three-folder defaults.
 - Background and file context menus within monitored folders show text-only
   New File actions; the root entry has the FileMint logo. Other apps may contribute similarly named menus.
 - Verify each quick action creates on disk, then verify automatic name increments.
