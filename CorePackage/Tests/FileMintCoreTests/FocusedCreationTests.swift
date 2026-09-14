@@ -4,6 +4,55 @@ import Testing
 
 @Suite("Focused creation")
 struct FocusedCreationTests {
+    @Test("background menus preserve the container even when directory metadata is unavailable")
+    func backgroundMenuDestination() {
+        let desktop = URL(fileURLWithPath: "/Users/test/Desktop", isDirectory: true)
+        let downloads = URL(fileURLWithPath: "/Users/test/Downloads", isDirectory: true)
+        for target in [desktop, downloads, downloads.appendingPathComponent("中文", isDirectory: true)] {
+            #expect(FileMenuDestination.directory(target: target, isContainer: true,
+                targetIsDirectory: false, desktop: desktop, monitoredFolders: [desktop, downloads]) == target)
+        }
+    }
+
+    @Test("only a targetless background menu can use a configured Desktop")
+    func desktopMenuFallback() {
+        let desktop = URL(fileURLWithPath: "/Users/test/Desktop", isDirectory: true)
+        #expect(FileMenuDestination.directory(target: nil, isContainer: true,
+            targetIsDirectory: false, desktop: desktop, monitoredFolders: [desktop]) == desktop)
+        #expect(FileMenuDestination.directory(target: nil, isContainer: false,
+            targetIsDirectory: false, desktop: desktop, monitoredFolders: [desktop]) == nil)
+        for folders in [[], [URL(fileURLWithPath: "/Users/test/Desk", isDirectory: true)]] {
+            #expect(FileMenuDestination.directory(target: nil, isContainer: true,
+                targetIsDirectory: false, desktop: desktop, monitoredFolders: folders) == nil)
+        }
+        #expect(FileMenuDestination.directory(target: URL(string: "https://example.com"), isContainer: true,
+            targetIsDirectory: false, desktop: desktop, monitoredFolders: [desktop]) == nil)
+        let file = desktop.appendingPathComponent("note.txt")
+        #expect(FileMenuDestination.directory(target: file, isContainer: false,
+            targetIsDirectory: false, desktop: desktop, monitoredFolders: [desktop]) == desktop)
+    }
+
+    @Test("a desktop background action creates in Desktop through the existing single-use ticket flow")
+    func desktopMenuCreation() throws {
+        let parent = try workspace()
+        defer { try? FileManager.default.removeItem(at: parent) }
+        let desktop = parent.appendingPathComponent("Desktop", isDirectory: true)
+        try FileManager.default.createDirectory(at: desktop, withIntermediateDirectories: true)
+        var preferences = FileMintPreferences.default
+        preferences.monitoredFolderURLs = [desktop]
+        let destination = try #require(FileMenuDestination.directory(target: nil, isContainer: true,
+            targetIsDirectory: false, desktop: desktop, monitoredFolders: preferences.monitoredFolderURLs))
+        let store = QuickCreationTicketStore(directory: parent.appendingPathComponent("requests"))
+        let template = TemplateCatalog.builtInTemplates[0]
+        let route = try store.enqueue(directory: destination, templateID: template.id)
+        let ticket = try #require(try store.consume(route, preferences: preferences))
+        let result = try FileCreationService().createFile(.init(destinationDirectory: ticket.directory, template: template))
+        #expect(result.createdURL.deletingLastPathComponent() == desktop)
+        #expect(FileManager.default.fileExists(atPath: result.createdURL.path))
+        #expect(try store.consume(route, preferences: preferences) == nil)
+        #expect(!FileManager.default.fileExists(atPath: parent.appendingPathComponent(template.suggestedFileName).path))
+    }
+
     private func workspace() throws -> URL {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("FileMint-\(UUID())")
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)

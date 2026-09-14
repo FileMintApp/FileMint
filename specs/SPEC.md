@@ -79,6 +79,11 @@ only user-requested update checks and downloads use the network.
   entry, not the content of a symlink's target.
 - Finder captures the destination with the menu action, rather than resolving a
   potentially different target later. No path or clipboard content is logged.
+- A background context menu uses Finder's container URL directly, including
+  Desktop; missing sandbox metadata must never turn that directory into its
+  parent. If a background menu supplies no target, use the real user's Desktop
+  only when it is within the configured menu scope. Known targets always win.
+  Item, sidebar and toolbar menus without a target never fall back to Desktop.
 - After either creation route, the Finder extension remains available for the
   next context menu and creation. App-launch completion callbacks may run on a
   background queue; they must not inherit main-actor isolation. Error UI is
@@ -170,6 +175,9 @@ only user-requested update checks and downloads use the network.
   and build, copyright `XiaoDaiGua-Ray`, and developers `XiaoDaiGua-Ray` and
   `GPT-Astra`. Names are preserved verbatim in both languages. The application
   About menu opens this same page. Project, license and privacy links are visible.
+- About and both README languages include Special Thanks / 特别感谢 to `阿逼`,
+  linking to `https://github.com/bibinocode`, for help with Developer ID signing
+  and Apple notarization. Preserve the nickname verbatim in both languages.
 - About, the application menu and the menu bar offer Check for Updates. Checking
   is explicit: no launch-time requests, periodic polling, account or analytics.
   Only the main app has the outbound-network entitlement; Finder stays offline.
@@ -237,7 +245,7 @@ only user-requested update checks and downloads use the network.
 ## Distribution and product presentation
 
 - macOS 13+; universal arm64 + x86_64 Release app and DMG on GitHub Releases.
-- Future public stable releases use the authorized Developer ID Application
+- Public stable releases starting with 0.5.2 use the authorized Developer ID Application
   identity for the app, Finder extension and DMG, with hardened runtime, secure
   timestamps and Apple notarization on the owner's Mac. Staple and validate the
   DMG ticket before computing its portable SHA-256 checksum. Only the validated

@@ -28,6 +28,14 @@ struct AboutPane: View {
                         Text(model.text(.developers)).foregroundStyle(.secondary)
                         Text(FileMintAbout.developers.joined(separator: " · ")).textSelection(.enabled)
                     }
+                    GridRow(alignment: .top) {
+                        Text(model.text(.specialThanks)).foregroundStyle(.secondary)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Link(FileMintAbout.specialThanksName, destination: FileMintAbout.specialThanksURL)
+                            Text(model.text(.signingThanks)).font(.caption).foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
                 }.font(.callout)
                 HStack(spacing: 18) {
                     Link(model.text(.projectPage), destination: FileMintAbout.projectURL)

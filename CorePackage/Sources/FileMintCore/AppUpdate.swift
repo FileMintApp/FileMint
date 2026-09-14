@@ -3,6 +3,8 @@ import Foundation
 public enum FileMintAbout {
     public static let copyright = "XiaoDaiGua-Ray"
     public static let developers = ["XiaoDaiGua-Ray", "GPT-Astra"]
+    public static let specialThanksName = "阿逼"
+    public static let specialThanksURL = URL(string: "https://github.com/bibinocode")!
     public static let projectURL = URL(string: "https://github.com/FileMintApp/FileMint")!
     public static let privacyURL = projectURL.appendingPathComponent("blob/main/PRIVACY.md")
     public static let licenseURL = projectURL.appendingPathComponent("blob/main/LICENSE")

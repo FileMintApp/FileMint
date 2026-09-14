@@ -48,6 +48,9 @@ A change is complete only when:
 through single-use tickets and filesystem creation, including name increments
 after older snapshots are evicted. The native LaunchServices callback/thread and
 repeated visible Finder menus require the checks in `docs/FINDER_QA.md`.
+Desktop coverage keeps a background container's destination even without
+filesystem metadata, limits targetless fallback to configured Desktop background
+menus, and exercises a fallback action through ticket consumption and file creation.
 `scripts/verify_bundle.sh` also verifies the main app's accessory-launch
 `LSUIElement` setting in the built bundle. Native checks cover showing the Dock
 icon only for the settings window's lifetime.
@@ -57,7 +60,7 @@ icon only for the settings window's lifetime.
 `AppUpdateTests` covers numeric stable-version comparison, no downgrades, release
 and asset validation, trusted download/redirect URLs, exact checksum filenames,
 digest mismatches, sandbox no-user-consent quarantine rejection, and bilingual
-About/update text. Network and native installer
+About/update text, including the exact special-thanks nickname and GitHub link. Network and native installer
 opening remain app responsibilities; record live checks, download/cancel/retry
 and installation handoff evidence in `docs/ACCEPTANCE.md`.
 

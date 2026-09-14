@@ -56,6 +56,8 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case version
     case copyright
     case developers
+    case specialThanks
+    case signingThanks
     case projectPage
     case privacyPolicy
     case license
@@ -188,6 +190,8 @@ public enum FileMintStrings {
         .version: ("Version", "版本"),
         .copyright: ("Copyright", "版权"),
         .developers: ("Developers", "开发者"),
+        .specialThanks: ("Special Thanks", "特别感谢"),
+        .signingThanks: ("For helping with Developer ID signing and Apple notarization.", "感谢为 FileMint 的 Developer ID 签名与 Apple 公证提供帮助。"),
         .projectPage: ("Project", "项目主页"),
         .privacyPolicy: ("Privacy", "隐私说明"),
         .license: ("License", "使用许可"),

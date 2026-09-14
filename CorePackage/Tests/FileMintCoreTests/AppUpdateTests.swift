@@ -160,8 +160,11 @@ struct AppUpdateTests {
     func aboutAndLocalization() {
         #expect(FileMintAbout.copyright == "XiaoDaiGua-Ray")
         #expect(FileMintAbout.developers == ["XiaoDaiGua-Ray", "GPT-Astra"])
+        #expect(FileMintAbout.specialThanksName == "阿逼")
+        #expect(FileMintAbout.specialThanksURL.absoluteString == "https://github.com/bibinocode")
         #expect(FileMintStrings.text(.about, language: .chinese) == "关于")
-        let keys: [FileMintTextKey] = [.about, .aboutFileMint, .version, .copyright, .developers, .projectPage,
+        let keys: [FileMintTextKey] = [.about, .aboutFileMint, .version, .copyright, .developers, .specialThanks,
+            .signingThanks, .projectPage,
             .privacyPolicy, .license, .updates, .checkForUpdates, .downloadUpdate, .openInstaller, .releaseNotes,
             .availableVersion, .updateIdle, .updateChecking, .updateCurrent, .updateAvailable, .updateDownloading,
             .updateVerifying, .updateReady, .updateInstallHint, .updateSaveHint, .updateInstallerAuthorizationFailed,

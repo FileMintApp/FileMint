@@ -1,6 +1,7 @@
 # Finder and native UI acceptance
 
-Use a disposable folder and the same ad-hoc signatures shipped in the DMG.
+Use a disposable folder and the exact signatures shipped in the DMG (Developer
+ID and Apple notarization starting with 0.5.2).
 Do not treat a menu click or a successful build as evidence of a created file.
 Record actual results in ACCEPTANCE.md.
 
@@ -43,6 +44,12 @@ Record actual results in ACCEPTANCE.md.
 ## Finder
 
 - Confirm the extension is listed and enabled in macOS settings.
+- Test the actual desktop wallpaper background separately from opening Desktop
+  in a Finder window. Both must show New File, and both creation routes must use
+  Desktop, including when no Finder window is open. Repeat after relaunch.
+- With Desktop removed from configured folders, a targetless background menu
+  must not offer Desktop creation. Missing toolbar/item/sidebar targets must not
+  become Desktop requests. A known Downloads target must remain Downloads.
 - Background and file context menus within monitored folders show text-only
   New File actions; the root entry has the FileMint logo. Other apps may contribute similarly named menus.
 - Verify each quick action creates on disk, then verify automatic name increments.
@@ -65,7 +72,11 @@ Record actual results in ACCEPTANCE.md.
 - Launch the copied DMG app, not only the DerivedData app.
 - Repeat Gatekeeper approval and extension activation on a clean Mac when one
   is available. A development Mac cannot prove clean-install trust behavior.
-- Final GitHub asset checksum and attestation match the exact uploaded DMG.
+- Final GitHub asset checksum, Developer ID signatures and stapled Apple ticket
+  match the exact uploaded DMG. GitHub build attestations apply only to versions
+  through 0.5.1.
+- About shows Special Thanks / 特别感谢, the exact nickname 阿逼, the
+  `https://github.com/bibinocode` link and the localized signing acknowledgement.
 ## Creation window isolation
 
 - Close settings, then Finder → New File → New File…. Only the creation panel

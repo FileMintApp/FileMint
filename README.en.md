@@ -21,7 +21,7 @@ Creating a file should not require opening an editor, choosing Save As, and find
 
 ## Use it
 
-Finder → right-click a folder background → **New File** → choose a type.
+Right-click the desktop background or a folder background in Finder → **New File** → choose a type.
 
 For a custom file: **New File…** → type `demo.js` → paste optional content → **Create**.
 
@@ -48,11 +48,15 @@ When upgrading from 0.3.0–0.5.0, download the new installer in your browser fi
 the old in-app downloader can produce a sandbox execution block. See the
 [update instructions](docs/INSTALL.md).
 
-**Distribution and provenance:** FileMint is distributed through GitHub Releases with a SHA-256 checksum. Published versions through 0.5.1 were built by GitHub Actions with GitHub build attestations, but use ad-hoc signatures and have no Apple notarization. Future stable versions are signed with Developer ID and notarized locally before upload; a locally built release does not claim GitHub Actions build provenance. The Finder extension still needs to be enabled in System Settings. Read [installation and limitations](docs/INSTALL.md) first.
+**Distribution and provenance:** FileMint is distributed through GitHub Releases with a SHA-256 checksum. Stable versions starting with 0.5.2 are signed with Developer ID and notarized locally before upload. Versions through 0.5.1 were built by GitHub Actions with GitHub build attestations, but use ad-hoc signatures and have no Apple notarization; locally built releases do not claim GitHub Actions build provenance. The Finder extension still needs to be enabled in System Settings. Read [installation and limitations](docs/INSTALL.md) first.
 
 ## Private by design
 
 No telemetry or uploads of filenames, paths or content. Clipboard access happens only when you paste. GitHub connections happen only when you check for updates or download them. No account or subscription. [Privacy policy](PRIVACY.md).
+
+## Special Thanks
+
+Thank you to [阿逼 (@bibinocode)](https://github.com/bibinocode) for helping with FileMint's Developer ID signing and Apple notarization, making installation easier for everyone.
 
 ## Buy me a coffee
 

@@ -1,11 +1,11 @@
 # FileMint 0.5 acceptance
 
-Checked on 2026-09-13, macOS 26.6.2, Apple silicon. Minimum deployment target:
+Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
 ## Automated verification
 
-- 48 Swift Testing tests pass, including installer quarantine preflight, repeated menu creation, update validation and bilingual About
+- 51 Swift Testing tests pass, including Desktop menu destinations, installer quarantine preflight, repeated menu creation, update validation and bilingual About
   text, plus the permission-copy tests and all 5 public JSON harness cases.
 - Coverage includes 40 simultaneous creations with distinct payloads, exact
   custom filenames, verbatim UTF-8 and CRLF, dangling symlinks, atomic replacement,
@@ -69,6 +69,30 @@ Intel execution, reboot/login execution and a clean-Mac first install were not
 performed on this host. Universal compilation, native login registration/status,
 and the actual runtime checks above are the evidence available here. The final
 0.5.1 release download and its attestation were verified separately after publication.
+
+## 0.5.2 Desktop menu and special thanks (2026-09-14)
+
+- Before changes, `make verify` passed 48 Swift tests and all 5 public harness
+  cases. After changes, all 51 tests and all 5 harness cases passed.
+- The installed 0.5.1 extension was enabled with one PluginKit registration.
+  A native Finder window opened to Desktop showed the FileMint submenu, while
+  the user's screenshot of the actual wallpaper background showed other
+  extensions but no FileMint entry. These are separate checks.
+- Background menu resolution now preserves the container URL without a sandbox
+  filesystem probe. A missing background target falls back only to configured
+  real-user Desktop; known targets and targetless non-background menus do not
+  take that fallback. Tests also consume the resulting ticket and verify that
+  the file is created in Desktop rather than its parent.
+- A universal Release build of 0.5.2 (7) passed, as did nested Developer ID
+  signature checks and `verify_bundle.sh`. Native About inspection showed the
+  version, Special Thanks / 特别感谢, the exact nickname 阿逼, the requested
+  `github.com/bibinocode` destination and the complete Chinese acknowledgement.
+- The computer-use interface cannot click Finder's wallpaper when it reports
+  `noWindowsAvailable`. The desktop-background menu and clean-Mac installation
+  still require the user's installation check; unit coverage and a Finder
+  folder-window menu are not represented as that runtime proof.
+- Signed/notarized package and publication results are recorded after the
+  release completes. Signing checks alone do not establish Apple notarization.
 
 ## Developer ID release preparation (2026-09-14)
 

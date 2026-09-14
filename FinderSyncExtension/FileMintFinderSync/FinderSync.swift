@@ -30,10 +30,17 @@ final class FinderSync: FIFinderSync {
         func text(_ key: FileMintTextKey) -> String {
             FileMintStrings.text(key, language: language)
         }
-        guard let target = FIFinderSyncController.default().targetedURL() else { return nil }
-        var isDirectory: ObjCBool = false
-        let directory = FileManager.default.fileExists(atPath: target.path, isDirectory: &isDirectory) && isDirectory.boolValue
-            ? target : target.deletingLastPathComponent()
+        let target = FIFinderSyncController.default().targetedURL()
+        let isContainer = menuKind == .contextualMenuForContainer
+        let targetIsDirectory = target.map {
+            $0.hasDirectoryPath || (!isContainer && (try? $0.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true)
+        } ?? false
+        let desktop = DefaultFolders.resolvedUserHomeDirectory(fileManager: .default)
+            .appendingPathComponent("Desktop", isDirectory: true)
+        guard let directory = FileMenuDestination.directory(
+            target: target, isContainer: isContainer, targetIsDirectory: targetIsDirectory,
+            desktop: desktop, monitoredFolders: preferences.monitoredFolderURLs
+        ) else { return nil }
         let menu = NSMenu(title: "FileMint")
         let root = NSMenuItem(title: text(.newFile), action: nil, keyEquivalent: "")
         if let source = Bundle(for: Self.self).image(forResource: "FinderRootMenuIcon"),

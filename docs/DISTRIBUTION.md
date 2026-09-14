@@ -1,8 +1,8 @@
 # Distribution
 
-## Current published channel and next release
+## Developer ID releases from 0.5.2
 
-The published 0.5.1 release uses GitHub-hosted builds, universal ad-hoc-signed
+The historical 0.5.1 release uses GitHub-hosted builds, universal ad-hoc-signed
 app bundles, a DMG, a portable SHA-256 checksum and GitHub artifact attestations.
 Its installation limitations remain visible in README, release notes and
 INSTALL.md. Do not describe that already-published artifact as Apple notarized.
@@ -14,7 +14,7 @@ commit; it does not grant Gatekeeper or Finder extension trust.
 The published 0.5.1 GitHub attestation refers only to that historical Actions
 build. A locally built release cannot claim GitHub Actions build provenance.
 
-The next public release is built on the owner's Mac from a clean, tagged commit.
+Public releases starting with 0.5.2 are built on the owner's Mac from a clean, tagged commit.
 That Mac signs the Finder extension, app and DMG with Developer ID Application,
 submits the DMG to Apple, staples its ticket, verifies the mounted app and final
 checksum, then uploads only the DMG and checksum to GitHub Releases. The release
@@ -53,8 +53,8 @@ checksum, published-release verification job and actual runtime results.
 
 ## Standing release policy
 
-GitHub Releases remain the distribution channel. The next and subsequent public
-stable releases require local Developer ID signing and Apple notarization.
+GitHub Releases remain the distribution channel. Public stable releases from
+0.5.2 require local Developer ID signing and Apple notarization.
 Ordinary CI runs deterministic tests only; local development may still produce
 ad-hoc bundles, but they are not public stable releases.
 
@@ -109,7 +109,7 @@ higher marketing version before existing installations offer it as an update.
 
 Versions 0.3.0 through 0.5.0 downloaded into a private sandbox cache and could
 produce a no-user-consent execution block. Upgrading those versions requires
-downloading the 0.5.1 installer through a browser; their old download code cannot
+downloading a current installer through a browser; their old download code cannot
 repair itself before installation. The fixed save-panel flow applies to later
 downloads from 0.5.1 and newer.
 
