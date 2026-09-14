@@ -253,16 +253,23 @@ only user-requested update checks and downloads use the network.
 ## Distribution and product presentation
 
 - macOS 13+; universal arm64 + x86_64 Release app and DMG on GitHub Releases.
-- Public stable releases starting with 0.5.3 use the authorized Developer ID Application
-  identity for the app, Finder extension and DMG, with hardened runtime, secure
-  timestamps and Apple notarization on the owner's Mac. Staple and validate the
-  DMG ticket before computing its portable SHA-256 checksum. Only the validated
-  local DMG and checksum are uploaded to GitHub Releases. Missing credentials,
-  rejected notarization or failed validation must stop publication.
+- The owner explicitly chose to publish 0.5.3 while its existing `notarytool`
+  submission was still `In Progress`. This one release uses the authorized
+  Developer ID Application identity for the app, Finder extension and DMG,
+  hardened runtime and secure timestamps, but has no Apple notarization ticket
+  at publication. The release page, README and installation guide must say so
+  clearly: Gatekeeper may block this download, and the SHA-256 file establishes
+  byte integrity, not Apple notarization or permission to launch. Do not call
+  the 0.5.3 DMG notarized or replace its published bytes after the fact.
+- Public stable releases after 0.5.3 require Apple notarization on the owner's
+  Mac. Staple and validate the DMG ticket before computing its portable SHA-256
+  checksum. Only the validated local DMG and checksum are uploaded to GitHub
+  Releases. Missing credentials, rejected notarization or failed validation
+  must stop publication.
 - GitHub Releases remain the distribution channel. GitHub CI verifies the core
   without holding Apple signing assets or rebuilding the public DMG. A locally
   built release is not represented as a GitHub Actions build or GitHub build
-  attestation. Existing published versions retain their original ad-hoc trust
+  attestation. Existing published versions retain their original trust
   limitations; documentation must distinguish them from the first notarized
   release. Never tell users to disable Gatekeeper globally. Finder extension
   enablement remains a separate system action.
@@ -271,9 +278,11 @@ only user-requested update checks and downloads use the network.
   notarization credentials must remain local and never be committed, uploaded
   to GitHub Actions secrets or bundled in the app.
 - Before publishing, local release checks verify the source tag, clean checkout,
-  both architectures, nested signatures, Apple notarization ticket, DMG integrity
-  and final checksum. A published-release GitHub job may re-check the uploaded
-  bytes without building them or claiming build provenance.
+  both architectures, nested signatures, DMG integrity and final checksum. The
+  one-time 0.5.3 exception additionally checks and records the actual Apple
+  `In Progress` state without claiming a ticket; later releases require ticket
+  validation. A published-release GitHub job may re-check the uploaded bytes
+  without building them or claiming build provenance.
 - README leads with the pain solved, actual features, screenshots, download and
   a brief install guide. Chinese first, English separate. Developer instructions
   live in docs. Optional donations link the supplied ReceivePayment images.

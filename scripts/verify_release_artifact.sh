@@ -2,9 +2,14 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-dmg_path="${1:?Provide the notarized FileMint DMG}"
+dmg_path="${1:?Provide the FileMint DMG}"
 version="${2:?Provide its version}"
 build_number="${3:-}"
+pending_053=0
+if [[ "${FILEMINT_ALLOW_PENDING_053:-0}" == 1 ]]; then
+  [[ "$version" == 0.5.3 ]] || { echo 'Pending notarization is allowed only for 0.5.3' >&2; exit 2; }
+  pending_053=1
+fi
 checksum_path="$dmg_path.sha256"
 [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo 'Invalid version' >&2; exit 2; }
 [[ -f "$dmg_path" && -f "$checksum_path" ]] || { echo 'Missing DMG or checksum' >&2; exit 2; }
@@ -20,7 +25,12 @@ expected_checksum="$(cd "$dmg_directory" && shasum -a 256 "$dmg_name")"
    "$(wc -l < "$checksum_path")" -eq 1 ]] || { echo 'DMG checksum mismatch' >&2; exit 1; }
 hdiutil verify "$dmg_path" > /dev/null
 bash scripts/verify_developer_id_signature.sh "$dmg_path"
-xcrun stapler validate "$dmg_path"
+if [[ "$pending_053" == 0 ]]; then
+  xcrun stapler validate "$dmg_path"
+elif xcrun stapler validate "$dmg_path" > /dev/null 2>&1; then
+  echo 'The 0.5.3 DMG has a ticket; verify it as a notarized release instead.' >&2
+  exit 1
+fi
 
 mount_directory="$(mktemp -d /private/tmp/filemint-release-verify.XXXXXX)"
 mounted=0
@@ -53,4 +63,8 @@ hdiutil detach -quiet "$mount_directory"
 mounted=0
 rmdir "$mount_directory"
 trap - EXIT
-printf 'Verified notarized FileMint %s (%s): %s\n' "$version" "$app_build" "$dmg_path"
+if [[ "$pending_053" == 1 ]]; then
+  printf 'Verified signed FileMint %s (%s), without Apple notarization ticket: %s\n' "$version" "$app_build" "$dmg_path"
+else
+  printf 'Verified notarized FileMint %s (%s): %s\n' "$version" "$app_build" "$dmg_path"
+fi

@@ -104,7 +104,9 @@ and the actual runtime checks above are the evidence available here. The final
 - The universal Release build, nested Developer ID signatures and bundle checks
   passed. The installed copy is 0.5.3 (11) with one enabled PluginKit registration.
   Clean-Mac notarized-install trust and actual user-folder file creation remain
-  separate acceptance items. Public release waits for Apple notarization.
+  separate acceptance items. Public release was initially planned to wait for
+  Apple notarization; the owner subsequently authorized a clearly labeled
+  one-time 0.5.3 release while the submission remained `In Progress`.
 - About and both READMEs retain the verified Special Thanks / 特别感谢 to 阿逼,
   linking to https://github.com/bibinocode for signing and notarization help.
 

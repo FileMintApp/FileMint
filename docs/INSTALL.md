@@ -7,15 +7,16 @@ FileMint 支持 macOS 13+，兼容 Apple 芯片与 Intel。请从
 ## 首次启动
 
 1. 打开 DMG，把 FileMint 拖入“应用程序”，推出“FileMint”安装磁盘，再从“应用程序”打开。
-2. 0.5.3 起的正式版使用 Developer ID 签名并经过 Apple 公证，首次启动仍可能出现正常的来源确认。
+2. 0.5.3 使用 Developer ID 签名，但发布时 Apple 公证仍在处理，没有公证票据；Gatekeeper 可能阻止打开。
+   请以 Apple 的实际公证结果为准，不能把 SHA-256 校验通过当成公证通过。0.5.3 之后的正式版须先完成公证。
    0.5.1 及更早版本没有 Apple Developer ID 签名和 Apple 公证。如果旧版被系统阻止启动，
    确认来源后，在“系统设置 → 隐私与安全性”中找到 FileMint 的阻止记录，
    选择“仍要打开”，再确认。不要全局关闭 Gatekeeper。
 3. 应用中的“新建文件…”可以独立使用。选择一个文件夹，输入名称和后缀，
    按需粘贴内容，再创建。
 
-系统策略或组织管理的 Mac 可能不允许打开旧版未公证应用。如果没有“仍要打开”
-选项，请遵守设备策略。新版的 Apple 公证不代替 Finder 扩展启用和文件夹访问授权。
+系统策略或组织管理的 Mac 可能不允许打开未公证应用，包括 0.5.3。如果没有“仍要打开”
+选项，请遵守设备策略。后续版本的 Apple 公证不代替 Finder 扩展启用和文件夹访问授权。
 
 ## 启用 Finder 右键入口
 
@@ -40,8 +41,8 @@ shasum -a 256 -c FileMint-VERSION.dmg.sha256
 ```
 
 校验和用于检查下载完整性。0.5.1 及更早版本另有 GitHub Actions
-构建认证；0.5.3 起本机构建的版本没有该认证，而是使用 Developer ID 签名与
-Apple 公证。两种认证对应不同的构建与分发流程。
+构建认证；0.5.3 起本机构建的版本没有该认证。0.5.3 使用 Developer ID 签名，
+但发布时未取得 Apple 公证票据。SHA-256、Developer ID 签名和公证是不同的验证。
 
 ## 登录启动、菜单栏与完全磁盘访问
 
@@ -70,8 +71,9 @@ FileMint 会用书签记住它，而不是每次创建都重新选择。下方�
 ## English
 
 Drag FileMint from the DMG into Applications, eject the FileMint installer volume,
-then open FileMint from Applications. Stable versions from 0.5.3 are Developer
-ID signed and Apple notarized; a normal first-launch confirmation may still appear.
+then open FileMint from Applications. Version 0.5.3 is Developer ID signed but
+was published while Apple notarization was in progress, without a stapled ticket.
+Gatekeeper may block it. Later stable releases require notarization first.
 Versions through 0.5.1 use
 ad-hoc signatures and are **not Apple notarized**. If one of those versions is blocked,
 review System Settings → Privacy & Security → Open Anyway for this specific app.

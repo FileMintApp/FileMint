@@ -1,6 +1,6 @@
 # Distribution
 
-## Developer ID releases from 0.5.3
+## Developer ID releases and the 0.5.3 exception
 
 The historical 0.5.1 release uses GitHub-hosted builds, universal ad-hoc-signed
 app bundles, a DMG, a portable SHA-256 checksum and GitHub artifact attestations.
@@ -14,13 +14,25 @@ commit; it does not grant Gatekeeper or Finder extension trust.
 The published 0.5.1 GitHub attestation refers only to that historical Actions
 build. A locally built release cannot claim GitHub Actions build provenance.
 
-Public releases starting with 0.5.3 are built on the owner's Mac from a clean, tagged commit.
-That Mac signs the Finder extension, app and DMG with Developer ID Application,
-submits the DMG to Apple, staples its ticket, verifies the mounted app and final
-checksum, then uploads only the DMG and checksum to GitHub Releases. The release
-command refuses missing credentials, rejected notarization or a mismatched
-artifact. Existing release assets are never replaced; use a fresh version for
-corrections. GitHub CI runs core tests without rebuilding the release DMG.
+Version 0.5.3 is a one-time early release explicitly requested by the owner while
+its exact signed DMG submission remains `In Progress` at Apple. The app, Finder
+extension and DMG are Developer ID signed, with hardened runtime and secure
+timestamps, but there is no notarization ticket at publication. Its GitHub
+release notes and installation instructions must say this. Gatekeeper may block
+the download. The exact submitted DMG and its portable checksum are published
+without stapling or changing the submitted bytes. Its Apple submission ID is
+`11ed351a-020e-4107-bfae-72d0a8daec52`. The 0.5.3 asset is not replaced if
+Apple accepts the submission later; a future version is needed for a newly
+stapled, independently verified release.
+
+Subsequent public stable releases are built on the owner's Mac from a clean,
+tagged commit. That Mac signs the Finder extension, app and DMG with Developer
+ID Application, submits the DMG to Apple, staples its ticket, verifies the
+mounted app and final checksum, then uploads only the validated DMG and checksum
+to GitHub Releases. The normal release command refuses missing credentials,
+rejected notarization or a mismatched artifact. Existing release assets are
+never replaced; use a fresh version for corrections. GitHub CI runs core tests
+without rebuilding the release DMG.
 After publication, a GitHub job downloads and checks the uploaded DMG without
 using Apple credentials or claiming it built the binary.
 
@@ -31,7 +43,7 @@ the installed release. Do not leave packaging or mounted-image registrations
 behind after installation checks.
 
 Local `make package` still defaults to ad-hoc signing for development checks.
-For a public version, update `docs/RELEASE_NOTES.md`, commit all changes and
+For a normal notarized public version after 0.5.3, update `docs/RELEASE_NOTES.md`, commit all changes and
 create `vVERSION` at `HEAD`. Store Apple notarization credentials in a local
 `notarytool` Keychain profile named `FileMint` (or supply the supported local
 credential variables). Then run:
@@ -53,8 +65,8 @@ checksum, published-release verification job and actual runtime results.
 
 ## Standing release policy
 
-GitHub Releases remain the distribution channel. Public stable releases from
-0.5.3 require local Developer ID signing and Apple notarization.
+GitHub Releases remain the distribution channel. Public stable releases after
+the explicit 0.5.3 exception require local Developer ID signing and Apple notarization.
 Ordinary CI runs deterministic tests only; local development may still produce
 ad-hoc bundles, but they are not public stable releases.
 

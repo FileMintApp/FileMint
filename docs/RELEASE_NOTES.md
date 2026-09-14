@@ -1,4 +1,11 @@
-FileMint 0.5.3 — 桌面右键与签名公证 / Desktop menus and notarized distribution
+FileMint 0.5.3 — 桌面右键与 Developer ID 签名 / Desktop menus and Developer ID signing
+
+**公证状态 / Notarization:** 这份 DMG 已使用 Developer ID 签名，并通过
+`notarytool` 提交给 Apple；发布时仍为 `In Progress`，尚无公证票据。
+macOS Gatekeeper 可能阻止打开。SHA-256 文件只校验下载字节，不代表 Apple 公证通过。
+This DMG is Developer ID signed and was submitted with `notarytool`, but Apple
+had not returned `Accepted` at publication. It has no stapled ticket, so
+Gatekeeper may block it. The SHA-256 file verifies download integrity only.
 
 - 修复桌面和文稿目录不显示“新建文件”的问题：补齐 Finder 对受保护目录的
   观察注册，同时保留已配置文件夹的菜单范围。未配置的目录不会出现 FileMint 菜单。
@@ -9,8 +16,8 @@ FileMint 0.5.3 — 桌面右键与签名公证 / Desktop menus and notarized dis
 - “关于”与中英文 README 新增特别感谢：
   [阿逼（@bibinocode）](https://github.com/bibinocode)，感谢为 FileMint 的
   Developer ID 签名与 Apple 公证提供帮助。
-- 首次采用本地 Developer ID 签名与 Apple 公证分发。主应用、Finder 扩展和
-  DMG 均有签名；安装包附带 Apple 公证票据和 SHA-256 校验文件。
+- 首次采用本地 Developer ID 为主应用、Finder 扩展和 DMG 签名；附带 SHA-256
+  校验文件。Apple 公证仍在处理，因此本版不能宣称已公证。
 
 Desktop and Documents menus now receive Finder callbacks through an observation
 ancestor while menu and creation scope remains limited to configured folders.
@@ -21,13 +28,13 @@ container even when directory metadata is unavailable. About and both READMEs
 thank [阿逼 (@bibinocode)](https://github.com/bibinocode) for signing and notarization help.
 
 This is the first release built locally with Developer ID signatures for the
-app, Finder extension and DMG, and a stapled Apple notarization ticket. The
+app, Finder extension and DMG. It has no Apple notarization ticket. The
 download includes a portable SHA-256 checksum. It does not claim GitHub Actions
 build provenance; versions through 0.5.1 retain their historical ad-hoc signatures.
 
 **安装 / Installation:** macOS 13+，Apple 芯片与 Intel 通用。退出旧版，把 FileMint
-拖入“应用程序”替换，推出安装磁盘，再从“应用程序”打开。首次启动仍可能出现
-正常的来源确认；Finder 扩展需要在系统设置中启用，文件夹访问仍需首次授权。
+拖入“应用程序”替换，推出安装磁盘，再从“应用程序”打开。由于本版尚未公证，
+Gatekeeper 可能阻止安装或启动；Finder 扩展需要在系统设置中启用，文件夹访问仍需首次授权。
 从 0.3.0–0.5.0 升级时，请用浏览器下载 DMG，以避开旧版下载器的沙盒问题。
 
 Quit FileMint, drag the new copy into Applications, eject the installer volume,

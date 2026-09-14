@@ -6,7 +6,7 @@ permissions:
   contents: read
 jobs:
   verify:
-    name: Verify uploaded notarized DMG
+    name: Verify uploaded DMG
     runs-on: macos-15
     timeout-minutes: 15
     env:
@@ -29,5 +29,10 @@ jobs:
             --pattern "FileMint-$version.dmg" --pattern "FileMint-$version.dmg.sha256" \
             --dir dist
           echo "VERSION=$version" >> "$GITHUB_ENV"
-      - name: Verify checksum, signatures and Apple ticket
-        run: bash scripts/verify_release_artifact.sh "dist/FileMint-$VERSION.dmg" "$VERSION"
+      - name: Verify checksum, signatures and release-specific ticket state
+        run: |
+          if [[ "$VERSION" == 0.5.3 ]]; then
+            FILEMINT_ALLOW_PENDING_053=1 bash scripts/verify_release_artifact.sh "dist/FileMint-$VERSION.dmg" "$VERSION"
+          else
+            bash scripts/verify_release_artifact.sh "dist/FileMint-$VERSION.dmg" "$VERSION"
+          fi
