@@ -15,15 +15,18 @@ The published 0.5.1 GitHub attestation refers only to that historical Actions
 build. A locally built release cannot claim GitHub Actions build provenance.
 
 Version 0.5.3 is a one-time early release explicitly requested by the owner while
-its exact signed DMG submission remains `In Progress` at Apple. The app, Finder
-extension and DMG are Developer ID signed, with hardened runtime and secure
-timestamps, but there is no notarization ticket at publication. Its GitHub
-release notes and installation instructions must say this. Gatekeeper may block
-the download. The exact submitted DMG and its portable checksum are published
-without stapling or changing the submitted bytes. Its Apple submission ID is
-`11ed351a-020e-4107-bfae-72d0a8daec52`. The 0.5.3 asset is not replaced if
-Apple accepts the submission later; a future version is needed for a newly
-stapled, independently verified release.
+its exact signed DMG submission was still `In Progress` at Apple. The app,
+Finder extension and DMG are Developer ID signed, with hardened runtime and
+secure timestamps, but there was no notarization ticket at publication. A
+2026-09-15 `notarytool info` query returned `Accepted` for the exact published
+DMG under submission `11ed351a-020e-4107-bfae-72d0a8daec52`. Apple publishes
+the resulting ticket online, so Gatekeeper can retrieve it for this unchanged
+DMG when the Mac has network access, including copies downloaded before
+acceptance. The published asset and portable checksum remain unchanged and the
+DMG has no stapled ticket, so offline verification can still fail. Its GitHub
+release notes and installation instructions must preserve this chronology.
+The 0.5.3 asset is not replaced; a future version is required for a stapled,
+independently verified release.
 
 Subsequent public stable releases are built on the owner's Mac from a clean,
 tagged commit. That Mac signs the Finder extension, app and DMG with Developer

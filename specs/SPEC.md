@@ -256,11 +256,16 @@ only user-requested update checks and downloads use the network.
 - The owner explicitly chose to publish 0.5.3 while its existing `notarytool`
   submission was still `In Progress`. This one release uses the authorized
   Developer ID Application identity for the app, Finder extension and DMG,
-  hardened runtime and secure timestamps, but has no Apple notarization ticket
-  at publication. The release page, README and installation guide must say so
-  clearly: Gatekeeper may block this download, and the SHA-256 file establishes
-  byte integrity, not Apple notarization or permission to launch. Do not call
-  the 0.5.3 DMG notarized or replace its published bytes after the fact.
+  hardened runtime and secure timestamps, but had no stapled Apple notarization
+  ticket at publication. A later query returned `Accepted` for the exact
+  published DMG under submission `11ed351a-020e-4107-bfae-72d0a8daec52`.
+  Apple publishes that ticket online, so Gatekeeper can retrieve it for the
+  unchanged DMG when the Mac is connected, including copies downloaded before
+  acceptance. The release page, README and installation guide must preserve
+  this chronology and explain that the existing asset still has no stapled
+  ticket, so offline verification can fail. The SHA-256 file establishes byte
+  integrity, not ticket presence or permission to launch. Do not replace the
+  published 0.5.3 bytes after the fact.
 - Public stable releases after 0.5.3 require Apple notarization on the owner's
   Mac. Staple and validate the DMG ticket before computing its portable SHA-256
   checksum. Only the validated local DMG and checksum are uploaded to GitHub
@@ -279,10 +284,12 @@ only user-requested update checks and downloads use the network.
   to GitHub Actions secrets or bundled in the app.
 - Before publishing, local release checks verify the source tag, clean checkout,
   both architectures, nested signatures, DMG integrity and final checksum. The
-  one-time 0.5.3 exception additionally checks and records the actual Apple
-  `In Progress` state without claiming a ticket; later releases require ticket
-  validation. A published-release GitHub job may re-check the uploaded bytes
-  without building them or claiming build provenance.
+  one-time 0.5.3 exception additionally checked and recorded the actual Apple
+  `In Progress` state at publication; the later `Accepted` result establishes
+  an online ticket but does not retroactively staple the uploaded DMG. Later
+  releases require local ticket validation before upload. A published-release
+  GitHub job may re-check the uploaded bytes without building them or claiming
+  build provenance.
 - README leads with the pain solved, actual features, screenshots, download and
   a brief install guide. Chinese first, English separate. Developer instructions
   live in docs. Optional donations link the supplied ReceivePayment images.

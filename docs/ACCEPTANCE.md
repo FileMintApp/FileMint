@@ -110,6 +110,24 @@ and the actual runtime checks above are the evidence available here. The final
 - About and both READMEs retain the verified Special Thanks / 特别感谢 to 阿逼,
   linking to https://github.com/bibinocode for signing and notarization help.
 
+## 0.5.3 notarization accepted after publication (2026-09-15)
+
+- A live `xcrun notarytool info` query using the local `FileMint` Keychain
+  profile returned `Accepted` for `FileMint-0.5.3.dmg`, submission
+  `11ed351a-020e-4107-bfae-72d0a8daec52`. The response identified the original
+  submission creation time as `2026-09-14T09:56:50.589Z`; it did not report the
+  later transition time.
+- A live GitHub Release query still found the exact 4,177,677-byte asset with
+  SHA-256 `712219fe3e3b163baf0fabfec16a78b305ac09311d1eba51a71010ea04c0f6ae`.
+  The asset therefore remains byte-identical to the accepted submission. It was
+  published before acceptance and has no stapled ticket, but Apple publishes the
+  accepted ticket online for Gatekeeper, including already-downloaded copies.
+  Offline first-launch behavior and a clean-Mac networked launch remain untested.
+- The Release title and body still said `pending` at the start of this follow-up.
+  They can be edited in place from `docs/RELEASE_NOTES.md`; the DMG and checksum
+  must not be deleted, replaced or re-uploaded. A future version remains the path
+  for a distribution with a locally stapled and validated ticket.
+
 ## 0.5.3 early signed GitHub release (2026-09-14)
 
 - The owner explicitly requested publication before Apple finished processing

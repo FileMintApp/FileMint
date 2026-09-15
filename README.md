@@ -48,7 +48,7 @@ FileMint 把这件事放回 Finder：**右键，选一种类型，文件就在�
 从 0.3.0–0.5.0 升级时，请先用浏览器下载新版，修复旧下载器可能导致的
 “应用程序无法打开”问题。详见[更新说明](docs/INSTALL.md)。
 
-**分发与来源认证：** FileMint 通过 GitHub Releases 分发，并提供 SHA-256 校验。0.5.3 由开发者本机使用 Developer ID 签名，但在 Apple 公证仍处于处理状态时提前发布，安装包没有公证票据，macOS 可能阻止打开。0.5.1 及更早版本由 GitHub Actions 构建并提供 GitHub 构建来源认证，但使用 ad-hoc 签名、没有 Apple 公证；本机构建的新版不宣称具有 GitHub Actions 构建认证。0.5.3 之后的正式版须完成 Apple 公证后发布。Finder 扩展仍需在系统设置中启用。请阅读[首次安装与限制](docs/INSTALL.md)。
+**分发与来源认证：** FileMint 通过 GitHub Releases 分发，并提供 SHA-256 校验。0.5.3 由开发者本机使用 Developer ID 签名，并在 Apple 公证仍处于处理状态时提前发布；Apple 后续已接受同一份 DMG 的公证提交，并在线发布可供 Gatekeeper 查询的票据。公开安装包保持原始字节与校验值不变，因此没有内嵌（stapled）票据：联网时 Gatekeeper 可获取在线票据，离线首次打开仍可能受阻。0.5.1 及更早版本由 GitHub Actions 构建并提供 GitHub 构建来源认证，但使用 ad-hoc 签名、没有 Apple 公证；本机构建的新版不宣称具有 GitHub Actions 构建认证。0.5.3 之后的正式版须先完成并附加 Apple 公证票据再发布。Finder 扩展仍需在系统设置中启用。请阅读[首次安装与限制](docs/INSTALL.md)。
 
 ## 本地运行，内容属于你
 

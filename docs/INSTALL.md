@@ -7,16 +7,18 @@ FileMint 支持 macOS 13+，兼容 Apple 芯片与 Intel。请从
 ## 首次启动
 
 1. 打开 DMG，把 FileMint 拖入“应用程序”，推出“FileMint”安装磁盘，再从“应用程序”打开。
-2. 0.5.3 使用 Developer ID 签名，但发布时 Apple 公证仍在处理，没有公证票据；Gatekeeper 可能阻止打开。
-   请以 Apple 的实际公证结果为准，不能把 SHA-256 校验通过当成公证通过。0.5.3 之后的正式版须先完成公证。
+2. 0.5.3 使用 Developer ID 签名，并在 Apple 公证仍在处理时提前发布，因此公开 DMG 没有内嵌（stapled）票据。
+   Apple 后续已接受这份原始 DMG 的公证提交；联网时 Gatekeeper 可获取 Apple 在线发布的票据，离线首次打开仍可能受阻。
+   SHA-256 只校验下载字节，不代表安装包内嵌票据。0.5.3 之后的正式版须先完成并附加公证票据再发布。
    0.5.1 及更早版本没有 Apple Developer ID 签名和 Apple 公证。如果旧版被系统阻止启动，
    确认来源后，在“系统设置 → 隐私与安全性”中找到 FileMint 的阻止记录，
    选择“仍要打开”，再确认。不要全局关闭 Gatekeeper。
 3. 应用中的“新建文件…”可以独立使用。选择一个文件夹，输入名称和后缀，
    按需粘贴内容，再创建。
 
-系统策略或组织管理的 Mac 可能不允许打开未公证应用，包括 0.5.3。如果没有“仍要打开”
-选项，请遵守设备策略。后续版本的 Apple 公证不代替 Finder 扩展启用和文件夹访问授权。
+系统策略或组织管理的 Mac 仍可能不允许打开从 GitHub 下载的应用。首次打开 0.5.3 时请保持联网，
+以便 Gatekeeper 获取在线票据；如果设备策略仍然阻止，请遵守设备策略。后续版本的 Apple 公证
+不代替 Finder 扩展启用和文件夹访问授权。
 
 ## 启用 Finder 右键入口
 
@@ -42,7 +44,8 @@ shasum -a 256 -c FileMint-VERSION.dmg.sha256
 
 校验和用于检查下载完整性。0.5.1 及更早版本另有 GitHub Actions
 构建认证；0.5.3 起本机构建的版本没有该认证。0.5.3 使用 Developer ID 签名，
-但发布时未取得 Apple 公证票据。SHA-256、Developer ID 签名和公证是不同的验证。
+发布时尚未取得公证结果，之后 Apple 已接受同一份 DMG；公开文件没有内嵌票据。
+SHA-256、Developer ID 签名、在线公证票据和内嵌票据是不同的验证。
 
 ## 登录启动、菜单栏与完全磁盘访问
 
@@ -71,9 +74,12 @@ FileMint 会用书签记住它，而不是每次创建都重新选择。下方�
 ## English
 
 Drag FileMint from the DMG into Applications, eject the FileMint installer volume,
-then open FileMint from Applications. Version 0.5.3 is Developer ID signed but
+then open FileMint from Applications. Version 0.5.3 is Developer ID signed and
 was published while Apple notarization was in progress, without a stapled ticket.
-Gatekeeper may block it. Later stable releases require notarization first.
+Apple later accepted that exact DMG submission and published its ticket online.
+Gatekeeper can retrieve the ticket while connected, including for copies downloaded
+before acceptance; a first launch offline may still be blocked. Later stable
+releases require notarization and stapling before publication.
 Versions through 0.5.1 use
 ad-hoc signatures and are **not Apple notarized**. If one of those versions is blocked,
 review System Settings → Privacy & Security → Open Anyway for this specific app.
