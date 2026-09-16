@@ -9,6 +9,34 @@
 FileMint 把这件事放回 Finder：**右键，选一种类型，文件就在这里。**
 需要自己起名字或粘贴内容时，打开一个小面板就够了。
 
+## 在你正在工作的地方新建
+
+桌面背景和已授权的 Finder 文件夹，都是 FileMint 的入口。无需先打开编辑器、
+另存为，或重新寻找刚才的目录。
+
+<p align="center">
+  <img src="website/public/images/finder-desktop-context-menu-zh.png" width="42%" alt="在桌面右键打开 FileMint 新建文件菜单">
+  <img src="website/public/images/finder-folder-context-menu-zh.png" width="42%" alt="在 Finder 文件夹右键打开 FileMint 新建文件菜单">
+</p>
+<p align="center"><sub>桌面和 Finder 文件夹：右键 → 新建文件 → 选择类型。</sub></p>
+
+### 需要命名或预先写内容时，也只要一个小面板
+
+完整文件名、后缀、保存位置和初始内容在创建前一次完成。创建 Markdown、代码、
+笔记或配置时，不必先生成空文件再打开别的应用。
+
+<p align="center">
+  <img src="website/public/images/create-panel-zh.png" width="760" alt="FileMint 的新建文件面板，包含文件名、后缀、位置和初始内容">
+</p>
+
+### 让右键菜单只留下你需要的类型
+
+内置常用格式可以启用、停用和排序；也能保存自己的文本后缀和初始模板。
+
+<p align="center">
+  <img src="website/public/images/file-types-zh.png" width="760" alt="FileMint 文件类型管理界面">
+</p>
+
 ## 只做文件创建，把它做好
 
 - **你起什么名字，就是什么文件。** 输入 `demo.js`，得到的就是 `demo.js`。完整文件名与后缀选择器会同步，也可以单独切换后缀。

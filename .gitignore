@@ -18,3 +18,9 @@ Config/Signing/*.cer
 # specs/, and docs/AI_PLAYBOOK.md.
 .agents/
 .codex/
+
+node_modules/
+.pnpm-store/
+website/.vitepress/cache/
+website/.vitepress/.temp/
+website/.vitepress/dist/

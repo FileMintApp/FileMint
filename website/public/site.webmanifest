@@ -1,0 +1,22 @@
+{
+  "name": "FileMint",
+  "short_name": "FileMint",
+  "description": "Create a new file right where you are working.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#fbfcfa",
+  "theme_color": "#0b9b7b",
+  "icons": [
+    {
+      "src": "./web-app-manifest-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

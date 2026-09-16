@@ -7,6 +7,36 @@
 Creating a file should not require opening an editor, choosing Save As, and finding your folder again.
 **Right-click in Finder, choose a type, and your file is there.** Use a compact panel when you want to name it or paste content first.
 
+## Create where you are already working
+
+FileMint is available from the desktop and the background of an authorized Finder folder.
+There is no detour through an editor, Save As, or a second folder chooser.
+
+<p align="center">
+  <img src="website/public/images/finder-desktop-context-menu-zh.png" width="42%" alt="FileMint New File menu from a desktop context menu">
+  <img src="website/public/images/finder-folder-context-menu-zh.png" width="42%" alt="FileMint New File menu from a Finder folder context menu">
+</p>
+<p align="center"><sub>Desktop or Finder folder: right-click → New File → choose a type.</sub></p>
+
+### When you need a name or starter content, use one compact panel
+
+Set the full filename, suffix, destination and optional starter content before creation.
+It is useful for Markdown, code, notes and configuration without first creating an empty file in another app.
+
+<p align="center">
+  <img src="website/public/images/create-panel-zh.png" width="760" alt="FileMint creation panel with filename, suffix, destination and starter content">
+</p>
+
+### Keep only the file types you use
+
+Enable, disable and reorder the built-in formats, then add your own text suffixes and starter templates.
+
+<p align="center">
+  <img src="website/public/images/file-types-zh.png" width="760" alt="FileMint file type management">
+</p>
+
+<p align="center"><sub>Screenshots use the Chinese localization; FileMint follows the macOS language or can be set to English or Chinese.</sub></p>
+
 ## Small by design
 
 - **Your filename, exactly.** Enter `demo.js` and save `demo.js`. The filename and extension selector stay in sync.

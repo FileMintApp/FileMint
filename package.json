@@ -1,0 +1,14 @@
+{
+  "name": "filemint-site",
+  "private": true,
+  "packageManager": "pnpm@11.26.0",
+  "type": "module",
+  "scripts": {
+    "site:dev": "vitepress dev website",
+    "site:build": "vitepress build website",
+    "site:preview": "vitepress preview website"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.4"
+  }
+}

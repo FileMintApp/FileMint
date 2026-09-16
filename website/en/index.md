@@ -1,0 +1,98 @@
+---
+layout: home
+hero:
+  name: FileMint
+  text: A new file. Right here.
+  tagline: Right-click in Finder and create a file exactly where you are working.
+  image:
+    src: /filemint-icon.png
+    alt: FileMint
+  actions:
+    - theme: brand
+      text: Download for macOS
+      link: https://github.com/FileMintApp/FileMint/releases/latest
+    - theme: alt
+      text: View on GitHub
+      link: https://github.com/FileMintApp/FileMint
+features:
+  - icon: ⌘
+    title: Native Finder entry point
+    details: Create a familiar file type from the desktop or an authorized folder.
+  - icon: ✦
+    title: Name it before you create it
+    details: Set the filename, suffix, location and starter content in one compact panel.
+  - icon: ◌
+    title: Private and offline
+    details: No account, analytics or background scanning. Creating files needs no network.
+---
+
+<section id="finder" class="landing-section">
+  <p class="section-kicker">01 / FINDER FIRST</p>
+  <h2>A new file, right where you are already working.</h2>
+  <p class="section-intro">No opening an editor, choosing Save As, then finding your folder again. FileMint puts the action back in Finder: right-click, choose a type, and the file is there.</p>
+  <div class="visual-grid">
+    <figure class="screen-card">
+      <img src="/images/finder-desktop-context-menu-zh.png" alt="FileMint New File menu in a desktop context menu">
+      <figcaption>Create directly from the desktop background.</figcaption>
+    </figure>
+    <figure class="screen-card">
+      <img src="/images/finder-folder-context-menu-zh.png" alt="FileMint New File menu in a Finder folder context menu">
+      <figcaption>In a working folder, the file stays exactly where you are.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="create" class="landing-section">
+  <p class="section-kicker">02 / CREATE WITH CONTEXT</p>
+  <h2>When you need more control, it is still one small panel.</h2>
+  <p class="section-intro">Enter the full filename, choose a suffix, confirm the location and write the first lines if you need to. Markdown, code, notes and configuration do not need an empty-file detour.</p>
+  <div class="visual-grid visual-grid--wide">
+    <figure class="screen-card screen-card--panel">
+      <img src="/images/create-panel-zh.png" alt="FileMint creation panel with filename, suffix, destination and starter content">
+      <figcaption>The full filename and suffix stay in sync; content is read only when you explicitly type or paste it.</figcaption>
+    </figure>
+    <div class="copy-stack">
+      <h3>More than a blank file</h3>
+      <p>Put the content you need straight into the panel, then create. Multiline text, Unicode, whitespace and template tokens are saved exactly as entered.</p>
+      <ul class="benefit-list">
+        <li><strong>⌘↩</strong> creates from anywhere; <strong>Esc</strong> cancels</li>
+        <li>The full filename wins; FileMint never silently rewrites the suffix</li>
+        <li>Quick creation increments names; custom creation asks before replacement</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="types" class="landing-section">
+  <p class="section-kicker">03 / YOUR MENU, YOUR TYPES</p>
+  <h2>Keep only the file types you actually use.</h2>
+  <p class="section-intro">Common formats work immediately, with more available when you need them. Add your own text suffixes and starter templates, then arrange their Finder menu order.</p>
+  <div class="visual-grid visual-grid--wide">
+    <div class="copy-stack">
+      <h3>Organize around your workflow</h3>
+      <p>Text, Markdown, JSON, Swift, HTML, CSS and Shell are ready from the start. CSV, YAML, XML, JavaScript, TypeScript, Python and SQL are one toggle away.</p>
+      <ul class="benefit-list">
+        <li>Enable, disable and reorder without a menu full of clutter</li>
+        <li>Keep custom text suffixes such as <strong>.toml</strong>, <strong>.vue</strong> and <strong>.log</strong></li>
+        <li>Templates and the Finder menu stay in sync</li>
+      </ul>
+    </div>
+    <figure class="screen-card">
+      <img src="/images/file-types-zh.png" alt="FileMint file type management">
+      <figcaption>Every type is managed from one native settings pane.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="download" class="landing-section">
+  <div class="callout-band">
+    <div>
+      <h2>Small, native and focused on one useful thing.</h2>
+      <p>For macOS 13+, with one universal build for Apple silicon and Intel Macs. File creation works offline, with no account, subscription, telemetry or background folder scanning.</p>
+    </div>
+    <div class="callout-actions">
+      <a href="https://github.com/FileMintApp/FileMint/releases/latest">Download the latest release</a>
+      <a href="./install.html">Read installation help</a>
+    </div>
+  </div>
+</section>
