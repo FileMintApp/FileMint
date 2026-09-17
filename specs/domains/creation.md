@@ -49,6 +49,8 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   extension components are invalid. Surrounding whitespace and leading dots are
   normalized. The most recently edited name or suffix wins; changing a compound suffix
   replaces the entire prior suffix. File names cannot escape the destination.
+- An update-triggered restart waits for an open draft or in-flight creation;
+  it never discards the draft or interrupts a file write.
 - Drafts are not stored. Cancelling never creates a file or changes the destination.
 
 ## Safe creation and performance

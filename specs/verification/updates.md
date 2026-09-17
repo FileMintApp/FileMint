@@ -18,6 +18,40 @@ About/update text, including the exact special-thanks nickname and GitHub link. 
 opening remain app responsibilities; record live checks, download/cancel/retry
 and installation handoff evidence in `docs/ACCEPTANCE.md`.
 
+## Sparkle installation checks
+
+`UpdateInstallationTests` binds the selected release version, URL and size,
+rejects informational/delta updates and covers restart protection. The Python
+appcast tests reject mismatched metadata, unexpected payloads and malformed
+signatures. These run offline in `make verify`.
+After the app build, `make verify-sparkle-driver` compiles the production driver
+against the real Sparkle framework with test UI sinks. It exercises callbacks,
+Objective-C delegate selectors, cancellation, progress, restart deferral and
+errors without starting network requests or installing anything. It does not
+replace the signed sandbox installation acceptance below.
+
+For release acceptance, use two signed sandbox builds in an isolated installation:
+
+1. Confirm automatic discovery never downloads or opens windows; disabling it
+   cancels only discovery. Manual checks remain available.
+2. Choose Update and Restart. Show progress; cancel during checking/download and
+   retry. No save dialog or Finder installation step should appear.
+3. Alter the appcast version/URL/size, archive bytes or signing key. Each must fail
+   without replacing the installed app. Retry a valid release afterward.
+4. Open a creation draft or begin quick creation while downloading. Installation
+   must preserve work and require retry after it is finished; no forced quit.
+5. Complete a valid upgrade. Verify the actual running bundle path, new version,
+   old process exit and helper cleanup. Check Finder creation, preferences,
+   bookmarks, login and menu bar settings. Do not claim helper replacement or
+   rollback from download success alone.
+6. Test a readonly DMG and an installation owned by another user; report the
+   actual authorization/failure behavior. No quarantine bypass is permitted.
+
+## Legacy client compatibility
+
+The following checks cover the retained manual downloader only; they do not
+exercise the production Sparkle installer or establish auto-update acceptance.
+
 `make verify-updates` is an opt-in network smoke check using the real app client.
 It queries the public release, verifies the equal-version result, cancels after
 download bytes arrive, checks cleanup, retries the complete download, and checks

@@ -23,18 +23,19 @@ or advertising. File creation does not require a network connection.
   every seven days; an overdue startup check waits at least one minute. Attempt
   times persist across launches, including failures. Manual checks remain
   available from About or the app/menu bar menu, even with the switch off. FileMint
-  requests the public latest release from api.github.com. Choosing Download
-  Update fetches the installer and its SHA-256 checksum from GitHub and its
+  requests the public latest release from api.github.com. Choosing Update and
+  Restart fetches that release’s update feed and signed installer from GitHub and its
   release asset CDN. These requests expose ordinary connection information,
-  such as your IP address and a generic FileMint update-checker User-Agent, to
+  such as your IP address and a FileMint/Sparkle User-Agent (including app version), to
   GitHub. They do not include filenames, folder paths, templates, clipboard
   contents, an account token, device identifier or usage analytics. The current
   app version is compared locally. Disabling automatic checks stops scheduled
   and in-flight automatic requests. Downloads always require your action.
-- Installers are kept in FileMint's private cache. Cancelled or failed downloads
-  are removed; the next download clears previous update cache files. A verified
-  installer is marked as downloaded from the internet and opened in macOS.
-  FileMint does not replace the installed app or quit automatically. The Finder
-  extension has no network entitlement and does not check for updates.
+- Sparkle stages and verifies user-requested updates, replaces the installed app
+  and relaunches it. It manages temporary update files and installation helpers.
+  Administrator authorization may be requested by macOS. FileMint preserves
+  preferences and folder bookmarks and defers restart while creation work is active.
+  Sparkle's independent automatic checks/downloads and system profiling are
+  disabled. The Finder extension stays offline and does not check for updates.
 - Donation images are supplied by the project owner. Payment is optional and
   processed by the payment service you choose, not by FileMint.

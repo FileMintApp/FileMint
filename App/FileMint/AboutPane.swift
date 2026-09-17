@@ -67,17 +67,17 @@ struct AboutPane: View {
                             .accessibilityLabel(model.text(updater.statusKey))
                     }
                     HStack(spacing: 10) {
-                        if updater.isBusy {
+                        if updater.canCancel {
                             Button(model.text(.cancel)) { updater.cancel() }
-                        } else {
+                        } else if !updater.isBusy {
                             Button(model.text(.checkForUpdates)) { updater.checkForUpdates() }
                             if updater.canDownload {
                                 Button(model.text(.downloadUpdate)) { updater.downloadUpdate() }
                                     .buttonStyle(.borderedProminent)
                             }
-                            if updater.installerURL != nil {
-                                Button(model.text(.openInstaller)) { updater.openInstaller() }
-                            }
+                        }
+                        if updater.state == .waitingToRestart {
+                            Button(model.text(.updateRestartNow)) { updater.retryInstallationRestart() }
                         }
                         Spacer()
                         Link(model.text(.releaseNotes), destination: updater.update?.releaseURL ?? FileMintAbout.releasesURL)

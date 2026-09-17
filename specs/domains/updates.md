@@ -26,7 +26,7 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   from the corrected time. If persistence fails, skip automatic networking.
 - Disabling the switch cancels scheduled and in-flight automatic checks, leaving
   manual checks and downloads alone. Automatic work never overlaps an existing
-  operation or save panel, or discards an offered update or verified installer.
+  operation or active modal window, or discards an offered update.
   No-update results and failures remain quiet; errors are visible in About and
   never represented as success. A new version appears in settings and the menu
   bar menu without opening a window, stealing focus or downloading anything.
@@ -38,43 +38,41 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - A newer release must contain the matching `FileMint-VERSION.dmg` and
   `FileMint-VERSION.dmg.sha256` assets. Only HTTPS release URLs from this exact
   repository are accepted; redirects are limited to GitHub's release hosts.
-- Show the available version and release notes link before downloading. Download
-  only after the user chooses it and confirms a destination in the system save
-  panel. Cancelling that panel starts no download. Downloads retain progress,
-  cancellation and retry. Network
-  work and file hashing run away from the main thread. Duplicate operations and
-  stale callbacks must not replace the current state.
-- Check the downloaded size and SHA-256 against the matching checksum file,
-  also checking GitHub's asset digest when provided. Missing, malformed or
-  mismatched checksums prevent opening. This checks download integrity; it does
-  not claim Apple notarization or automatically verify a GitHub attestation.
-- Use the private cache only for partial downloads and verification. After all
-  checks pass, atomically write fresh bytes to the exact save-panel-authorized
-  URL, preserving existing destination content until verification succeeds.
-  Never open or move a private-cache DMG directly into the installation flow:
-  sandbox-created cache files can carry a no-user-consent execution block.
-- Mark the saved DMG as an internet download and check that quarantine is
-  present without the sandbox no-user-consent execution block before opening it.
-  Never clear quarantine, disable the sandbox, or strip Gatekeeper protections.
-  Keep the saved URL accessible for reopening during the session. Temporary
-  downloads are removed on success, cancellation and failure; completed files
-  in the user's chosen location are theirs and are not automatically removed.
-  Old update cache files are cleared on the next download. Downloaded release
-  notes are never rendered as executable HTML.
-- Revalidate the saved installer's size, checksum and quarantine before every
-  open, including reopening it later in the session; changed or replaced files
-  must not be opened as previously verified downloads.
-- Run the update client from a real sandboxed app with the system save panel
-  when verifying download-to-install behavior. Command-line network/checksum
-  tests alone do not prove that macOS will allow the saved installer to run.
-- Opening the DMG is not installation completion. Explain that the user must quit
-  FileMint, drag the new app into Applications to replace it, then reopen it.
-  The installation handoff must also tell users to eject the FileMint installer
-  volume after copying, then reopen the installed app from Applications. A
-  downloaded DMG cache is not an installed app, and removing that cache is not
-  proof that an installer volume has been ejected.
-  Report disk-image opening failures and offer reopening or the release page.
-  Do not replace the running app, alter user preferences, or quit automatically.
+- Show the available version and release notes link before downloading. The user
+  chooses Update and Restart once; the app then downloads, verifies, installs and
+  relaunches without a save panel, Finder drag-and-drop or a second restart prompt.
+  System administrator authorization may still be necessary for protected installs.
+- Use pinned Sparkle 2 for installation, with a custom visible About-page user
+  driver. This dependency provides the signed installer/XPC, bundle replacement
+  and relaunch lifecycle that the sandboxed main app cannot safely implement alone.
+  Keep the main app and Finder extension sandboxed. Enable only Sparkle's installer
+  XPC service and its two scoped Mach lookup exceptions; retain main-app networking.
+- Keep the existing GitHub metadata discovery and weekly scheduler. Sparkle's own
+  automatic checks, automatic downloads and system profiling are disabled. Start
+  Sparkle only for an explicit install request, using the selected release's
+  immutable appcast.xml asset, not a moving latest feed. Bind the offered item to
+  the selected version, exact DMG URL and size; reject mismatches, informational
+  items, deltas and downgrades. Require an EdDSA archive signature before extraction.
+  Apple signing/notarization remains required for public releases. SHA-256 files
+  remain available for older clients and manual downloads.
+- Show progress and cancellation during checking/download. Disable cancellation
+  once extraction/installation begins; do not claim cancellation after commit.
+  Failures remain visible and retryable, with a release-page fallback. Never report
+  installation success just because a download or extraction finished.
+- Before starting, and again before relaunch, defer installation while a creation
+  draft, file operation or modal sheet is active. Preserve the draft and let the
+  user choose Update and Restart after finishing it. Do not force-kill Finder,
+  discard work, alter preferences/bookmarks or silently enable the Finder extension.
+- Sparkle owns update staging, signature checks, replacement, cleanup and relaunch.
+  Never hand a sandbox-created private-cache DMG from the legacy UpdateClient to
+  the installer or strip quarantine to bypass a macOS execution block.
+- Existing clients without Sparkle need one manual installation of the first
+  Sparkle-enabled release; later upgrades use the automatic replacement path.
+  Keep the legacy download client and smoke harness for testing old-client
+  compatibility, not as a second production installation path.
+- Verify this from a real sandboxed app with signed old/new bundles. Core tests
+  and a successful build do not prove helper launch, replacement, relaunch or
+  Finder extension refresh on an installed system.
 
 ## Working context
 

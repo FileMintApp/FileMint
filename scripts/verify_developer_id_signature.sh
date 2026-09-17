@@ -14,7 +14,7 @@ if [[ "$metadata" != *"Authority=$expected_identity"* ||
   printf '%s\n' "$metadata" >&2
   exit 1
 fi
-if [[ "$target" == *.app || "$target" == *.appex ]] &&
+if [[ "$target" != *.dmg ]] &&
    [[ "$metadata" != *'flags=0x10000(runtime)'* ]]; then
   printf 'Hardened runtime is missing: %s\n' "$target" >&2
   exit 1

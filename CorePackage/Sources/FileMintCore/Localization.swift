@@ -76,6 +76,10 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case updateAvailable
     case updateDownloading
     case updateVerifying
+    case updateInstalling
+    case updateFinishWork
+    case updateRestartNow
+    case updateInstallFailed
     case updateReady
     case updateInstallHint
     case updateSaveHint
@@ -203,7 +207,7 @@ public enum FileMintStrings {
         .license: ("License", "使用许可"),
         .updates: ("Software Update", "软件更新"),
         .checkForUpdates: ("Check for Updates…", "检查更新…"),
-        .downloadUpdate: ("Download Update", "下载更新"),
+        .downloadUpdate: ("Update and Restart", "更新并重启"),
         .openInstaller: ("Reopen Installer", "重新打开安装包"),
         .releaseNotes: ("Release Notes", "查看发布说明"),
         .availableVersion: ("Available version", "可用版本"),
@@ -214,7 +218,11 @@ public enum FileMintStrings {
         .updateDownloading: ("Downloading the installer…", "正在下载安装包…"),
         .updateVerifying: ("Verifying the installer…", "正在校验安装包…"),
         .updateReady: ("Installer verified and opened. Finish installing in Finder.", "安装包已校验并打开，请在 Finder 中完成安装。"),
-        .updateInstallHint: ("After the installer opens, quit FileMint and drag the new app into Applications to replace it. Eject the FileMint installer volume, then reopen FileMint from Applications. macOS may ask you to approve the app or Finder extension again.", "安装包打开后，请退出 FileMint，将新版拖入“应用程序”替换旧版。推出“FileMint”安装磁盘，再从“应用程序”重新打开 FileMint。macOS 可能需要再次确认应用或启用 Finder 扩展。"),
+        .updateInstallHint: ("FileMint will download, verify, install the update and restart automatically. Finish creating or editing files first. macOS may request administrator authorization.", "FileMint 将下载、校验并安装更新，然后自动重启。请先完成文件创建或编辑。macOS 可能要求管理员授权。"),
+        .updateInstalling: ("Installing the update and restarting…", "正在安装更新并重启…"),
+        .updateFinishWork: ("Finish or cancel the open creation or editing window, then choose Update and Restart again.", "请先完成或取消打开的创建或编辑窗口，再选择更新并重启。"),
+        .updateRestartNow: ("Restart to Finish Updating", "重启以完成更新"),
+        .updateInstallFailed: ("The update could not be installed. Try again or download the installer from the release page.", "未能安装更新，请重试或从发布页面下载安装包。"),
         .updateSaveHint: ("Choose where to save the installer. It opens after the download is verified.", "请选择安装包的保存位置。下载并校验完成后会打开安装包。"),
         .updateInstallerAuthorizationFailed: ("macOS has not authorized this installer to run. Download again and confirm its location in the system save window.", "macOS 尚未允许此安装包运行。请重新下载，并在系统保存窗口中确认保存位置。"),
         .updateNetworkFailed: ("Could not connect to GitHub. Check your connection and retry, or visit the release page.", "无法连接 GitHub，请检查网络后重试，或前往发布页面。"),

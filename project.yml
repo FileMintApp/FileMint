@@ -7,6 +7,9 @@ options:
   createIntermediateGroups: true
 
 packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    exactVersion: 2.10.0
   FileMintCore:
     path: CorePackage
 
@@ -37,12 +40,15 @@ targets:
     platform: macOS
     sources:
       - App/FileMint
+      - path: Resources/Sparkle-LICENSE.txt
+        buildPhase: resources
       - path: LICENSE
         buildPhase: resources
       - FinderSyncExtension/FileMintFinderSync/FinderIntegrationStatus.swift
       - SharedUI
       - Resources/Assets.xcassets
     dependencies:
+      - package: Sparkle
       - package: FileMintCore
       - target: FileMintFinderSync
         embed: true
@@ -55,6 +61,14 @@ targets:
             CFBundleURLSchemes: [filemint]
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        SUFeedURL: https://github.com/FileMintApp/FileMint/releases/latest/download/appcast.xml
+        SUPublicEDKey: z1oSqYAfKIkNBXs+vhIppYE38y87EUiz5mA+v7b+GWs=
+        SUEnableAutomaticChecks: false
+        SUAutomaticallyUpdate: false
+        SUEnableSystemProfiling: false
+        SUVerifyUpdateBeforeExtraction: true
+        SUEnableInstallerLauncherService: true
+        SUEnableDownloaderService: false
         LSUIElement: true
         NSHumanReadableCopyright: "Copyright © XiaoDaiGua-Ray"
     entitlements:
@@ -62,6 +76,9 @@ targets:
       properties:
         com.apple.security.app-sandbox: true
         com.apple.security.network.client: true
+        com.apple.security.temporary-exception.mach-lookup.global-name:
+          - $(PRODUCT_BUNDLE_IDENTIFIER)-spks
+          - $(PRODUCT_BUNDLE_IDENTIFIER)-spki
         com.apple.security.temporary-exception.files.home-relative-path.read-write:
           - /Library/Application Support/FileMint/
         com.apple.security.files.user-selected.read-write: true

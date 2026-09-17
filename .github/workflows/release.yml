@@ -28,6 +28,7 @@ jobs:
           gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
             --pattern "FileMint-$version.dmg" --pattern "FileMint-$version.dmg.sha256" \
             --dir dist
+          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --pattern appcast.xml --dir dist
           echo "VERSION=$version" >> "$GITHUB_ENV"
       - name: Verify checksum, signatures and release-specific ticket state
         run: |

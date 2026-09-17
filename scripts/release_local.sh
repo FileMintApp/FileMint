@@ -33,7 +33,7 @@ mkdir -p build/local-release-work.noindex
 stage_directory="$(mktemp -d "$PWD/build/local-release-work.noindex/run.XXXXXX")"
 cleanup_stage() {
   if [[ "$stage_directory" == "$PWD/build/local-release-work.noindex/run."* ]]; then
-    rm -f "$stage_directory/FileMint-$version.dmg" "$stage_directory/FileMint-$version.dmg.sha256"
+    rm -f "$stage_directory/FileMint-$version.dmg" "$stage_directory/FileMint-$version.dmg.sha256" "$stage_directory/appcast.xml"
     rmdir "$stage_directory" 2>/dev/null || true
   fi
 }
@@ -42,22 +42,27 @@ trap cleanup_stage EXIT
 final_dmg="$PWD/build/FileMint-$version.dmg"
 final_checksum="$final_dmg.sha256"
 final_manifest="$PWD/build/FileMint-$version.release.json"
-[[ ! -e "$final_dmg" && ! -e "$final_checksum" && ! -e "$final_manifest" ]] || {
+final_feed="$PWD/build/FileMint-$version.appcast.xml"
+[[ ! -e "$final_dmg" && ! -e "$final_checksum" && ! -e "$final_manifest" && ! -e "$final_feed" ]] || {
   echo 'Release output already exists; use a new version or handle it explicitly' >&2
   exit 2
 }
 
 make verify
+bash scripts/sparkle_tools.sh > /dev/null
 FILEMINT_OUTPUT_DIR="$stage_directory" bash scripts/package_release.sh
+python3 scripts/update_appcast.py generate "$stage_directory/FileMint-$version.dmg" "$version" "$build_number" "$stage_directory/appcast.xml"
 bash scripts/verify_release_artifact.sh "$stage_directory/FileMint-$version.dmg" "$version" "$build_number"
 
+mv "$stage_directory/appcast.xml" "$final_feed"
 mv "$stage_directory/FileMint-$version.dmg" "$final_dmg"
 mv "$stage_directory/FileMint-$version.dmg.sha256" "$final_checksum"
 dmg_sha256="$(shasum -a 256 "$final_dmg" | awk '{print $1}')"
+feed_sha256="$(shasum -a 256 "$final_feed" | awk '{print $1}')"
 certificate_sha256="$(shasum -a 256 Config/Signing/DeveloperIDApplication-8S66M2ZLD5.cer | awk '{print $1}')"
 jq -n --arg version "$version" --arg build "$build_number" --arg tag "$tag" \
-  --arg commit "$head_commit" --arg sha256 "$dmg_sha256" --arg certificate "$certificate_sha256" \
-  '{version: $version, build: $build, tag: $tag, commit: $commit, dmgSHA256: $sha256, certificateSHA256: $certificate}' \
+  --arg commit "$head_commit" --arg sha256 "$dmg_sha256" --arg certificate "$certificate_sha256" --arg feed "$feed_sha256" \
+  '{version: $version, build: $build, tag: $tag, commit: $commit, dmgSHA256: $sha256, certificateSHA256: $certificate, appcastSHA256: $feed}' \
   > "$final_manifest"
 echo "Local signed and notarized release is ready: $final_dmg"
 echo "Review it, then run: APP_VERSION=$version make publish-local"

@@ -231,13 +231,17 @@ final class PreferencesModel: ObservableObject {
         } catch { lastError = error.localizedDescription }
     }
 
+    private(set) var pendingCreationCount = 0
+
     func handle(url: URL) {
         if let directory = CreationRoute.directory(from: url) {
             CustomFileSavePanelController.shared.present(in: directory, preferences: preferences,
                                                           templateID: CreationRoute.templateID(from: url))
             return
         }
+        pendingCreationCount += 1
         Task {
+            defer { pendingCreationCount -= 1 }
             do {
                 let snapshot = preferences
                 let ticket = try await Task.detached(priority: .userInitiated) {

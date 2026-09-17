@@ -14,6 +14,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         for url in urls { PreferencesModel.shared.handle(url: url) }
     }
 
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        if UpdateModel.shared.isCommittingInstallation && !UpdateModel.shared.canSafelyRestart {
+            return .terminateCancel
+        }
+        return .terminateNow
+    }
+
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 
     func applicationShouldOpenUntitledFile(_ sender: NSApplication) -> Bool { false }

@@ -45,6 +45,22 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   GitHub job may re-check the uploaded bytes without building them or claiming
   build provenance.
 
+## Automatic-update artifacts
+
+- Pin Sparkle in project.yml; embed its framework and installer tools only in the
+  main application. Sign nested XPC services, Autoupdate and Updater.app before
+  the framework and host app, with the release identity and hardened runtime.
+- Publish appcast.xml alongside the existing DMG and checksum. Generate the
+  EdDSA signature only after notarization/stapling fixes the final DMG bytes.
+  The feed binds the numeric build, marketing version, exact GitHub asset URL,
+  minimum macOS version, size and signature. Release builds and publication must
+  fail if the feed/signature/public-key configuration is missing or mismatched.
+- Keep the Sparkle EdDSA private key in the local Keychain under a FileMint-specific
+  account. Only the public key belongs in source and in the app. Never export keys
+  to CI, logs or release assets. Existing Apple signing credentials are unchanged.
+- The first Sparkle-enabled release still includes DMG and SHA-256 for older
+  clients. Publishing is a separate requested operation, not implied by development.
+
 ## Working context
 
 - Implementation entry points: `project.yml`, `Config/`, `CorePackage/Package.swift`, build/release scripts and `.github/workflows/ci.yml` / `release.yml`.

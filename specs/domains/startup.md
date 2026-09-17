@@ -26,6 +26,9 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - New preferences follow the system's supported language; explicit saved English
   or Chinese choices remain authoritative. Users can also select Follow System.
 
+- An explicitly requested updater relaunch must wait until creation work and
+  modal editing are finished. Preserve saved startup preferences and bookmarks.
+
 ## Working context
 
 - Implementation entry points: `App/FileMint/FileMintApp.swift`, `AppDelegate.swift`, `SettingsWindowController.swift`, `LoginItemService.swift`, `PreferencesModel.swift`; `Preferences.swift`, `LoginItemPolicy.swift`, `Localization.swift`.

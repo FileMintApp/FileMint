@@ -31,7 +31,7 @@ independently verified release.
 Subsequent public stable releases are built on the owner's Mac from a clean,
 tagged commit. That Mac signs the Finder extension, app and DMG with Developer
 ID Application, submits the DMG to Apple, staples its ticket, verifies the
-mounted app and final checksum, then uploads only the validated DMG and checksum
+mounted app and final checksum, then uploads the validated DMG, checksum and appcast
 to GitHub Releases. The normal release command refuses missing credentials,
 rejected notarization or a mismatched artifact. Existing release assets are
 never replaced; use a fresh version for corrections. GitHub CI runs core tests
@@ -57,7 +57,7 @@ APP_VERSION=VERSION make publish-local
 ```
 
 The first command runs `make verify`, signs and notarizes in a temporary output
-directory, checks the mounted DMG, and saves the final DMG, `.sha256` and local
+directory, checks the mounted DMG, and saves the final DMG, `.sha256`, appcast and local
 source manifest under `build/`. The second checks those exact bytes and the
 tagged source again, pushes `main` and the version tag if needed, creates the GitHub Release
 and downloads its assets to confirm they match. It never uploads the local
@@ -121,36 +121,39 @@ expiring local request tickets, with no dependency on App Group provisioning.
 
 ## In-app updates
 
-About and both app menus use the public GitHub latest-release API. No credentials
-or additional update server are required. Continue publishing stable tags in
-`vMAJOR.MINOR.PATCH` format with both `FileMint-VERSION.dmg` and
-`FileMint-VERSION.dmg.sha256`, as the existing packaging workflow does. Do not
-rename or replace assets after publication. Drafts and prereleases are excluded.
+GitHub metadata discovery and the weekly scheduler remain in FileMint. The
+Sparkle-enabled client offers Update and Restart, then uses that exact release's
+`appcast.xml` asset for signed download, installation and relaunch. Its own
+background checks/downloads and system profiling are disabled. The main app and
+Finder extension remain sandboxed; only the main app embeds Sparkle.
 
-The app downloads only after the user confirms a destination in NSSavePanel,
-validates the exact version's asset URLs,
-restricts redirects to GitHub release hosts, checks the size and SHA-256, and
-compares the GitHub asset digest when present. The private cache is used only
-for verification; verified bytes are atomically saved to the authorized URL.
-It preserves internet quarantine and rejects sandbox no-user-consent execution
-blocks. Saved installers are revalidated before each open. The quarantine
-attribute is never removed or patched to bypass a system block.
-Users quit the app and replace it through the opened DMG themselves, eject the
-installer volume, then reopen the copy in Applications. Cached DMG cleanup does
-not eject a mounted volume. This is download integrity verification; the app
-does not automatically verify artifact attestations or query Apple notarization
-status. A newly published version needs a
-higher marketing version before existing installations offer it as an update.
+The dependency is pinned in `project.yml`. `make build` resolves it under
+`build/SourcePackages`; `sign_app.sh` signs its nested XPC services and helpers,
+then the framework, Finder extension and app. `release-local` signs the final
+notarized/stapled DMG with the FileMint-specific EdDSA key, generates an immutable
+appcast and verifies it using the public key before accepting the release.
+The feed hash is bound into the local release manifest. `publish-local` uploads
+it as `appcast.xml` alongside the DMG/checksum and compares all three downloaded
+assets with the local originals. No new server or GitHub credential in the app
+is needed. Continue using increasing numeric builds and `vMAJOR.MINOR.PATCH` tags.
 
-Versions 0.3.0 through 0.5.0 downloaded into a private sandbox cache and could
-produce a no-user-consent execution block. Upgrading those versions requires
-downloading a current installer through a browser; their old download code cannot
-repair itself before installation. The fixed save-panel flow applies to later
-downloads from 0.5.1 and newer.
+The update private key remains in the local Keychain account
+`io.github.daigua.filemint.updates`. Only its public key is in `project.yml` and
+the generated app plist. Do not regenerate or rotate this key during ordinary
+releases. A missing/mismatched key stops release preparation. Do not export
+private keys to CI or publish them. Public-key signature verification uses
+CryptoKit and needs no Keychain credentials. Apple notarization is unchanged.
 
-The update client follows the [GitHub Releases API](https://docs.github.com/en/rest/releases/releases#get-the-latest-release)
-and adds Apple's [outbound network entitlement](https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.security.network.client)
-to the main app only. Finder remains offline.
+Clients without Sparkle need one manual installation of the first enabled
+release. DMG and `.sha256` assets remain for these clients. Versions 0.3.0–0.5.0
+need a browser download because their private-cache download path could create
+a sandbox execution block. `UpdateClient`, `make verify-updates` and the old
+sandbox harness remain solely for compatibility checks, not production installs.
+
+No updater forcibly quits Finder or enables the extension. Test a real signed
+sandbox installation and Finder refresh before release; a build and Core tests
+are not installation proof. A standard-user or managed installation may require
+administrator authorization. A readonly mounted DMG cannot update in place.
 
 ## Primary references
 

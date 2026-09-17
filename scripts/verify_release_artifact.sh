@@ -5,6 +5,7 @@ cd "$(dirname "$0")/.."
 dmg_path="${1:?Provide the FileMint DMG}"
 version="${2:?Provide its version}"
 build_number="${3:-}"
+feed_path="${4:-$(dirname "$dmg_path")/appcast.xml}"
 pending_053=0
 if [[ "${FILEMINT_ALLOW_PENDING_053:-0}" == 1 ]]; then
   [[ "$version" == 0.5.3 ]] || { echo 'Pending notarization is allowed only for 0.5.3' >&2; exit 2; }
@@ -57,6 +58,18 @@ extension_build="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$extensi
 if [[ -n "$build_number" && "$app_build" != "$build_number" ]]; then
   echo 'Release build number mismatch' >&2
   exit 1
+fi
+
+if /usr/libexec/PlistBuddy -c 'Print :SUEnableInstallerLauncherService' "$app_path/Contents/Info.plist" >/dev/null 2>&1; then
+  configured_key="$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' Config/AppInfo.plist)"
+  bundled_key="$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "$app_path/Contents/Info.plist")"
+  [[ "$bundled_key" == "$configured_key" ]] || { echo 'Update public key mismatch' >&2; exit 1; }
+  sparkle="$app_path/Contents/Frameworks/Sparkle.framework/Versions/B"
+  for component in XPCServices/Installer.xpc XPCServices/Downloader.xpc Autoupdate Updater.app; do
+    bash scripts/verify_developer_id_signature.sh "$sparkle/$component"
+  done
+  bash scripts/verify_developer_id_signature.sh "$app_path/Contents/Frameworks/Sparkle.framework"
+  python3 scripts/update_appcast.py verify "$dmg_path" "$version" "$app_build" "$feed_path"
 fi
 
 hdiutil detach -quiet "$mount_directory"

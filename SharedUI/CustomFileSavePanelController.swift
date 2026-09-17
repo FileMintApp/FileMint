@@ -5,6 +5,8 @@ import FileMintCore
 final class CustomFileSavePanelController: NSObject {
     static let shared = CustomFileSavePanelController()
 
+    var hasActiveDraft: Bool { panel != nil || directoryPicker != nil || isCreating }
+
     private var createButton: NSButton?
     private var cancelButton: NSButton?
     private var isCreating = false

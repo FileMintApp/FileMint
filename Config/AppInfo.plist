@@ -38,5 +38,21 @@
 	<true/>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © XiaoDaiGua-Ray</string>
+	<key>SUAutomaticallyUpdate</key>
+	<false/>
+	<key>SUEnableAutomaticChecks</key>
+	<false/>
+	<key>SUEnableDownloaderService</key>
+	<false/>
+	<key>SUEnableInstallerLauncherService</key>
+	<true/>
+	<key>SUEnableSystemProfiling</key>
+	<false/>
+	<key>SUFeedURL</key>
+	<string>https://github.com/FileMintApp/FileMint/releases/latest/download/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>z1oSqYAfKIkNBXs+vhIppYE38y87EUiz5mA+v7b+GWs=</string>
+	<key>SUVerifyUpdateBeforeExtraction</key>
+	<true/>
 </dict>
 </plist>

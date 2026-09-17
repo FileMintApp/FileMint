@@ -17,7 +17,7 @@ checklist for the changed surface; do not preload all checklists at task start.
 | Build, packaging, signing or release | `make verify`; Release build and applicable artifact checks | [Distribution procedure](../docs/DISTRIBUTION.md), [Finder QA distribution checks](../docs/FINDER_QA.md#distribution). Publication remains a separate action. |
 
 The existing `make verify` runs context checks, Swift tests and the public JSON
-harness plus real CLI regression. It stays offline and does not build the app/extension or website.
+harness plus real CLI regression and appcast validation tests. It stays offline and does not build the app/extension or website.
 PR CI invokes that same command; additional checks in this table are not implied
 by a green Core test run. Swift tests and the JSON CLI share the JSON cases;
 those cases are not independent coverage counted twice.

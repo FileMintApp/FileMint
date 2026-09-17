@@ -13,6 +13,13 @@ if [[ "$IDENTITY" == "-" ]]; then
 else
   SIGN_ARGS+=(--timestamp)
 fi
+# Sign from the inside out. Code Sign on Copy does not re-sign nested helpers.
+SPARKLE="$APP_PATH/Contents/Frameworks/Sparkle.framework"
+[[ -d "$SPARKLE" ]] || { echo 'Missing Sparkle framework' >&2; exit 2; }
+for component in XPCServices/Installer.xpc XPCServices/Downloader.xpc Autoupdate Updater.app; do
+  codesign "${SIGN_ARGS[@]}" --preserve-metadata=entitlements "$SPARKLE/Versions/B/$component"
+done
+codesign "${SIGN_ARGS[@]}" "$SPARKLE"
 codesign "${SIGN_ARGS[@]}" --entitlements Config/FileMintFinderSync.entitlements "$EXTENSION_PATH"
 codesign "${SIGN_ARGS[@]}" --entitlements Config/FileMint.entitlements "$APP_PATH"
 codesign --verify --strict --deep --verbose=2 "$APP_PATH"

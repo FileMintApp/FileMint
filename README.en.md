@@ -46,7 +46,7 @@ Enable, disable and reorder the built-in formats, then add your own text suffixe
 - **Ready when you log in.** Launch at login and the menu bar item are enabled by default after installation and first launch. Both can be disabled in General.
 - **Your language.** Follow the system language or choose English / Chinese. The Finder entry combines the FileMint logo with the localized New File label; type rows remain text only.
 - **Native and focused.** Swift, AppKit and SwiftUI. Offline file creation, text-only menus, native editing, no web runtime, account or background scanning.
-- **Low-frequency update checks.** Check automatically at most once every 7 days, enabled by default and optional in General. Manual checks remain in About and the menus. Download a verified installer when you choose, then finish installing yourself.
+- **Low-frequency update checks.** Check automatically at most once every 7 days, enabled by default and optional in General. Manual checks remain in About and the menus. Choose when to update; builds with the new updater install and restart automatically.
 - **Safe collisions.** Quick creation increments names; custom creation asks before replacement. Concurrent requests never silently overwrite one another.
 
 ## Use it
@@ -117,12 +117,12 @@ Implementation notes and completion criteria live in the [implementation roadmap
 2. Launch it, enable the Finder extension and authorize your working folders.
 3. Create from Finder.
 
-For later updates, choose **About → Check for Updates → Download Update** and
-confirm the destination in the system save dialog. After
-the verified installer opens, quit FileMint, drag the new app into Applications
-to replace the old copy, eject the FileMint installer volume, then reopen FileMint
-from Applications. The app and menu bar menus also offer
-Check for Updates.
+In builds with the new updater, choose **About → Check for Updates → Update and Restart**.
+FileMint downloads, verifies, replaces the app and restarts. Finish creating or
+editing files first; macOS may request administrator authorization.
+Older updater builds (including 0.5.4) need one manual installation of an enabled
+build: open the DMG, quit FileMint, replace it in Applications, eject the volume
+and reopen the installed app.
 
 When upgrading from 0.3.0–0.5.0, download the new installer in your browser first:
 the old in-app downloader can produce a sandbox execution block. See the

@@ -2,34 +2,35 @@ import AppKit
 import Combine
 import FileMintCore
 import Foundation
-import UniformTypeIdentifiers
 
 @MainActor
 final class UpdateModel: ObservableObject {
     static let shared = UpdateModel()
 
     enum State: Equatable {
-        case idle, checking, upToDate, available, downloading, verifying, ready
+        case idle, checking, upToDate, available, downloading, verifying, installing, waitingToRestart
         case failed(FileMintTextKey)
     }
 
     @Published private(set) var state: State = .idle
     @Published private(set) var update: AppUpdate?
     @Published private(set) var progress: Double = 0
-    @Published private(set) var installerURL: URL?
     let currentVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
     let buildNumber = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
     private let client = UpdateClient()
-    private var verifiedInstaller: VerifiedInstaller?
+    private lazy var installer = SparkleInstaller(model: self)
+    @Published private(set) var isInstalling = false
+    @Published private(set) var canCancelInstallation = false
+    var isCommittingInstallation: Bool { isInstalling && !canCancelInstallation }
     private var operation: Task<Void, Never>?
     private var operationID = UUID()
-    private var isChoosingDownloadLocation = false
     private var automaticCheckTimer: Timer?
     private var automaticPreferenceObserver: AnyCancellable?
     private var automaticCheckID: UUID?
 
-    var isBusy: Bool { state == .checking || state == .downloading || state == .verifying }
-    var canDownload: Bool { update != nil && installerURL == nil && !isBusy }
+    var isBusy: Bool { isInstalling || state == .checking }
+    var canCancel: Bool { isInstalling ? canCancelInstallation : state == .checking }
+    var canDownload: Bool { update != nil && !isBusy }
     var isFailure: Bool { if case .failed = state { return true }; return false }
 
     var statusKey: FileMintTextKey {
@@ -40,7 +41,8 @@ final class UpdateModel: ObservableObject {
         case .available: return .updateAvailable
         case .downloading: return .updateDownloading
         case .verifying: return .updateVerifying
-        case .ready: return .updateReady
+        case .installing: return .updateInstalling
+        case .waitingToRestart: return .updateFinishWork
         case .failed(let key): return key
         }
     }
@@ -71,7 +73,7 @@ final class UpdateModel: ObservableObject {
         automaticCheckTimer = nil
         let model = PreferencesModel.shared
         guard automaticPreferenceObserver != nil, model.preferences.automaticallyChecksForUpdates,
-              !isBusy, !isChoosingDownloadLocation, update == nil, installerURL == nil else { return }
+              !isBusy, update == nil else { return }
         let now = Date()
         if let saved = model.preferences.lastUpdateCheckAttempt, saved > now {
             guard model.recordUpdateCheckAttempt(now) else { return }
@@ -89,8 +91,7 @@ final class UpdateModel: ObservableObject {
 
     private func checkAutomaticallyIfDue() {
         let preferences = PreferencesModel.shared.preferences
-        guard preferences.automaticallyChecksForUpdates, !isBusy, !isChoosingDownloadLocation,
-              update == nil, installerURL == nil else { return }
+        guard preferences.automaticallyChecksForUpdates, !isBusy, update == nil else { return }
         let now = Date()
         guard let next = AutomaticUpdatePolicy.nextCheckDate(enabled: true,
             lastAttempt: preferences.lastUpdateCheckAttempt, now: now), next <= now else {
@@ -103,7 +104,7 @@ final class UpdateModel: ObservableObject {
     func checkForUpdates() { checkForUpdates(automatically: false) }
 
     private func checkForUpdates(automatically: Bool) {
-        guard !isBusy, !isChoosingDownloadLocation else { return }
+        guard !isBusy else { return }
         automaticCheckTimer?.invalidate()
         automaticCheckTimer = nil
         // Failed and cancelled attempts also consume the weekly automatic check.
@@ -116,8 +117,6 @@ final class UpdateModel: ObservableObject {
         operationID = id
         automaticCheckID = automatically ? id : nil
         update = nil
-        installerURL = nil
-        verifiedInstaller = nil
         state = .checking
         operation = Task {
             defer {
@@ -143,88 +142,58 @@ final class UpdateModel: ObservableObject {
         }
     }
 
+    var canSafelyRestart: Bool {
+        UpdateInstallationPolicy.canRestart(
+            hasDraft: CustomFileSavePanelController.shared.hasActiveDraft,
+            pendingCreations: PreferencesModel.shared.pendingCreationCount,
+            hasModal: NSApp.modalWindow != nil || NSApp.windows.contains { $0.attachedSheet != nil })
+    }
+
     func downloadUpdate() {
-        guard canDownload, !isChoosingDownloadLocation, let update else { return }
-        let panel = NSSavePanel()
-        panel.title = PreferencesModel.shared.text(.downloadUpdate)
-        panel.message = PreferencesModel.shared.text(.updateSaveHint)
-        panel.allowedContentTypes = [.diskImage]
-        panel.nameFieldStringValue = update.fileName
-        panel.canCreateDirectories = true
-        panel.directoryURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
-        isChoosingDownloadLocation = true
-        let response = panel.runModal()
-        isChoosingDownloadLocation = false
-        defer { scheduleAutomaticCheck() }
-        guard response == .OK, let destination = panel.url else { return }
-        let accessing = destination.startAccessingSecurityScopedResource()
-        let id = UUID()
-        operationID = id
-        state = .downloading
-        progress = 0
-        operation = Task {
-            defer {
-                if accessing { destination.stopAccessingSecurityScopedResource() }
-                if operationID == id { operation = nil }
-            }
-            do {
-                let installer = try await client.download(update, to: destination, progress: { [weak self] value in
-                    Task { @MainActor in
-                        guard let self, self.operationID == id, self.state == .downloading else { return }
-                        self.progress = value
-                    }
-                }, verifying: { [weak self] in
-                    Task { @MainActor in
-                        guard let self, self.operationID == id, self.state == .downloading else { return }
-                        self.state = .verifying
-                    }
-                })
-                // A fully saved file belongs to the user even if UI cancellation
-                // wins the race with this callback; stale callbacks never open it.
-                guard operationID == id, !Task.isCancelled else { return }
-                verifiedInstaller = installer
-                installerURL = installer.url
-                openInstaller()
-            } catch {
-                guard operationID == id, !Task.isCancelled else { return }
-                state = .failed(errorKey(error))
-            }
+        guard canDownload, let update else { return }
+        guard canSafelyRestart else {
+            state = .failed(.updateFinishWork)
+            return
         }
+        automaticCheckTimer?.invalidate()
+        automaticCheckTimer = nil
+        isInstalling = true
+        canCancelInstallation = false
+        progress = 0
+        state = .checking
+        installer.install(update)
     }
 
     func cancel() {
-        guard isBusy else { return }
+        guard canCancel else { return }
+        if isInstalling {
+            installer.cancel()
+            return
+        }
         operationID = UUID()
         operation?.cancel()
         operation = nil
         automaticCheckID = nil
         state = update == nil ? .idle : .available
-        progress = 0
         scheduleAutomaticCheck()
     }
 
-    func openInstaller() {
-        guard let installer = verifiedInstaller else { return }
-        let id = UUID()
-        operationID = id
-        state = .verifying
-        let accessing = installer.url.startAccessingSecurityScopedResource()
-        operation = Task {
-            defer {
-                if accessing { installer.url.stopAccessingSecurityScopedResource() }
-                if operationID == id { operation = nil }
-            }
-            do {
-                try await client.validateInstaller(installer)
-                guard operationID == id, !Task.isCancelled else { return }
-                state = NSWorkspace.shared.open(installer.url) ? .ready : .failed(.updateOpenFailed)
-            } catch {
-                guard operationID == id, !Task.isCancelled else { return }
-                verifiedInstaller = nil
-                installerURL = nil
-                state = .failed(errorKey(error))
-            }
-        }
+    func retryInstallationRestart() {
+        guard canSafelyRestart else { return }
+        installer.retryTermination()
+    }
+
+    func installationChanged(_ newState: State, progress value: Double = 0, cancellable: Bool = false) {
+        state = newState
+        progress = min(1, max(0, value))
+        canCancelInstallation = cancellable
+    }
+
+    func installationFinished() {
+        isInstalling = false
+        canCancelInstallation = false
+        if !isFailure { state = update == nil ? .idle : .available }
+        scheduleAutomaticCheck()
     }
 
     private func errorKey(_ error: Error) -> FileMintTextKey {

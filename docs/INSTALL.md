@@ -102,11 +102,20 @@ Use the checksum command above to verify the download. GitHub build attestations
 apply to published versions through 0.5.1, not to locally built releases from 0.5.3.
 ## 应用内更新 / Updating from FileMint
 
+包含新更新器的版本提供“更新并重启”：下载并校验后自动安装、退出并重新启动。
+不再需要保存 DMG 或拖拽覆盖。请先完成创建或编辑，避免重启中断未保存内容。
+macOS 可能要求管理员授权。旧版用户需要手动安装一次包含新更新器的版本。
+
+Builds with the new updater offer Update and Restart: the signed update is
+installed and FileMint relaunches automatically. Finish creation/editing first;
+macOS may request administrator authorization. Older clients need one manual
+installation of a build containing the new updater.
+
 从 0.3.0–0.5.0 升级时，本次请用浏览器从 GitHub Release 下载新版 DMG。旧版
 内置下载器可能让安装包带上沙盒禁止执行标记，出现“应用程序无法打开”；仅重复
 拷贝同一个旧下载包无法修复该标记。重新下载并替换即可，无需删除偏好设置。
 
-0.5.1 起，打开 **关于 → 检查更新 → 下载更新**，在系统保存窗口中确认安装包
+使用旧更新器的版本（0.5.1–0.5.4），打开 **关于 → 检查更新 → 下载更新**，在系统保存窗口中确认安装包
 位置。取消保存窗口不会开始下载。安装包校验并打开后，退出 FileMint，
 将新版拖入“应用程序”替换旧版，推出“FileMint”安装磁盘，再从“应用程序”重新打开。
 可随时取消下载并重试；
@@ -121,7 +130,7 @@ Their old in-app downloader can add a sandbox execution block; recopying that
 same download does not repair it. Download afresh and replace the app without
 deleting your preferences.
 
-From 0.5.1 onward, open **About / 关于 → Check for Updates / 检查更新**. A new stable version offers
+For legacy updater builds (0.5.1–0.5.4), open **About / 关于 → Check for Updates / 检查更新**. A new stable version offers
 **Download Update / 下载更新** and its release notes. Confirm the destination in
 the system save dialog. FileMint checks the installer
 size and SHA-256 before opening it. After it opens, quit FileMint, drag the new app
@@ -134,8 +143,7 @@ General → Automatically check for updates defaults on. While the app runs, it
 checks at most once every seven days, with at least a one-minute delay after
 startup or enabling the switch. Attempt times persist even on failure. New
 versions appear in settings and the menu bar menu without opening a window.
-Manual checks work with the switch off; downloads and installation remain manual.
+Manual checks work with the switch off; downloads require an explicit user action.
 A failed check is shown in About as an error;
 it does not mean your version is current. Check or download again, or use the
-release-page link if GitHub is unavailable. A verified installer can be reopened
-from About during the same session. Opening it does not replace the running app.
+release-page link if GitHub is unavailable. Legacy clients can reopen their verified DMG from About; opening that DMG alone does not install it.
