@@ -1,12 +1,19 @@
 -include .local/signing.mk
 
-.PHONY: verify verify-updates update-sandbox-harness test harness project build dmg package release-local publish-local doctor icon clean
+.PHONY: verify verify-context verify-harness-cli verify-updates update-sandbox-harness test harness project build dmg package release-local publish-local doctor icon clean
 
 DEVELOPER_DIR ?= /Applications/Xcode.app/Contents/Developer
 export DEVELOPER_DIR
 export DEVELOPMENT_TEAM
 
-verify: test harness
+verify: verify-context test harness verify-harness-cli
+
+verify-context:
+	python3 scripts/verify_context.py
+
+verify-harness-cli:
+	swift build --package-path CorePackage --product filemint-harness
+	python3 scripts/test_harness_cli.py --binary "$$(swift build --package-path CorePackage --show-bin-path)/filemint-harness"
 
 verify-updates:
 	bash scripts/verify_updates.sh

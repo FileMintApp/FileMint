@@ -1,15 +1,28 @@
 # FileMint Agent Guide
 
-Use the project in SPEC-first order.
+Use SPEC-first development with demand-loaded context.
 
-1. Read `specs/SPEC.md`.
-2. Read `specs/HARNESS.md`.
-3. Run `make verify` before changing behavior when the local Swift toolchain is available.
-4. Update SPEC first when product behavior changes.
-5. Add or update harness/unit coverage for naming, templates, creation, or preferences behavior.
-6. Keep deterministic behavior in `CorePackage`.
-7. Keep Finder API usage in `FinderSyncExtension`.
-8. Keep SwiftUI settings code in `App/FileMint`.
-9. Run `make verify` after implementation.
+1. Read [SPEC](specs/SPEC.md), the compact product overview and task router.
+2. Match the task's behavior and affected paths to its rows. Read only the selected
+   domain contracts before editing; add domains when scope crosses a boundary.
+   Shared files require the rules for the behavior being edited, not every domain.
+3. Read [HARNESS](specs/HARNESS.md) when choosing or running verification; load
+   detailed checklists only for the affected surfaces.
+4. Load [AI Playbook](docs/AI_PLAYBOOK.md) only for cross-domain features, handoff,
+   resuming a task or changing this workflow. Small fixes need no task document.
+5. Do not preload domain directories, acceptance history, roadmaps, research,
+   task archives or tool configuration. Follow a link only when the task needs it.
 
-Do not edit generated `FileMint.xcodeproj` directly. Edit `project.yml`, then run `make project`.
+Keep these invariants across all tasks:
+
+- Update the owning domain SPEC before intentional product behavior changes;
+  bug fixes restore the existing contract. Add regression coverage for behavior.
+- Run `make verify` before behavior changes when Swift is available, and after
+  implementation. Use HARNESS for additional checks and report any blocked checks.
+- Keep deterministic rules in `CorePackage`, Finder APIs in `FinderSyncExtension`,
+  SwiftUI settings in `App/FileMint`, and native creation UI in `SharedUI`.
+- Preserve user files, preferences and authorization boundaries. No folder crawling,
+  clipboard monitoring, path/content logging or unrequested publication.
+- Edit `project.yml`, then `make project`; never edit generated `FileMint.xcodeproj`.
+- Do not add package dependencies without a SPEC rationale. Report observed
+  verification separately from assumptions and old evidence.

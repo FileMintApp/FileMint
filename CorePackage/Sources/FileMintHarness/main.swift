@@ -1,31 +1,51 @@
 import FileMintCore
 import Foundation
 
-let arguments = CommandLine.arguments
-
-guard arguments.count == 2 else {
-    fputs("Usage: filemint-harness <cases.json>\n", stderr)
-    exit(64)
+let arguments = Array(CommandLine.arguments.dropFirst())
+// Keep usage errors machine-readable when a valid JSON format flag was supplied.
+let wantsJSON = zip(arguments, arguments.dropFirst()).contains { $0 == "--format" && $1 == "json" }
+var format = "text"
+var input: String?
+var sawFormat = false
+var invalidArguments = false
+var index = 0
+while index < arguments.count {
+    let argument = arguments[index]
+    if argument == "--format" {
+        index += 1
+        if sawFormat || index >= arguments.count || !["text", "json"].contains(arguments[index]) {
+            invalidArguments = true
+            break
+        }
+        sawFormat = true
+        format = arguments[index]
+    } else if argument.hasPrefix("-") || input != nil {
+        invalidArguments = true
+        break
+    } else {
+        input = argument
+    }
+    index += 1
 }
 
-let casesURL = URL(fileURLWithPath: arguments[1])
-let data = try Data(contentsOf: casesURL)
-let cases = try JSONDecoder().decode([FileCreationHarnessCase].self, from: data)
-let workspace = FileManager.default.temporaryDirectory
-    .appendingPathComponent("FileMintHarness", isDirectory: true)
-
-try? FileManager.default.removeItem(at: workspace)
-try FileManager.default.createDirectory(at: workspace, withIntermediateDirectories: true)
-defer { try? FileManager.default.removeItem(at: workspace) }
-
-let results = try HarnessRunner.run(cases: cases, workspaceRoot: workspace)
-let failures = results.filter { !$0.passed }
-
-for result in results {
-    let mark = result.passed ? "PASS" : "FAIL"
-    print("\(mark) \(result.name) -> \(result.createdFileName)")
+let report: HarnessReport
+if invalidArguments || input == nil {
+    report = .usageError()
+    format = wantsJSON ? "json" : "text"
+} else {
+    do {
+        let suite = try HarnessSuite.load(from: URL(fileURLWithPath: input!))
+        report = HarnessRunner.run(suite)
+    } catch {
+        report = .inputError(error)
+    }
 }
 
-if !failures.isEmpty {
-    exit(1)
+do {
+    let data = format == "json" ? try report.jsonData() : Data(report.text().utf8)
+    try FileHandle.standardOutput.write(contentsOf: data + Data([10]))
+} catch {
+    fputs("ERROR report output failed\n", stderr)
+    exit(2)
 }
+exit(report.exitCode)

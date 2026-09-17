@@ -6,18 +6,11 @@ import Testing
 struct FileCreationHarnessTests {
     @Test("public harness cases pass")
     func harnessCasesPass() throws {
-        let casesURL = try Self.fixtureCasesURL()
-        let data = try Data(contentsOf: casesURL)
-        let cases = try JSONDecoder().decode([FileCreationHarnessCase].self, from: data)
-        let workspace = FileManager.default.temporaryDirectory
-            .appendingPathComponent("FileMintCoreTests-\(UUID().uuidString)", isDirectory: true)
+        let suite = try HarnessSuite.load(from: Self.fixtureCasesURL())
+        let report = HarnessRunner.run(suite)
 
-        try FileManager.default.createDirectory(at: workspace, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: workspace) }
-
-        let results = try HarnessRunner.run(cases: cases, workspaceRoot: workspace)
-
-        #expect(results.allSatisfy { $0.passed })
+        #expect(report.exitCode == 0, "\(report.text())")
+        #expect(report.cases.count == suite.caseCount)
     }
 
     @Test("collision fail strategy refuses overwrite")
@@ -260,24 +253,12 @@ struct FileCreationHarnessTests {
         #expect(steps[1].detail.contains("Finder"))
     }
 
-    private static func fixtureCasesURL() throws -> URL {
-        let fileManager = FileManager.default
-        var directory = URL(fileURLWithPath: fileManager.currentDirectoryPath, isDirectory: true)
-
-        while true {
-            let candidate = directory
-                .appendingPathComponent("specs/harness/cases/file_creation_cases.json")
-            if fileManager.fileExists(atPath: candidate.path) {
-                return candidate
-            }
-
-            let parent = directory.deletingLastPathComponent()
-            if parent.path == directory.path {
-                break
-            }
-            directory = parent
-        }
-
-        throw CocoaError(.fileNoSuchFile)
+    private static func fixtureCasesURL() -> URL {
+        URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("specs/harness/cases/file_creation_cases.json")
     }
 }

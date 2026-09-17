@@ -1,0 +1,205 @@
+{
+  "date": "2026-09-17",
+  "scope": "current unmodified harness CLI",
+  "head": "9d32ad2032dd88f0f5ba09780ead67b843350219",
+  "results": [
+    {
+      "probe": "valid_fixture_control",
+      "exit_code": 0,
+      "stdout": "PASS create plain text file in empty folder -> Untitled.txt\nPASS increment text file when default name already exists -> Untitled 2.txt\nPASS create markdown file with rendered title -> Untitled.md\nPASS sanitize requested filename separators -> api-config.json\nPASS increment custom swift filename -> Model 3.swift",
+      "stderr_first_line": "",
+      "input_json": "[{\"name\": \"create plain text file in empty folder\", \"templateID\": \"plain-text\", \"requestedFileName\": null, \"existingFileNames\": [], \"expectedFileName\": \"Untitled.txt\", \"expectedContentContains\": []}, {\"name\": \"increment text file when default name already exists\", \"templateID\": \"plain-text\", \"requestedFileName\": null, \"existingFileNames\": [\"Untitled.txt\"], \"expectedFileName\": \"Untitled 2.txt\", \"expectedContentContains\": []}, {\"name\": \"create markdown file with rendered title\", \"templateID\": \"markdown\", \"requestedFileName\": null, \"existingFileNames\": [], \"expectedFileName\": \"Untitled.md\", \"expectedContentContains\": [\"# Untitled.md\"]}, {\"name\": \"sanitize requested filename separators\", \"templateID\": \"json\", \"requestedFileName\": \"api/config.json\", \"existingFileNames\": [], \"expectedFileName\": \"api-config.json\", \"expectedContentContains\": [\"{}\"]}, {\"name\": \"increment custom swift filename\", \"templateID\": \"swift\", \"requestedFileName\": \"Model.swift\", \"existingFileNames\": [\"Model.swift\", \"Model 2.swift\"], \"expectedFileName\": \"Model 3.swift\", \"expectedContentContains\": [\"import Foundation\"]}]"
+    },
+    {
+      "probe": "empty_suite",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr_first_line": "",
+      "input_json": "[]"
+    },
+    {
+      "probe": "unknown_assertion",
+      "exit_code": 0,
+      "stdout": "PASS create plain text file in empty folder -> Untitled.txt",
+      "stderr_first_line": "",
+      "input_json": "[{\"name\": \"create plain text file in empty folder\", \"templateID\": \"plain-text\", \"requestedFileName\": null, \"existingFileNames\": [], \"expectedFileName\": \"Untitled.txt\", \"expectedContentContains\": [], \"expectedContentEquals\": \"MUST EXIST\"}]"
+    },
+    {
+      "probe": "typo_optional_requested_name",
+      "exit_code": 0,
+      "stdout": "PASS create plain text file in empty folder -> Untitled.txt",
+      "stderr_first_line": "",
+      "input_json": "[{\"name\": \"create plain text file in empty folder\", \"templateID\": \"plain-text\", \"requestedFileName\": null, \"existingFileNames\": [], \"expectedFileName\": \"Untitled.txt\", \"expectedContentContains\": [], \"requestedFileNmae\": \"Chosen.txt\"}]"
+    },
+    {
+      "probe": "unknown_collision_strategy",
+      "exit_code": 0,
+      "stdout": "PASS create plain text file in empty folder -> Untitled 2.txt",
+      "stderr_first_line": "",
+      "input_json": "[{\"name\": \"create plain text file in empty folder\", \"templateID\": \"plain-text\", \"requestedFileName\": null, \"existingFileNames\": [\"Untitled.txt\"], \"expectedFileName\": \"Untitled 2.txt\", \"expectedContentContains\": [], \"collisionStrategy\": \"fail\"}]"
+    },
+    {
+      "probe": "duplicate_case_names",
+      "exit_code": 0,
+      "stdout": "PASS create plain text file in empty folder -> Untitled.txt\nPASS create plain text file in empty folder -> Untitled.txt",
+      "stderr_first_line": "",
+      "input_json": "[{\"name\": \"create plain text file in empty folder\", \"templateID\": \"plain-text\", \"requestedFileName\": null, \"existingFileNames\": [], \"expectedFileName\": \"Untitled.txt\", \"expectedContentContains\": []}, {\"name\": \"create plain text file in empty folder\", \"templateID\": \"plain-text\", \"requestedFileName\": null, \"existingFileNames\": [], \"expectedFileName\": \"Untitled.txt\", \"expectedContentContains\": []}]"
+    },
+    {
+      "probe": "empty_case_name",
+      "exit_code": 0,
+      "stdout": "PASS  -> Untitled.txt",
+      "stderr_first_line": "",
+      "input_json": "[{\"name\": \"\", \"templateID\": \"plain-text\", \"requestedFileName\": null, \"existingFileNames\": [], \"expectedFileName\": \"Untitled.txt\", \"expectedContentContains\": []}]"
+    },
+    {
+      "probe": "fixture_setup_missing_parent",
+      "exit_code": 0,
+      "stdout": "PASS create plain text file in empty folder -> Untitled.txt",
+      "stderr_first_line": "",
+      "input_json": "[{\"name\": \"create plain text file in empty folder\", \"templateID\": \"plain-text\", \"requestedFileName\": null, \"existingFileNames\": [\"missing-parent/seed.txt\"], \"expectedFileName\": \"Untitled.txt\", \"expectedContentContains\": []}]"
+    },
+    {
+      "probe": "duplicate_fixture_names",
+      "exit_code": 0,
+      "stdout": "PASS create plain text file in empty folder -> Untitled 2.txt",
+      "stderr_first_line": "",
+      "input_json": "[{\"name\": \"create plain text file in empty folder\", \"templateID\": \"plain-text\", \"requestedFileName\": null, \"existingFileNames\": [\"Untitled.txt\", \"Untitled.txt\"], \"expectedFileName\": \"Untitled 2.txt\", \"expectedContentContains\": []}]"
+    },
+    {
+      "probe": "assertion_mismatch_control",
+      "exit_code": 1,
+      "stdout": "FAIL create plain text file in empty folder -> Untitled.txt",
+      "stderr_first_line": "",
+      "input_json": "[{\"name\": \"create plain text file in empty folder\", \"templateID\": \"plain-text\", \"requestedFileName\": null, \"existingFileNames\": [], \"expectedFileName\": \"Untitled.txt\", \"expectedContentContains\": [\"MUST EXIST\"]}]"
+    },
+    {
+      "probe": "duplicate_json_key_first_correct",
+      "exit_code": 0,
+      "stdout": "PASS create plain text file in empty folder -> Untitled.txt",
+      "stderr_first_line": "",
+      "input_json": "[{\"name\": \"create plain text file in empty folder\", \"templateID\": \"plain-text\", \"requestedFileName\": null, \"existingFileNames\": [], \"expectedFileName\": \"Untitled.txt\", \"expectedContentContains\": [],\"expectedFileName\":\"WRONG.txt\"}]"
+    },
+    {
+      "probe": "duplicate_json_key_first_wrong",
+      "exit_code": 1,
+      "stdout": "FAIL create plain text file in empty folder -> Untitled.txt",
+      "stderr_first_line": "",
+      "input_json": "[{\"name\": \"create plain text file in empty folder\", \"templateID\": \"plain-text\", \"requestedFileName\": null, \"existingFileNames\": [], \"expectedFileName\": \"WRONG.txt\", \"expectedContentContains\": [],\"expectedFileName\":\"Untitled.txt\"}]"
+    },
+    {
+      "probe": "escaped_duplicate_json_key",
+      "exit_code": 0,
+      "stdout": "PASS create plain text file in empty folder -> Untitled.txt",
+      "stderr_first_line": "",
+      "input_json": "[{\"name\": \"create plain text file in empty folder\", \"templateID\": \"plain-text\", \"requestedFileName\": null, \"existingFileNames\": [], \"expectedFileName\": \"Untitled.txt\", \"expectedContentContains\": [],\"expectedFile\\u004eame\":\"WRONG.txt\"}]"
+    },
+    {
+      "probe": "unknown_template_error",
+      "exit_code": -5,
+      "stdout": "",
+      "stderr_first_line": "Swift/ErrorType.swift:254: Fatal error: Error raised at top level: FileMintCore.FileMintError.templateNotFound(\"missing-template\")",
+      "input_json": "[{\"name\": \"create plain text file in empty folder\", \"templateID\": \"missing-template\", \"requestedFileName\": null, \"existingFileNames\": [], \"expectedFileName\": \"Untitled.txt\", \"expectedContentContains\": []}]"
+    },
+    {
+      "probe": "malformed_json_error",
+      "exit_code": -5,
+      "stdout": "",
+      "stderr_first_line": "Swift/ErrorType.swift:254: Fatal error: Error raised at top level: DecodingError.dataCorrupted: Data was corrupted. Debug description: The given data was not valid JSON.. Underlying error: Error Domain=NSCocoaErrorDomain Code=3840 \"Unexpected end of file\" UserInfo={NSDebugDescrip",
+      "input_json": "[{\"name\":"
+    },
+    {
+      "probe": "fixture_parent_escape",
+      "exit_code": 0,
+      "stdout": "PASS create plain text file in empty folder -> Untitled.txt",
+      "stderr_first_line": "",
+      "outside_case_sentinel_bytes_after": "",
+      "input_json": "[{\"name\": \"create plain text file in empty folder\", \"templateID\": \"plain-text\", \"requestedFileName\": null, \"existingFileNames\": [\"../../outside.txt\"], \"expectedFileName\": \"Untitled.txt\", \"expectedContentContains\": []}]",
+      "precondition": "Create TMPDIR/outside.txt containing KEEP THIS SENTINEL before invoking the binary."
+    },
+    {
+      "probe": "fixed_workspace_deletes_previous_owner",
+      "exit_code": 0,
+      "stdout": "PASS create plain text file in empty folder -> Untitled.txt",
+      "stderr_first_line": "",
+      "previous_owner_marker_exists_after": false,
+      "input_json": "[{\"name\": \"create plain text file in empty folder\", \"templateID\": \"plain-text\", \"requestedFileName\": null, \"existingFileNames\": [], \"expectedFileName\": \"Untitled.txt\", \"expectedContentContains\": []}]",
+      "precondition": "Create TMPDIR/FileMintHarness/previous-owner.txt containing PRESERVE before invoking the binary."
+    },
+    {
+      "probe": "four_concurrent_runs_shared_tmpdir",
+      "cases_per_run": 80,
+      "exit_codes": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "passed_lines_per_run": [
+        80,
+        80,
+        80,
+        80
+      ]
+    },
+    {
+      "probe": "second_run_started_after_first_created_case_directory",
+      "cases_per_run": 2000,
+      "overlap_observed": true,
+      "exit_codes": [
+        0,
+        0
+      ],
+      "passed_lines_per_run": [
+        2000,
+        2000
+      ],
+      "stderr_prefixes": [
+        "",
+        ""
+      ]
+    }
+  ],
+  "environment": {
+    "macOS": "27.0",
+    "swift": "Apple Swift 6.4",
+    "architecture": "arm64",
+    "developer_dir": "/Applications/Xcode.app/Contents/Developer"
+  },
+  "baseline": {
+    "command": "make verify",
+    "status": "passed",
+    "swift_tests": 60,
+    "swift_suites": 5,
+    "json_cases": 5,
+    "context_documents": 17,
+    "context_links": 84
+  },
+  "isolation": "All probes used disposable, explicitly checked TMPDIR directories. The traversal sentinel was inside the probe-owned temporary tree; no user files were used.",
+  "limitations": [
+    "Both concurrent batches passed; a concurrent failure was not reproduced.",
+    "The fixed-workspace deletion and fixture parent-path overwrite were separately reproduced.",
+    "Observed duplicate-key selection and abnormal exit signals are specific to this tested Foundation/Swift environment."
+  ],
+  "swift_semantics_probe": {
+    "typed_allKeys": [
+      "known"
+    ],
+    "dynamic_allKeys": [
+      "known",
+      "unexpected"
+    ],
+    "duplicate_key_value": "first",
+    "escaped_duplicate_key_value": "first",
+    "empty_allSatisfy": true,
+    "empty_string_contains": false,
+    "canonically_equivalent_string_equal": true,
+    "canonically_equivalent_bytes_equal": false
+  },
+  "source_sha256": {
+    "CorePackage/Sources/FileMintCore/HarnessCase.swift": "25af23bbbde43009e84e27f79765581d6832e29b36c72b13478f74068e186f49",
+    "CorePackage/Sources/FileMintHarness/main.swift": "da83a97d064dfd3f88bb2be7557bff37905ac7bb7b4854b45baa9e0acea8b6d4",
+    "CorePackage/Tests/FileMintCoreTests/FileCreationHarnessTests.swift": "b9e7ae84c993c897d3664ef4175b33f7b0ca6a1b4e0626dda07d89124c0c7d1c",
+    "specs/harness/cases/file_creation_cases.json": "89157a9bf584008225162f74a434c82acc639c48c185ae554e1db78b780d5d91"
+  }
+}
