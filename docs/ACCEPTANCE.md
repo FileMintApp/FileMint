@@ -5,6 +5,11 @@ macOS 13. Release bundles contain arm64 and x86_64 executables.
 
 ## Automatic update checks and extension guidance — 2026-09-17
 
+Published 0.5.4 (12) subsequently passed local Developer ID signing, Apple
+notarization and stapling, downloaded-asset comparison and GitHub release
+verification. See [the 0.5.4 release record](RELEASE_VERIFICATION_0.5.4.md) for
+the exact source commit, submission ID, checksum and runtime scope.
+
 - General now has a default-on automatic update switch. Attempts persist across
   launches and are spaced at least seven days apart; the first overdue check
   waits at least 60 seconds. Manual checks remain usable with the switch off.

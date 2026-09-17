@@ -66,6 +66,26 @@ source manifest or any Apple credential.
 Release evidence should include the local notarization result, downloaded asset
 checksum, published-release verification job and actual runtime results.
 
+## Standard notarytool workflow
+
+The owner confirmed on 2026-09-17 that normal releases should use `xcrun
+notarytool` with the existing local `FileMint` Keychain profile to submit the
+signed DMG to Apple and wait for review. This is the standard workflow for future
+release requests. Keep credentials local; routine releases do not require a new
+Apple account, signing identity or credential setup.
+
+`make release-local` already runs `notarytool submit --wait`. If submission and
+waiting are performed separately, save the returned submission ID and use
+`notarytool wait` or `notarytool info` with that ID. An `In Progress` result or
+a wait timeout means to retain the submitted file and continue waiting on the
+same submission, not upload another copy merely to retry a status check.
+
+After `Accepted`, staple and validate the DMG ticket, then calculate the final
+SHA-256 and run the artifact checks. Only then push the source/tag and publish
+the exact validated DMG and checksum to GitHub. A pending or rejected submission
+does not qualify for a normal stable release. The historical 0.5.3 exception
+does not change this flow.
+
 ## Standing release policy
 
 GitHub Releases remain the distribution channel. Public stable releases after
