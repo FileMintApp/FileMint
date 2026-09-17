@@ -7,6 +7,8 @@ description: Install and enable FileMint on macOS.
 
 FileMint supports **macOS 13 and later**. One DMG works on both Apple silicon and Intel Macs.
 
+The 0.5.4 installer is Developer ID signed, Apple notarized and stapled.
+
 ## First install
 
 1. Download the latest DMG from [GitHub Releases](https://github.com/FileMintApp/FileMint/releases/latest).

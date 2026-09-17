@@ -2,7 +2,7 @@
 <h1 align="center">FileMint</h1>
 <p align="center"><strong>新文件，就在此刻。</strong><br>一个干净、直接的原生 macOS 文件创建工具。</p>
 <p align="center"><strong>简体中文</strong> ｜ <a href="README.en.md"><strong>English →</strong></a></p>
-<p align="center"><a href="https://github.com/FileMintApp/FileMint/releases/latest">下载 macOS 版</a> · <a href="docs/INSTALL.md">安装帮助</a> · <a href="https://github.com/FileMintApp/FileMint/issues">反馈问题</a></p>
+<p align="center"><a href="https://github.com/FileMintApp/FileMint/releases/latest">下载 macOS 版</a> · <a href="docs/INSTALL.md">安装帮助</a> · <a href="#未来规划">未来规划</a> · <a href="https://github.com/FileMintApp/FileMint/issues">反馈问题</a></p>
 
 想建一个文件，却要先打开编辑器、另存为、再找回刚才的文件夹？
 
@@ -60,9 +60,59 @@ FileMint 把这件事放回 Finder：**右键，选一种类型，文件就在�
 
 自定义后缀创建的是 **UTF-8 文本文件**。修改后缀不会把文本转换成 PDF、图片或 Word/Excel 文件。
 
+## 未来规划
+
+把日常创建文件的小事继续做好。下面是准备逐步打磨的 TODO，按使用场景整理；尚未勾选的功能还未完成，会随着实际使用和反馈持续调整。
+
+<!-- #region roadmap -->
+<div class="roadmap-group">
+
+### 模板与命名
+
+- [ ] **同格式多模板** — 为 Markdown 等同一种格式保存会议记录、项目说明等不同模板。
+- [ ] **模板复制与预览** — 从已有模板开始修改，创建前查看文件名和初始内容。
+- [ ] **文件名规则** — 用日期、项目名称等生成文件名，并预览最终结果。
+- [ ] **模板导入导出** — 备份、迁移和分享自己的模板，导入时选择如何处理同名项。
+- [ ] **真实文档模板** — 从自己的 Word、Excel 等文档创建副本，保留原有格式和内容。
+
+</div>
+<div class="roadmap-group">
+
+### 创建与后续操作
+
+- [ ] **从剪贴板新建** — 将复制的文本带入创建面板，命名后保存为文件。
+- [ ] **图片粘贴为文件** — 把复制的截图或图片直接保存到当前文件夹。
+- [ ] **创建后打开** — 创建完成后，用默认应用或选择的编辑器继续工作。
+
+</div>
+<div class="roadmap-group">
+
+### 目录与工具联动
+
+- [ ] **项目目录模板** — 一次创建常用的文件夹结构和起始文件。
+- [ ] **复制文件名与路径** — 快速复制单个或多个文件的名称、完整路径。
+- [ ] **在当前目录打开工具** — 从当前位置进入常用终端或编辑器。
+- [ ] **快捷指令与启动器联动** — 从快捷指令、Raycast 或 Alfred 打开预填的创建面板。
+
+</div>
+<div class="roadmap-group">
+
+### 查找与日常体验
+
+- [ ] **模板分组与常用项** — 为场景模板分组、固定常用项，并通过搜索快速找到它们。
+- [ ] **首次创建引导** — 从启用扩展、授权文件夹到创建第一个文件，都有清楚的下一步。
+- [ ] **故障指引与兼容性说明** — 菜单未出现或无法创建时给出具体建议，持续补充云盘和外置磁盘的验证结果。
+
+</div>
+<!-- #endregion roadmap -->
+
+每项的实现思路和完成条件记录在[实施路线](docs/ROADMAP.md)。欢迎通过 [Issues](https://github.com/FileMintApp/FileMint/issues) 分享你反复遇到的创建场景，也欢迎贡献模板、翻译和复现步骤。
+
 ## 下载与安装
 
 支持 **macOS 13 及以上**，同一个安装包兼容 Apple 芯片与 Intel Mac。
+
+**0.5.4 安装包已使用 Developer ID 签名，通过 Apple 公证并附加公证票据。** Finder 扩展启用与文件夹授权仍需在首次使用时完成。
 
 1. [下载最新 DMG](https://github.com/FileMintApp/FileMint/releases/latest)，把 FileMint 拖入“应用程序”。
 2. 启动 FileMint，按应用内提示启用 Finder 扩展并授权常用文件夹。“文件夹”页也提供完全磁盘访问权限指引；它与沙盒文件夹授权相互独立。

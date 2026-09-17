@@ -2,7 +2,7 @@
 <h1 align="center">FileMint</h1>
 <p align="center"><strong>A new file. Right here.</strong><br>A small, native macOS file creation utility.</p>
 <p align="center"><a href="README.md"><strong>← 简体中文</strong></a> ｜ <strong>English</strong></p>
-<p align="center"><a href="https://github.com/FileMintApp/FileMint/releases/latest">Download for macOS</a> · <a href="docs/INSTALL.md">Installation help</a> · <a href="https://github.com/FileMintApp/FileMint/issues">Report an issue</a></p>
+<p align="center"><a href="https://github.com/FileMintApp/FileMint/releases/latest">Download for macOS</a> · <a href="docs/INSTALL.md">Installation help</a> · <a href="#roadmap">Roadmap</a> · <a href="https://github.com/FileMintApp/FileMint/issues">Report an issue</a></p>
 
 Creating a file should not require opening an editor, choosing Save As, and finding your folder again.
 **Right-click in Finder, choose a type, and your file is there.** Use a compact panel when you want to name it or paste content first.
@@ -59,9 +59,59 @@ For a custom file: **New File…** → type `demo.js` → paste optional content
 
 Custom suffixes produce **UTF-8 text**. Renaming a suffix does not create a valid PDF, image or Office document.
 
+## Roadmap
+
+Keep making everyday file creation a little easier. These TODOs are grouped by use case. Unchecked features are still planned work, and the list will evolve with everyday use and feedback.
+
+<!-- #region roadmap -->
+<div class="roadmap-group">
+
+### Templates and naming
+
+- [ ] **Multiple templates per format** — Keep meeting notes, project readmes and other templates for the same format.
+- [ ] **Duplicate and preview templates** — Start from an existing template and preview the filename and initial content.
+- [ ] **Filename rules** — Build names from dates, project names and other fields, with a preview of the result.
+- [ ] **Import and export templates** — Back up, move and share templates, choosing how to handle conflicts on import.
+- [ ] **Document templates** — Create copies of your own Word, Excel and other documents, preserving their format and content.
+
+</div>
+<div class="roadmap-group">
+
+### Creation and next steps
+
+- [ ] **Create from the clipboard** — Bring copied text into the creation panel, name it and save it as a file.
+- [ ] **Paste images as files** — Save a copied screenshot or image directly into the current folder.
+- [ ] **Open after creation** — Continue working in the default app or an editor you choose.
+
+</div>
+<div class="roadmap-group">
+
+### Folders and tool integrations
+
+- [ ] **Project folder templates** — Create a familiar folder structure and starter files in one action.
+- [ ] **Copy names and paths** — Quickly copy the names or full paths of one or more files.
+- [ ] **Open tools in the current folder** — Continue in your preferred terminal or editor at the current location.
+- [ ] **Shortcuts and launcher integrations** — Open a prefilled creation panel from Shortcuts, Raycast or Alfred.
+
+</div>
+<div class="roadmap-group">
+
+### Finding templates and everyday use
+
+- [ ] **Template groups and favorites** — Group templates by purpose, pin favorites and find them through search.
+- [ ] **First-file walkthrough** — Follow clear steps from enabling the extension and authorizing a folder to creating your first file.
+- [ ] **Troubleshooting and compatibility notes** — Get specific help when menus or creation fail, with verified cloud-folder and external-drive notes.
+
+</div>
+<!-- #endregion roadmap -->
+
+Implementation notes and completion criteria live in the [implementation roadmap (Chinese)](docs/ROADMAP.md). Share recurring file-creation needs through [Issues](https://github.com/FileMintApp/FileMint/issues), or contribute templates, translations and reproduction steps.
+
 ## Install
 
 **macOS 13+**, Apple silicon and Intel in one universal DMG.
+
+**The 0.5.4 installer is Developer ID signed, Apple notarized and stapled.** Enabling the Finder extension and authorizing working folders remain separate first-use steps.
 
 1. [Download the latest DMG](https://github.com/FileMintApp/FileMint/releases/latest) and drag FileMint into Applications.
 2. Launch it, enable the Finder extension and authorize your working folders.

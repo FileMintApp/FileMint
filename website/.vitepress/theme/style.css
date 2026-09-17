@@ -171,6 +171,59 @@
   background: linear-gradient(135deg, var(--vp-c-brand-soft), transparent 72%);
 }
 
+.roadmap-todos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 32px 48px;
+  margin-top: 36px;
+}
+
+.roadmap-group {
+  min-width: 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+.roadmap-group h3 {
+  margin: 0 0 20px;
+  font-size: 1.2rem;
+}
+
+.roadmap-group ul {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.roadmap-group .task-list-item {
+  position: relative;
+  margin: 0;
+  padding-inline-start: 26px;
+  color: var(--vp-c-text-2);
+  line-height: 1.7;
+}
+
+.roadmap-group strong {
+  color: var(--vp-c-text-1);
+}
+
+.roadmap-group .task-checkbox {
+  position: absolute;
+  inset-inline-start: 0;
+  top: 6px;
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: var(--vp-c-brand-1);
+}
+
+.roadmap-links {
+  margin-top: 28px;
+  color: var(--vp-c-text-2);
+}
+
 .callout-band h2 {
   max-width: 520px;
   font-size: clamp(1.8rem, 4vw, 2.65rem);
@@ -222,7 +275,8 @@
   }
 
   .visual-grid,
-  .visual-grid--wide {
+  .visual-grid--wide,
+  .roadmap-todos {
     grid-template-columns: 1fr;
   }
 

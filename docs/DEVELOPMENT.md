@@ -33,3 +33,9 @@ installer macOS refuses to execute.
 
 Read [SPEC](../specs/SPEC.md) and [HARNESS](../specs/HARNESS.md) before changes.
 Do not edit the generated Xcode project. No runtime package dependencies.
+
+Future feature ideas, implementation starting points and completion criteria
+live in the [implementation roadmap](ROADMAP.md). The public TODO lists are
+maintained in the `roadmap` regions of both READMEs and included by the website
+homepages. After editing them, build the site with
+`SITE_BASE=/FileMint/ pnpm run site:build` to verify the GitHub Pages base path.

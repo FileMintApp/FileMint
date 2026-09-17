@@ -312,6 +312,12 @@ optional low-frequency update checks and user-requested downloads use the networ
 - README leads with the pain solved, actual features, screenshots, download and
   a brief install guide. Chinese first, English separate. Developer instructions
   live in docs. Optional donations link the supplied ReceivePayment images.
+- Both README languages and website homepages show a future roadmap as grouped
+  TODO checklists. Describe concrete user outcomes without priorities, release
+  assignments or delivery dates, and distinguish planned work from available
+  features. Website checklists reuse the corresponding README content. Keep
+  implementation guidance and completion criteria in docs/ROADMAP.md; checking
+  off an item requires its implementation and verification to be complete.
 - Non-commercial use is free for everyone, including personal, educational and
   research use. Commercial use, commercial redistribution and commercial
   derivatives require prior written authorization or a separately issued paid

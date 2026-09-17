@@ -8,6 +8,27 @@ export default defineConfig({
   base,
   title: 'FileMint',
   description: 'Create a new file right where you are working.',
+  markdown: {
+    config(md) {
+      // Render the same GitHub task lists used by the README includes.
+      md.core.ruler.after('inline', 'task-lists', (state) => {
+        for (let index = 2; index < state.tokens.length; index++) {
+          const token = state.tokens[index]
+          const item = state.tokens[index - 2]
+          const first = token.children?.[0]
+          if (token.type !== 'inline' || item.type !== 'list_item_open' || first?.type !== 'text') continue
+          const marker = /^\[([ xX])\]\s+/.exec(first.content)
+          if (!marker) continue
+          first.content = first.content.slice(marker[0].length)
+          const label = md.utils.escapeHtml(token.children!.map((child) => child.content).join(''))
+          const checkbox = new state.Token('html_inline', '', 0)
+          checkbox.content = `<input class="task-checkbox" type="checkbox" disabled${marker[1] === ' ' ? '' : ' checked'} aria-label="${label}"> `
+          token.children!.unshift(checkbox)
+          item.attrJoin('class', 'task-list-item')
+        }
+      })
+    }
+  },
   head: [
     ['meta', { name: 'theme-color', content: '#0b9b7b' }],
     ['meta', { property: 'og:image', content: publicAsset('filemint-icon.png') }],
@@ -30,6 +51,7 @@ export default defineConfig({
       themeConfig: {
         nav: [
           { text: '亮点', link: '/#finder' },
+          { text: '未来规划', link: '/#roadmap' },
           { text: '安装', link: '/install' },
           { text: '隐私', link: '/privacy' },
           { text: 'GitHub', link: repository }
@@ -49,6 +71,7 @@ export default defineConfig({
       themeConfig: {
         nav: [
           { text: 'Highlights', link: '/en/#finder' },
+          { text: 'Roadmap', link: '/en/#roadmap' },
           { text: 'Install', link: '/en/install' },
           { text: 'Privacy', link: '/en/privacy' },
           { text: 'GitHub', link: repository }

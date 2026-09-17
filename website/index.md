@@ -84,6 +84,20 @@ features:
   </div>
 </section>
 
+<section id="roadmap" class="landing-section">
+  <p class="section-kicker">04 / TODO</p>
+  <h2>未来规划，一件件慢慢做好。</h2>
+  <p class="section-intro">从日常创建文件的小事出发，逐步打磨这些功能。未勾选的项目还未完成，清单会随着实际使用和反馈持续更新。</p>
+
+<div class="roadmap-todos">
+
+<!--@include: ../README.md#roadmap-->
+
+</div>
+
+  <p class="roadmap-links"><a href="https://github.com/FileMintApp/FileMint/blob/main/docs/ROADMAP.md">查看实施路线</a>，或在 <a href="https://github.com/FileMintApp/FileMint/issues">GitHub 分享你的使用场景</a>。也欢迎贡献模板、翻译和复现步骤。</p>
+</section>
+
 <section id="download" class="landing-section">
   <div class="callout-band">
     <div>
