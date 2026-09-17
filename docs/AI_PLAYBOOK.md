@@ -44,8 +44,14 @@ from the current task rather than replaying a transcript.
 
 - Update the owning domain contract before intentional behavior changes. Fixes
   restore the existing contract; do not weaken expectations to fit defective code.
-- Use [HARNESS](../specs/HARNESS.md) for baseline and completion checks. Run
+- Use [HARNESS](../specs/HARNESS.md) for applicable completion checks. Run
   `make doctor` only for environment diagnosis; it is not a test result.
+- Select checks for the current phase: analysis/planning has no default test run,
+  documentation edits use documentation checks, and implementation tests run after
+  completing the relevant change. Pre-change tests need a concrete diagnostic
+  purpose or explicit request; starting implementation does not require a baseline.
+  A task plan listing future tests does not authorize running them now. Reclassify
+  if the task proceeds from planning to implementation.
 - Preserve the architecture boundaries in [AGENTS](../AGENTS.md). Prefer small
   stable structs and explicit dependencies over hidden global state.
 - Review changed paths against the router again before completion. Add any missed

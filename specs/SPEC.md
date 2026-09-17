@@ -36,6 +36,12 @@ or fall back to reading every document.
 
 ## Verification and deeper references
 
+- Classify the current task before choosing checks: analysis/planning, documentation
+  edits, or implementation. Discussing future code changes does not trigger a test
+  baseline. Pure analysis needs no default test run; documentation-only work uses
+  documentation checks. Run implementation checks after completing the relevant
+  change, selected by actual changed behavior; pre-change tests are optional and
+  need a concrete diagnostic purpose or explicit request.
 - Before planning checks, read the short [verification matrix](HARNESS.md).
   Load its detailed Core, Finder or update checklist only when applicable.
 - For cross-session work, use the [AI Playbook](../docs/AI_PLAYBOOK.md). Current

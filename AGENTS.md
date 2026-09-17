@@ -17,8 +17,11 @@ Keep these invariants across all tasks:
 
 - Update the owning domain SPEC before intentional product behavior changes;
   bug fixes restore the existing contract. Add regression coverage for behavior.
-- Run `make verify` before behavior changes when Swift is available, and after
-  implementation. Use HARNESS for additional checks and report any blocked checks.
+- Choose checks by task intent and actual changes using HARNESS. Analysis/planning
+  does not trigger tests; documentation-only edits use documentation checks.
+  Run applicable tests after completing implementation; no mandatory pre-change
+  baseline. Use a targeted pre-change test only for a concrete diagnostic need or
+  explicit request. Report any blocked applicable checks.
 - Keep deterministic rules in `CorePackage`, Finder APIs in `FinderSyncExtension`,
   SwiftUI settings in `App/FileMint`, and native creation UI in `SharedUI`.
 - Preserve user files, preferences and authorization boundaries. No folder crawling,

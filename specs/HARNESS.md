@@ -6,10 +6,23 @@ checklist for the changed surface; do not preload all checklists at task start.
 
 ## Choose checks by change
 
+Choose by the current task's intent and actual edits, not the code mentioned in
+a plan or the domains read. Reading SPEC/HARNESS, starting a task, writing a plan
+or changing a future requirement does not itself trigger `make verify`.
+By default, run applicable tests after completing the relevant code, logic or
+runtime-flow change. There is no mandatory pre-change baseline. Run a targeted
+pre-change test only to reproduce a defect, investigate an existing failure or
+fulfill an explicit request, and state that purpose before running it.
+For an explicit verification request or a diagnosis requiring execution, run the
+requested or smallest relevant check and state why it is needed. Do not expand
+a generic review/check request into the full suite automatically.
+
 | Changed surface | Automated checks | Additional evidence / load when needed |
 | --- | --- | --- |
-| Context routing, domain docs, agent workflow | `make verify-context`; `make verify` after implementation | Check representative task routes; product rules must survive documentation moves. |
-| Core rules, names, templates, preferences, tickets | `make verify` before and after behavior changes | [Core checks and case format](verification/core.md); native QA for changed UI interactions. |
+| Read-only questions, analysis, review or planning | None by default | Inspect relevant source/contracts; distinguish static findings from runtime evidence. |
+| Documentation only: context routing, domain docs, agent workflow, roadmap or task plans | `make verify-context` for context-document changes; otherwise inspect changed text and local links | Check representative routes when routing changes; preserve product rules. No Swift tests, app build or full `make verify` solely for these edits. Published site content follows the website row. |
+| Executable test infrastructure, Harness code/cases, verification scripts or Makefile verification targets | `make verify` after implementation | [Core checks and case format](verification/core.md) when Harness behavior changes. Editing instructions about tests is documentation only. |
+| Core rules, names, templates, preferences, tickets | `make verify` after implementation | [Core checks and case format](verification/core.md); native QA for changed UI interactions. |
 | App, SharedUI, Finder, login, windows or authorization | `make verify`; unsigned `CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO make build` | [Finder/native checks](verification/finder.md), only affected scenarios. A build is not runtime proof. |
 | About or updater | `make verify`; unsigned app build for app-code changes | [Update checks](verification/updates.md); network smoke for client changes, sandbox flow for save/download/open changes, native scheduling checks for timer/cancellation changes. |
 | Website, site dependencies, README includes | `SITE_BASE=/FileMint/ pnpm run site:build` | Inspect affected pages and base-path links. Build success is not live deployment. |
@@ -33,8 +46,10 @@ the right rules or that tests cover the meaning of a contract.
 - New or changed behavior has appropriate Harness/unit coverage. Naming,
   templates, creation and preferences require Core coverage; documentation moves
   preserve rules and links without manufacturing product tests.
-- `make verify` passes after implementation; behavior changes also have a baseline
-  run. If the toolchain is unavailable, record the command and blocking reason.
+- Checks selected from the matrix pass after implementation. Run `make verify`
+  only where the applicable row requires it; no baseline run is required. Analysis and
+  documentation-only work do not inherit implementation completion gates.
+  If a required toolchain is unavailable, record the command and blocking reason.
 - Run all applicable rows above, including build/native/artifact checks when
   those surfaces change. A missing environment does not turn a check into a pass.
 - Report checks as `passed`, `failed`, `not-run` or `blocked`, with the tested
