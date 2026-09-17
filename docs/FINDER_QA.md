@@ -18,6 +18,12 @@ Record actual results in ACCEPTANCE.md.
 
 ## Types and preferences
 
+- Navigate General, Creation, Templates & Types, Finder & Folders and About
+  using the sidebar and Up/Down keys. Verify selection and keyboard focus remain
+  distinguishable in light/dark mode, without a bright solid selection block.
+- At the 840×600 minimum content size, check both languages, list actions, editor
+  sheets and scrolling of the expanded Full Disk Access guide. New File remains
+  accessible from each page. About menu commands reuse the same settings window.
 - Add `.toml` with starter content; verify it appears in the selector and Finder.
 - Edit, disable, reorder and remove that custom type. Built-ins remain intact.
 - Restore built-ins; verify custom types remain after explicit confirmation.

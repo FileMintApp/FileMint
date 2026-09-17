@@ -5,7 +5,10 @@ import Foundation
 @MainActor
 final class PreferencesModel: ObservableObject {
     static let shared = PreferencesModel()
-    enum Pane { case general, fileTypes, folders, about }
+    enum Pane: String, CaseIterable, Identifiable {
+        case general, creation, fileTypes, folders, about
+        var id: String { rawValue }
+    }
     @Published var selectedPane: Pane = .general
     @Published var preferences: FileMintPreferences
     @Published var lastError: String?

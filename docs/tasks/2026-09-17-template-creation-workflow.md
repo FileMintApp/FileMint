@@ -1,7 +1,7 @@
 # Task: 多模板、复制与预览、文件名规则、创建后打开
 
 Status: planned
-Next action: 从 T1 开始：运行 `make verify` 基线，再更新模板、创建及偏好迁移契约，实现按模板 ID 选择和同后缀默认模板规则。
+Next action: [设置入口重构](2026-09-17-settings-navigation.md)已完成本地实现与布局验证；从 T1 开始更新模板、创建及偏好迁移契约，沿新 TypesPane 实现按模板 ID 选择和同后缀默认模板规则。按当前 HARNESS 选择实施后的验证。
 
 ## Objective and scope
 
@@ -130,11 +130,11 @@ Environment: 本地 macOS 工作区；本次仅规划文档，无产品代码变
 | `make verify` | passed | 2026-09-17：上下文校验、82 个 Swift tests、5 个 JSON cases、10 个 CLI regressions、3 个 appcast tests 通过；首次沙盒运行因编译缓存不可写中断，授权重跑通过。证明现有基线，不代表计划功能已实现 |
 | 无签名 app build / 原生验收 | not-run | 尚无产品实现；每阶段修改 App/SharedUI/Finder 后必须执行对应检查 |
 
-每阶段开始与结束运行 `make verify`；原生代码改动还运行 `CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO make build` 并按受影响场景实机验证。记录具体环境和限制，构建通过不等于 Finder 或打开应用行为通过。
+每阶段实施完成后按当前 HARNESS 运行 `make verify`；原生代码改动还运行 `CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO make build` 并按受影响场景实机验证。不因规划或开始实施自动运行基线。记录具体环境和限制，构建通过不等于 Finder 或打开应用行为通过。
 
 ## Handoff
 
 - Remaining work: T1–T4 全部产品实现与验收；各阶段完成时在本文件记录证据和下一步。
 - Files currently changed: 本任务、`docs/ROADMAP.md` 的任务链接。
 - Known limitations / native checks still needed: 原生模板切换、Finder 标签与连续创建、编辑器打开及沙盒访问全部尚未验证。
-- Next action and minimum context: 阅读本任务 T1，核对工作区，加载模板/创建/启动契约并运行基线；涉及 Finder 时再加载其契约。无需加载其他任务历史。
+- Next action and minimum context: 阅读本任务 T1，核对工作区，加载模板/创建/启动契约；涉及 Finder 时再加载其契约。无需加载其他任务历史。

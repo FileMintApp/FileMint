@@ -26,6 +26,11 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - New preferences follow the system's supported language; explicit saved English
   or Chinese choices remain authoritative. Users can also select Follow System.
 
+- Settings has one resizable sidebar window. Switching pages preserves the
+  in-session page selection without saving navigation into user preferences.
+  About/update commands select About in that same window; page navigation does
+  not change the explicit-launch and Finder-creation window ownership rules.
+
 - An explicitly requested updater relaunch must wait until creation work and
   modal editing are finished. Preserve saved startup preferences and bookmarks.
 

@@ -7,9 +7,10 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     static let shared = SettingsWindowController()
 
     private init() {
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 640, height: 490),
-                              styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 650),
+                              styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
         window.title = "FileMint"
+        window.contentMinSize = NSSize(width: 840, height: 600)
         window.isReleasedWhenClosed = false
         window.isRestorable = false
         window.contentView = NSHostingView(rootView: ContentView()

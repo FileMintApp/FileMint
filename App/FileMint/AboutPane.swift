@@ -87,7 +87,7 @@ struct AboutPane: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
-            }.padding(18)
+            }.padding(1)
         }
     }
 }

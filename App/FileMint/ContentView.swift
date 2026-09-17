@@ -5,258 +5,184 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject private var model: PreferencesModel
     @EnvironmentObject private var updater: UpdateModel
+    @FocusState private var focusedPane: PreferencesModel.Pane?
 
     var body: some View {
-        VStack(spacing: 0) {
-            if let update = updater.update, model.selectedPane != .about {
-                HStack {
-                    Text("\(model.text(.availableVersion)) \(update.version.description)")
-                    Spacer()
-                    Button(model.text(.viewUpdate)) { model.selectedPane = .about }
-                }.font(.callout).padding([.horizontal, .top], 20)
-            }
-            TabView(selection: $model.selectedPane) {
-                GeneralPane().tabItem { Text(model.text(.general)) }.tag(PreferencesModel.Pane.general)
-                TypesPane().tabItem { Text(model.text(.fileTypes)) }.tag(PreferencesModel.Pane.fileTypes)
-                FoldersPane().tabItem { Text(model.text(.folders)) }.tag(PreferencesModel.Pane.folders)
-                AboutPane().tabItem { Text(model.text(.about)) }.tag(PreferencesModel.Pane.about)
-            }
-            .padding(20)
-            if let error = model.lastError {
-                Text(error).foregroundStyle(.red).font(.callout).textSelection(.enabled)
-                    .padding([.horizontal, .bottom], 20)
-            }
+        HStack(spacing: 0) {
+            sidebar
+            Divider()
+            VStack(alignment: .leading, spacing: 0) {
+                VStack(alignment: .leading, spacing: 7) {
+                    Text(model.text(model.selectedPane.title)).font(.system(size: 25, weight: .bold))
+                        .accessibilityAddTraits(.isHeader)
+                    Text(model.text(model.selectedPane.subtitle))
+                        .font(.callout).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }.padding(28)
+                Divider().padding(.horizontal, 28)
+                page.padding(28).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                if let error = model.lastError {
+                    Text(error).foregroundStyle(.red).font(.callout).textSelection(.enabled)
+                        .padding([.horizontal, .bottom], 28)
+                }
+            }.background(Color(nsColor: .windowBackgroundColor))
         }
-        .frame(width: 640, height: 490)
+        .frame(minWidth: 840, minHeight: 600)
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             model.refreshStatus()
         }
     }
-}
 
-private struct GeneralPane: View {
-    @EnvironmentObject private var model: PreferencesModel
-
-    var body: some View {
-        ScrollView {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 14) {
-                Image(nsImage: NSApplication.shared.applicationIconImage).resizable().frame(width: 60, height: 60)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("FileMint").font(.title2.weight(.semibold))
-                    Text(model.text(.productTagline)).foregroundStyle(.secondary)
+    private var sidebar: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 10) {
+                Image(nsImage: NSApplication.shared.applicationIconImage)
+                    .resizable().frame(width: 40, height: 40).accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("FileMint").font(.headline)
+                    Text(model.text(.settingsLabel)).font(.caption).foregroundStyle(.secondary)
                 }
-                Spacer()
-                Button(model.text(.customNewFile)) { model.newFile() }
-                    .keyboardShortcut("n").controlSize(.large)
-            }
-            Text(model.text(.productDetail)).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-            Divider()
-            HStack {
-                Text(model.text(.language))
-                Spacer()
-                Picker("", selection: $model.preferences.language) {
-                    ForEach(AppLanguage.allCases) { language in
-                        Text(language == .system ? model.text(.followSystem) : language.displayName).tag(language)
-                    }
-                }.labelsHidden().frame(width: 160)
-                    .onChange(of: model.preferences.language) { _ in model.save() }
-            }
-            Toggle(model.text(.launchAtLogin), isOn: Binding(
-                get: { model.preferences.launchAtLogin },
-                set: { value in Task { await model.setLaunchAtLogin(value) } }
-            )).disabled(model.isUpdatingLoginItem)
-            if let hint = model.loginItemHint {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(hint).font(.caption).foregroundStyle(.secondary)
-                    HStack {
-                        Button(model.text(.openLoginSettings)) { model.openLoginSettings() }
-                        if model.loginItemError != nil {
-                            Button(model.text(.retry)) { Task { await model.setLaunchAtLogin(true) } }
-                                .disabled(model.isUpdatingLoginItem)
+            }.padding(.horizontal, 20).padding(.top, 24).padding(.bottom, 20)
+            ScrollView {
+                VStack(spacing: 5) {
+                    ForEach(PreferencesModel.Pane.allCases) { pane in
+                        SettingsSidebarButton(title: model.text(pane.title), symbol: pane.symbol,
+                                              isSelected: model.selectedPane == pane,
+                                              isFocused: focusedPane == pane) {
+                            model.selectedPane = pane
+                            focusedPane = pane
                         }
-                    }.font(.caption)
+                        .focusable()
+                        .modifier(SidebarFocusEffect())
+                        .focused($focusedPane, equals: pane)
+                        .accessibilityIdentifier("settings.\(pane.rawValue)")
+                    }
+                }.padding(.horizontal, 12).padding(.vertical, 4)
+            }
+            .onMoveCommand { direction in
+                guard let focusedPane,
+                      let index = PreferencesModel.Pane.allCases.firstIndex(of: focusedPane) else { return }
+                let offset: Int
+                switch direction {
+                case .up: offset = -1
+                case .down: offset = 1
+                default: return
                 }
+                let panes = PreferencesModel.Pane.allCases
+                let next = max(0, min(panes.count - 1, index + offset))
+                self.focusedPane = panes[next]
+                model.selectedPane = panes[next]
             }
-            Toggle(model.text(.showMenuBar), isOn: Binding(
-                get: { model.preferences.showMenuBar }, set: { model.setShowMenuBar($0) }
-            ))
-            VStack(alignment: .leading, spacing: 4) {
-                Toggle(model.text(.automaticallyCheckForUpdates), isOn: Binding(
-                    get: { model.preferences.automaticallyChecksForUpdates },
-                    set: { model.setAutomaticallyChecksForUpdates($0) }
-                )).accessibilityIdentifier("automaticallyCheckForUpdates")
-                Text(model.text(.automaticUpdateHint)).font(.caption).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Toggle(model.text(.revealCreatedFile), isOn: $model.preferences.revealAfterCreation)
-                .onChange(of: model.preferences.revealAfterCreation) { _ in model.save() }
-            HStack {
-                Text(model.text(.whenFileExists))
-                Spacer()
-                Picker("", selection: $model.preferences.collisionStrategy) {
-                    Text(model.text(.autoIncrement)).tag(NameCollisionStrategy.increment)
-                    Text(model.text(.fail)).tag(NameCollisionStrategy.fail)
-                }.labelsHidden().frame(width: 160)
-                    .onChange(of: model.preferences.collisionStrategy) { _ in model.save() }
-            }
-            Divider()
-            HStack {
-                Text("Finder").fontWeight(.medium)
-                Text(model.extensionEnabled ? model.text(.ready) : model.text(.permissionSetup))
-                    .font(.callout).foregroundStyle(.secondary)
-                Spacer()
-                Button(model.text(.openExtensionSettings)) { model.openExtensionSettings() }
-            }
-            Text(model.text(.finderSetup)).font(.callout).foregroundStyle(.secondary)
-            Spacer(minLength: 0)
-            HStack {
-                Text(model.text(.sourceAvailable)).font(.caption).foregroundStyle(.secondary)
-                Spacer()
-                Text(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")
-                    .font(.caption).foregroundStyle(.tertiary)
-            }
-        }.padding(18)
+            VStack(alignment: .leading, spacing: 14) {
+                if let update = updater.update, model.selectedPane != .about {
+                    Button { model.selectedPane = .about } label: {
+                        Label("\(model.text(.availableVersion)) \(update.version.description)", systemImage: "arrow.down.circle")
+                            .font(.caption).fixedSize(horizontal: false, vertical: true)
+                    }.buttonStyle(.plain).foregroundStyle(Color.accentColor)
+                }
+                Button { model.newFile() } label: {
+                    HStack {
+                        Text(model.text(.customNewFile))
+                        Spacer()
+                        Text("⌘N").foregroundStyle(.secondary)
+                    }.padding(.vertical, 3)
+                }.keyboardShortcut("n").controlSize(.large)
+                Divider()
+                Text(model.text(.sourceAvailable)).font(.caption2).foregroundStyle(.secondary)
+                Text("FileMint \(updater.currentVersion)").font(.caption2).foregroundStyle(.tertiary)
+            }.padding(16)
+        }.frame(width: 208).background(.regularMaterial)
+    }
+
+    @ViewBuilder private var page: some View {
+        switch model.selectedPane {
+        case .general: GeneralPane()
+        case .creation: CreationSettingsPane()
+        case .fileTypes: TypesPane()
+        case .folders: FoldersPane()
+        case .about: AboutPane()
         }
     }
 }
 
-private struct TypesPane: View {
-    @EnvironmentObject private var model: PreferencesModel
-    @State private var selection: String?
-    @State private var editor: TypeEditorDraft?
-    @State private var restoring = false
-    @State private var removing = false
+private struct SettingsSidebarButton: View {
+    let title: String
+    let symbol: String
+    let isSelected: Bool
+    let isFocused: Bool
+    let action: () -> Void
+    @State private var isHovered = false
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var mint: Color { Color(nsColor: .systemMint) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(model.text(.fileTypeHint)).font(.callout).foregroundStyle(.secondary)
-            List(selection: $selection) {
-                ForEach($model.preferences.templates) { $template in
-                    HStack(spacing: 12) {
-                        Toggle(model.templateDisplayName(for: template), isOn: $template.isEnabled)
-                            .toggleStyle(.checkbox)
-                            .onChange(of: template.isEnabled) { _ in model.save() }
-                        Spacer()
-                        Text(template.suggestedFileName.replacingOccurrences(of: "Untitled", with: ""))
-                            .font(.system(.callout, design: .monospaced)).foregroundStyle(.secondary)
-                    }.padding(.vertical, 4).tag(template.id)
-                }.onMove { model.moveTemplates(fromOffsets: $0, toOffset: $1) }
-            }.listStyle(.bordered(alternatesRowBackgrounds: true))
-            HStack(spacing: 8) {
-                Button(model.text(.addType)) { editor = TypeEditorDraft() }
-                Button(model.text(.editType)) {
-                    if let type = model.preferences.templates.first(where: { $0.id == selection }) { editor = TypeEditorDraft(type) }
-                }.disabled(selection == nil || !model.isCustom(selection ?? ""))
-                Button(model.text(.remove)) { removing = true }
-                    .disabled(selection == nil || !model.isCustom(selection ?? ""))
-                Spacer()
-                Button(model.text(.moveUp)) { if let selection { model.moveTemplate(id: selection, by: -1) } }
-                    .disabled(!model.canMoveTemplate(id: selection ?? "", by: -1))
-                Button(model.text(.moveDown)) { if let selection { model.moveTemplate(id: selection, by: 1) } }
-                    .disabled(!model.canMoveTemplate(id: selection ?? "", by: 1))
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: symbol).font(.system(size: 16, weight: .medium))
+                    .frame(width: 20)
+                    .foregroundStyle(isSelected ? mint : Color.secondary)
+                Text(title).font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+                    .foregroundStyle(.primary)
+                Spacer(minLength: 0)
             }
-            Button(model.text(.resetBuiltIns)) { restoring = true }.font(.callout)
-        }.padding(16)
-            .sheet(item: $editor) { TypeEditor(draft: $0).environmentObject(model) }
-            .alert(model.text(.restoreConfirm), isPresented: $restoring) {
-                Button(model.text(.cancel), role: .cancel) {}
-                Button(model.text(.restore)) { model.resetTemplates() }
+            .padding(.horizontal, 12).frame(height: 40)
+            .background {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(isSelected ? mint.opacity(colorScheme == .dark ? 0.13 : 0.10)
+                          : Color.primary.opacity(isHovered ? 0.045 : 0))
             }
-            .alert(model.text(.deleteTypeConfirm), isPresented: $removing) {
-                Button(model.text(.cancel), role: .cancel) {}
-                Button(model.text(.remove), role: .destructive) { if let selection { model.removeType(selection) } }
+            .overlay {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(mint.opacity(isFocused ? 0.55 : isSelected ? 0.20 : 0),
+                                  lineWidth: isFocused ? 1 : 0.5)
             }
+            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovered = $0 }
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
-private struct TypeEditorDraft: Identifiable {
-    let id = UUID()
-    var templateID: String?
-    var name = ""
-    var suffix = ""
-    var content = ""
-    init() {}
-    init(_ type: FileTemplate) {
-        templateID = type.id
-        name = type.displayName
-        suffix = String(type.suggestedFileName.dropFirst("Untitled.".count))
-        content = type.content
+private struct SidebarFocusEffect: ViewModifier {
+    @ViewBuilder func body(content: Content) -> some View {
+        if #available(macOS 14.0, *) {
+            content.focusEffectDisabled()
+        } else {
+            content
+        }
     }
 }
 
-private struct TypeEditor: View {
-    @EnvironmentObject private var model: PreferencesModel
-    @Environment(\.dismiss) private var dismiss
-    @State var draft: TypeEditorDraft
-    @State private var error: String?
-    @FocusState private var nameFocused: Bool
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(model.text(draft.templateID == nil ? .addType : .editType)).font(.headline)
-            TextField(model.text(.displayName), text: $draft.name).focused($nameFocused)
-            TextField(model.text(.extensionLabel), text: $draft.suffix)
-            Text(model.text(.initialContent)).font(.callout)
-            PlainTextEditor(text: $draft.content, label: model.text(.initialContent))
-                .frame(height: 120).border(Color(nsColor: .separatorColor))
-            Text(model.text(.customTypeHint)).font(.caption).foregroundStyle(.secondary)
-            if let error { Text(error).foregroundStyle(.red).font(.callout) }
-            HStack {
-                Spacer()
-                Button(model.text(.cancel)) { dismiss() }.keyboardShortcut(.cancelAction)
-                Button(model.text(.save)) { save() }.keyboardShortcut(.defaultAction)
-            }
-        }.padding(24).frame(width: 430).onAppear { nameFocused = true }
+extension PreferencesModel.Pane {
+    var title: FileMintTextKey {
+        switch self {
+        case .general: .general
+        case .creation: .creationSettings
+        case .fileTypes: .templatesAndTypes
+        case .folders: .finderAndFolders
+        case .about: .about
+        }
     }
 
-    private func save() {
-        do {
-            try model.saveType(name: draft.name, suffix: draft.suffix, content: draft.content, id: draft.templateID)
-            if let error = model.lastError { self.error = error } else { dismiss() }
-        } catch TemplateValidationError.duplicateExtension { error = model.text(.duplicateType) }
-        catch TemplateValidationError.emptyName { error = model.text(.emptyTypeName) }
-        catch { self.error = model.text(.invalidFileExtension) }
+    var subtitle: FileMintTextKey {
+        switch self {
+        case .general: .generalSettingsHint
+        case .creation: .creationSettingsHint
+        case .fileTypes: .fileTypeHint
+        case .folders: .finderFoldersHint
+        case .about: .productTagline
+        }
     }
-}
 
-private struct FoldersPane: View {
-    @EnvironmentObject private var model: PreferencesModel
-    @State private var selection: URL?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(model.text(.folderHint)).font(.callout).foregroundStyle(.secondary)
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text(model.text(.fullDiskAccess)).fontWeight(.medium)
-                    Spacer()
-                    Button(model.text(.openFullDiskAccess)) { model.openFullDiskAccessSettings() }
-                }
-                Text(model.text(.fullDiskAccessStatus)).font(.callout.weight(.medium))
-                Text(model.text(.fullDiskAccessStatusHint))
-                    .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                Text(model.text(.fullDiskAccessEnabledHint))
-                    .font(.caption).fixedSize(horizontal: false, vertical: true)
-                Text(model.text(.fullDiskAccessHint))
-                    .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-            }
-            Divider()
-            Text(model.text(.folderAccessReminder))
-                .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-            List(model.preferences.monitoredFolderURLs, id: \.self, selection: $selection) { url in
-                VStack(alignment: .leading, spacing: 3) {
-                    Text((url.path as NSString).abbreviatingWithTildeInPath).lineLimit(1).truncationMode(.middle)
-                    Text(model.preferences.monitoredFolderBookmarks[url.path] == nil ? model.text(.needsAccess) : model.text(.folderAccessSaved))
-                        .font(.caption).foregroundStyle(.secondary)
-                }.padding(.vertical, 5).tag(url)
-            }.listStyle(.bordered(alternatesRowBackgrounds: true))
-            HStack {
-                Button(model.text(.addFolder)) { model.addMonitoredFolder() }
-                Button(model.text(.authorize)) { model.addMonitoredFolder(initial: selection) }.disabled(selection == nil)
-                Button(model.text(.remove)) { if let selection { model.removeFolder(selection) } }.disabled(selection == nil)
-                Spacer()
-            }
-        }.padding(16)
+    var symbol: String {
+        switch self {
+        case .general: "gearshape"
+        case .creation: "doc.badge.plus"
+        case .fileTypes: "doc.on.doc"
+        case .folders: "folder"
+        case .about: "info.circle"
+        }
     }
 }

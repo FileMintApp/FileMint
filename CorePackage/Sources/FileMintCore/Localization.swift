@@ -51,6 +51,24 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case folderAccessSaved
     case importSettings
 
+    case settingsLabel
+    case creationSettings
+    case templatesAndTypes
+    case finderAndFolders
+    case generalSettingsHint
+    case creationSettingsHint
+    case finderFoldersHint
+    case interfaceLanguage
+    case startupAndAccess
+    case viewUpdateSettings
+    case quickCreation
+    case quickCollisionHint
+    case afterCreationHint
+    case manageTemplates
+    case finderExtension
+    case menuFolders
+    case enabledTypes
+
     case general
     case fileTypes
     case folders
@@ -171,6 +189,24 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
 
 public enum FileMintStrings {
     private static let focused: [FileMintTextKey: (String, String)] = [
+        .settingsLabel: ("Settings", "设置"),
+        .creationSettings: ("Creation", "创建行为"),
+        .templatesAndTypes: ("Templates & Types", "模板与类型"),
+        .finderAndFolders: ("Finder & Folders", "Finder 与文件夹"),
+        .generalSettingsHint: ("Make FileMint fit the way you work.", "设置语言、启动方式与更新偏好。"),
+        .creationSettingsHint: ("Choose what happens when you create a file.", "设置同名处理与创建完成后的行为。"),
+        .finderFoldersHint: ("Manage Finder integration and the folders you work in.", "管理 Finder 扩展、菜单范围与文件夹访问权限。"),
+        .interfaceLanguage: ("Interface language", "界面语言"),
+        .startupAndAccess: ("Startup & menu bar", "启动与菜单栏"),
+        .viewUpdateSettings: ("View version and updates…", "查看版本与更新…"),
+        .quickCreation: ("Quick creation", "快速创建"),
+        .quickCollisionHint: ("Applies to one-click creation from Finder. New File… asks before replacing an existing file.", "适用于 Finder 中的一键创建。“新建文件…”面板仍会在替换已有文件前询问。"),
+        .afterCreationHint: ("Select the saved file in Finder after either creation method succeeds.", "任一创建方式成功后，在 Finder 中选中已保存的文件。"),
+        .manageTemplates: ("Manage templates and file types…", "管理模板与文件类型…"),
+        .finderExtension: ("Finder extension", "Finder 扩展"),
+        .menuFolders: ("Menu locations", "菜单显示范围"),
+        .enabledTypes: ("enabled", "已启用"),
+
         .followSystem: ("Follow System", "跟随系统"),
         .launchAtLogin: ("Launch at login", "开机自动启动"),
         .showMenuBar: ("Show in menu bar", "显示在菜单栏"),
@@ -188,7 +224,7 @@ public enum FileMintStrings {
         .fullDiskAccessStatusHint: ("FileMint cannot read this switch automatically. This guide remaining visible does not mean access is denied.", "FileMint 无法自动读取此开关。此说明仍然显示，不代表你尚未授权。"),
         .fullDiskAccessEnabledHint: ("Switch on: permission is granted. Quit and reopen FileMint after enabling it; no need to add it again.", "开关已开启：已授予权限。开启后退出并重新打开 FileMint，无需重复添加或授权。"),
         .fullDiskAccessHint: ("Switch off or FileMint missing: add the installed FileMint.app in Privacy & Security → Full Disk Access, then turn it on.", "开关关闭或没有 FileMint：在“隐私与安全性 → 完全磁盘访问权限”中添加已安装的 FileMint.app 并开启。"),
-        .folderAccessReminder: ("The list below shows saved folder access only. Even with Full Disk Access, choose each working folder once to let FileMint remember access.", "下方仅显示各文件夹的授权记录。即使已开启完全磁盘访问，仍需首次选择工作文件夹以记住访问权限。"),
+        .folderAccessReminder: ("The folder list shows saved access only. Even with Full Disk Access, choose each working folder once to let FileMint remember access.", "列表仅显示各文件夹的授权记录。即使已开启完全磁盘访问，仍需首次选择工作文件夹以记住访问权限。"),
         .folderAccessSaved: ("Folder access saved", "已保存此文件夹的授权"),
         .importSettings: ("Import Settings…", "导入设置…"),
 
@@ -251,7 +287,7 @@ public enum FileMintStrings {
         .needsAccess: ("Choose this folder once", "需首次选择此文件夹以授权"),
         .productTagline: ("A new file. Right here.", "新文件，就在此刻。"),
         .productDetail: ("Right-click in Finder to create a file. Use New File… when you want to name it or paste content first.", "在 Finder 右键创建文件。需要命名或粘贴内容时，选择“新建文件…”。"),
-        .finderSetup: ("macOS requires you to enable the Finder extension. Click Open Extension Settings, enable FileMint, then return here to refresh its status. You can also create files using New File… above.", "Finder 扩展需要你在 macOS 中开启。点击“打开扩展设置”，开启 FileMint 后返回这里，状态会自动刷新。也可直接使用上方的“新建文件…”功能。"),
+        .finderSetup: ("macOS requires you to enable the Finder extension. Click Open Extension Settings, enable FileMint, then return here to refresh its status. You can also use New File… in the sidebar.", "Finder 扩展需要你在 macOS 中开启。点击“打开扩展设置”，开启 FileMint 后返回这里，状态会自动刷新。也可使用侧栏中的“新建文件…”。"),
         .fileTypeHint: ("Checked types appear in Finder and the format picker. Drag to reorder, or use Move Up / Down.", "勾选后显示在 Finder 和后缀选择器中。拖动排序，或使用上移、下移。"),
         .customTypeHint: ("Creates UTF-8 text with this suffix. A suffix does not convert text into PDF, images or Office files.", "以此后缀创建 UTF-8 文本；不能通过更改后缀生成 PDF、图片或 Office 文件。"),
         .restoreConfirm: ("Restore built-in types? Custom types will be kept.", "恢复内置类型？自定义类型会保留。"),

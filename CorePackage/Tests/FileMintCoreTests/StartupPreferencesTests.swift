@@ -100,6 +100,22 @@ struct StartupPreferencesTests {
         }
     }
 
+    @Test("settings navigation and moved behavior explanations are bilingual")
+    func settingsNavigationCopy() {
+        for key in [FileMintTextKey.settingsLabel, .creationSettings, .templatesAndTypes,
+                    .finderAndFolders, .generalSettingsHint, .creationSettingsHint,
+                    .finderFoldersHint, .interfaceLanguage, .startupAndAccess,
+                    .viewUpdateSettings, .quickCreation, .quickCollisionHint,
+                    .afterCreationHint, .manageTemplates, .finderExtension, .menuFolders, .enabledTypes] {
+            let english = FileMintStrings.text(key, language: .english)
+            let chinese = FileMintStrings.text(key, language: .chinese)
+            #expect(english != key.rawValue && chinese != key.rawValue)
+            #expect(!english.isEmpty && !chinese.isEmpty && english != chinese)
+        }
+        #expect(FileMintStrings.text(.quickCollisionHint, language: .english).contains("asks before replacing"))
+        #expect(FileMintStrings.text(.quickCollisionHint, language: .chinese).contains("替换已有文件前询问"))
+    }
+
     @Test("permission guidance explains granted, off and unreadable status in both languages",
           arguments: [AppLanguage.english, .chinese])
     func permissionGuidance(language: AppLanguage) {

@@ -6,9 +6,26 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 
 ## Appearance
 
-- Native controls and system colors. Compact settings with General, File Types,
-  Folders and About. No decorative cards. Follow system language by default; English
-  and Chinese can be selected explicitly.
+- Native controls and adaptive system colors. Settings use a persistent leading
+  sidebar and a resizable detail area, with General, Creation, Templates & Types,
+  Finder & Folders, and About. Each page has a title, concise explanation and
+  functional sections; list actions stay next to their list. No decorative cards
+  or disabled placeholders for future roadmap features. Follow system language
+  by default; English and Chinese can be selected explicitly.
+- General owns language, startup/menu bar and automatic-check preferences.
+  Creation owns quick-creation collisions and reveal-after-creation. Templates &
+  Types owns the existing enabled/order/custom-type management. Finder & Folders
+  owns extension status, folder scope/access and optional Full Disk Access guidance.
+  About retains its credits and update actions. New File remains reachable from
+  every page. Settings navigation itself never writes preferences or creates files.
+- Use a 900 × 650 initial content size and an 840 × 600 minimum, with scrolling
+  for long content. Sidebar labels, focus/selection and controls remain readable
+  in English/Chinese and system light/dark appearances. Native keyboard and
+  accessibility labels must remain available; icons supplement text, not replace it.
+- Sidebar navigation uses a continuous background and a subdued mint selection
+  with a stronger label/icon, rather than the system List's bright selection fill.
+  Hover and keyboard focus remain distinct from the selected page; arrow keys
+  move between page buttons and the current page is exposed to accessibility.
 - Only the top-level Finder entry has the small FileMint logo; its label maps
   to the resolved app language. Format choices, submenu rows and creation
   controls use text only. The Finder

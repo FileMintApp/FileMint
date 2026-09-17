@@ -3,6 +3,48 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Settings sidebar and native layout — 2026-09-17
+
+Subsequent local-install check on the same date: at the user's explicit request,
+the arm64 Debug build was installed at `/Applications/FileMint.app` and opened.
+Both app and Finder extension processes were observed at that installed path,
+with exactly one enabled extension registration. Ad-hoc signatures passed strict
+deep verification; both targets retain App Sandbox and get-task-allow. This
+development build is signed without Hardened Runtime because its ad-hoc Debug
+dylib was rejected by the release-style library validation. No system security
+setting or release signing configuration was changed. The preferences JSON hash
+was unchanged. The prior installed app is archived locally at
+`build/local-install-backups/20260917-175149/FileMint-installed.zip`; the same
+directory contains the installation record and build log. Debugger attachment,
+complete Finder creation and public-release notarization were not tested.
+
+Checked on macOS 27.0, Apple silicon, at `73e02f5` plus the settings-navigation
+worktree changes. This is local development evidence, not release acceptance.
+
+- Final `make verify` passed 83 Swift tests, 5 JSON cases, 10 CLI regressions
+  and 3 appcast tests. The unsigned universal app build passed. Logs are retained
+  locally under `build/settings-preview/`; no signed installer was produced.
+- The actual built app was opened in Chinese/light appearance: settings pages,
+  template actions and the expanded/scrollable Full Disk Access guide were
+  inspected. The app's About menu selected About in the same settings window.
+  The sidebar New File action opened its directory picker; cancelling returned
+  to settings. No file was created and no settings toggle was changed during QA.
+- An isolated native preview compiled the actual page views with in-memory
+  fixture models, without preferences storage, bookmarks, Finder registration
+  or network operations. At 840×600, English/dark template actions, creation
+  settings, About and the editor sheet were readable; Escape cancelled editing.
+- After the user's visual feedback, the final sidebar used a continuous
+  background, subdued mint selection and a thin mint keyboard focus outline.
+  Chinese and English dark layouts were inspected; Down moved from Creation
+  to Templates & Types, and accessibility exposed the selected page button.
+- The fixture is layout/interaction evidence only. Real persistence, login-item
+  changes, updater installation and signed/installed Finder cold-launch/window
+  isolation were not rerun. macOS 13 retains the system focus indicator and its
+  native appearance was not tested on that OS. No release was published.
+
+See [the settings task](tasks/2026-09-17-settings-navigation.md) for scope and
+remaining release checks.
+
 ## Automatic update checks and extension guidance — 2026-09-17
 
 Published 0.5.4 (12) subsequently passed local Developer ID signing, Apple
