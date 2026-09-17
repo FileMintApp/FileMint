@@ -56,6 +56,11 @@ private struct FileMintMenu: View {
         Button(model.text(.openFileMint)) {
             SettingsWindowController.shared.show()
         }.keyboardShortcut(",")
+        if let update = updater.update {
+            Button("\(model.text(.availableVersion)) \(update.version.description)…") {
+                SettingsWindowController.shared.show(pane: .about)
+            }
+        }
         Button(model.text(.checkForUpdates)) {
             SettingsWindowController.shared.show(pane: .about)
             updater.checkForUpdates()

@@ -19,6 +19,8 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
     public var language: AppLanguage
     public var launchAtLogin: Bool
     public var showMenuBar: Bool
+    public var automaticallyChecksForUpdates: Bool
+    public var lastUpdateCheckAttempt: Date?
     public var hasAttemptedLoginItemSetup: Bool
     private var folderScopeVersion = 2
 
@@ -31,7 +33,9 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         language: AppLanguage = .system,
         launchAtLogin: Bool = true,
         showMenuBar: Bool = true,
-        hasAttemptedLoginItemSetup: Bool = false
+        hasAttemptedLoginItemSetup: Bool = false,
+        automaticallyChecksForUpdates: Bool = true,
+        lastUpdateCheckAttempt: Date? = nil
     ) {
         self.templates = templates
         self.monitoredFolderURLs = monitoredFolderURLs
@@ -42,6 +46,8 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         self.language = language
         self.launchAtLogin = launchAtLogin
         self.showMenuBar = showMenuBar
+        self.automaticallyChecksForUpdates = automaticallyChecksForUpdates
+        self.lastUpdateCheckAttempt = lastUpdateCheckAttempt
         self.hasAttemptedLoginItemSetup = hasAttemptedLoginItemSetup
     }
 
@@ -55,6 +61,8 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         case language
         case launchAtLogin
         case showMenuBar
+        case automaticallyChecksForUpdates
+        case lastUpdateCheckAttempt
         case hasAttemptedLoginItemSetup
         case folderScopeVersion
     }
@@ -82,6 +90,8 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         language = (try? container.decode(AppLanguage.self, forKey: .language)) ?? defaults.language
         launchAtLogin = (try? container.decode(Bool.self, forKey: .launchAtLogin)) ?? true
         showMenuBar = (try? container.decode(Bool.self, forKey: .showMenuBar)) ?? true
+        automaticallyChecksForUpdates = (try? container.decode(Bool.self, forKey: .automaticallyChecksForUpdates)) ?? true
+        lastUpdateCheckAttempt = try? container.decode(Date.self, forKey: .lastUpdateCheckAttempt)
         hasAttemptedLoginItemSetup = (try? container.decode(Bool.self, forKey: .hasAttemptedLoginItemSetup)) ?? false
     }
 

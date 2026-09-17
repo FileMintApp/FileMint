@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import FileMintCore
 import Foundation
 import UniformTypeIdentifiers
@@ -23,6 +24,9 @@ final class UpdateModel: ObservableObject {
     private var operation: Task<Void, Never>?
     private var operationID = UUID()
     private var isChoosingDownloadLocation = false
+    private var automaticCheckTimer: Timer?
+    private var automaticPreferenceObserver: AnyCancellable?
+    private var automaticCheckID: UUID?
 
     var isBusy: Bool { state == .checking || state == .downloading || state == .verifying }
     var canDownload: Bool { update != nil && installerURL == nil && !isBusy }
@@ -41,19 +45,95 @@ final class UpdateModel: ObservableObject {
         }
     }
 
-    func checkForUpdates() {
+    func startAutomaticChecks() {
+        guard automaticPreferenceObserver == nil else { return }
+        automaticPreferenceObserver = PreferencesModel.shared.$preferences
+            .removeDuplicates {
+                $0.automaticallyChecksForUpdates == $1.automaticallyChecksForUpdates &&
+                    $0.lastUpdateCheckAttempt == $1.lastUpdateCheckAttempt
+            }
+            .sink { [weak self] preferences in
+                // @Published emits before assigning the new preferences.
+                let enabled = preferences.automaticallyChecksForUpdates
+                Task { @MainActor in self?.automaticSettingsChanged(enabled: enabled) }
+            }
+    }
+
+    private func automaticSettingsChanged(enabled: Bool) {
+        if !enabled, automaticCheckID != nil {
+            cancel()
+        }
+        scheduleAutomaticCheck()
+    }
+
+    private func scheduleAutomaticCheck() {
+        automaticCheckTimer?.invalidate()
+        automaticCheckTimer = nil
+        let model = PreferencesModel.shared
+        guard automaticPreferenceObserver != nil, model.preferences.automaticallyChecksForUpdates,
+              !isBusy, !isChoosingDownloadLocation, update == nil, installerURL == nil else { return }
+        let now = Date()
+        if let saved = model.preferences.lastUpdateCheckAttempt, saved > now {
+            guard model.recordUpdateCheckAttempt(now) else { return }
+        }
+        guard let next = AutomaticUpdatePolicy.nextCheckDate(enabled: true,
+            lastAttempt: model.preferences.lastUpdateCheckAttempt, now: now) else { return }
+        let delay = max(AutomaticUpdatePolicy.startupDelay, next.timeIntervalSince(now))
+        let timer = Timer(timeInterval: delay, repeats: false) { [weak self] _ in
+            Task { @MainActor in self?.checkAutomaticallyIfDue() }
+        }
+        timer.tolerance = min(3600, delay / 10)
+        automaticCheckTimer = timer
+        RunLoop.main.add(timer, forMode: .common)
+    }
+
+    private func checkAutomaticallyIfDue() {
+        let preferences = PreferencesModel.shared.preferences
+        guard preferences.automaticallyChecksForUpdates, !isBusy, !isChoosingDownloadLocation,
+              update == nil, installerURL == nil else { return }
+        let now = Date()
+        guard let next = AutomaticUpdatePolicy.nextCheckDate(enabled: true,
+            lastAttempt: preferences.lastUpdateCheckAttempt, now: now), next <= now else {
+            scheduleAutomaticCheck()
+            return
+        }
+        checkForUpdates(automatically: true)
+    }
+
+    func checkForUpdates() { checkForUpdates(automatically: false) }
+
+    private func checkForUpdates(automatically: Bool) {
         guard !isBusy, !isChoosingDownloadLocation else { return }
+        automaticCheckTimer?.invalidate()
+        automaticCheckTimer = nil
+        // Failed and cancelled attempts also consume the weekly automatic check.
+        let recorded = PreferencesModel.shared.recordUpdateCheckAttempt(Date())
+        guard recorded || !automatically else {
+            scheduleAutomaticCheck()
+            return
+        }
         let id = UUID()
         operationID = id
+        automaticCheckID = automatically ? id : nil
         update = nil
         installerURL = nil
         verifiedInstaller = nil
         state = .checking
         operation = Task {
-            defer { if operationID == id { operation = nil } }
+            defer {
+                if operationID == id {
+                    operation = nil
+                    automaticCheckID = nil
+                    scheduleAutomaticCheck()
+                }
+            }
             do {
                 let result = try await client.check(currentVersion: currentVersion)
                 guard operationID == id, !Task.isCancelled else { return }
+                if automatically && !PreferencesModel.shared.preferences.automaticallyChecksForUpdates {
+                    cancel()
+                    return
+                }
                 update = result
                 state = result == nil ? .upToDate : .available
             } catch {
@@ -75,6 +155,7 @@ final class UpdateModel: ObservableObject {
         isChoosingDownloadLocation = true
         let response = panel.runModal()
         isChoosingDownloadLocation = false
+        defer { scheduleAutomaticCheck() }
         guard response == .OK, let destination = panel.url else { return }
         let accessing = destination.startAccessingSecurityScopedResource()
         let id = UUID()
@@ -116,8 +197,10 @@ final class UpdateModel: ObservableObject {
         operationID = UUID()
         operation?.cancel()
         operation = nil
+        automaticCheckID = nil
         state = update == nil ? .idle : .available
         progress = 0
+        scheduleAutomaticCheck()
     }
 
     func openInstaller() {

@@ -108,7 +108,11 @@ apply to published versions through 0.5.1, not to locally built releases from 0.
 位置。取消保存窗口不会开始下载。安装包校验并打开后，退出 FileMint，
 将新版拖入“应用程序”替换旧版，推出“FileMint”安装磁盘，再从“应用程序”重新打开。
 可随时取消下载并重试；
-检查和下载都需要主动操作。macOS 可能需要再次确认应用或启用 Finder 扩展。
+下载和安装需要主动操作。macOS 可能需要再次确认应用或启用 Finder 扩展。
+
+“通用 → 自动检查更新”默认开启。应用运行时每 7 天最多检查一次，首次到期检查
+在启动或开启开关至少一分钟后进行；检查失败也会保留间隔，重启不会立即重试。
+发现新版本后可在设置顶部或菜单栏菜单查看。关闭后仍可手动检查，不会自动下载。
 
 For this upgrade from versions 0.3.0–0.5.0, download the new DMG using a browser.
 Their old in-app downloader can add a sandbox execution block; recopying that
@@ -124,7 +128,12 @@ volume, then reopen FileMint from Applications. macOS may
 ask you to approve the app or Finder extension again. Existing installation
 requirements in this guide still apply.
 
-Update checks and downloads are manual. A failed check is shown as an error;
+General → Automatically check for updates defaults on. While the app runs, it
+checks at most once every seven days, with at least a one-minute delay after
+startup or enabling the switch. Attempt times persist even on failure. New
+versions appear in settings and the menu bar menu without opening a window.
+Manual checks work with the switch off; downloads and installation remain manual.
+A failed check is shown in About as an error;
 it does not mean your version is current. Check or download again, or use the
 release-page link if GitHub is unavailable. A verified installer can be reopened
 from About during the same session. Opening it does not replace the running app.

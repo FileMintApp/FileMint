@@ -100,6 +100,18 @@ final class PreferencesModel: ObservableObject {
         save()
     }
 
+    func setAutomaticallyChecksForUpdates(_ enabled: Bool) {
+        guard preferences.automaticallyChecksForUpdates != enabled else { return }
+        preferences.automaticallyChecksForUpdates = enabled
+        save()
+    }
+
+    @discardableResult
+    func recordUpdateCheckAttempt(_ date: Date) -> Bool {
+        preferences.lastUpdateCheckAttempt = date
+        return save()
+    }
+
     func openLoginSettings() { loginItemService.openSettings() }
 
     func openFullDiskAccessSettings() {
@@ -109,14 +121,19 @@ final class PreferencesModel: ObservableObject {
         }
     }
 
-    func save() {
+    @discardableResult
+    func save() -> Bool {
         do {
             try store.save(preferences)
             DistributedNotificationCenter.default().post(
                 name: Notification.Name(FileMintAppGroup.preferencesDidChangeNotification), object: nil
             )
             lastError = nil
-        } catch { lastError = error.localizedDescription }
+            return true
+        } catch {
+            lastError = error.localizedDescription
+            return false
+        }
     }
 
     func resetTemplates() {

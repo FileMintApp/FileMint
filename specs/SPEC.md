@@ -5,7 +5,7 @@
 A small, native macOS utility that creates a file where the user is already working.
 Fast Finder actions, a compact keyboard-friendly creation panel, and no account,
 analytics, folder crawling, or clipboard monitoring. File creation works offline;
-only user-requested update checks and downloads use the network.
+optional low-frequency update checks and user-requested downloads use the network.
 
 ## The two creation paths
 
@@ -86,8 +86,8 @@ only user-requested update checks and downloads use the network.
   next context menu and creation. App-launch completion callbacks may run on a
   background queue; they must not inherit main-actor isolation. Error UI is
   dispatched explicitly to the main actor.
-- Preference refresh is notification-driven. No timers or background directory
-  enumeration. File I/O runs away from the main thread, and duplicate submission
+- Preference refresh is notification-driven, with no polling timers or background
+  directory enumeration. File I/O runs away from the main thread, and duplicate submission
   is disabled until it completes. An actionable error keeps the draft intact.
 
 ## Folders and permissions
@@ -121,6 +121,10 @@ only user-requested update checks and downloads use the network.
 - Settings give short instructions for enabling the extension (macOS 15+:
   General → Login Items & Extensions → Finder; older systems: Privacy & Security
   → Extensions). Show actual extension status when the system API is available.
+- macOS discovers and loads the bundled Finder extension; its enabled state is
+  controlled by the user. Explain this in the setup guide and open the system
+  extension management UI on request. Do not use private APIs or `pluginkit` to
+  silently enable it from the sandboxed app. Refresh actual status on returning.
 - Finder APIs remain in FinderSyncExtension; deterministic rules in CorePackage;
   SwiftUI settings remain in App/FileMint. Shared AppKit creation UI may be
   compiled into both app and extension.
@@ -186,8 +190,23 @@ only user-requested update checks and downloads use the network.
 - About and both README languages include Special Thanks / 特别感谢 to `阿逼`,
   linking to `https://github.com/bibinocode`, for help with Developer ID signing
   and Apple notarization. Preserve the nickname verbatim in both languages.
-- About, the application menu and the menu bar offer Check for Updates. Checking
-  is explicit: no launch-time requests, periodic polling, account or analytics.
+- About, the application menu and the menu bar offer Check for Updates. General
+  includes Automatically check for updates, enabled for new and older settings
+  unless an explicit off value has been saved. Manual checks work with it off.
+- While the main app is running, automatic checks request only release metadata
+  at most once per seven days. The first overdue check waits at least 60 seconds
+  after startup or enabling the switch. Use a one-shot timer for the next due
+  check, not frequent polling; no helper launches the app just to check.
+  Persist the attempt time before each check, including manual checks, failures
+  and cancellations, so relaunches, wake and switching off/on do not trigger
+  repeated requests. A future timestamp after clock rollback waits one interval
+  from the corrected time. If persistence fails, skip automatic networking.
+- Disabling the switch cancels scheduled and in-flight automatic checks, leaving
+  manual checks and downloads alone. Automatic work never overlaps an existing
+  operation or save panel, or discards an offered update or verified installer.
+  No-update results and failures remain quiet; errors are visible in About and
+  never represented as success. A new version appears in settings and the menu
+  bar menu without opening a window, stealing focus or downloading anything.
   Only the main app has the outbound-network entitlement; Finder stays offline.
 - Use the public latest stable release of `FileMintApp/FileMint` on GitHub.
   Compare the three numeric version components, never lexicographically. Equal

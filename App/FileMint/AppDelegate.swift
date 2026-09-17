@@ -3,6 +3,7 @@ import AppKit
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
+        UpdateModel.shared.startAutomaticChecks()
         if notification.userInfo?[NSApplication.launchIsDefaultUserInfoKey] as? Bool == true {
             SettingsWindowController.shared.show()
         }

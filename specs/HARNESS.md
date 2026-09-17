@@ -61,6 +61,14 @@ icon only for the settings window's lifetime.
 
 ## Update coverage
 
+`AutomaticUpdateTests` covers default-on migration, saved off/attempt persistence,
+the seven-day boundary, re-enabling without resetting the cooldown, clock
+rollback recovery, and bilingual automatic-update and extension setup guidance.
+Native checks should exercise the first delayed check, disabling during an
+automatic check, manual checks with the switch off, and quiet update discovery
+with settings closed. No-update/failure outcomes must not open a window; an
+available update must appear in settings and the menu without starting a download.
+
 `AppUpdateTests` covers numeric stable-version comparison, no downgrades, release
 and asset validation, trusted download/redirect URLs, exact checksum filenames,
 digest mismatches, sandbox no-user-consent quarantine rejection, and bilingual

@@ -33,6 +33,9 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case followSystem
     case launchAtLogin
     case showMenuBar
+    case automaticallyCheckForUpdates
+    case automaticUpdateHint
+    case viewUpdate
     case loginNeedsApproval
     case loginInstallFirst
     case loginRegistrationFailed
@@ -167,6 +170,9 @@ public enum FileMintStrings {
         .followSystem: ("Follow System", "跟随系统"),
         .launchAtLogin: ("Launch at login", "开机自动启动"),
         .showMenuBar: ("Show in menu bar", "显示在菜单栏"),
+        .automaticallyCheckForUpdates: ("Automatically check for updates", "自动检查更新"),
+        .automaticUpdateHint: ("While FileMint is running, check for a new version at most once every 7 days. Download and install when you choose.", "FileMint 运行时，每 7 天最多检查一次新版本。下载和安装由你决定。"),
+        .viewUpdate: ("View Update", "查看更新"),
         .loginNeedsApproval: ("Allow FileMint in macOS Login Items to finish enabling startup.", "请在 macOS 登录项中允许 FileMint，完成开机启动设置。"),
         .loginInstallFirst: ("Move FileMint to Applications to enable launch at login.", "将 FileMint 移到“应用程序”后启用开机启动。"),
         .loginRegistrationFailed: ("Launch at login could not be enabled. Retry or check macOS Login Items.", "未能启用开机启动，可重试或检查 macOS 登录项设置。"),
@@ -201,7 +207,7 @@ public enum FileMintStrings {
         .openInstaller: ("Reopen Installer", "重新打开安装包"),
         .releaseNotes: ("Release Notes", "查看发布说明"),
         .availableVersion: ("Available version", "可用版本"),
-        .updateIdle: ("Check GitHub for a new version when you choose. No automatic checks or downloads.", "主动检查 GitHub 上的新版本，不会自动检查或下载。"),
+        .updateIdle: ("Check for a new version now, or manage automatic checks in General. Downloads always require your confirmation.", "可立即检查新版本，或在“通用”中管理自动检查。下载始终需要你的确认。"),
         .updateChecking: ("Checking for updates…", "正在检查更新…"),
         .updateCurrent: ("You're up to date. No newer stable release is available.", "当前已是最新版本，暂无更新的正式版本。"),
         .updateAvailable: ("A new version is available. Download it when you're ready.", "发现新版本，可下载更新。"),
@@ -237,7 +243,7 @@ public enum FileMintStrings {
         .needsAccess: ("Choose this folder once", "需首次选择此文件夹以授权"),
         .productTagline: ("A new file. Right here.", "新文件，就在此刻。"),
         .productDetail: ("Right-click in Finder to create a file. Use New File… when you want to name it or paste content first.", "在 Finder 右键创建文件。需要命名或粘贴内容时，选择“新建文件…”。"),
-        .finderSetup: ("Enable FileMint in macOS Finder extensions, then add your working folders.", "在 macOS 中启用 FileMint Finder 扩展，再添加常用文件夹。"),
+        .finderSetup: ("macOS requires you to enable the Finder extension. Click Open Extension Settings, enable FileMint, then return here to refresh its status. You can also create files using New File… above.", "Finder 扩展需要你在 macOS 中开启。点击“打开扩展设置”，开启 FileMint 后返回这里，状态会自动刷新。也可直接使用上方的“新建文件…”功能。"),
         .fileTypeHint: ("Checked types appear in Finder and the format picker. Drag to reorder, or use Move Up / Down.", "勾选后显示在 Finder 和后缀选择器中。拖动排序，或使用上移、下移。"),
         .customTypeHint: ("Creates UTF-8 text with this suffix. A suffix does not convert text into PDF, images or Office files.", "以此后缀创建 UTF-8 文本；不能通过更改后缀生成 PDF、图片或 Office 文件。"),
         .restoreConfirm: ("Restore built-in types? Custom types will be kept.", "恢复内置类型？自定义类型会保留。"),

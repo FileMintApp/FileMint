@@ -3,6 +3,45 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Automatic update checks and extension guidance — 2026-09-17
+
+- General now has a default-on automatic update switch. Attempts persist across
+  launches and are spaced at least seven days apart; the first overdue check
+  waits at least 60 seconds. Manual checks remain usable with the switch off.
+  Release discovery shows an in-app/menu indication without a download or window.
+- Apple public documentation and a DTS response were reviewed; the bundled
+  extension's loading and user enablement are separate. The app remains
+  sandboxed and uses status plus system settings guidance. Sources and the
+  supported boundary are in `FINDER_EXTENSION_ENABLEMENT.md`.
+- Initial `make verify` and `make build` attempts were blocked by the machine's
+  unaccepted Xcode license (exit 69). Command Line Tools also failed with a
+  PackageDescription linker error. After the user completed Xcode setup,
+  Xcode 27.0 (27A266a) passed its first-launch check. No system setting or license
+  was changed by the agent.
+- The normal `make verify` command then passed all **60 tests in 5 suites** and
+  all **5 JSON harness cases** using `/Applications/Xcode.app/Contents/Developer`.
+  `make build` with `CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO` succeeded.
+  Both the app and Finder extension contain arm64 and x86_64; their versions
+  match, and the accessory-launch flag, Finder extension metadata and bundled
+  license were checked. This is an unsigned local build, not a signed release,
+  notarized installer or completed installation. Global `xcode-select` still
+  points to Command Line Tools; the Makefile selects Xcode for these commands.
+- Independent validation used the installed Swift compiler directly with its
+  matching SDK, writing artifacts to `/tmp/filemint-validation`: all Core sources
+  compiled; all **60 Swift Testing tests in 5 suites** passed; all **5 JSON harness
+  cases** passed. The app, shared UI and Finder status bridge passed Swift 6
+  type checking. Existing download-closure capture warnings remain.
+- A temporary native smoke executable compiled the actual `UpdateModel.swift`
+  with in-memory preferences and a controlled mock update client. It exercised
+  the real 60-second one-shot timer: no immediate request, exactly one delayed
+  check, attempt recorded before completion, cancellation on disabling, manual
+  checks with auto off, retained cooldown after toggling, and an in-flight manual
+  check unaffected by toggling all passed. It made no network request and did
+  not open an installer or change the user's preferences.
+- `git diff --check` passed. Packaged-app visual inspection, a real automatic
+  GitHub request, and sleep/wake behavior remain native acceptance follow-ups.
+  The existing installed app was not replaced, and no release was published.
+
 ## Automated verification
 
 - 54 Swift Testing tests pass, including Desktop menu destinations, installer quarantine preflight, repeated menu creation, update validation and bilingual About

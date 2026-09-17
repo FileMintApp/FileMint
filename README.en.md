@@ -46,7 +46,7 @@ Enable, disable and reorder the built-in formats, then add your own text suffixe
 - **Ready when you log in.** Launch at login and the menu bar item are enabled by default after installation and first launch. Both can be disabled in General.
 - **Your language.** Follow the system language or choose English / Chinese. The Finder entry combines the FileMint logo with the localized New File label; type rows remain text only.
 - **Native and focused.** Swift, AppKit and SwiftUI. Offline file creation, text-only menus, native editing, no web runtime, account or background scanning.
-- **Updates on your terms.** Check from About or the menus, download a verified installer, then finish installing yourself. No automatic checks or downloads.
+- **Low-frequency update checks.** Check automatically at most once every 7 days, enabled by default and optional in General. Manual checks remain in About and the menus. Download a verified installer when you choose, then finish installing yourself.
 - **Safe collisions.** Quick creation increments names; custom creation asks before replacement. Concurrent requests never silently overwrite one another.
 
 ## Use it
@@ -82,7 +82,7 @@ the old in-app downloader can produce a sandbox execution block. See the
 
 ## Private by design
 
-No telemetry or uploads of filenames, paths or content. Clipboard access happens only when you paste. GitHub connections happen only when you check for updates or download them. No account or subscription. [Privacy policy](PRIVACY.md).
+No telemetry or uploads of filenames, paths or content. Clipboard access happens only when you paste. GitHub connections are used for optional low-frequency automatic checks, manual checks and user-requested downloads. Automatic checks default on and can be disabled in General. No account or subscription. [Privacy policy](PRIVACY.md).
 
 ## Special Thanks
 

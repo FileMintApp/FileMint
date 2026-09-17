@@ -4,9 +4,17 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject private var model: PreferencesModel
+    @EnvironmentObject private var updater: UpdateModel
 
     var body: some View {
         VStack(spacing: 0) {
+            if let update = updater.update, model.selectedPane != .about {
+                HStack {
+                    Text("\(model.text(.availableVersion)) \(update.version.description)")
+                    Spacer()
+                    Button(model.text(.viewUpdate)) { model.selectedPane = .about }
+                }.font(.callout).padding([.horizontal, .top], 20)
+            }
             TabView(selection: $model.selectedPane) {
                 GeneralPane().tabItem { Text(model.text(.general)) }.tag(PreferencesModel.Pane.general)
                 TypesPane().tabItem { Text(model.text(.fileTypes)) }.tag(PreferencesModel.Pane.fileTypes)
@@ -73,6 +81,14 @@ private struct GeneralPane: View {
             Toggle(model.text(.showMenuBar), isOn: Binding(
                 get: { model.preferences.showMenuBar }, set: { model.setShowMenuBar($0) }
             ))
+            VStack(alignment: .leading, spacing: 4) {
+                Toggle(model.text(.automaticallyCheckForUpdates), isOn: Binding(
+                    get: { model.preferences.automaticallyChecksForUpdates },
+                    set: { model.setAutomaticallyChecksForUpdates($0) }
+                )).accessibilityIdentifier("automaticallyCheckForUpdates")
+                Text(model.text(.automaticUpdateHint)).font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             Toggle(model.text(.revealCreatedFile), isOn: $model.preferences.revealAfterCreation)
                 .onChange(of: model.preferences.revealAfterCreation) { _ in model.save() }
             HStack {
