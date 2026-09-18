@@ -30,7 +30,7 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   Hover and keyboard focus remain distinct from the selected page; arrow keys
   move between page buttons and the current page is exposed to accessibility.
 - File & Folder Tools retains its module and Menu actions headings, using native
-  checkboxes and separate softly bordered functional sections for the five tools.
+  checkboxes and separate softly bordered functional sections for the tools.
   Align menu-position pickers on the trailing side; keep descriptions and secondary
   options next to their tool. Use compact spacing, adaptive surfaces and mint
   accents. Menu-position picker values use the adaptive system control text color,
@@ -47,7 +47,8 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   remain readable with menu selection. Each file-tool action has a matching
   colored SF Symbol in settings and Finder, at both main-menu and submenu levels:
   names use blue `doc.on.doc`, paths indigo `link`, move teal `folder`, permanent
-  deletion orange `trash`, and AirDrop purple `airplayaudio`. The temporary move
+  deletion orange `trash`, AirDrop purple `airplayaudio`, and desktop aliases blue
+  `arrowshape.turn.up.right`. The temporary move
   destination retains its mint/teal icon in either location. Use 16 × 16 non-template
   menu images; color supplements recognizable shapes and text. New-file format
   choices and creation controls remain text only. The Finder

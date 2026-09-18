@@ -10,6 +10,7 @@ struct FileToolExpansionTests {
         preferences.isEnabled = true
         preferences.permanentDelete = true
         preferences.airDrop = true
+        preferences.desktopAlias = true
         for mask in 0..<(1 << FileTool.allCases.count) {
             preferences.mainMenuTools = Set(FileTool.allCases.enumerated().compactMap {
                 mask & (1 << $0.offset) != 0 ? $0.element : nil
@@ -37,7 +38,7 @@ struct FileToolExpansionTests {
         for json in [#"{}"#, #"{"deleteConfirmation":"invalid"}"#] {
             let value = try JSONDecoder().decode(FileToolsPreferences.self, from: Data(json.utf8))
             #expect(value.deleteConfirmation == .required)
-            #expect(!value.permanentDelete && !value.airDrop && value.mainMenuTools.isEmpty)
+            #expect(!value.permanentDelete && !value.airDrop && !value.desktopAlias && value.mainMenuTools.isEmpty)
             #expect(value.moveHereInMainMenu)
         }
         var value = FileMintPreferences.default
@@ -63,7 +64,7 @@ struct FileToolExpansionTests {
         var preferences = FileMintPreferences.default
         preferences.monitoredFolderURLs = [root]
         preferences.fileTools.isEnabled = true
-        for tool in [FileTool.airDrop, .permanentDelete] {
+        for tool in [FileTool.airDrop, .permanentDelete, .desktopAlias] {
             preferences.fileTools.setEnabled(true, for: tool)
             let selection = [root.appendingPathComponent("one"), root.appendingPathComponent("two")]
             #expect(FileToolsPolicy.availableTools(selection: selection, isItemMenu: true, preferences: preferences).contains(tool))
@@ -154,7 +155,7 @@ struct FileToolExpansionTests {
             let items = try FileDeletionService.capture([file])
             let store = FileOperationTicketStore(directory: root.appendingPathComponent("tickets"))
             let now = Date()
-            for request in [FileOperationRequest.permanentDelete(items: items, confirmation: .required), .airDrop([file])] {
+            for request in [FileOperationRequest.permanentDelete(items: items, confirmation: .required), .airDrop([file]), .desktopAlias(items)] {
                 let url = try store.enqueue(request, now: now)
                 #expect(try store.consume(url, now: now) == request)
                 #expect(try store.consume(url, now: now) == nil)

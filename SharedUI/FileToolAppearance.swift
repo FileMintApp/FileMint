@@ -9,6 +9,7 @@ enum FileToolAppearance {
         case .copyPaths: image("link", palette: [.systemIndigo, .systemBlue], size: size)
         case .move: image("folder", palette: [.systemTeal, .systemMint], size: size)
         case .permanentDelete: image("trash", palette: [.systemOrange, .systemRed], size: size)
+        case .desktopAlias: image("arrowshape.turn.up.right", palette: [.systemBlue, .systemTeal], size: size)
         case .airDrop: image("airplayaudio", palette: [.systemPurple, .systemIndigo], size: size)
         }
     }

@@ -62,11 +62,11 @@ This fixture does not prove that Finder has loaded the new extension.
 - Verify the tools root has a mint/blue wrench/screwdriver icon and the temporary
   Move Selected Items Here action has a mint/teal boxed right-arrow icon. Every
   tool has its matching settings icon in either menu location: blue names,
-  indigo paths, teal move, orange deletion, purple AirDrop. Icons remain readable
+  indigo paths, teal move, orange deletion, purple AirDrop and blue desktop aliases. Icons remain readable
   in light, dark and highlighted menus. New-file format rows remain text-only.
 - Toggle each child independently, then disable all; no empty root remains.
 - Disable/re-enable the module and relaunch: child choices and placement are preserved.
-- With the module off, all five settings sections remain visible and grayscale.
+- With the module off, all tool settings sections remain visible and grayscale.
   Try their checkboxes, placement pickers, move destination and deletion options
   with pointer and keyboard: none can change. The module checkbox still works.
   Re-enable and verify all previous choices return. With only one child disabled,
@@ -81,6 +81,16 @@ This fixture does not prove that Finder has loaded the new extension.
 - Enable AirDrop for files/folders/multiple items: the system recipient window
   opens with the captured selection. Cancel without sending, then verify the next
   tool action and normal quit work. Test unavailable AirDrop and folder access.
+- Enable Send Alias to Desktop (off on migration). Select a file, a nonempty
+  folder and an App bundle; verify Desktop entries are Finder aliases with the
+  native arrow, double-click opens the originals, and originals are unchanged.
+  Repeat to check numbered names and select items already on Desktop. Existing
+  files, folders and dangling links must never be overwritten.
+- Cancel source or Desktop authorization: create nothing and release the busy
+  guard. Grant only the exact fixture folders, relaunch and verify saved grants
+  work without another picker. Menu scope must remain unchanged. Check partial
+  failures and removed/replaced originals. A redirected/iCloud Desktop and
+  disconnected/file-provider originals require separate native evidence.
 - Confirm native checkboxes, descriptions and both placement/deletion controls remain
   readable at minimum window size in both languages and appearances.
 - Select files, folders and multiple items with Unicode/spaces/compound extensions;

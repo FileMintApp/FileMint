@@ -130,6 +130,10 @@ final class FinderSync: FIFinderSync {
                 FinderActions.shared.delete(selection, confirmation: preferences.fileTools.deleteConfirmation)
                 return
             }
+            if tool == .desktopAlias {
+                FinderActions.shared.sendAliasesToDesktop(selection)
+                return
+            }
             if tool == .airDrop {
                 FinderActions.shared.perform(.airDrop(selection))
                 return
@@ -203,6 +207,18 @@ private final class FinderActions {
                 }.value
                 open(url, activate: false)
             } catch { showError(error, title: .fileToolsErrorTitle) }
+        }
+    }
+
+    func sendAliasesToDesktop(_ selection: [URL]) {
+        Task {
+            do {
+                let url = try await Task.detached(priority: .userInitiated) {
+                    let items = try DesktopAliasService.capture(selection)
+                    return try FileOperationTicketStore().enqueue(.desktopAlias(items))
+                }.value
+                open(url, activate: false)
+            } catch { showError(error, title: .sendAliasToDesktop) }
         }
     }
 

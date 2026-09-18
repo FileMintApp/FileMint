@@ -3,6 +3,34 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Desktop aliases — 2026-09-18
+
+Checked on macOS 27.0 (26A428), Apple silicon, `41067c3` plus the desktop-alias
+worktree. See the [task and official sources](tasks/desktop-aliases.md).
+
+- Final automated verification passed: 112 Swift tests, 5 Harness cases, 10 CLI
+  regressions and 3 appcast tests. Unsigned universal app/extension build passed.
+- Production settings view: the opt-in alias checkbox, placement picker and blue
+  symbol were inspected in Chinese/light and English/dark at minimum detail width.
+  Main-menu placement changed successfully; master off disabled alias controls
+  while preserving their values.
+- An isolated, ad-hoc-signed sandbox fixture compiled the production coordinator.
+  Its source and synthetic Desktop were initially inaccessible. Cancelling the
+  source picker left zero outputs. Authorizing both exact fixture folders made
+  two aliases. Relaunching and repeating reused saved bookmarks without pickers,
+  making `Folder 2` and `报告 2.txt`; both original fixture contents were unchanged.
+- Finder displayed the native arrow. Get Info identified the folder output as
+  “替身” and showed the correct original; opening it displayed the original child.
+- The isolated fixture did not replace the installed app. A later clean arm64
+  Debug build `0.5.6 (14)` was installed at `/Applications/FileMint.app`; the
+  installed settings page showed the opt-in `发送替身到桌面` switch and placement
+  picker without changing preferences. The actual Finder extension callback,
+  real Desktop/iCloud integration and removable volumes remain unverified.
+  Rollback archive: `build/local-install-backups/20260918-174004-desktop-alias-debug-clean/FileMint-before-debug.zip`.
+- The four aliases created by the disposable fixture were removed from
+  `build/desktop-alias-native.iS7cSz/Desktop`; no test aliases remain there.
+- Logs and disposable fixture sources are in `build/desktop-alias-evidence/`.
+
 ## File tools settings polish — 2026-09-18
 
 Checked on macOS 27.0 (26A428), Apple silicon, `559fc8f` plus the UI-polish

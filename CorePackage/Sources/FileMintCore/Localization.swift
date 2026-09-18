@@ -79,6 +79,10 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case deleteConfirmMessage
     case deleteFailedCount
     case airDrop
+    case sendAliasToDesktop
+    case desktopAliasHint
+    case desktopAliasFailedCount
+    case desktopAliasAuthorize
     case airDropHint
     case airDropUnavailable
     case fileOperationFailed
@@ -265,6 +269,10 @@ public enum FileMintStrings {
         .deleteConfirmMessage: ("These files and folders will be deleted immediately, bypassing Trash. This cannot be undone.", "这些文件和文件夹将直接删除，不会放入废纸篓，且无法撤销。"),
         .deleteFailedCount: ("Deletion stopped. Deleted: %d. Not completed: %d. Check folder access and select the remaining items again.", "删除已停止。已删除 %d 个，未完成 %d 个。请检查文件夹权限，重新选择剩余项目后再试。"),
         .airDrop: ("AirDrop", "隔空投送"),
+        .sendAliasToDesktop: ("Send Alias to Desktop", "发送替身到桌面"),
+        .desktopAliasHint: ("Create Desktop shortcuts to the originals. Existing items are kept; duplicate names are numbered.", "在桌面创建指向原项目的替身，保留原文件，重名时自动编号。"),
+        .desktopAliasFailedCount: ("Alias creation stopped. Created: %d. Not completed: %d. Check the original items and folder access, then select the remaining items to try again.", "替身创建已停止。已创建 %d 个，未完成 %d 个。请检查原项目和文件夹权限，重新选择剩余项目后再试。"),
+        .desktopAliasAuthorize: ("Choose Desktop to allow FileMint to create aliases there.", "请选择桌面文件夹，允许 FileMint 在其中创建替身。"),
         .airDropHint: ("Open the system AirDrop window for the selected files and folders.", "为选中的文件或文件夹打开系统隔空投送窗口。"),
         .airDropUnavailable: ("AirDrop cannot share these items right now. Check that AirDrop is available and the selected items are accessible.", "暂时无法隔空投送这些项目，请检查隔空投送是否可用，以及所选项目是否可访问。"),
         .fileOperationFailed: ("The operation could not be completed. Check the selected items, folder access and tool settings, then try again.", "操作未能完成。请检查所选项目、文件夹权限和功能开关后重试。"),

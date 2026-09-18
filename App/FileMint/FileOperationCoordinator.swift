@@ -12,15 +12,21 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
     private let store: PendingFileMoveStore
     private let tickets: FileOperationTicketStore
     private let preferencesFile: URL?
+    private let aliasAccessStore: DesktopAliasAccessStore
+    private let desktopDirectory: URL
     private var sharingService: NSSharingService?
     private var sharingContinuation: CheckedContinuation<Void, Error>?
     private var operationTitle: FileMintTextKey = .moveFailed
 
     init(store: PendingFileMoveStore = PendingFileMoveStore(),
-         tickets: FileOperationTicketStore = FileOperationTicketStore(), preferencesFile: URL? = nil) {
+         tickets: FileOperationTicketStore = FileOperationTicketStore(), preferencesFile: URL? = nil,
+         aliasAccessStore: DesktopAliasAccessStore = DesktopAliasAccessStore(),
+         desktopDirectory: URL = DesktopAliasService.desktopDirectory) {
         self.store = store
         self.tickets = tickets
         self.preferencesFile = preferencesFile
+        self.aliasAccessStore = aliasAccessStore
+        self.desktopDirectory = desktopDirectory
         super.init()
     }
 
@@ -42,6 +48,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
                         case .prepare, .perform: operationTitle = .moveFailed
                         case .permanentDelete: operationTitle = .permanentDelete
                         case .airDrop: operationTitle = .airDrop
+                        case .desktopAlias: operationTitle = .sendAliasToDesktop
                         }
                         try await handle(request)
                     }
@@ -121,6 +128,28 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
                 service.perform(withItems: selection)
             }
 
+        case .desktopAlias(let items):
+            let selection = items.map(\.source)
+            try require(.desktopAlias, selection: selection)
+            var bookmarks = try aliasAccessStore.load()
+            for parent in uniqueParents(selection) {
+                guard try authorize(parent, bookmarks: &bookmarks, readOnly: true) else { return }
+                try aliasAccessStore.save(bookmarks)
+            }
+            guard try authorize(desktopDirectory, bookmarks: &bookmarks,
+                                message: .desktopAliasAuthorize) else { return }
+            try aliasAccessStore.save(bookmarks)
+            try require(.desktopAlias, selection: selection)
+            let directory = desktopDirectory
+            let preferencesFile = self.preferencesFile
+            _ = try await Task.detached(priority: .userInitiated) {
+                try DesktopAliasService.perform(items: items, in: directory) {
+                    let preferences = FileMintPreferencesStore(fileURL: preferencesFile).load()
+                    return FileToolsPolicy.availableTools(selection: selection, isItemMenu: true,
+                        preferences: preferences).contains(.desktopAlias)
+                }
+            }.value
+
         case .perform(let batchID, let destination):
             guard var pending = try store.load(), pending.id == batchID else { throw FileMoveError.staleRequest }
             try validate(pending, destination: destination)
@@ -184,8 +213,10 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
 
     /// Grants never expand the configured Finder menu scope. Existing folder
     /// bookmarks are already held by PreferencesModel; additional grants belong
-    /// only to this pending operation and are released after the request.
-    private func authorize(_ directory: URL, bookmarks: inout [String: Data], readOnly: Bool = false) throws -> Bool {
+    /// to the operation's private store (pending moves or desktop aliases).
+    /// Active access is released after the request.
+    private func authorize(_ directory: URL, bookmarks: inout [String: Data], readOnly: Bool = false,
+                           message: FileMintTextKey = .fileOperationAuthorize) throws -> Bool {
         if let data = bookmarks[directory.path] {
             var stale = false
             if let restored = try? URL(resolvingBookmarkData: data, options: [.withSecurityScope, .withoutUI],
@@ -204,7 +235,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
         let language = currentPreferences.language
         let panel = NSOpenPanel()
         panel.title = FileMintStrings.text(operationTitle, language: language)
-        panel.message = FileMintStrings.text(.fileOperationAuthorize, language: language)
+        panel.message = FileMintStrings.text(message, language: language)
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
@@ -230,6 +261,14 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
     }
 
     private func show(_ error: Error) {
+        if let failure = error as? DesktopAliasFailure {
+            let alert = NSAlert()
+            alert.messageText = text(.sendAliasToDesktop)
+            alert.informativeText = String(format: text(.desktopAliasFailedCount), failure.completed, failure.total - failure.completed)
+            NSApp.activate(ignoringOtherApps: true)
+            alert.runModal()
+            return
+        }
         if let failure = error as? FileDeletionFailure {
             let alert = NSAlert()
             alert.messageText = text(.permanentDelete)

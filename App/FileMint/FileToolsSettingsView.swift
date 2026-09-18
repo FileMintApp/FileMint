@@ -156,6 +156,7 @@ struct FileToolsSettingsView: View {
         case .move: .moveSettingsHint
         case .permanentDelete: .deleteSettingsHint
         case .airDrop: .airDropHint
+        case .desktopAlias: .desktopAliasHint
         }
     }
 }

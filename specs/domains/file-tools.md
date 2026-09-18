@@ -110,6 +110,38 @@ Load for: Optional Finder file/folder actions, selection snapshots and tool swit
   cancellation. System permission prompts remain authoritative. Opening the
   service must not open settings or change creation behavior.
 
+## Desktop aliases
+
+- Send Alias to Desktop / 发送替身到桌面 creates native Finder aliases for the
+  complete selected batch of files, folders or packages. It has an independent
+  switch, initially off (also on migration), and the usual menu placement picker,
+  initially submenu. Existing aliases and symbolic links use Foundation's native
+  bookmark semantics; FileMint does not rewrite their targets.
+- A Finder alias opens the original item; it does not copy or move its contents.
+  Finder owns the icon and arrow. Use Foundation bookmark data with
+  `suitableForBookmarkFile` and `URL.writeBookmarkData`, not a symbolic link,
+  AppleScript or a custom shortcut format. Never combine alias bookmark options
+  with `withSecurityScope`.
+- Capture immutable selection and filesystem identity on the explicit click;
+  use the existing private single-use expiring ticket transport. Recheck current
+  switches, whole-selection scope and source identities after authorization and
+  before each write. Reject roots, duplicates and missing/replaced sources.
+- The main app resolves Desktop under the operating-system-resolved real user
+  home (including the normal iCloud Desktop location). Desktop need not be a
+  configured menu location; authorization never expands menu scope. Authorize
+  exact source parents for read access and Desktop for writing using native
+  directory pickers only when needed. Keep operation grants in a private bookmark
+  store and release active access after each request; cancellation creates nothing.
+- Preserve the source name, adding ` 2`, ` 3`, etc. before a file extension (after
+  the whole name for folders/packages) on collision. Never overwrite any existing
+  Desktop item, including dangling links or an item created concurrently. Write
+  to an owned staging directory and publish by an exclusive rename; remove only
+  that staging directory. No folder traversal or content reads.
+- Serialize with existing file operations, run filesystem work off the main
+  thread and hold the app's busy/restart guard. On failure, stop and show created
+  and remaining counts; keep successful aliases and original resources intact.
+  A successful operation opens no settings or confirmation window.
+
 ## Working context
 
 - Core policies: `FileTools.swift`, `PendingFileMove.swift`, `FileOperationTicket.swift`,
