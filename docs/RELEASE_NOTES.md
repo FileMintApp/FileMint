@@ -1,3 +1,15 @@
+# FileMint 0.5.7
+
+## 产品展示与文档 / Product presentation and documentation
+
+- 官网首页和 README 重新整理，突出小体积原生 macOS app、Finder 工作流、本地处理和清晰的隐私边界。
+- 官网与 README 增加当前安装版的 Finder、创建面板、资源工具和文件（夹）工具截图。
+- 安装与隐私说明同步资源工具、文件工具和当前 0.5.7 安装包信息。
+
+- The website and README now lead with FileMint's small native macOS footprint, Finder workflow, local processing and clear privacy boundaries.
+- Current installed-build screenshots cover Finder menus, the creation panel, Resource Tools and File & Folder Tools.
+- Installation and privacy documentation now match Resource Tools, File & Folder Tools and the 0.5.7 installer.
+
 # FileMint 0.5.6
 
 已于 2026-09-18 发布：[GitHub Release v0.5.6](https://github.com/FileMintApp/FileMint/releases/tag/v0.5.6)。DMG、SHA-256 校验和和 `appcast.xml` 均已发布；签名、公证与远端下载核验见 [0.5.6 发布验证记录](RELEASE_VERIFICATION_0.5.6.md)。
