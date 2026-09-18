@@ -59,6 +59,21 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case enableFileTools
     case fileToolsOffHint
     case fileToolsActions
+    case showInMainMenu
+    case moveHereInMainMenu
+    case permanentDelete
+    case deleteConfirmation
+    case deleteRequireConfirmation
+    case deleteSilently
+    case permanentDeleteHint
+    case deleteConfirmTitle
+    case deleteConfirmMessage
+    case deleteFailedCount
+    case airDrop
+    case airDropHint
+    case airDropUnavailable
+    case fileOperationFailed
+    case fileOperationAuthorize
     case copyItemNames
     case copyItemPaths
     case copyItemsHint
@@ -218,10 +233,25 @@ public enum FileMintStrings {
         .basicSettings: ("Basics", "基础设置"),
         .extensions: ("Extensions", "扩展功能"),
         .fileTools: ("File & Folder Tools", "文件（夹）工具"),
-        .fileToolsHint: ("Choose tools for selected files and folders in a separate Finder submenu.", "在独立的 Finder 子菜单中，按需开启针对文件或文件夹的操作。"),
+        .fileToolsHint: ("Choose file and folder actions and where they appear in Finder.", "按需启用文件或文件夹操作，并选择显示在一级菜单或子菜单。"),
         .enableFileTools: ("Enable File & Folder Tools", "启用文件（夹）工具"),
         .fileToolsOffHint: ("Off by default. Turning this off hides its Finder menu and preserves your choices.", "默认关闭。关闭后隐藏对应的右键菜单，并保留子功能设置。"),
-        .fileToolsActions: ("Menu actions", "菜单子功能"),
+        .showInMainMenu: ("Show in main menu", "显示在一级菜单"),
+        .moveHereInMainMenu: ("Show “Move Selected Items Here” in main menu", "将「将所选项目移到此处」显示在一级菜单"),
+        .permanentDelete: ("Delete Permanently", "彻底删除"),
+        .deleteConfirmation: ("Before deleting", "删除方式"),
+        .deleteRequireConfirmation: ("Require confirmation", "需要二次确认"),
+        .deleteSilently: ("Delete silently", "直接静默删除"),
+        .permanentDeleteHint: ("Bypasses Trash and cannot be undone. Silent mode skips confirmation; system permissions still apply.", "不经过废纸篓，删除后无法撤销。静默删除不再二次确认，系统授权仍可能出现。"),
+        .deleteConfirmTitle: ("Permanently delete %d selected items?", "彻底删除所选的 %d 个项目？"),
+        .deleteConfirmMessage: ("These files and folders will be deleted immediately, bypassing Trash. This cannot be undone.", "这些文件和文件夹将直接删除，不会放入废纸篓，且无法撤销。"),
+        .deleteFailedCount: ("Deletion stopped. Deleted: %d. Not completed: %d. Check folder access and select the remaining items again.", "删除已停止。已删除 %d 个，未完成 %d 个。请检查文件夹权限，重新选择剩余项目后再试。"),
+        .airDrop: ("AirDrop", "隔空投送"),
+        .airDropHint: ("Open the system AirDrop window for the selected files and folders.", "为选中的文件或文件夹打开系统隔空投送窗口。"),
+        .airDropUnavailable: ("AirDrop cannot share these items right now. Check that AirDrop is available and the selected items are accessible.", "暂时无法隔空投送这些项目，请检查隔空投送是否可用，以及所选项目是否可访问。"),
+        .fileOperationFailed: ("The operation could not be completed. Check the selected items, folder access and tool settings, then try again.", "操作未能完成。请检查所选项目、文件夹权限和功能开关后重试。"),
+        .fileOperationAuthorize: ("Choose this exact folder to allow access to the selected items.", "请选择当前文件夹，以允许访问所选项目。"),
+        .fileToolsActions: ("Menu actions", "菜单功能"),
         .copyItemNames: ("Copy File / Folder Names", "拷贝文件（夹）名称"),
         .copyItemPaths: ("Copy File / Folder Paths", "拷贝文件（夹）路径"),
         .copyItemsHint: ("Names include extensions. Multiple selected items are copied one per line. An empty tools menu is hidden.", "名称包含后缀。多选时每个项目占一行；没有启用的子功能时隐藏工具菜单。"),

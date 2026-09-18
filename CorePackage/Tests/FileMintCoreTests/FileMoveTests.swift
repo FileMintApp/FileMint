@@ -159,9 +159,9 @@ struct FileMoveTests {
     @Test("transport is single-use and expiring, while pending state has no clock")
     func tickets() throws {
         try workspace { root, source, target, _ in
-            let tickets = FileMoveTicketStore(directory: root.appendingPathComponent("tickets"))
+            let tickets = FileOperationTicketStore(directory: root.appendingPathComponent("tickets"))
             let date = Date(timeIntervalSince1970: 1_000)
-            let request = FileMoveRequest.prepare([source.appendingPathComponent("file")])
+            let request = FileOperationRequest.prepare([source.appendingPathComponent("file")])
             let url = try tickets.enqueue(request, now: date)
             #expect(try tickets.consume(url, now: date) == request)
             #expect(try tickets.consume(url, now: date) == nil)

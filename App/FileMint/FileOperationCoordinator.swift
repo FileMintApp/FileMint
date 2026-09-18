@@ -4,20 +4,24 @@ import FileMintCore
 /// The main app is the sole writer of pending state and user files. Requests are
 /// serialized across URL callbacks, including native authorization dialogs.
 @MainActor
-final class FileMoveCoordinator {
-    static let shared = FileMoveCoordinator()
+final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
+    static let shared = FileOperationCoordinator()
     private var queue: [URL] = []
     private(set) var isBusy = false
     private var access: [URL] = []
     private let store: PendingFileMoveStore
-    private let tickets: FileMoveTicketStore
+    private let tickets: FileOperationTicketStore
     private let preferencesFile: URL?
+    private var sharingService: NSSharingService?
+    private var sharingContinuation: CheckedContinuation<Void, Error>?
+    private var operationTitle: FileMintTextKey = .moveFailed
 
     init(store: PendingFileMoveStore = PendingFileMoveStore(),
-         tickets: FileMoveTicketStore = FileMoveTicketStore(), preferencesFile: URL? = nil) {
+         tickets: FileOperationTicketStore = FileOperationTicketStore(), preferencesFile: URL? = nil) {
         self.store = store
         self.tickets = tickets
         self.preferencesFile = preferencesFile
+        super.init()
     }
 
     func enqueue(_ url: URL) {
@@ -33,14 +37,21 @@ final class FileMoveCoordinator {
                     let request = try await Task.detached(priority: .userInitiated) {
                         try tickets.consume(url)
                     }.value
-                    if let request { try await handle(request) }
+                    if let request {
+                        switch request {
+                        case .prepare, .perform: operationTitle = .moveFailed
+                        case .permanentDelete: operationTitle = .permanentDelete
+                        case .airDrop: operationTitle = .airDrop
+                        }
+                        try await handle(request)
+                    }
                 } catch { show(error) }
                 releaseAccess()
             }
         }
     }
 
-    private func handle(_ request: FileMoveRequest) async throws {
+    private func handle(_ request: FileOperationRequest) async throws {
         switch request {
         case .prepare(let selection):
             guard FileToolsPolicy.availableTools(selection: selection, isItemMenu: true,
@@ -57,6 +68,58 @@ final class FileMoveCoordinator {
                 let pending = try PendingFileMove.capture(selection: selection, bookmarks: savedBookmarks)
                 try store.save(pending)
             }.value
+
+        case .permanentDelete(let items, let confirmation):
+            let selection = items.map(\.source)
+            try require(.permanentDelete, selection: selection)
+            var bookmarks: [String: Data] = [:]
+            for parent in uniqueParents(selection) {
+                guard try authorize(parent, bookmarks: &bookmarks) else { return }
+            }
+            try require(.permanentDelete, selection: selection)
+            try await Task.detached(priority: .userInitiated) { try FileDeletionService.validate(items) }.value
+            let requiresConfirmation = DeleteConfirmation.isRequired(captured: confirmation, current: currentPreferences.fileTools.deleteConfirmation)
+            if requiresConfirmation {
+                let alert = NSAlert()
+                alert.alertStyle = .warning
+                alert.messageText = String(format: text(.deleteConfirmTitle), items.count)
+                alert.informativeText = text(.deleteConfirmMessage)
+                alert.addButton(withTitle: text(.cancel))
+                alert.addButton(withTitle: text(.permanentDelete))
+                alert.buttons[0].keyEquivalent = "\r"
+                alert.buttons[1].keyEquivalent = ""
+                NSApp.activate(ignoringOtherApps: true)
+                guard alert.runModal() == .alertSecondButtonReturn else { return }
+            }
+            let preferencesFile = self.preferencesFile
+            try await Task.detached(priority: .userInitiated) {
+                try FileDeletionService.perform(items: items) {
+                    let preferences = FileMintPreferencesStore(fileURL: preferencesFile).load()
+                    return FileToolsPolicy.availableTools(selection: selection, isItemMenu: true,
+                        preferences: preferences).contains(.permanentDelete) &&
+                        (requiresConfirmation || preferences.fileTools.deleteConfirmation == .silent)
+                }
+            }.value
+
+        case .airDrop(let selection):
+            try require(.airDrop, selection: selection)
+            var bookmarks: [String: Data] = [:]
+            for parent in uniqueParents(selection) {
+                guard try authorize(parent, bookmarks: &bookmarks, readOnly: true) else { return }
+            }
+            try require(.airDrop, selection: selection)
+            guard let service = NSSharingService(named: .sendViaAirDrop), service.canPerform(withItems: selection) else {
+                showMessage(.airDropUnavailable)
+                return
+            }
+            sharingService = service
+            service.delegate = self
+            defer { sharingService?.delegate = nil; sharingService = nil }
+            NSApp.activate(ignoringOtherApps: true)
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                sharingContinuation = continuation
+                service.perform(withItems: selection)
+            }
 
         case .perform(let batchID, let destination):
             guard var pending = try store.load(), pending.id == batchID else { throw FileMoveError.staleRequest }
@@ -81,6 +144,29 @@ final class FileMoveCoordinator {
         }
     }
 
+    private func text(_ key: FileMintTextKey) -> String {
+        FileMintStrings.text(key, language: currentPreferences.language)
+    }
+
+    private func require(_ tool: FileTool, selection: [URL]) throws {
+        guard FileToolsPolicy.availableTools(selection: selection, isItemMenu: true,
+            preferences: currentPreferences).contains(tool) else { throw FileMoveError.disabled }
+    }
+
+    func sharingService(_ sharingService: NSSharingService, didShareItems items: [Any]) {
+        let continuation = sharingContinuation
+        sharingContinuation = nil
+        continuation?.resume()
+    }
+
+    func sharingService(_ sharingService: NSSharingService, didFailToShareItems items: [Any], error: Error) {
+        let continuation = sharingContinuation
+        sharingContinuation = nil
+        if (error as NSError).code == NSUserCancelledError {
+            continuation?.resume()
+        } else { continuation?.resume(throwing: error) }
+    }
+
     private var currentPreferences: FileMintPreferences { FileMintPreferencesStore(fileURL: preferencesFile).load() }
 
     private func validate(_ pending: PendingFileMove, destination: URL) throws {
@@ -99,7 +185,7 @@ final class FileMoveCoordinator {
     /// Grants never expand the configured Finder menu scope. Existing folder
     /// bookmarks are already held by PreferencesModel; additional grants belong
     /// only to this pending operation and are released after the request.
-    private func authorize(_ directory: URL, bookmarks: inout [String: Data]) throws -> Bool {
+    private func authorize(_ directory: URL, bookmarks: inout [String: Data], readOnly: Bool = false) throws -> Bool {
         if let data = bookmarks[directory.path] {
             var stale = false
             if let restored = try? URL(resolvingBookmarkData: data, options: [.withSecurityScope, .withoutUI],
@@ -114,11 +200,11 @@ final class FileMoveCoordinator {
             }
         }
         let manager = FileManager.default
-        if manager.isReadableFile(atPath: directory.path) && manager.isWritableFile(atPath: directory.path) { return true }
+        if manager.isReadableFile(atPath: directory.path) && (readOnly || manager.isWritableFile(atPath: directory.path)) { return true }
         let language = currentPreferences.language
         let panel = NSOpenPanel()
-        panel.title = FileMintStrings.text(.moveItems, language: language)
-        panel.message = FileMintStrings.text(.moveAuthorizeFolder, language: language)
+        panel.title = FileMintStrings.text(operationTitle, language: language)
+        panel.message = FileMintStrings.text(.fileOperationAuthorize, language: language)
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
@@ -144,6 +230,18 @@ final class FileMoveCoordinator {
     }
 
     private func show(_ error: Error) {
+        if let failure = error as? FileDeletionFailure {
+            let alert = NSAlert()
+            alert.messageText = text(.permanentDelete)
+            alert.informativeText = String(format: text(.deleteFailedCount), failure.completed, failure.total - failure.completed)
+            NSApp.activate(ignoringOtherApps: true)
+            alert.runModal()
+            return
+        }
+        if operationTitle != .moveFailed {
+            showMessage(.fileOperationFailed)
+            return
+        }
         if let error = error as? FileMoveError {
             let key: FileMintTextKey = switch error {
             case .invalidSelection: .moveInvalidSelection
@@ -156,7 +254,7 @@ final class FileMoveCoordinator {
             showMessage(key)
         } else {
             let alert = NSAlert()
-            alert.messageText = FileMintStrings.text(.moveFailed, language: currentPreferences.language)
+            alert.messageText = FileMintStrings.text(operationTitle, language: currentPreferences.language)
             alert.informativeText = error.localizedDescription
             NSApp.activate(ignoringOtherApps: true)
             alert.runModal()
@@ -165,7 +263,7 @@ final class FileMoveCoordinator {
 
     private func showMessage(_ key: FileMintTextKey) {
         let alert = NSAlert()
-        alert.messageText = FileMintStrings.text(.moveFailed, language: currentPreferences.language)
+        alert.messageText = FileMintStrings.text(operationTitle, language: currentPreferences.language)
         alert.informativeText = FileMintStrings.text(key, language: currentPreferences.language)
         NSApp.activate(ignoringOtherApps: true)
         alert.runModal()

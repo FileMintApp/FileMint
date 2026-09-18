@@ -6,7 +6,8 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 
 ## Appearance
 
-- Native controls and adaptive system colors. Settings use a persistent leading
+- Native controls and adaptive system colors. Settings switches use the native
+  small control size, preserving readable labels and keyboard/accessibility support. Settings use a persistent leading
   sidebar and a resizable detail area, with General, Creation, Templates & Types,
   Finder & Folders, File & Folder Tools under Extensions, and About. Each page has a title, concise explanation and
   functional sections; list actions stay next to their list. No decorative cards
@@ -40,8 +41,8 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   toolbar use a separately drawn crisp monochrome F silhouette. No medical-style
   plus badge. `make icon` regenerates the asset catalog from the masters.
   The generated Xcode project is never edited directly.
-- Optional modules add independent Finder submenu roots only when enabled and
-  applicable. Chinese copy uses 拷贝 for Copy; the file-tools root is 文件（夹）工具.
+- Optional modules show enabled, applicable entries at their configured main-menu
+  or submenu level; empty submenu roots are hidden. Chinese copy uses 拷贝 for Copy; the file-tools root is 文件（夹）工具.
 
 ## Product presentation
 

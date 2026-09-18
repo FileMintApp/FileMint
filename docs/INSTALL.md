@@ -36,12 +36,14 @@ Finder 扩展是否被加载由 macOS 决定。若扩展没有出现，先确认
 
 ## 文件（夹）工具
 
-“文件（夹）工具”默认关闭。打开“设置 → 扩展功能 → 文件（夹）工具”后，可分别开启拷贝文件（夹）名称、拷贝文件（夹）路径和移动文件（夹）。
+“文件（夹）工具”默认关闭。打开“设置 → 扩展功能 → 文件（夹）工具”后，可分别开启拷贝文件（夹）名称、拷贝文件（夹）路径、移动文件（夹）、彻底删除和隔空投送。每项还可选择显示在 Finder 一级菜单，或收进“文件（夹）工具”子菜单；同一项不会重复显示。新建文件菜单不受这些选择影响。
 
-- 只在已授权范围内选中一个或多个本地项目后，Finder 右键菜单才会显示该工具；它与“新建文件”并列，不会嵌入或改变新建菜单。
+- 只在已授权范围内选中一个或多个本地项目后，Finder 右键菜单才会显示已启用的工具；它们可按设置显示在一级或二级菜单，不会嵌入或改变新建菜单。
 - 名称保留后缀，路径使用完整本地路径；多选时按 Finder 的选择顺序一项一行。只有点按拷贝菜单项才会写入剪贴板。
-- “移动文件（夹）”先保存源项目，不会立即移动。到目标文件夹空白处右键，选择最外层的“将所选项目移到此处”才会执行。
+- “移动文件（夹）”先保存源项目，不会立即移动。到目标文件夹空白处右键，选择“将所选项目移到此处”才会执行；此操作也能独立选择菜单层级。
 - 选择新的源项目会替换上一批待移动项目；成功前待移动项目会在重新启动 FileMint 后保留。同名目标、已变化的源项目、原文件夹或自身子目录都会被拒绝，不会覆盖或合并。
+- “彻底删除”默认要求二次确认，确认后直接删除所选项目，不经过废纸篓。可在设置中明确改为“直接静默删除”；此选项只跳过 FileMint 的确认框，不跳过 macOS 的文件夹授权。删除符号链接时只删除链接本身，不删除目标。
+- “隔空投送”默认关闭。启用后点击菜单项会打开 macOS 原生隔空投送界面，由你选择接收设备；取消、不可用或发送失败不会改为其他分享方式。
 
 ## 验证下载来源（可选）
 
@@ -103,12 +105,14 @@ The app's New File… action works independently of Finder integration.
 
 ### File & Folder Tools
 
-File & Folder Tools is disabled by default. Open Settings → Extensions → File & Folder Tools to enable Copy Names, Copy Paths and Move File / Folder independently.
+File & Folder Tools is disabled by default. Open Settings → Extensions → File & Folder Tools to enable Copy Names, Copy Paths, Move File / Folder, Delete Permanently and AirDrop independently. Each action can appear in Finder's main menu or in the File & Folder Tools submenu, never both. These choices do not alter New File.
 
-- It appears beside New File only after you select one or more local items inside an authorized scope; it never changes or nests inside the creation menu.
+- Enabled tools appear only after you select one or more local items inside an authorized scope. Their configured main-menu or submenu position never changes or nests inside the creation menu.
 - Names retain suffixes, paths are complete local paths, and multi-selection is copied one Finder-order item per line. The clipboard is written only after an explicit Copy action.
-- Move File / Folder captures source items without moving them. Right-click the target folder background, then choose Move Selected Items Here to complete the operation.
+- Move File / Folder captures source items without moving them. Right-click the target folder background, then choose Move Selected Items Here to complete the operation; that target action has its own placement choice.
 - A new source selection replaces the previous batch; unfinished items survive a FileMint relaunch. Existing names, changed sources, the current folder and a folder's own descendant are all rejected without overwrite or merge.
+- Delete Permanently asks for confirmation by default, then bypasses Trash. You can explicitly choose Delete silently; this skips only FileMint's dialog, never folder authorization. A symbolic link is removed without touching its target.
+- AirDrop starts disabled. When enabled, it opens macOS's native AirDrop UI so you choose a recipient. Cancelling, an unavailable service or a sending failure never falls back to another sharing service.
 
 In Finder & Folders, use “Check in System Settings…” to confirm Full Disk Access. An
 enabled FileMint switch means permission is granted; quit and reopen after

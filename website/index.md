@@ -26,7 +26,7 @@ features:
     details: 不要账号、没有分析或后台扫描；文件创建不依赖网络。
   - icon: ↔
     title: 可选的文件（夹）工具
-    details: 在已授权范围内，按需拷贝名称、路径或分两步移动已选项目。
+    details: 在已授权范围内，按需拷贝、移动、彻底删除或隔空投送，并决定菜单层级。
 ---
 
 <section id="finder" class="landing-section">
@@ -109,22 +109,24 @@ features:
 <section id="file-tools" class="landing-section">
   <p class="section-kicker">05 / FILE &amp; FOLDER TOOLS</p>
   <h2>处理已选项目，仍然只在你明确点按时发生。</h2>
-  <p class="section-intro">在已授权范围内选择本地文件或文件夹，开启后的“文件（夹）工具”会以与“新建文件”并列的根菜单出现。它默认关闭，因此原有创建菜单保持不变。</p>
+  <p class="section-intro">在已授权范围内选择本地文件或文件夹后，按需开启“文件（夹）工具”。每项操作可直接显示在一级菜单，也可收进子菜单；它默认关闭，新建文件菜单保持不变。</p>
   <div class="visual-grid visual-grid--wide">
     <div class="copy-stack">
-      <h3>拷贝而不打扰</h3>
+      <h3>菜单按你习惯放</h3>
       <ul class="benefit-list">
         <li><strong>拷贝文件（夹）名称</strong>：保留后缀；多选时每项一行</li>
         <li><strong>拷贝文件（夹）路径</strong>：写入完整本地路径</li>
-        <li>不会读取文件内容、扫描目录或监控剪贴板；只有点按菜单项才写入剪贴板</li>
+        <li>每项可选一级菜单或“文件（夹）工具”子菜单，同一项不会重复出现</li>
+        <li>不会读取文件内容、扫描目录或监控剪贴板；只有点按拷贝菜单项才写入剪贴板</li>
       </ul>
     </div>
     <div class="copy-stack">
-      <h3>移动，分两步确认</h3>
+      <h3>移动、删除与发送</h3>
       <ul class="benefit-list">
         <li>先在源项目上选择“移动文件（夹）”；此时不会立即移动</li>
-        <li>再在目标文件夹空白处右键，选择“将所选项目移到此处”</li>
+        <li>再在目标文件夹空白处右键，选择“将所选项目移到此处”；该操作也可选择菜单层级</li>
         <li>同名项目绝不覆盖或合并；待移动项目在完成或被新选择替换前会保留</li>
+        <li><strong>彻底删除</strong>默认二次确认并绕过废纸篓；<strong>隔空投送</strong>打开系统原生界面，由你选择接收设备</li>
       </ul>
     </div>
   </div>

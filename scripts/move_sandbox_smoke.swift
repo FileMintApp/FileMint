@@ -7,9 +7,9 @@ import FileMintCore
 final class MoveSandboxSmoke: NSObject, NSApplicationDelegate {
     private var window: NSWindow!
     private var status: NSTextField!
-    private var coordinator: FileMoveCoordinator!
+    private var coordinator: FileOperationCoordinator!
     private var store: PendingFileMoveStore!
-    private var tickets: FileMoveTicketStore!
+    private var tickets: FileOperationTicketStore!
     private var fixture: URL!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -18,14 +18,14 @@ final class MoveSandboxSmoke: NSObject, NSApplicationDelegate {
             let local = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
                 .appendingPathComponent("move-smoke")
             store = PendingFileMoveStore(file: local.appendingPathComponent("pending.json"))
-            tickets = FileMoveTicketStore(directory: local.appendingPathComponent("requests"))
+            tickets = FileOperationTicketStore(directory: local.appendingPathComponent("requests"))
             let preferencesURL = local.appendingPathComponent("preferences.json")
             var preferences = FileMintPreferences.default
             preferences.monitoredFolderURLs = [fixture]
             preferences.fileTools.isEnabled = true
             preferences.language = .chinese
             try FileMintPreferencesStore(fileURL: preferencesURL).save(preferences)
-            coordinator = FileMoveCoordinator(store: store, tickets: tickets, preferencesFile: preferencesURL)
+            coordinator = FileOperationCoordinator(store: store, tickets: tickets, preferencesFile: preferencesURL)
             window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 660, height: 180),
                               styleMask: [.titled, .closable], backing: .buffered, defer: false)
             window.title = "FileMint isolated move regression"
@@ -54,7 +54,7 @@ final class MoveSandboxSmoke: NSObject, NSApplicationDelegate {
         run(.perform(batchID: pending.id, destination: fixture.appendingPathComponent("target")))
     }
 
-    private func run(_ request: FileMoveRequest) {
+    private func run(_ request: FileOperationRequest) {
         guard !coordinator.isBusy else { return }
         do { coordinator.enqueue(try tickets.enqueue(request)) }
         catch { status.stringValue = "FAIL: enqueue"; return }

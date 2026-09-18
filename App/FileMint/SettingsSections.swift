@@ -72,7 +72,7 @@ struct GeneralPane: View {
                         .fixedSize(horizontal: false, vertical: true)
                     Button(model.text(.viewUpdateSettings)) { model.selectedPane = .about }
                 }
-            }.toggleStyle(.switch).padding(1)
+            }.toggleStyle(SmallSettingsSwitchStyle()).padding(1)
         }
     }
 }
@@ -91,19 +91,54 @@ struct FileToolsPane: View {
                 }
                 if model.preferences.fileTools.isEnabled {
                     SettingsSection(title: model.text(.fileToolsActions)) {
-                        Toggle(model.text(.copyItemNames), isOn: $model.preferences.fileTools.copyNames)
-                            .accessibilityIdentifier("fileTools.copyNames")
-                        Toggle(model.text(.copyItemPaths), isOn: $model.preferences.fileTools.copyPaths)
-                            .accessibilityIdentifier("fileTools.copyPaths")
-                        Toggle(model.text(.moveItems), isOn: $model.preferences.fileTools.move)
-                            .accessibilityIdentifier("fileTools.move")
+                        ForEach(FileTool.allCases, id: \.self) { tool in
+                            if tool != FileTool.allCases.first { Divider() }
+                            VStack(alignment: .leading, spacing: 10) {
+                                Toggle(model.text(tool.title), isOn: Binding(
+                                    get: { model.preferences.fileTools.isToolEnabled(tool) },
+                                    set: { model.preferences.fileTools.setEnabled($0, for: tool) }
+                                )).accessibilityIdentifier("fileTools.\(tool.rawValue)")
+                                Toggle(model.text(.showInMainMenu), isOn: Binding(
+                                    get: { model.preferences.fileTools.mainMenuTools.contains(tool) },
+                                    set: { value in
+                                        if value { model.preferences.fileTools.mainMenuTools.insert(tool) }
+                                        else { model.preferences.fileTools.mainMenuTools.remove(tool) }
+                                    }
+                                ))
+                                .accessibilityLabel("\(model.text(tool.title)) — \(model.text(.showInMainMenu))")
+                                .accessibilityIdentifier("fileTools.\(tool.rawValue).mainMenu")
+                                .disabled(!model.preferences.fileTools.isToolEnabled(tool))
+                                .padding(.leading, 16)
+                                if tool == .move {
+                                    Toggle(model.text(.moveHereInMainMenu), isOn: $model.preferences.fileTools.moveHereInMainMenu)
+                                        .disabled(!model.preferences.fileTools.move)
+                                        .accessibilityIdentifier("fileTools.moveHere.mainMenu")
+                                        .padding(.leading, 16)
+                                }
+                                if tool == .permanentDelete {
+                                    Picker(model.text(.deleteConfirmation), selection: $model.preferences.fileTools.deleteConfirmation) {
+                                        Text(model.text(.deleteRequireConfirmation)).tag(DeleteConfirmation.required)
+                                        Text(model.text(.deleteSilently)).tag(DeleteConfirmation.silent)
+                                    }.pickerStyle(.menu)
+                                        .disabled(!model.preferences.fileTools.permanentDelete)
+                                        .accessibilityIdentifier("fileTools.deleteConfirmation")
+                                        .padding(.leading, 16)
+                                    Text(model.text(.permanentDeleteHint)).font(.caption).foregroundStyle(.secondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                                if tool == .airDrop {
+                                    Text(model.text(.airDropHint)).font(.caption).foregroundStyle(.secondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                        }
                         Text(model.text(.moveItemsHint)).font(.caption).foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                         Text(model.text(.copyItemsHint)).font(.caption).foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
-            }.toggleStyle(.switch).padding(1)
+            }.toggleStyle(SmallSettingsSwitchStyle()).padding(1)
         }.onChange(of: model.preferences.fileTools) { _ in model.save() }
     }
 }
@@ -130,7 +165,7 @@ struct CreationSettingsPane: View {
                 SettingsSection(title: model.text(.afterCreation)) {
                     Toggle(isOn: $model.preferences.revealAfterCreation) {
                         Text(model.text(.revealCreatedFile)).frame(maxWidth: .infinity, alignment: .leading)
-                    }.toggleStyle(.switch)
+                    }.toggleStyle(SmallSettingsSwitchStyle())
                         .onChange(of: model.preferences.revealAfterCreation) { _ in model.save() }
                     Text(model.text(.afterCreationHint)).font(.caption).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -138,5 +173,13 @@ struct CreationSettingsPane: View {
                 Button(model.text(.manageTemplates)) { model.selectedPane = .fileTypes }
             }.padding(1)
         }
+    }
+}
+
+private struct SmallSettingsSwitchStyle: ToggleStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        Toggle(isOn: configuration.$isOn) { configuration.label }
+            .toggleStyle(.switch)
+            .controlSize(.small)
     }
 }

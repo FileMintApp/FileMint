@@ -1,23 +1,27 @@
 import Foundation
 
-public enum FileMoveRequest: Codable, Equatable, Sendable {
+public enum FileOperationRequest: Codable, Equatable, Sendable {
     case prepare([URL])
+    case permanentDelete(items: [FileMoveItem], confirmation: DeleteConfirmation)
+    case airDrop([URL])
     case perform(batchID: UUID, destination: URL)
 }
 
-private struct FileMoveTicket: Codable {
-    let request: FileMoveRequest
+private struct FileOperationTicket: Codable {
+    let request: FileOperationRequest
     let issuedAt: Date
 }
 
-public struct FileMoveTicketStore: Sendable {
+/// Preserve the existing private transport location and URL route; the ticket
+/// payload now describes all main-app file operations, not only moves.
+public struct FileOperationTicketStore: Sendable {
     private let directory: URL
     public init(directory: URL = FileMintStorage.directory.appendingPathComponent("move-requests")) {
         self.directory = directory
     }
 
-    public func enqueue(_ request: FileMoveRequest, now: Date = Date()) throws -> URL {
-        let data = try JSONEncoder().encode(FileMoveTicket(request: request, issuedAt: now))
+    public func enqueue(_ request: FileOperationRequest, now: Date = Date()) throws -> URL {
+        let data = try JSONEncoder().encode(FileOperationTicket(request: request, issuedAt: now))
         guard data.count <= 1_048_576 else { throw FileMoveError.invalidSelection }
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true,
                                                attributes: [.posixPermissions: 0o700])
@@ -28,7 +32,7 @@ public struct FileMoveTicketStore: Sendable {
         return URL(string: "filemint://move?id=\(id.uuidString)")!
     }
 
-    public func consume(_ url: URL, now: Date = Date()) throws -> FileMoveRequest? {
+    public func consume(_ url: URL, now: Date = Date()) throws -> FileOperationRequest? {
         guard let parts = URLComponents(url: url, resolvingAgainstBaseURL: false),
               parts.scheme == "filemint", parts.host == "move", parts.path.isEmpty,
               parts.user == nil, parts.password == nil, parts.port == nil, parts.fragment == nil,
@@ -42,7 +46,7 @@ public struct FileMoveTicketStore: Sendable {
         do { try FileManager.default.moveItem(at: source, to: claimed) }
         catch CocoaError.fileNoSuchFile { return nil }
         defer { try? FileManager.default.removeItem(at: claimed) }
-        let ticket = try JSONDecoder().decode(FileMoveTicket.self, from: Data(contentsOf: claimed))
+        let ticket = try JSONDecoder().decode(FileOperationTicket.self, from: Data(contentsOf: claimed))
         guard (0...60).contains(now.timeIntervalSince(ticket.issuedAt)) else { return nil }
         return ticket.request
     }

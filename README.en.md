@@ -40,12 +40,14 @@ at the bottom of the sidebar, and arrow keys can move between pages.
 
 ### More than creation: optional File & Folder Tools
 
-Select one or more files or folders inside an authorized scope, then right-click to find
-**File & Folder Tools** beside **New File**. The module is off by default, leaving the existing creation menu unchanged.
+Select one or more files or folders inside an authorized scope, then opt into
+**File & Folder Tools**. The module is off by default, leaving the existing creation menu unchanged.
 
-- **Turn it on only if you need it.** Open FileMint → Settings → Extensions → File & Folder Tools. After enabling the master switch, choose Copy Names, Copy Paths, and Move File / Folder independently.
+- **Choose each menu position.** Put any enabled action directly in Finder's main menu or inside File & Folder Tools. An action appears once only. New File and its types stay unchanged.
 - **Copy names or paths.** Names include their suffixes; each selected item gets its own line. Paths are complete local filesystem paths. Only choosing either Copy command writes to the clipboard, and neither command reads file contents.
-- **Move in two deliberate steps.** Choose Move File / Folder on the source items, then right-click the target folder background and choose the root-level Move Selected Items Here action. Existing names are never overwritten or merged; selecting another source batch replaces the previous one, and unfinished items remain available to retry after you fix the problem.
+- **Move in two deliberate steps.** Choose Move File / Folder on the source items, then right-click the target folder background and choose Move Selected Items Here. That target action has its own main-menu or submenu choice. Existing names are never overwritten or merged; selecting another source batch replaces the previous one, and unfinished items remain available to retry after you fix the problem.
+- **Delete permanently after a clear choice.** Delete Permanently asks for confirmation by default and bypasses Trash; you can explicitly change it to Delete silently. It deletes the captured selected items only, and removes a symbolic link without touching its target.
+- **Use the system's AirDrop.** AirDrop opens macOS's native recipient UI. You choose the recipient; FileMint never sends automatically or substitutes another sharing service.
 - **You control the scope.** Tools appear only for the current local selection in an authorized scope. They do not crawl folders, monitor the clipboard, or process files in the background.
 
 ## Small by design, still focused on Finder
@@ -54,7 +56,7 @@ Select one or more files or folders inside an authorized scope, then right-click
 - **One-click presets.** Text, Markdown, JSON, Swift, HTML, CSS and Shell; enable CSV, YAML, XML, JavaScript, TypeScript, Python and SQL when needed.
 - **Your own types.** Save suffixes such as `.toml`, `.vue` and `.log`, optional starter content, and your preferred menu order.
 - **Settings without a pile-up.** A persistent sidebar separates creation, types, Finder & Folders, Extensions and About, so each preference has a clearer home.
-- **Handle selected items when you choose.** Optional File & Folder Tools puts name/path copying and deliberate two-step moves in a separate Finder menu. It is off by default and does not alter New File.
+- **Handle selected items when you choose.** Optional File & Folder Tools copies names or paths, moves in two steps, deletes permanently and opens AirDrop. Each action can live in the main menu or submenu; the module is off by default and does not alter New File.
 - **Paste before creating.** Notes, code and configuration go straight into the creation panel. Edited content, including Unicode, line breaks and literal template tokens, is saved verbatim.
 - **Ready when you log in.** Launch at login and the menu bar item are enabled by default after installation and first launch. Both can be disabled in General.
 - **Your language.** Follow the system language or choose English / Chinese. The Finder entry combines the FileMint logo with the localized New File label; type rows remain text only.
@@ -70,7 +72,7 @@ For a custom file: **New File…** → type `demo.js` → paste optional content
 
 `Tab` moves focus, `⌘V` pastes, `⌘↩` creates and `Esc` cancels. Return inserts a newline in the content editor. The app and menu bar also offer creation through a folder picker, without Finder integration.
 
-**File & Folder Tools:** Turn on the master switch in **Settings → Extensions → File & Folder Tools**. Right-click a selected item in an authorized scope to copy names, copy paths or prepare a move; confirm a move with a second right-click on the target folder background.
+**File & Folder Tools:** Turn on the master switch in **Settings → Extensions → File & Folder Tools**, then choose which actions to enable and whether each belongs in the main menu or submenu. Delete Permanently and AirDrop start off; permanent deletion confirms by default. Moving still needs a second right-click on the target folder background.
 
 Custom suffixes produce **UTF-8 text**. Renaming a suffix does not create a valid PDF, image or Office document.
 

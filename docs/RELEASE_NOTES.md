@@ -1,3 +1,19 @@
+# FileMint 0.5.6
+
+待发布版本。0.5.6 的源码、文档和官网内容可以随 `main` 推送；在 GitHub Release、DMG、校验和和更新源实际发布前，下载“最新版本”仍指向 0.5.5。
+
+## 新功能 / New features
+
+- 文件（夹）工具支持逐项选择 Finder 一级菜单或二级菜单，包括「将所选项目移到此处」。同一项只显示一次，空子菜单自动隐藏；新建文件菜单和创建流程保持不变。
+- 新增「彻底删除」。它只处理点按时捕获的所选项目，默认需要二次确认并绕过废纸篓；可明确改为“直接静默删除”。静默模式不会跳过文件夹授权，删除符号链接时只删除链接本身。
+- 新增「隔空投送」。它在点击后拉起 macOS 原生隔空投送界面，由用户选择接收设备；不会自动发送或回退为其他分享方式。
+- 彻底删除和隔空投送默认关闭，可在文件（夹）工具中分别启用；设置开关改为系统小尺寸。
+
+- File & Folder Tools now lets every action choose Finder's main menu or the submenu, including Move Selected Items Here. An action appears once only, empty submenus disappear, and New File remains unchanged.
+- Delete Permanently handles only the captured selected items. It confirms by default and bypasses Trash, with an explicit Delete silently option. Silent deletion never bypasses folder authorization, and deleting a symbolic link removes the link rather than its target.
+- AirDrop opens macOS's native recipient UI after an explicit click. The user chooses the recipient; it never sends automatically or falls back to another sharing service.
+- Delete Permanently and AirDrop start disabled and can be enabled separately. Settings switches now use the native small control size.
+
 # FileMint 0.5.5
 
 ## 新功能 / New features

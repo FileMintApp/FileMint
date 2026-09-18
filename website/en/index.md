@@ -26,7 +26,7 @@ features:
     details: No account, analytics or background scanning. Creating files needs no network.
   - icon: ↔
     title: Optional File & Folder Tools
-    details: Copy names, paths or deliberately move selected items inside authorized folders.
+    details: Copy, move, delete permanently or use AirDrop inside authorized folders, with per-action menu placement.
 ---
 
 <section id="finder" class="landing-section">
@@ -109,22 +109,24 @@ features:
 <section id="file-tools" class="landing-section">
   <p class="section-kicker">05 / FILE &amp; FOLDER TOOLS</p>
   <h2>Handle selected items only when you explicitly ask.</h2>
-  <p class="section-intro">Select local files or folders inside an authorized scope, then enable File &amp; Folder Tools to see a root menu beside New File. It is off by default, so existing creation menus stay exactly as they are.</p>
+  <p class="section-intro">Select local files or folders inside an authorized scope, then opt into File &amp; Folder Tools. Each action can appear directly in Finder's main menu or inside the submenu. The module is off by default, so New File stays exactly as it is.</p>
   <div class="visual-grid visual-grid--wide">
     <div class="copy-stack">
-      <h3>Copy without surveillance</h3>
+      <h3>Put each action where you use it</h3>
       <ul class="benefit-list">
         <li><strong>Copy Names</strong>: preserves suffixes, with one line per selected item</li>
         <li><strong>Copy Paths</strong>: writes complete local filesystem paths</li>
+        <li>Each action can live in the main menu or File &amp; Folder Tools, never both</li>
         <li>No file-content reads, folder crawling or clipboard monitoring; the clipboard changes only when you choose a Copy action</li>
       </ul>
     </div>
     <div class="copy-stack">
-      <h3>Move in two deliberate steps</h3>
+      <h3>Move, delete and send</h3>
       <ul class="benefit-list">
         <li>Choose <strong>Move File / Folder</strong> on source items; nothing moves yet</li>
-        <li>Right-click the target folder background and choose <strong>Move Selected Items Here</strong></li>
+        <li>Right-click the target folder background and choose <strong>Move Selected Items Here</strong>; its position is configurable too</li>
         <li>Existing names never overwrite or merge; pending items remain until they complete or a new source selection replaces them</li>
+        <li><strong>Delete Permanently</strong> confirms by default and bypasses Trash; <strong>AirDrop</strong> opens the system recipient UI for you to choose a device</li>
       </ul>
     </div>
   </div>

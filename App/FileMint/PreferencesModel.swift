@@ -238,7 +238,7 @@ final class PreferencesModel: ObservableObject {
 
     func handle(url: URL) {
         if url.scheme == "filemint", url.host == "move" {
-            FileMoveCoordinator.shared.enqueue(url)
+            FileOperationCoordinator.shared.enqueue(url)
             return
         }
         if let directory = CreationRoute.directory(from: url) {

@@ -70,6 +70,7 @@ final class FinderSync: FIFinderSync {
         // Use the clicked folder for item menus, not a later Finder selection.
         let moveTarget = isContainer ? target : (selection.count == 1 ? selection.first : nil)
         let moveValues = isContainer ? nil : try? moveTarget?.resourceValues(forKeys: [.isDirectoryKey, .isPackageKey])
+        var moveHereItem: NSMenuItem?
         if let pending = try? PendingFileMoveStore().load(),
            FileMovePolicy.isEnabled(preferences, pending: pending),
            let destination = FileMovePolicy.destination(target: moveTarget, isContainer: isContainer,
@@ -82,22 +83,32 @@ final class FinderSync: FIFinderSync {
             item.image = Self.menuIcon("arrow.right.square", palette: [.systemMint, .systemTeal])
             item.tag = actions.register([FileMenuAction(directory: destination, moveBatchID: pending.id)])[0]
             // Root-level entry; Finder owns placement relative to system rows.
-            menu.insertItem(item, at: 0)
+            moveHereItem = item
         }
         let tools = FileToolsPolicy.availableTools(selection: selection,
             isItemMenu: menuKind == .contextualMenuForItems, preferences: preferences)
-        if !tools.isEmpty {
+        let layout = FileToolsMenuLayout(tools: tools, hasMoveDestination: moveHereItem != nil,
+                                         preferences: preferences.fileTools)
+        let toolsMenu = NSMenu(title: text(.fileTools))
+        if let moveHereItem {
+            if layout.moveHereInMain { menu.insertItem(moveHereItem, at: 0) }
+            else if layout.moveHereInSubmenu {
+                moveHereItem.image = nil
+                toolsMenu.addItem(moveHereItem)
+            }
+        }
+        let toolTags = actions.register(tools.map {
+            FileMenuAction(directory: directory, tool: $0, selection: selection)
+        })
+        for (index, tool) in tools.enumerated() {
+            let item = NSMenuItem(title: text(tool.title), action: #selector(performFileTool(_:)), keyEquivalent: "")
+            item.tag = toolTags[index]
+            if layout.main.contains(tool) { menu.addItem(item) }
+            else { toolsMenu.addItem(item) }
+        }
+        if layout.showsSubmenu {
             let toolsRoot = NSMenuItem(title: text(.fileTools), action: nil, keyEquivalent: "")
             toolsRoot.image = Self.menuIcon("wrench.and.screwdriver", palette: [.systemMint, .systemBlue])
-            let toolsMenu = NSMenu(title: text(.fileTools))
-            let toolTags = actions.register(tools.map {
-                FileMenuAction(directory: directory, tool: $0, selection: selection)
-            })
-            for (index, tool) in tools.enumerated() {
-                let item = NSMenuItem(title: text(tool.title), action: #selector(performFileTool(_:)), keyEquivalent: "")
-                item.tag = toolTags[index]
-                toolsMenu.addItem(item)
-            }
             toolsRoot.submenu = toolsMenu
             menu.addItem(toolsRoot)
         }
@@ -124,7 +135,15 @@ final class FinderSync: FIFinderSync {
             guard FileToolsPolicy.availableTools(selection: selection, isItemMenu: true,
                 preferences: preferences).contains(tool) else { return }
             if tool == .move {
-                FinderActions.shared.move(.prepare(selection))
+                FinderActions.shared.perform(.prepare(selection))
+                return
+            }
+            if tool == .permanentDelete {
+                FinderActions.shared.delete(selection, confirmation: preferences.fileTools.deleteConfirmation)
+                return
+            }
+            if tool == .airDrop {
+                FinderActions.shared.perform(.airDrop(selection))
                 return
             }
             guard let value = FileToolsPolicy.clipboardText(for: tool, selection: selection) else { return }
@@ -150,8 +169,8 @@ final class FinderSync: FIFinderSync {
 
     @objc private func moveSelectedHere(_ item: NSMenuItem) {
         guard let action = actions.take(item.tag), let batchID = action.moveBatchID else { return }
-        let request = FileMoveRequest.perform(batchID: batchID, destination: action.directory)
-        Task { @MainActor in FinderActions.shared.move(request) }
+        let request = FileOperationRequest.perform(batchID: batchID, destination: action.directory)
+        Task { @MainActor in FinderActions.shared.perform(request) }
     }
 
     @objc private func showCustomFile(_ item: NSMenuItem) {
@@ -187,14 +206,26 @@ private final class FinderActions {
         }
     }
 
-    func move(_ request: FileMoveRequest) {
+    func delete(_ selection: [URL], confirmation: DeleteConfirmation) {
         Task {
             do {
                 let url = try await Task.detached(priority: .userInitiated) {
-                    try FileMoveTicketStore().enqueue(request)
+                    let items = try FileDeletionService.capture(selection)
+                    return try FileOperationTicketStore().enqueue(.permanentDelete(items: items, confirmation: confirmation))
                 }.value
                 open(url, activate: false)
-            } catch { showError(error, title: .moveFailed) }
+            } catch { showError(error, title: .fileToolsErrorTitle) }
+        }
+    }
+
+    func perform(_ request: FileOperationRequest) {
+        Task {
+            do {
+                let url = try await Task.detached(priority: .userInitiated) {
+                    try FileOperationTicketStore().enqueue(request)
+                }.value
+                open(url, activate: false)
+            } catch { showError(error, title: .fileToolsErrorTitle) }
         }
     }
 

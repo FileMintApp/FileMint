@@ -9,8 +9,13 @@ Load for: Optional Finder file/folder actions, selection snapshots and tool swit
 - The module defaults off, including when older preferences are loaded. Copy
   Names and Copy Paths each have a persistent child switch, initially on. Turning
   the module off preserves child choices and hides its controls and Finder menu.
-  All children off hides the empty Finder menu. Existing creation behavior stays
-  unchanged.
+  All children off hides the empty Finder menu. Permanent Delete and AirDrop
+  have independent switches, initially off. Existing creation behavior stays unchanged.
+- Each tool has an independent Show in main menu switch, initially off; the
+  temporary Move Selected Items Here entry has its own placement, initially main.
+  Enabled, applicable entries appear exactly once, either directly in Finder or
+  inside File & Folder Tools. Hide the group when no applicable children remain.
+  Preserve placement while disabled. New File and its contents stay unchanged.
 - Tools appear only for selected items in configured folder scope. Do not use a
   background, toolbar or sidebar menu's stale selection. All selected URLs must
   be local file URLs in scope; never silently operate on a subset.
@@ -36,7 +41,7 @@ Load for: Optional Finder file/folder actions, selection snapshots and tool swit
   It survives relaunch, has no expiry or cancel entry, and is independent of the
   clipboard. Turning switches off hides/blocks actions but preserves the batch.
 - A configured destination context menu displays Move Selected Items Here /
-  将所选项目移到此处 at the root, a sibling of New File and File & Folder Tools.
+  将所选项目移到此处 at its configured level (main menu by default).
   Multiple items append a localized count. No filenames in the title. This is
   offered for a background directory or one selected ordinary directory, never
   a regular file, application/package, toolbar or ambiguous multiple selection.
@@ -61,11 +66,47 @@ Load for: Optional Finder file/folder actions, selection snapshots and tool swit
 - Do not log source/destination paths. No directory discovery or background scans;
   recursive I/O occurs only as part of an explicitly requested directory move.
 
+## Permanent deletion
+
+- Permanent Delete / 彻底删除 accepts selected files, folders, packages and links.
+  It bypasses Trash; deleting a link must not delete its target. Recursive deletion
+  is allowed only inside a folder explicitly selected for this operation.
+- A persistent dropdown offers Require confirmation / 需要二次确认 (default) and
+  Delete silently / 直接静默删除. The main app owns the native confirmation dialog,
+  shows the selected item count, and explains that deletion cannot be undone.
+  Cancel is the default. Silent mode skips this dialog, never system authorization
+  or failure reporting. A request captured in confirmation mode cannot become
+  silent while in transit; switching back to confirmation always takes effect.
+- Capture immutable selection and filesystem identities on the explicit click.
+  Transfer via private single-use expiring tickets, never bare path deep links.
+  Recheck whole selection scope, switches and identities after authorization and
+  confirmation, and before deleting each item. Reject roots, duplicate/overlapping
+  selections, missing/replaced items and changed parent paths. Never act on a
+  newly selected Finder item or follow a selected symlink to delete its target.
+- Only the main app deletes; reuse exact-parent sandbox authorization when needed.
+  Cancelled authorization or confirmation deletes nothing. Work runs off the main
+  thread, serialized with moves; quit/updater restart waits for completion.
+  On partial failure, stop and show completed/remaining counts; do not retry
+  automatically or report the whole batch as successful. No path/content logging.
+
+## AirDrop
+
+- AirDrop / 隔空投送 is offered for selected files and folders in scope, not for
+  background, toolbar or sidebar contexts. Capture the complete selection.
+- A private single-use expiring ticket opens the main app's native
+  `NSSharingService(named: .sendViaAirDrop)` flow. Check `canPerform(withItems:)`
+  for the complete selection, and report unavailable service or sharing failure.
+  The user chooses the recipient in the system UI; never auto-send, imitate that
+  UI, or fall back to another sharing service. Do not alter the clipboard.
+- Keep the service and any sandbox grants alive through success, failure or
+  cancellation. System permission prompts remain authoritative. Opening the
+  service must not open settings or change creation behavior.
+
 ## Working context
 
-- Core policies: `FileTools.swift`, `PendingFileMove.swift`, `FileMoveTicket.swift`,
+- Core policies: `FileTools.swift`, `PendingFileMove.swift`, `FileOperationTicket.swift`,
   `FileMenuAction.swift`, `Preferences.swift`.
-- Native adapters: `FinderSync.swift`, `FileMoveCoordinator.swift`; settings in
+- Native adapters: `FinderSync.swift`, `FileOperationCoordinator.swift`; settings in
   `SettingsSections.swift`. The coordinator's active requests also guard app quit
   and updater relaunch.
 - Load [Finder](finder-permissions.md) for scope and native callbacks,

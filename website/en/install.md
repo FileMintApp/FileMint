@@ -15,17 +15,19 @@ The 0.5.5 installer is Developer ID signed, Apple notarized and stapled.
 2. Open it and drag FileMint into Applications.
 3. Launch FileMint from Applications, then follow the in-app prompt to enable its Finder extension and authorize your working folders.
 4. Back in Finder, right-click the desktop or the background of an authorized folder and choose **New File**.
-5. To use File & Folder Tools, open **Settings → Extensions → File & Folder Tools**, then enable the master switch and the actions you need.
+5. To use File & Folder Tools, open **Settings → Extensions → File & Folder Tools**, then enable the master switch, the actions you need, and each action's main-menu or submenu position.
 
 The Finder extension and folder authorization are separate system capabilities. FileMint guides you to the relevant settings but never changes system permissions silently.
 
 ## Enable File & Folder Tools
 
-File & Folder Tools is off by default. Once enabled, select one or more local files or folders inside an authorized scope, then right-click and choose **File & Folder Tools**.
+File & Folder Tools is off by default. Once enabled, select one or more local files or folders inside an authorized scope. Each enabled action can appear directly in Finder's main menu or inside **File & Folder Tools**; New File stays unchanged.
 
 - **Copy Names** retains suffixes, while **Copy Paths** writes complete local paths. A multi-selection uses one line per item.
-- **Move File / Folder** captures source items without moving them. Right-click the target folder background, then choose the root-level **Move Selected Items Here** action to complete the move.
+- **Move File / Folder** captures source items without moving them. Right-click the target folder background, then choose **Move Selected Items Here** to complete the move. This target action has its own placement choice.
 - Existing names never overwrite or merge. If items remain unfinished, fix the problem and try the target again; choosing a new source selection replaces the pending batch.
+- **Delete Permanently** confirms by default and bypasses Trash. You can explicitly choose **Delete silently**; it never skips folder authorization, and a symbolic link is removed without touching its target.
+- **AirDrop** starts off. When enabled, it opens macOS's native AirDrop UI and lets you choose a recipient; it never sends automatically or falls back to another sharing service.
 - The menu appears only when every currently selected item is inside an authorized scope. It does not crawl folders or monitor the clipboard.
 
 ## Later updates

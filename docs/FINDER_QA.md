@@ -56,7 +56,19 @@ Record actual results in ACCEPTANCE.md.
   remain readable in light, dark and highlighted menus; submenu rows retain their
   text-only presentation.
 - Toggle each child independently, then disable all; no empty root remains.
-- Disable/re-enable the module and relaunch: child choices are preserved.
+- Disable/re-enable the module and relaunch: child choices and placement are preserved.
+- Set tools to all main, all submenu, and mixed placements: each enabled action
+  appears exactly once, empty groups disappear, and New File remains unchanged.
+  Move Selected Items Here has an independent placement and remains conditional.
+- Enable Permanent Delete using disposable fixtures only. Default confirmation
+  has Cancel as the default; cancel preserves every item, confirm bypasses Trash.
+  Silent mode skips that dialog; permissions and failures still surface. Verify
+  files, nonempty folders, packages, links, multi-selection and partial failures.
+- Enable AirDrop for files/folders/multiple items: the system recipient window
+  opens with the captured selection. Cancel without sending, then verify the next
+  tool action and normal quit work. Test unavailable AirDrop and folder access.
+- Confirm small native switches and both placement/deletion controls remain
+  readable at minimum window size in both languages and appearances.
 - Select files, folders and multiple items with Unicode/spaces/compound extensions;
   paste copied names and paths into a scratch document and compare exact lines.
 - Verify background, sidebar, toolbar and out-of-scope menus do not expose the
@@ -66,8 +78,9 @@ Record actual results in ACCEPTANCE.md.
 - Check Chinese/English at minimum settings size, keyboard navigation and light/dark.
 - Select a file, image, script, App bundle, folder, symlink and multiple items;
   Move File / Folder must save the selection without moving anything yet.
-- Right-click the destination: Move Selected Items Here is at the root, without
-  a filename; multiple items show a count. No cancel item or expiry exists.
+- Right-click the destination: Move Selected Items Here appears at its configured
+  main-menu or submenu level, without a filename; multiple items show a count.
+  No cancel item or expiry exists.
 - Relaunch before completing the move: the pending selection and source grants
   survive. Changing selections in Finder alone must not change the pending batch.
 - Prepare a new selection, then use an older open menu: it must not move the new

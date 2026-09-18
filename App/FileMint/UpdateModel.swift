@@ -145,7 +145,7 @@ final class UpdateModel: ObservableObject {
     var canSafelyRestart: Bool {
         UpdateInstallationPolicy.canRestart(
             hasDraft: CustomFileSavePanelController.shared.hasActiveDraft,
-            pendingCreations: PreferencesModel.shared.pendingCreationCount + (FileMoveCoordinator.shared.isBusy ? 1 : 0),
+            pendingCreations: PreferencesModel.shared.pendingCreationCount + (FileOperationCoordinator.shared.isBusy ? 1 : 0),
             hasModal: NSApp.modalWindow != nil || NSApp.windows.contains { $0.attachedSheet != nil })
     }
 

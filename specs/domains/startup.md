@@ -32,7 +32,10 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   not change the explicit-launch and Finder-creation window ownership rules.
 - Optional tool modules have their own settings entry under Extensions. Their
   master switches default off on new installs and migration, preserve child
-  choices when disabled, and never alter existing creation preferences.
+  choices and menu placement when disabled, and never alter existing creation
+  preferences. File-tool placements default to submenu, except Move Selected Items
+  Here which defaults to main. New deletion/AirDrop switches default off; deletion
+  confirmation defaults to required, including absent or invalid saved values.
 
 - An explicitly requested updater relaunch must wait until creation work and
   modal editing are finished. Preserve saved startup preferences and bookmarks.
