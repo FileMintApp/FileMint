@@ -16,9 +16,31 @@ public enum FileMenuDestination {
 public struct FileMenuAction: Equatable, Sendable {
     public let directory: URL
     public let templateID: String?
+    public let tool: FileTool?
+    public let selection: [URL]
+    public let moveBatchID: UUID?
     public init(directory: URL, templateID: String?) {
         self.directory = directory
         self.templateID = templateID
+        self.tool = nil
+        self.selection = []
+        self.moveBatchID = nil
+    }
+
+    public init(directory: URL, tool: FileTool, selection: [URL]) {
+        self.directory = directory
+        self.templateID = nil
+        self.tool = tool
+        self.selection = selection
+        self.moveBatchID = nil
+    }
+
+    public init(directory: URL, moveBatchID: UUID) {
+        self.directory = directory
+        self.templateID = nil
+        self.tool = nil
+        self.selection = []
+        self.moveBatchID = moveBatchID
     }
 }
 

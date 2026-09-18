@@ -8,7 +8,7 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 
 - Native controls and adaptive system colors. Settings use a persistent leading
   sidebar and a resizable detail area, with General, Creation, Templates & Types,
-  Finder & Folders, and About. Each page has a title, concise explanation and
+  Finder & Folders, File & Folder Tools under Extensions, and About. Each page has a title, concise explanation and
   functional sections; list actions stay next to their list. No decorative cards
   or disabled placeholders for future roadmap features. Follow system language
   by default; English and Chinese can be selected explicitly.
@@ -26,8 +26,12 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   with a stronger label/icon, rather than the system List's bright selection fill.
   Hover and keyboard focus remain distinct from the selected page; arrow keys
   move between page buttons and the current page is exposed to accessibility.
-- Only the top-level Finder entry has the small FileMint logo; its label maps
-  to the resolved app language. Format choices, submenu rows and creation
+- The top-level New File Finder entry has the small FileMint logo; its label
+  maps to the resolved app language. File & Folder Tools uses the system
+  `wrench.and.screwdriver` symbol in mint/blue; the temporary Move Selected
+  Items Here entry uses `arrow.right.square` in mint/teal. Both are 16 × 16
+  palette-colored images that keep their theme colors in the native menu and
+  remain readable with menu selection. Format choices, submenu rows and creation
   controls use text only. The Finder
   toolbar and macOS menu bar retain the small template glyph those entry points
   require. No icon preference.
@@ -36,6 +40,8 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   toolbar use a separately drawn crisp monochrome F silhouette. No medical-style
   plus badge. `make icon` regenerates the asset catalog from the masters.
   The generated Xcode project is never edited directly.
+- Optional modules add independent Finder submenu roots only when enabled and
+  applicable. Chinese copy uses 拷贝 for Copy; the file-tools root is 文件（夹）工具.
 
 ## Product presentation
 

@@ -46,6 +46,15 @@ struct ContentView: View {
             ScrollView {
                 VStack(spacing: 5) {
                     ForEach(PreferencesModel.Pane.allCases) { pane in
+                        if pane == .general || pane == .fileTools {
+                            Text(model.text(pane == .general ? .basicSettings : .extensions))
+                                .font(.caption).foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 12).padding(.top, pane == .general ? 0 : 14)
+                                .padding(.bottom, 4)
+                                .accessibilityAddTraits(.isHeader)
+                        }
+                        if pane == .about { Divider().padding(.vertical, 8) }
                         SettingsSidebarButton(title: model.text(pane.title), symbol: pane.symbol,
                                               isSelected: model.selectedPane == pane,
                                               isFocused: focusedPane == pane) {
@@ -100,6 +109,7 @@ struct ContentView: View {
         case .creation: CreationSettingsPane()
         case .fileTypes: TypesPane()
         case .folders: FoldersPane()
+        case .fileTools: FileToolsPane()
         case .about: AboutPane()
         }
     }
@@ -162,6 +172,7 @@ extension PreferencesModel.Pane {
         case .creation: .creationSettings
         case .fileTypes: .templatesAndTypes
         case .folders: .finderAndFolders
+        case .fileTools: .fileTools
         case .about: .about
         }
     }
@@ -172,6 +183,7 @@ extension PreferencesModel.Pane {
         case .creation: .creationSettingsHint
         case .fileTypes: .fileTypeHint
         case .folders: .finderFoldersHint
+        case .fileTools: .fileToolsHint
         case .about: .productTagline
         }
     }
@@ -182,6 +194,7 @@ extension PreferencesModel.Pane {
         case .creation: "doc.badge.plus"
         case .fileTypes: "doc.on.doc"
         case .folders: "folder"
+        case .fileTools: "wrench.and.screwdriver"
         case .about: "info.circle"
         }
     }

@@ -3,6 +3,79 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Finder tools menu icons — 2026-09-18
+
+Checked on macOS 27.0 (26A428), `9bbc850` plus the existing file-tools worktree
+and the menu-icon changes. The tools root uses `wrench.and.screwdriver` with a
+mint/blue palette; the pending-move root uses `arrow.right.square` with a
+mint/teal palette. Both resolve through the actual `menuIcon` helper as 16 × 16
+non-template images. An isolated AppKit rendering of both icons with their
+Chinese labels was inspected in light/dark appearances.
+`make verify-context` and the unsigned universal `make build` passed. This was
+an appearance-only change; Core tests were not rerun at that point.
+
+## Debug build installation and Finder menu acceptance — 2026-09-18
+
+Built the current worktree as an arm64 Debug app with ad-hoc local signing,
+`get-task-allow`, App Sandbox and Hardened Runtime disabled, then installed it
+at `/Applications/FileMint.app`. The previous installation is recoverable from
+`build/local-install-backups/20260918-debug-menu-icons/`.
+
+- The installed app and embedded Finder extension passed deep strict signature
+  verification and report version `0.5.4 (12)`. Their main executable bytes match
+  the Debug build output.
+- After restarting Finder, the Documents background context menu showed New File
+  and its format entries. A selected-directory context menu showed File & Folder
+  Tools with Copy Names, Copy Paths and Move File / Folder. PluginKit reports one
+  FileMint extension, from `/Applications/FileMint.app`.
+- The temporary Move Selected Items Here action was not prepared during this
+  install check, so no pending move state was created. Its two icon symbols were
+  already verified in the isolated light/dark rendering above.
+- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer make verify` passed
+  97 Swift tests, 5 harness cases, 10 CLI regressions and 3 appcast tests. The
+  installed app is running for manual acceptance; release signing and notarization
+  are outside this Debug install.
+
+## Colored Finder menu icons Debug update — 2026-09-18
+
+Changed the two Finder root icons to palette-colored, non-template SF Symbols:
+mint/blue for File & Folder Tools and mint/teal for Move Selected Items Here.
+Both remain 16 × 16. The arm64 Debug build was installed at
+`/Applications/FileMint.app`; the previous monochrome install is recoverable from
+`build/local-install-backups/20260918-color-menu-icons/`.
+
+- After restarting Finder, the actual selected-file context menu showed File &
+  Folder Tools with Copy Names, Copy Paths and Move File / Folder. The installed
+  FileMint extension was the only PluginKit registration.
+- No pending move was prepared, so this check did not change the user's pending
+  move state. The move icon was verified through the same palette helper and the
+  isolated AppKit rendering.
+- `make verify-context`, the arm64 Debug build, and
+  `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer make verify` passed.
+
+## Installed Debug Finder menu recovery — 2026-09-18
+
+Checked on macOS 27.0 (26A428), with installed Debug 0.5.4 (12) at
+`/Applications/FileMint.app`; source checkout was `9bbc850` plus existing
+file-tools worktree changes. No build or installation was performed in this check,
+so exact source-to-installed-binary correspondence was not established.
+
+- Reproduced: the Documents background context menu had no FileMint New File
+  entry. PluginKit listed exactly one enabled FileMint extension at the installed
+  path, but its process was absent. Strict signature verification passed and the
+  installed extension retained its App Sandbox entitlement.
+- System logs showed the Finder-hosted extension received SIGTERM at 10:14:11
+  and Finder lost its connection. The sender of that signal was not established.
+  Separate sandbox-rejection logs referred to an unsigned Release build under
+  DerivedData, not the installed Debug extension.
+- Recovery passed: `killall -TERM Finder` restarted Finder; the installed
+  extension process returned. The actual Documents background context menu then
+  showed New File and its custom, text, Markdown, JSON, HTML, CSS and Shell items.
+  PluginKit still listed exactly one enabled installed extension.
+- No application code, preferences or extension enablement was changed. File
+  creation, desktop menus and recurrence after another Debug replacement were
+  not tested. Automated tests/build were not run for this runtime recovery.
+
 ## Settings sidebar and native layout — 2026-09-17
 
 Subsequent local-install check on the same date: at the user's explicit request,

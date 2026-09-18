@@ -77,6 +77,37 @@ struct GeneralPane: View {
     }
 }
 
+struct FileToolsPane: View {
+    @EnvironmentObject private var model: PreferencesModel
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 26) {
+                SettingsSection(title: model.text(.fileTools)) {
+                    Toggle(model.text(.enableFileTools), isOn: $model.preferences.fileTools.isEnabled)
+                        .accessibilityIdentifier("fileTools.enabled")
+                    Text(model.text(.fileToolsOffHint)).font(.caption).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                if model.preferences.fileTools.isEnabled {
+                    SettingsSection(title: model.text(.fileToolsActions)) {
+                        Toggle(model.text(.copyItemNames), isOn: $model.preferences.fileTools.copyNames)
+                            .accessibilityIdentifier("fileTools.copyNames")
+                        Toggle(model.text(.copyItemPaths), isOn: $model.preferences.fileTools.copyPaths)
+                            .accessibilityIdentifier("fileTools.copyPaths")
+                        Toggle(model.text(.moveItems), isOn: $model.preferences.fileTools.move)
+                            .accessibilityIdentifier("fileTools.move")
+                        Text(model.text(.moveItemsHint)).font(.caption).foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(model.text(.copyItemsHint)).font(.caption).foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }.toggleStyle(.switch).padding(1)
+        }.onChange(of: model.preferences.fileTools) { _ in model.save() }
+    }
+}
+
 struct CreationSettingsPane: View {
     @EnvironmentObject private var model: PreferencesModel
 

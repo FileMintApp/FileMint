@@ -52,6 +52,31 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case importSettings
 
     case settingsLabel
+    case basicSettings
+    case extensions
+    case fileTools
+    case fileToolsHint
+    case enableFileTools
+    case fileToolsOffHint
+    case fileToolsActions
+    case copyItemNames
+    case copyItemPaths
+    case copyItemsHint
+    case fileToolsErrorTitle
+    case clipboardWriteFailed
+    case moveItems
+    case moveItemsHint
+    case moveSelectedHere
+    case moveSelectedHereCount
+    case moveFailed
+    case moveInvalidSelection
+    case moveSourceChanged
+    case moveInvalidDestination
+    case moveDestinationExists
+    case moveStaleRequest
+    case moveDisabled
+    case moveAuthorizeFolder
+    case moveChooseExactFolder
     case creationSettings
     case templatesAndTypes
     case finderAndFolders
@@ -190,6 +215,31 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
 public enum FileMintStrings {
     private static let focused: [FileMintTextKey: (String, String)] = [
         .settingsLabel: ("Settings", "设置"),
+        .basicSettings: ("Basics", "基础设置"),
+        .extensions: ("Extensions", "扩展功能"),
+        .fileTools: ("File & Folder Tools", "文件（夹）工具"),
+        .fileToolsHint: ("Choose tools for selected files and folders in a separate Finder submenu.", "在独立的 Finder 子菜单中，按需开启针对文件或文件夹的操作。"),
+        .enableFileTools: ("Enable File & Folder Tools", "启用文件（夹）工具"),
+        .fileToolsOffHint: ("Off by default. Turning this off hides its Finder menu and preserves your choices.", "默认关闭。关闭后隐藏对应的右键菜单，并保留子功能设置。"),
+        .fileToolsActions: ("Menu actions", "菜单子功能"),
+        .copyItemNames: ("Copy File / Folder Names", "拷贝文件（夹）名称"),
+        .copyItemPaths: ("Copy File / Folder Paths", "拷贝文件（夹）路径"),
+        .copyItemsHint: ("Names include extensions. Multiple selected items are copied one per line. An empty tools menu is hidden.", "名称包含后缀。多选时每个项目占一行；没有启用的子功能时隐藏工具菜单。"),
+        .fileToolsErrorTitle: ("File & Folder Tools", "文件（夹）工具"),
+        .clipboardWriteFailed: ("Could not write to the clipboard. Please try again.", "无法写入剪贴板，请重试。"),
+        .moveItems: ("Move File / Folder", "移动文件（夹）"),
+        .moveItemsHint: ("Choose items to move, then right-click the destination folder and choose Move Selected Items Here. A new selection replaces the previous one; pending items stay until moved.", "选择要移动的项目，再在目标位置右键选择“将所选项目移到此处”。新选择覆盖旧选择，待移动项目会一直保留。"),
+        .moveSelectedHere: ("Move Selected Items Here", "将所选项目移到此处"),
+        .moveSelectedHereCount: ("Move Selected Items Here (%d items)", "将所选项目移到此处（%d 项）"),
+        .moveFailed: ("Move could not be completed", "未能完成移动"),
+        .moveInvalidSelection: ("Select files or folders again. A selection cannot include a folder together with items inside it.", "请重新选择文件或文件夹，不能同时选择文件夹及其内部项目。"),
+        .moveSourceChanged: ("A source item is missing or has been replaced. Select the items to move again.", "源项目已不存在或已被替换，请重新选择要移动的项目。"),
+        .moveInvalidDestination: ("Choose a different folder. Items cannot be moved to their current folder or inside themselves.", "请选择其他文件夹，不能移动到原文件夹或项目自身内部。"),
+        .moveDestinationExists: ("An item with the same name already exists. Nothing will be overwritten. Choose another destination or resolve the name conflict, then try again.", "目标位置已有同名项目，不会覆盖。请选择其他位置或处理同名项目后重试。"),
+        .moveStaleRequest: ("The pending selection has changed. Reopen the destination context menu and try again.", "待移动项目已变化，请重新打开目标位置的右键菜单后重试。"),
+        .moveDisabled: ("Enable Move File / Folder in File & Folder Tools, and check the configured folder scope.", "请启用文件（夹）工具中的移动功能，并检查菜单文件夹范围。"),
+        .moveAuthorizeFolder: ("Allow access to this folder to move the selected items. Choose the indicated folder; your pending selection is kept if you close this dialog.", "移动所选项目需要访问此文件夹。请选择当前指定的文件夹；关闭此对话框会保留待移动项目。"),
+        .moveChooseExactFolder: ("Please choose the indicated folder.", "请选择指定的文件夹。"),
         .creationSettings: ("Creation", "创建行为"),
         .templatesAndTypes: ("Templates & Types", "模板与类型"),
         .finderAndFolders: ("Finder & Folders", "Finder 与文件夹"),

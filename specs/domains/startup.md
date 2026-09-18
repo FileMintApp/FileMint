@@ -30,6 +30,9 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   in-session page selection without saving navigation into user preferences.
   About/update commands select About in that same window; page navigation does
   not change the explicit-launch and Finder-creation window ownership rules.
+- Optional tool modules have their own settings entry under Extensions. Their
+  master switches default off on new installs and migration, preserve child
+  choices when disabled, and never alter existing creation preferences.
 
 - An explicitly requested updater relaunch must wait until creation work and
   modal editing are finished. Preserve saved startup preferences and bookmarks.

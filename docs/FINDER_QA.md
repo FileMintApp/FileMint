@@ -47,6 +47,44 @@ Record actual results in ACCEPTANCE.md.
 - Legacy development JSON/plist settings import through the File menu; protected
   App Group directories are never accessed automatically.
 
+## File and folder tools
+
+- Start with old preferences: File & Folder Tools is off and New File is unchanged.
+- Enable the module; verify its root is a sibling of New File in item context menus.
+- Verify the tools root has a mint/blue wrench/screwdriver icon and the temporary
+  Move Selected Items Here root has a mint/teal boxed right-arrow icon. Both
+  remain readable in light, dark and highlighted menus; submenu rows retain their
+  text-only presentation.
+- Toggle each child independently, then disable all; no empty root remains.
+- Disable/re-enable the module and relaunch: child choices are preserved.
+- Select files, folders and multiple items with Unicode/spaces/compound extensions;
+  paste copied names and paths into a scratch document and compare exact lines.
+- Verify background, sidebar, toolbar and out-of-scope menus do not expose the
+  selection-tools submenu. A pending move may add its separate root action to an
+  in-scope background folder or one selected non-package directory.
+- Open menus in two windows and execute the older one: captured items must be used.
+- Check Chinese/English at minimum settings size, keyboard navigation and light/dark.
+- Select a file, image, script, App bundle, folder, symlink and multiple items;
+  Move File / Folder must save the selection without moving anything yet.
+- Right-click the destination: Move Selected Items Here is at the root, without
+  a filename; multiple items show a count. No cancel item or expiry exists.
+- Relaunch before completing the move: the pending selection and source grants
+  survive. Changing selections in Finder alone must not change the pending batch.
+- Prepare a new selection, then use an older open menu: it must not move the new
+  batch. Reopen the menu to use the new batch.
+- Disable/re-enable the master and move child switches: entries hide and restore,
+  pending state stays. Existing New File actions continue working.
+- Verify exact-folder authorization and closing its dialog without moving.
+- Complete moves on the same volume and across volumes; check contents and source
+  removal. Verify same-name conflicts never overwrite, including dangling links.
+- Test partial failure: completed items stay moved, remaining items can be retried.
+- Test missing/replaced sources, same-folder and descendant destinations; no wrong
+  file is moved. Quit/updater restart must defer while a move is in flight.
+- For isolated sandbox checks without replacing FileMint, build with
+  `bash scripts/build_move_sandbox_harness.sh` and run the generated app explicitly.
+  It uses synthetic external fixtures and its own preferences/container. This
+  does not prove the installed Finder extension's visible menu behavior.
+
 ## Finder
 
 - Confirm the extension is listed and enabled in macOS settings.

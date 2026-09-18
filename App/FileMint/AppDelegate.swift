@@ -15,6 +15,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        if FileMoveCoordinator.shared.isBusy { return .terminateCancel }
         if UpdateModel.shared.isCommittingInstallation && !UpdateModel.shared.canSafelyRestart {
             return .terminateCancel
         }

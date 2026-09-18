@@ -6,7 +6,7 @@ import Foundation
 final class PreferencesModel: ObservableObject {
     static let shared = PreferencesModel()
     enum Pane: String, CaseIterable, Identifiable {
-        case general, creation, fileTypes, folders, about
+        case general, creation, fileTypes, folders, fileTools, about
         var id: String { rawValue }
     }
     @Published var selectedPane: Pane = .general
@@ -237,6 +237,10 @@ final class PreferencesModel: ObservableObject {
     private(set) var pendingCreationCount = 0
 
     func handle(url: URL) {
+        if url.scheme == "filemint", url.host == "move" {
+            FileMoveCoordinator.shared.enqueue(url)
+            return
+        }
         if let directory = CreationRoute.directory(from: url) {
             CustomFileSavePanelController.shared.present(in: directory, preferences: preferences,
                                                           templateID: CreationRoute.templateID(from: url))

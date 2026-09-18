@@ -65,7 +65,79 @@ final class FinderSync: FIFinderSync {
         }
         root.submenu = submenu
         menu.addItem(root)
+        let selection = menuKind == .contextualMenuForItems
+            ? FIFinderSyncController.default().selectedItemURLs() ?? [] : []
+        // Use the clicked folder for item menus, not a later Finder selection.
+        let moveTarget = isContainer ? target : (selection.count == 1 ? selection.first : nil)
+        let moveValues = isContainer ? nil : try? moveTarget?.resourceValues(forKeys: [.isDirectoryKey, .isPackageKey])
+        if let pending = try? PendingFileMoveStore().load(),
+           FileMovePolicy.isEnabled(preferences, pending: pending),
+           let destination = FileMovePolicy.destination(target: moveTarget, isContainer: isContainer,
+               selectionCount: selection.count, targetIsDirectory: moveValues?.isDirectory == true,
+               targetIsPackage: moveValues?.isPackage == true,
+               isItemMenu: menuKind == .contextualMenuForItems, preferences: preferences) {
+            let title = pending.items.count == 1 ? text(.moveSelectedHere)
+                : String(format: text(.moveSelectedHereCount), pending.items.count)
+            let item = NSMenuItem(title: title, action: #selector(moveSelectedHere(_:)), keyEquivalent: "")
+            item.image = Self.menuIcon("arrow.right.square", palette: [.systemMint, .systemTeal])
+            item.tag = actions.register([FileMenuAction(directory: destination, moveBatchID: pending.id)])[0]
+            // Root-level entry; Finder owns placement relative to system rows.
+            menu.insertItem(item, at: 0)
+        }
+        let tools = FileToolsPolicy.availableTools(selection: selection,
+            isItemMenu: menuKind == .contextualMenuForItems, preferences: preferences)
+        if !tools.isEmpty {
+            let toolsRoot = NSMenuItem(title: text(.fileTools), action: nil, keyEquivalent: "")
+            toolsRoot.image = Self.menuIcon("wrench.and.screwdriver", palette: [.systemMint, .systemBlue])
+            let toolsMenu = NSMenu(title: text(.fileTools))
+            let toolTags = actions.register(tools.map {
+                FileMenuAction(directory: directory, tool: $0, selection: selection)
+            })
+            for (index, tool) in tools.enumerated() {
+                let item = NSMenuItem(title: text(tool.title), action: #selector(performFileTool(_:)), keyEquivalent: "")
+                item.tag = toolTags[index]
+                toolsMenu.addItem(item)
+            }
+            toolsRoot.submenu = toolsMenu
+            menu.addItem(toolsRoot)
+        }
         return menu
+    }
+
+    private static func menuIcon(_ symbolName: String, palette: [NSColor]) -> NSImage? {
+        guard let source = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil),
+              let image = source.withSymbolConfiguration(NSImage.SymbolConfiguration(paletteColors: palette))
+        else { return nil }
+        image.size = NSSize(width: 16, height: 16)
+        // Preserve the FileMint palette instead of letting Finder remap this to
+        // its monochrome template color. Finder still controls the surrounding
+        // menu highlight and keeps the text contrast native.
+        image.isTemplate = false
+        return image
+    }
+
+    @objc private func performFileTool(_ item: NSMenuItem) {
+        guard let action = actions.take(item.tag), let tool = action.tool else { return }
+        let selection = action.selection
+        Task { @MainActor in
+            let preferences = FileMintPreferencesStore().load()
+            guard FileToolsPolicy.availableTools(selection: selection, isItemMenu: true,
+                preferences: preferences).contains(tool) else { return }
+            if tool == .move {
+                FinderActions.shared.move(.prepare(selection))
+                return
+            }
+            guard let value = FileToolsPolicy.clipboardText(for: tool, selection: selection) else { return }
+            let pasteboard = NSPasteboard.general
+            pasteboard.clearContents()
+            guard pasteboard.setString(value, forType: .string) else {
+                let alert = NSAlert()
+                alert.messageText = FileMintStrings.text(.fileToolsErrorTitle, language: preferences.language)
+                alert.informativeText = FileMintStrings.text(.clipboardWriteFailed, language: preferences.language)
+                alert.runModal()
+                return
+            }
+        }
     }
 
     @objc private func reloadPreferences() {
@@ -74,6 +146,12 @@ final class FinderSync: FIFinderSync {
             for: preferences.monitoredFolderURLs,
             home: DefaultFolders.resolvedUserHomeDirectory(fileManager: .default)
         )
+    }
+
+    @objc private func moveSelectedHere(_ item: NSMenuItem) {
+        guard let action = actions.take(item.tag), let batchID = action.moveBatchID else { return }
+        let request = FileMoveRequest.perform(batchID: batchID, destination: action.directory)
+        Task { @MainActor in FinderActions.shared.move(request) }
     }
 
     @objc private func showCustomFile(_ item: NSMenuItem) {
@@ -109,6 +187,17 @@ private final class FinderActions {
         }
     }
 
+    func move(_ request: FileMoveRequest) {
+        Task {
+            do {
+                let url = try await Task.detached(priority: .userInitiated) {
+                    try FileMoveTicketStore().enqueue(request)
+                }.value
+                open(url, activate: false)
+            } catch { showError(error, title: .moveFailed) }
+        }
+    }
+
     private func open(_ url: URL, activate: Bool) {
         let appURL = Bundle(for: FinderSync.self).bundleURL
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
@@ -122,10 +211,10 @@ private final class FinderActions {
         }
     }
 
-    private func showError(_ error: Error) {
+    private func showError(_ error: Error, title: FileMintTextKey = .createFileErrorTitle) {
         let alert = NSAlert()
         let language = FileMintPreferencesStore().load().language
-        alert.messageText = FileMintStrings.text(.createFileErrorTitle, language: language)
+        alert.messageText = FileMintStrings.text(title, language: language)
         alert.informativeText = error.localizedDescription
         NSApp.activate(ignoringOtherApps: true)
         alert.runModal()
