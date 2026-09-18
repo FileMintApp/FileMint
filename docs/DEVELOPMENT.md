@@ -48,3 +48,5 @@ live in the [implementation roadmap](ROADMAP.md). The public TODO lists are
 maintained in the `roadmap` regions of both READMEs and included by the website
 homepages. After editing them, build the site with
 `SITE_BASE=/FileMint/ pnpm run site:build` to verify the GitHub Pages base path.
+
+For downstream fork maintainers, see the [fork synchronization guide](FORK_SYNC.md).

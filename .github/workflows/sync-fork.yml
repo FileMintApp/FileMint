@@ -1,0 +1,79 @@
+name: Sync fork from upstream
+
+on:
+  schedule:
+    # Run once a day without competing with the top-of-hour Actions load.
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: write
+
+concurrency:
+  group: fork-sync-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Merge upstream into fork
+    # This workflow is copied into forks with the upstream source. Never run
+    # the write step in FileMintApp/FileMint itself.
+    if: ${{ github.event.repository.fork == true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out the fork default branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Merge upstream changes
+        id: sync
+        env:
+          UPSTREAM_REPOSITORY: FileMintApp/FileMint
+          UPSTREAM_BRANCH: main
+          TARGET_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          echo "changed=false" >> "$GITHUB_OUTPUT"
+
+          if [[ "$GITHUB_REPOSITORY" == "$UPSTREAM_REPOSITORY" ]]; then
+            echo "The upstream repository is not a sync destination."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add upstream "https://github.com/${UPSTREAM_REPOSITORY}.git"
+          git fetch --no-tags upstream "$UPSTREAM_BRANCH"
+
+          # A normal merge preserves commits made in the fork. A conflict
+          # stops the job before push so a maintainer can resolve it manually.
+          before_sync=$(git rev-parse HEAD)
+          git merge --no-edit "upstream/${UPSTREAM_BRANCH}"
+          after_sync=$(git rev-parse HEAD)
+
+          if [[ "$before_sync" == "$after_sync" ]]; then
+            echo "Fork is already up to date."
+            exit 0
+          fi
+
+          git push origin "HEAD:${TARGET_BRANCH}"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Dispatch fork CI after sync
+        # A manual run can retry CI dispatch after a previous post-push
+        # dispatch failure, even when the fork is already current.
+        if: ${{ steps.sync.outputs.changed == 'true' || github.event_name == 'workflow_dispatch' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CI_WORKFLOW: ci.yml
+          TARGET_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          gh workflow run "$CI_WORKFLOW" \
+            --repo "$GITHUB_REPOSITORY" \
+            --ref "$TARGET_BRANCH"
