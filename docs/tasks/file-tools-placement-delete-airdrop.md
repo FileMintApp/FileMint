@@ -1,7 +1,7 @@
 # Task: Flexible file tools, permanent deletion and AirDrop
 
-Status: in-progress (documentation and source push)
-Next action: Verify Chinese/English website build, then commit and push the reviewed source and documentation.
+Status: complete (implementation, documentation and source push; native acceptance pending user)
+Next action: User installs build/FileMint-0.5.6.dmg and performs native acceptance.
 
 ## Objective and scope
 
@@ -68,3 +68,5 @@ Current worktree on macOS / Xcode, 2026-09-18.
 - The GitHub Release is intentionally still separate: the release notes state
   that the public latest download remains 0.5.5 until a tagged release uploads
   the DMG, checksum and appcast built from that exact commit.
+- Committed and pushed to `main` as `22e92fd feat: make file tools configurable`.
+  The matching CI and website deployment both completed successfully.
