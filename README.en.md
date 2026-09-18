@@ -1,84 +1,134 @@
 <p align="center"><img src="Resources/IconSource/FileMint-AppIcon-1024.png" width="112" alt="FileMint"></p>
 <h1 align="center">FileMint</h1>
-<p align="center"><strong>A new file. Right here.</strong><br>A small, native macOS file creation utility.</p>
+<p align="center"><strong>Put file tools back in Finder.</strong><br>A small native macOS app for creating, processing and organizing files and images.</p>
 <p align="center"><a href="README.md"><strong>← 简体中文</strong></a> ｜ <strong>English</strong></p>
-<p align="center"><a href="https://github.com/FileMintApp/FileMint/releases/latest">Download for macOS</a> · <a href="docs/INSTALL.md">Installation help</a> · <a href="#roadmap">Roadmap</a> · <a href="https://github.com/FileMintApp/FileMint/issues">Report an issue</a></p>
+<p align="center"><a href="https://github.com/FileMintApp/FileMint/releases/latest">Download for macOS</a> · <a href="website/">Website source</a> · <a href="docs/INSTALL.md">Installation help</a> · <a href="https://github.com/FileMintApp/FileMint/issues">Report an issue</a></p>
+<p align="center"><sub>Swift + AppKit + SwiftUI · macOS 13+ · Apple silicon and Intel · Offline file creation</sub></p>
 
-Creating a file should not require opening an editor, choosing Save As, and finding your folder again.
-**Right-click in Finder, choose a type, and your file is there.** Use a compact panel when you want to name it or paste content first.
+Creating a file should not require opening an editor, choosing Save As and finding your folder again.
 
-## Create where you are already working
+FileMint puts the action back in Finder: **right-click, choose a type and your file is there.**
+When you need a name, starter content, image processing or selected-item tools, the same native workflow continues.
 
-FileMint is available from the desktop and the background of an authorized Finder folder.
-There is no detour through an editor, Save As, or a second folder chooser.
+## Why FileMint
+
+| What matters | How FileMint approaches it |
+| --- | --- |
+| Native experience | Swift + AppKit + SwiftUI; native menus, windows and editing without an embedded web runtime. |
+| Small and focused | Small footprint, no account, no subscription and no background folder crawl. |
+| Local performance boundary | File creation, image processing and OCR run on your Mac instead of a remote service. |
+| Finder context | Right-click the desktop or an authorized folder; the current location is the destination context. |
+| Opt-in extensions | File Tools and Resource Tools start off and never disturb the existing New File menu. |
+
+## See the workflow
+
+### 1. A context menu with clear layers
+
+This is a real installed-build Finder example. With `longmao.navigator.png` selected, **New File**, **File & Folder Tools** and **Resource Tools** remain distinct, with color icons for quick scanning.
 
 <p align="center">
-  <img src="website/public/images/finder-desktop-context-menu-zh.png" width="42%" alt="FileMint New File menu from a desktop context menu">
-  <img src="website/public/images/finder-folder-context-menu-zh.png" width="42%" alt="FileMint New File menu from a Finder folder context menu">
+  <img src="website/public/images/finder-resource-menu-zh.png" width="360" alt="Current FileMint Finder context menu with New File, File and Folder Tools, and Resource Tools">
 </p>
-<p align="center"><sub>Desktop or Finder folder: right-click → New File → choose a type.</sub></p>
 
-### When you need a name or starter content, use one compact panel
+### 2. Keep the context when you create
 
-Set the full filename, suffix, destination and optional starter content before creation.
-It is useful for Markdown, code, notes and configuration without first creating an empty file in another app.
+Set the full filename, suffix, destination and starter content before creation. Enter `project-kickoff.md`, paste the first Markdown lines and create it without an empty-file detour.
 
 <p align="center">
-  <img src="website/public/images/create-panel-zh.png" width="760" alt="FileMint creation panel with filename, suffix, destination and starter content">
+  <img src="website/public/images/create-panel-en.png" width="760" alt="FileMint New File panel with project-kickoff.md and starter content">
 </p>
 
-### Keep only the file types you use
+The creation panel supports:
 
-Enable, disable and reorder the built-in formats, then add your own text suffixes and starter templates.
+- `⌘↩` to create and `Esc` to cancel; Return inserts a newline in the editor.
+- A full filename and synchronized extension selector; custom suffixes remain UTF-8 text.
+- Automatic numbering for quick creation and confirmation before custom replacement.
+- Literal multiline text, Unicode, spaces and template-looking tokens.
 
-### Settings, organized around your workflow
+### 3. Six image Resource Tools
 
-The settings window now uses a persistent sidebar. Basic Settings separates General, Creation,
-Templates & Types, and Finder & Folders; Extensions holds optional modules, while About keeps
-versions and updates. Changing pages never changes saved preferences, New File… remains available
-at the bottom of the sidebar, and arrow keys can move between pages.
+Select an image in Finder and open Resource Tools, or choose a local image explicitly from the app:
 
-### More than creation: optional File & Folder Tools
+- **Convert Image**: JPEG, PNG, HEIC and TIFF.
+- **Compress Image**: system encoders, with originals kept unchanged.
+- **Resize Image**: preserve proportions, batch resize and never enlarge the source.
+- **Generate Icons**: ICNS, ICO and PNG size sets.
+- **Stitch Images**: horizontal or vertical layouts with preview and ordering.
+- **Extract Text**: system OCR with editable, copyable and savable results.
 
-Select one or more files or folders inside an authorized scope, then opt into
-**File & Folder Tools**. The module is off by default, leaving the existing creation menu unchanged.
+<p align="center">
+  <img src="website/public/images/resource-tools-en.png" width="760" alt="FileMint Resource Tools page with six image actions">
+</p>
+<p align="center">
+  <img src="website/public/images/resource-panel-longmao-en.png" width="760" alt="FileMint Convert Image panel using longmao.navigator.png">
+</p>
+<p align="center"><sub>The resource example uses longmao.navigator.png; preview, destination and original preservation are visible in the panel.</sub></p>
 
-- **Choose each menu position.** Put any enabled action directly in Finder's main menu or inside File & Folder Tools. An action appears once only. New File and its types stay unchanged.
-- **Copy names or paths.** Names include their suffixes; each selected item gets its own line. Paths are complete local filesystem paths. Only choosing either Copy command writes to the clipboard, and neither command reads file contents.
-- **Move in two deliberate steps.** Choose Move File / Folder on the source items, then right-click the target folder background and choose Move Selected Items Here. That target action has its own main-menu or submenu choice. Existing names are never overwritten or merged; selecting another source batch replaces the previous one, and unfinished items remain available to retry after you fix the problem.
-- **Delete permanently after a clear choice.** Delete Permanently asks for confirmation by default and bypasses Trash; you can explicitly change it to Delete silently. It deletes the captured selected items only, and removes a symbolic link without touching its target.
-- **Use the system's AirDrop.** AirDrop opens macOS's native recipient UI. You choose the recipient; FileMint never sends automatically or substitutes another sharing service.
-- **You control the scope.** Tools appear only for the current local selection in an authorized scope. They do not crawl folders, monitor the clipboard, or process files in the background.
+### 4. Six opt-in File & Folder Tools
 
-## Small by design, still focused on Finder
+The module starts off. Once enabled, each action can live directly in Finder's main menu or inside **File & Folder Tools**:
 
-- **Your filename, exactly.** Enter `demo.js` and save `demo.js`. The filename and extension selector stay in sync.
-- **One-click presets.** Text, Markdown, JSON, Swift, HTML, CSS and Shell; enable CSV, YAML, XML, JavaScript, TypeScript, Python and SQL when needed.
-- **Your own types.** Save suffixes such as `.toml`, `.vue` and `.log`, optional starter content, and your preferred menu order.
-- **Settings without a pile-up.** A persistent sidebar separates creation, types, Finder & Folders, Extensions and About, so each preference has a clearer home.
-- **Handle selected items when you choose.** Optional File & Folder Tools copies names or paths, moves in two steps, deletes permanently and opens AirDrop. Each action can live in the main menu or submenu; the module is off by default and does not alter New File.
-- **Paste before creating.** Notes, code and configuration go straight into the creation panel. Edited content, including Unicode, line breaks and literal template tokens, is saved verbatim.
-- **Ready when you log in.** Launch at login and the menu bar item are enabled by default after installation and first launch. Both can be disabled in General.
-- **Your language.** Follow the system language or choose English / Chinese. The Finder entry combines the FileMint logo with the localized New File label; type rows remain text only.
-- **Native and focused.** Swift, AppKit and SwiftUI. Offline file creation, text-only menus, native editing, no web runtime, account or background scanning.
-- **Low-frequency update checks.** Check automatically at most once every 7 days, enabled by default and optional in General. Manual checks remain in About and the menus. Choose when to update; builds with the new updater install and restart automatically.
-- **Safe collisions.** Quick creation increments names; custom creation asks before replacement. Concurrent requests never silently overwrite one another.
+- **Copy File / Folder Names and Paths**: one line per selected item; the clipboard changes only when you choose the command.
+- **Move File / Folder**: capture sources first, then confirm at the target folder background. Nothing moves silently.
+- **Delete Permanently**: confirmation by default, bypasses Trash and never follows a selected symlink.
+- **AirDrop**: opens macOS's native recipient UI; it never sends automatically.
+- **Send Alias to Desktop**: creates native Finder aliases, preserves originals and numbers conflicts.
+
+<p align="center">
+  <img src="website/public/images/file-tools-en.png" width="760" alt="FileMint File and Folder Tools settings with menu placement and individual switches">
+</p>
+
+## Settings with a clear hierarchy
+
+The persistent sidebar groups settings by job:
+
+- **File Creation**: Templates & Types, Creation.
+- **Extensions**: File & Folder Tools, Resource Tools.
+- **Preferences**: General, Finder & Folders, About.
+
+Each page has a clear responsibility, optional modules can be disabled independently, and arrow keys move between pages. Native controls stay readable in Chinese, English, light and dark appearances.
 
 ## Use it
 
-Right-click the desktop background or a folder background in Finder → **New File** → choose a type.
+**Quick creation:** Finder desktop or folder background → **New File** → choose a type.
 
-For a custom file: **New File…** → type `demo.js` → paste optional content → **Create**.
+**Custom creation:** **New File…** → enter the full filename → choose the suffix → paste optional content → **Create**.
 
-`Tab` moves focus, `⌘V` pastes, `⌘↩` creates and `Esc` cancels. Return inserts a newline in the content editor. The app and menu bar also offer creation through a folder picker, without Finder integration.
+**Resource Tools:** Settings → Extensions → Resource Tools; enable it, then choose images in the app or from Finder.
 
-**File & Folder Tools:** Turn on the master switch in **Settings → Extensions → File & Folder Tools**, then choose which actions to enable and whether each belongs in the main menu or submenu. Delete Permanently and AirDrop start off; permanent deletion confirms by default. Moving still needs a second right-click on the target folder background.
+**File & Folder Tools:** Settings → Extensions → File & Folder Tools; enable the module, then choose actions and menu locations.
 
-Custom suffixes produce **UTF-8 text**. Renaming a suffix does not create a valid PDF, image or Office document.
+The FileMint app and menu bar also offer New File… without Finder integration.
+
+## Privacy and permission boundaries
+
+- Filenames, paths, content, images and OCR results are never uploaded.
+- FileMint does not crawl folders, enumerate files, monitor the clipboard or keep image-processing history.
+- Finder actions operate only on the current local selection inside an authorized scope.
+- Creation and image processing work offline. The main app reaches GitHub only for update checks or downloads; the Finder extension stays offline.
+- Finder enablement, folder authorization and Full Disk Access are separate macOS capabilities. FileMint guides you, but never changes system permissions silently.
+
+Read the complete [privacy policy](PRIVACY.md).
+
+## Install
+
+Supports **macOS 13+**, with one universal package for Apple silicon and Intel Macs.
+
+**The 0.5.6 installer is Developer ID signed, Apple notarized and stapled.** First use still follows macOS prompts for Finder enablement and folder authorization.
+
+1. [Download the latest DMG](https://github.com/FileMintApp/FileMint/releases/latest) and drag FileMint into Applications.
+2. Launch it, enable the Finder extension and authorize your working folders.
+3. Return to Finder and start creating or processing images.
+
+In 0.5.5 and later builds with the new updater, choose **About → Check for Updates → Update and Restart**. FileMint verifies, replaces and restarts; finish creating or editing first because macOS may request administrator authorization.
+
+Older updater builds, including 0.5.4, need one manual installation of 0.5.6: quit FileMint, replace it in Applications, eject the installer volume and reopen the installed app.
+
+For full installation limitations, update notes and provenance, read the [installation guide](docs/INSTALL.md).
 
 ## Roadmap
 
-Keep making everyday file creation a little easier. These TODOs are grouped by use case. Unchecked features are still planned work, and the list will evolve with everyday use and feedback.
+These are unfinished directions only; the list changes with real use and feedback.
 
 <!-- #region roadmap -->
 <div class="roadmap-group">
@@ -123,40 +173,13 @@ Keep making everyday file creation a little easier. These TODOs are grouped by u
 
 Implementation notes and completion criteria live in the [implementation roadmap (Chinese)](docs/ROADMAP.md). Share recurring file-creation needs through [Issues](https://github.com/FileMintApp/FileMint/issues), or contribute templates, translations and reproduction steps.
 
-## Install
-
-**macOS 13+**, Apple silicon and Intel in one universal DMG.
-
-**The 0.5.6 installer is Developer ID signed, Apple notarized and stapled.** Enabling the Finder extension and authorizing working folders remain separate first-use steps.
-
-1. [Download the latest DMG](https://github.com/FileMintApp/FileMint/releases/latest) and drag FileMint into Applications.
-2. Launch it, enable the Finder extension and authorize your working folders.
-3. Create from Finder.
-
-In 0.5.5 and later builds with the new updater, choose **About → Check for Updates → Update and Restart**.
-FileMint downloads, verifies, replaces the app and restarts. Finish creating or
-editing files first; macOS may request administrator authorization.
-Older updater builds (including 0.5.4) need one manual installation of 0.5.6:
-open the DMG, quit FileMint, replace it in Applications, eject the volume
-and reopen the installed app.
-
-When upgrading from 0.3.0–0.5.0, download the new installer in your browser first:
-the old in-app downloader can produce a sandbox execution block. See the
-[update instructions](docs/INSTALL.md).
-
-**Distribution and provenance:** FileMint is distributed through GitHub Releases with a SHA-256 checksum. Version 0.5.3 is Developer ID signed and was released while Apple notarization was still in progress. Apple later accepted the same DMG submission and published its ticket online for Gatekeeper. The public asset retains its original bytes and checksum, so it has no embedded (stapled) ticket: Gatekeeper can retrieve the online ticket when connected, while a first launch offline may still be blocked. Versions through 0.5.1 were built by GitHub Actions with GitHub build attestations, but use ad-hoc signatures and have no Apple notarization; locally built releases do not claim GitHub Actions build provenance. Stable versions after 0.5.3 must be notarized and stapled before publication. The Finder extension still needs to be enabled in System Settings. Read [installation and limitations](docs/INSTALL.md) first.
-
-## Private by design
-
-No telemetry or uploads of filenames, paths or content. Clipboard access happens only when you paste, or when you explicitly choose Copy Names or Copy Paths to write to it. GitHub connections are used for optional low-frequency automatic checks, manual checks and user-requested downloads. Automatic checks default on and can be disabled in General. No account or subscription. [Privacy policy](PRIVACY.md).
-
 ## Special Thanks
 
 Thank you to [阿逼 (@bibinocode)](https://github.com/bibinocode) for helping with FileMint's Developer ID signing and Apple notarization submission.
 
 ## Buy me a coffee
 
-If FileMint saves you a few interruptions, optional donations are welcome. Non-commercial use is free and all features remain available regardless of donations. A donation does not purchase commercial rights. Thank you!
+Optional donations are welcome if FileMint saves you a few interruptions. Personal and non-commercial use is free; features do not depend on donations. A donation does not purchase commercial rights.
 
 <p align="center">
   <img src="ReceivePayment/wx.JPG" width="220" alt="WeChat Pay donation QR code">&nbsp;&nbsp;
