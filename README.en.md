@@ -114,7 +114,7 @@ Read the complete [privacy policy](PRIVACY.md).
 
 Supports **macOS 13+**, with one universal package for Apple silicon and Intel Macs.
 
-**The 0.5.6 installer is Developer ID signed, Apple notarized and stapled.** First use still follows macOS prompts for Finder enablement and folder authorization.
+**The 0.5.7 installer is Developer ID signed, Apple notarized and stapled.** First use still follows macOS prompts for Finder enablement and folder authorization.
 
 1. [Download the latest DMG](https://github.com/FileMintApp/FileMint/releases/latest) and drag FileMint into Applications.
 2. Launch it, enable the Finder extension and authorize your working folders.
@@ -122,7 +122,7 @@ Supports **macOS 13+**, with one universal package for Apple silicon and Intel M
 
 In 0.5.5 and later builds with the new updater, choose **About → Check for Updates → Update and Restart**. FileMint verifies, replaces and restarts; finish creating or editing first because macOS may request administrator authorization.
 
-Older updater builds, including 0.5.4, need one manual installation of 0.5.6: quit FileMint, replace it in Applications, eject the installer volume and reopen the installed app.
+Older updater builds, including 0.5.4, need one manual installation of 0.5.7: quit FileMint, replace it in Applications, eject the installer volume and reopen the installed app.
 
 For full installation limitations, update notes and provenance, read the [installation guide](docs/INSTALL.md).
 
