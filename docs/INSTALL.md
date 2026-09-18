@@ -7,7 +7,7 @@ FileMint 支持 macOS 13+，兼容 Apple 芯片与 Intel。请从
 ## 首次启动
 
 1. 打开 DMG，把 FileMint 拖入“应用程序”，推出“FileMint”安装磁盘，再从“应用程序”打开。
-2. 0.5.4 使用 Developer ID 签名，已通过 Apple 公证并附加（stapled）票据。
+2. 0.5.5 使用 Developer ID 签名，已通过 Apple 公证并附加（stapled）票据。
    如果下载的是旧版 0.5.3：它在 Apple 公证仍在处理时提前发布，因此公开 DMG 没有内嵌票据。
    Apple 后续已接受这份原始 DMG 的公证提交；联网时 Gatekeeper 可获取 Apple 在线发布的票据，离线首次打开仍可能受阻。
    SHA-256 只校验下载字节，不代表安装包内嵌票据。0.5.3 之后的正式版须先完成并附加公证票据再发布。
@@ -26,13 +26,22 @@ FileMint 支持 macOS 13+，兼容 Apple 芯片与 Intel。请从
 - 在 FileMint 中点击“打开扩展设置”。
 - macOS 15 及更新版本：通用 → 登录项与扩展 → Finder，打开 FileMint。
 - 较旧版本：隐私与安全性 → 扩展 → Finder 扩展。
-- 在 FileMint 的“文件夹”中选择常用位置并允许访问。默认菜单范围包含系统识别的当前用户主目录及其子目录；
+- 在 FileMint 的“Finder 与文件夹”中选择常用位置并允许访问。默认菜单范围包含系统识别的当前用户主目录及其子目录；
   桌面、文稿和下载也保留为单独的授权条目。可以添加其他位置，文件夹访问授权会保留。
 - 在桌面背景或该文件夹的空白处右键。如果启用后尚未刷新，可自行重新启动 Finder。
 
 Finder 扩展是否被加载由 macOS 决定。若扩展没有出现，先确认应用
 位于“应用程序”、已手动允许启动并在系统设置中启用扩展。应用内的新建功能仍可使用。请在反馈中
 附上 macOS 版本、处理器类型、安装方式和具体错误，勿附带私人文件内容。
+
+## 文件（夹）工具
+
+“文件（夹）工具”默认关闭。打开“设置 → 扩展功能 → 文件（夹）工具”后，可分别开启拷贝文件（夹）名称、拷贝文件（夹）路径和移动文件（夹）。
+
+- 只在已授权范围内选中一个或多个本地项目后，Finder 右键菜单才会显示该工具；它与“新建文件”并列，不会嵌入或改变新建菜单。
+- 名称保留后缀，路径使用完整本地路径；多选时按 Finder 的选择顺序一项一行。只有点按拷贝菜单项才会写入剪贴板。
+- “移动文件（夹）”先保存源项目，不会立即移动。到目标文件夹空白处右键，选择最外层的“将所选项目移到此处”才会执行。
+- 选择新的源项目会替换上一批待移动项目；成功前待移动项目会在重新启动 FileMint 后保留。同名目标、已变化的源项目、原文件夹或自身子目录都会被拒绝，不会覆盖或合并。
 
 ## 验证下载来源（可选）
 
@@ -56,7 +65,7 @@ SHA-256、Developer ID 签名、在线公证票据和内嵌票据是不同的验
 和 DMG 内的副本不会自动注册为登录项。隐藏菜单栏后仍可从应用程序打开；打开
 设置时会显示在 Dock，关闭设置后会回到后台工具状态。
 
-需要确认完全磁盘访问时，在“文件夹”页点击“在系统设置中确认…”，在
+需要确认完全磁盘访问时，在“Finder 与文件夹”页点击“在系统设置中确认…”，在
 系统设置 → 隐私与安全性 → 完全磁盘访问权限中添加 `/Applications/FileMint.app`
 并开启，随后退出并重新打开 FileMint。此权限由你在 macOS 中选择，应用不会代为启用。
 如果 FileMint 的开关已经开启，就表示已授予权限，无需重复添加或授权。
@@ -75,7 +84,7 @@ FileMint 会用书签记住它，而不是每次创建都重新选择。下方�
 ## English
 
 Drag FileMint from the DMG into Applications, eject the FileMint installer volume,
-then open FileMint from Applications. Version 0.5.4 is Developer ID signed,
+then open FileMint from Applications. Version 0.5.5 is Developer ID signed,
 Apple notarized and stapled. The older version 0.5.3 is Developer ID signed and
 was published while Apple notarization was in progress, without a stapled ticket.
 Apple later accepted that exact DMG submission and published its ticket online.
@@ -92,7 +101,16 @@ or Privacy & Security → Extensions on older systems. Authorize your working
 folders in FileMint. Finder extension loading remains subject to macOS policy.
 The app's New File… action works independently of Finder integration.
 
-In Folders, use “Check in System Settings…” to confirm Full Disk Access. An
+### File & Folder Tools
+
+File & Folder Tools is disabled by default. Open Settings → Extensions → File & Folder Tools to enable Copy Names, Copy Paths and Move File / Folder independently.
+
+- It appears beside New File only after you select one or more local items inside an authorized scope; it never changes or nests inside the creation menu.
+- Names retain suffixes, paths are complete local paths, and multi-selection is copied one Finder-order item per line. The clipboard is written only after an explicit Copy action.
+- Move File / Folder captures source items without moving them. Right-click the target folder background, then choose Move Selected Items Here to complete the operation.
+- A new source selection replaces the previous batch; unfinished items survive a FileMint relaunch. Existing names, changed sources, the current folder and a folder's own descendant are all rejected without overwrite or merge.
+
+In Finder & Folders, use “Check in System Settings…” to confirm Full Disk Access. An
 enabled FileMint switch means permission is granted; quit and reopen after
 enabling it, without adding the app again. FileMint cannot automatically read
 this switch, so the guide remaining visible does not mean access is denied.
@@ -102,14 +120,14 @@ Use the checksum command above to verify the download. GitHub build attestations
 apply to published versions through 0.5.1, not to locally built releases from 0.5.3.
 ## 应用内更新 / Updating from FileMint
 
-包含新更新器的版本提供“更新并重启”：下载并校验后自动安装、退出并重新启动。
+0.5.5 及之后包含新更新器的版本提供“更新并重启”：下载并校验后自动安装、退出并重新启动。
 不再需要保存 DMG 或拖拽覆盖。请先完成创建或编辑，避免重启中断未保存内容。
-macOS 可能要求管理员授权。旧版用户需要手动安装一次包含新更新器的版本。
+macOS 可能要求管理员授权。旧版用户需要手动安装一次 0.5.5。
 
-Builds with the new updater offer Update and Restart: the signed update is
+Version 0.5.5 and later builds with the new updater offer Update and Restart: the signed update is
 installed and FileMint relaunches automatically. Finish creation/editing first;
 macOS may request administrator authorization. Older clients need one manual
-installation of a build containing the new updater.
+installation of 0.5.5.
 
 从 0.3.0–0.5.0 升级时，本次请用浏览器从 GitHub Release 下载新版 DMG。旧版
 内置下载器可能让安装包带上沙盒禁止执行标记，出现“应用程序无法打开”；仅重复

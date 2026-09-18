@@ -31,17 +31,30 @@ It is useful for Markdown, code, notes and configuration without first creating 
 
 Enable, disable and reorder the built-in formats, then add your own text suffixes and starter templates.
 
-<p align="center">
-  <img src="website/public/images/file-types-zh.png" width="760" alt="FileMint file type management">
-</p>
+### Settings, organized around your workflow
 
-<p align="center"><sub>Screenshots use the Chinese localization; FileMint follows the macOS language or can be set to English or Chinese.</sub></p>
+The settings window now uses a persistent sidebar. Basic Settings separates General, Creation,
+Templates & Types, and Finder & Folders; Extensions holds optional modules, while About keeps
+versions and updates. Changing pages never changes saved preferences, New File… remains available
+at the bottom of the sidebar, and arrow keys can move between pages.
 
-## Small by design
+### More than creation: optional File & Folder Tools
+
+Select one or more files or folders inside an authorized scope, then right-click to find
+**File & Folder Tools** beside **New File**. The module is off by default, leaving the existing creation menu unchanged.
+
+- **Turn it on only if you need it.** Open FileMint → Settings → Extensions → File & Folder Tools. After enabling the master switch, choose Copy Names, Copy Paths, and Move File / Folder independently.
+- **Copy names or paths.** Names include their suffixes; each selected item gets its own line. Paths are complete local filesystem paths. Only choosing either Copy command writes to the clipboard, and neither command reads file contents.
+- **Move in two deliberate steps.** Choose Move File / Folder on the source items, then right-click the target folder background and choose the root-level Move Selected Items Here action. Existing names are never overwritten or merged; selecting another source batch replaces the previous one, and unfinished items remain available to retry after you fix the problem.
+- **You control the scope.** Tools appear only for the current local selection in an authorized scope. They do not crawl folders, monitor the clipboard, or process files in the background.
+
+## Small by design, still focused on Finder
 
 - **Your filename, exactly.** Enter `demo.js` and save `demo.js`. The filename and extension selector stay in sync.
 - **One-click presets.** Text, Markdown, JSON, Swift, HTML, CSS and Shell; enable CSV, YAML, XML, JavaScript, TypeScript, Python and SQL when needed.
 - **Your own types.** Save suffixes such as `.toml`, `.vue` and `.log`, optional starter content, and your preferred menu order.
+- **Settings without a pile-up.** A persistent sidebar separates creation, types, Finder & Folders, Extensions and About, so each preference has a clearer home.
+- **Handle selected items when you choose.** Optional File & Folder Tools puts name/path copying and deliberate two-step moves in a separate Finder menu. It is off by default and does not alter New File.
 - **Paste before creating.** Notes, code and configuration go straight into the creation panel. Edited content, including Unicode, line breaks and literal template tokens, is saved verbatim.
 - **Ready when you log in.** Launch at login and the menu bar item are enabled by default after installation and first launch. Both can be disabled in General.
 - **Your language.** Follow the system language or choose English / Chinese. The Finder entry combines the FileMint logo with the localized New File label; type rows remain text only.
@@ -56,6 +69,8 @@ Right-click the desktop background or a folder background in Finder → **New Fi
 For a custom file: **New File…** → type `demo.js` → paste optional content → **Create**.
 
 `Tab` moves focus, `⌘V` pastes, `⌘↩` creates and `Esc` cancels. Return inserts a newline in the content editor. The app and menu bar also offer creation through a folder picker, without Finder integration.
+
+**File & Folder Tools:** Turn on the master switch in **Settings → Extensions → File & Folder Tools**. Right-click a selected item in an authorized scope to copy names, copy paths or prepare a move; confirm a move with a second right-click on the target folder background.
 
 Custom suffixes produce **UTF-8 text**. Renaming a suffix does not create a valid PDF, image or Office document.
 
@@ -89,7 +104,6 @@ Keep making everyday file creation a little easier. These TODOs are grouped by u
 ### Folders and tool integrations
 
 - [ ] **Project folder templates** — Create a familiar folder structure and starter files in one action.
-- [ ] **Copy names and paths** — Quickly copy the names or full paths of one or more files.
 - [ ] **Open tools in the current folder** — Continue in your preferred terminal or editor at the current location.
 - [ ] **Shortcuts and launcher integrations** — Open a prefilled creation panel from Shortcuts, Raycast or Alfred.
 
@@ -111,17 +125,17 @@ Implementation notes and completion criteria live in the [implementation roadmap
 
 **macOS 13+**, Apple silicon and Intel in one universal DMG.
 
-**The 0.5.4 installer is Developer ID signed, Apple notarized and stapled.** Enabling the Finder extension and authorizing working folders remain separate first-use steps.
+**The 0.5.5 installer is Developer ID signed, Apple notarized and stapled.** Enabling the Finder extension and authorizing working folders remain separate first-use steps.
 
 1. [Download the latest DMG](https://github.com/FileMintApp/FileMint/releases/latest) and drag FileMint into Applications.
 2. Launch it, enable the Finder extension and authorize your working folders.
 3. Create from Finder.
 
-In builds with the new updater, choose **About → Check for Updates → Update and Restart**.
+In 0.5.5 and later builds with the new updater, choose **About → Check for Updates → Update and Restart**.
 FileMint downloads, verifies, replaces the app and restarts. Finish creating or
 editing files first; macOS may request administrator authorization.
-Older updater builds (including 0.5.4) need one manual installation of an enabled
-build: open the DMG, quit FileMint, replace it in Applications, eject the volume
+Older updater builds (including 0.5.4) need one manual installation of 0.5.5:
+open the DMG, quit FileMint, replace it in Applications, eject the volume
 and reopen the installed app.
 
 When upgrading from 0.3.0–0.5.0, download the new installer in your browser first:
@@ -132,7 +146,7 @@ the old in-app downloader can produce a sandbox execution block. See the
 
 ## Private by design
 
-No telemetry or uploads of filenames, paths or content. Clipboard access happens only when you paste. GitHub connections are used for optional low-frequency automatic checks, manual checks and user-requested downloads. Automatic checks default on and can be disabled in General. No account or subscription. [Privacy policy](PRIVACY.md).
+No telemetry or uploads of filenames, paths or content. Clipboard access happens only when you paste, or when you explicitly choose Copy Names or Copy Paths to write to it. GitHub connections are used for optional low-frequency automatic checks, manual checks and user-requested downloads. Automatic checks default on and can be disabled in General. No account or subscription. [Privacy policy](PRIVACY.md).
 
 ## Special Thanks
 

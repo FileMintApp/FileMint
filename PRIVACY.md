@@ -1,17 +1,22 @@
 # Privacy
 
-FileMint creates files locally. It has no analytics, account system, cloud sync
-or advertising. File creation does not require a network connection.
+FileMint creates files and optional Finder file/folder actions locally. It has no
+analytics, account system, cloud sync or advertising. File creation and file tools
+do not require a network connection.
 
 - File names, paths and contents are not uploaded or logged.
 - The clipboard is read only when you invoke Paste or a standard paste shortcut.
-  It is never watched or saved as a clipboard history.
+  Copy Names and Copy Paths write to it only after you explicitly choose either
+  Finder menu action. It is never watched or saved as a clipboard history.
 - Preferences contain enabled file types, custom template content, language,
   login/menu bar choices, automatic-update preference and last check attempt time,
-  folder paths and security-scoped bookmarks needed to remember folder access.
-  They are stored privately in ~/Library/Application Support/FileMint. The
-  Finder extension uses single-use request files there; requests expire after
-  60 seconds and are removed when consumed.
+  file-tool switches, folder paths and security-scoped bookmarks needed to remember
+  folder access. They are stored privately in ~/Library/Application Support/FileMint.
+  File-creation requests use single-use files there, which expire after 60 seconds
+  and are removed when consumed. A prepared move keeps the captured item identities
+  and required scoped-folder bookmarks in private local state until it completes or
+  a new source selection replaces it. This state is not uploaded, logged as
+  telemetry or used to inspect file content.
 - Draft filenames and pasted contents are not persisted by FileMint. Creating a
   file writes the requested content to the destination you selected.
 - Launch at login is managed through macOS ServiceManagement; the switch can

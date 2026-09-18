@@ -11,7 +11,8 @@ FileMint creates files locally and offline. It does not require an account or co
 
 - Filenames, paths and content are never uploaded.
 - It does not crawl folders, badge files or enumerate files in the background.
-- It does not monitor the clipboard. Text is read only when you explicitly paste it.
+- It does not monitor the clipboard. Text is read only when you explicitly paste it, and the clipboard is written only when you choose Copy Names or Copy Paths.
+- File & Folder Tools acts only on items you explicitly select inside an authorized scope. It does not read file contents, crawl folders, or upload names, paths or pending-move state.
 
 ## When it uses the network
 

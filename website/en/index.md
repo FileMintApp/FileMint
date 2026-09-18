@@ -24,6 +24,9 @@ features:
   - icon: ◌
     title: Private and offline
     details: No account, analytics or background scanning. Creating files needs no network.
+  - icon: ↔
+    title: Optional File & Folder Tools
+    details: Copy names, paths or deliberately move selected items inside authorized folders.
 ---
 
 <section id="finder" class="landing-section">
@@ -67,25 +70,68 @@ features:
   <p class="section-kicker">03 / YOUR MENU, YOUR TYPES</p>
   <h2>Keep only the file types you actually use.</h2>
   <p class="section-intro">Common formats work immediately, with more available when you need them. Add your own text suffixes and starter templates, then arrange their Finder menu order.</p>
+  <div class="copy-stack">
+    <h3>Organize around your workflow</h3>
+    <p>Text, Markdown, JSON, Swift, HTML, CSS and Shell are ready from the start. CSV, YAML, XML, JavaScript, TypeScript, Python and SQL are one toggle away.</p>
+    <ul class="benefit-list">
+      <li>Enable, disable and reorder without a menu full of clutter</li>
+      <li>Keep custom text suffixes such as <strong>.toml</strong>, <strong>.vue</strong> and <strong>.log</strong></li>
+      <li>Templates and the Finder menu stay in sync</li>
+    </ul>
+  </div>
+</section>
+
+<section id="settings" class="landing-section">
+  <p class="section-kicker">04 / SETTINGS, WITH A PLACE FOR EVERYTHING</p>
+  <h2>Clearer settings, without doing anything on your behalf.</h2>
+  <p class="section-intro">FileMint now uses a persistent sidebar, so each preference has a clear home. Changing pages is navigation only; it never rewrites settings, and New File… stays at the bottom of the sidebar.</p>
   <div class="visual-grid visual-grid--wide">
     <div class="copy-stack">
-      <h3>Organize around your workflow</h3>
-      <p>Text, Markdown, JSON, Swift, HTML, CSS and Shell are ready from the start. CSV, YAML, XML, JavaScript, TypeScript, Python and SQL are one toggle away.</p>
+      <h3>Basic Settings</h3>
       <ul class="benefit-list">
-        <li>Enable, disable and reorder without a menu full of clutter</li>
-        <li>Keep custom text suffixes such as <strong>.toml</strong>, <strong>.vue</strong> and <strong>.log</strong></li>
-        <li>Templates and the Finder menu stay in sync</li>
+        <li><strong>General</strong>: language, launch at login, menu bar and automatic update checks</li>
+        <li><strong>Creation</strong>: collision handling and revealing the completed file in Finder</li>
+        <li><strong>Templates &amp; Types</strong>: common formats, custom suffixes and starter content</li>
+        <li><strong>Finder &amp; Folders</strong>: extension status, menu scope and folder authorization</li>
       </ul>
     </div>
-    <figure class="screen-card">
-      <img src="/images/file-types-zh.png" alt="FileMint file type management">
-      <figcaption>Every type is managed from one native settings pane.</figcaption>
-    </figure>
+    <div class="copy-stack">
+      <h3>Extensions and About</h3>
+      <ul class="benefit-list">
+        <li><strong>Extensions</strong>: opt into File &amp; Folder Tools without affecting New File</li>
+        <li><strong>About</strong>: version, license, privacy, manual update checks and Update and Restart</li>
+        <li>Arrow-key navigation and native readability across Chinese, English, light and dark appearances</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="file-tools" class="landing-section">
+  <p class="section-kicker">05 / FILE &amp; FOLDER TOOLS</p>
+  <h2>Handle selected items only when you explicitly ask.</h2>
+  <p class="section-intro">Select local files or folders inside an authorized scope, then enable File &amp; Folder Tools to see a root menu beside New File. It is off by default, so existing creation menus stay exactly as they are.</p>
+  <div class="visual-grid visual-grid--wide">
+    <div class="copy-stack">
+      <h3>Copy without surveillance</h3>
+      <ul class="benefit-list">
+        <li><strong>Copy Names</strong>: preserves suffixes, with one line per selected item</li>
+        <li><strong>Copy Paths</strong>: writes complete local filesystem paths</li>
+        <li>No file-content reads, folder crawling or clipboard monitoring; the clipboard changes only when you choose a Copy action</li>
+      </ul>
+    </div>
+    <div class="copy-stack">
+      <h3>Move in two deliberate steps</h3>
+      <ul class="benefit-list">
+        <li>Choose <strong>Move File / Folder</strong> on source items; nothing moves yet</li>
+        <li>Right-click the target folder background and choose <strong>Move Selected Items Here</strong></li>
+        <li>Existing names never overwrite or merge; pending items remain until they complete or a new source selection replaces them</li>
+      </ul>
+    </div>
   </div>
 </section>
 
 <section id="roadmap" class="landing-section">
-  <p class="section-kicker">04 / TODO</p>
+  <p class="section-kicker">06 / TODO</p>
   <h2>More useful, one small step at a time.</h2>
   <p class="section-intro">These plans grow out of everyday file creation. Unchecked items are still future work, and the list will evolve with use and feedback.</p>
 

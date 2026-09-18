@@ -24,6 +24,9 @@ features:
   - icon: ◌
     title: 私密且离线
     details: 不要账号、没有分析或后台扫描；文件创建不依赖网络。
+  - icon: ↔
+    title: 可选的文件（夹）工具
+    details: 在已授权范围内，按需拷贝名称、路径或分两步移动已选项目。
 ---
 
 <section id="finder" class="landing-section">
@@ -67,25 +70,68 @@ features:
   <p class="section-kicker">03 / YOUR MENU, YOUR TYPES</p>
   <h2>让右键菜单只留下你真正会用的类型。</h2>
   <p class="section-intro">常用格式开箱即用；其余格式可以按需启用。你也能添加自己的文本后缀和初始模板，并调整它们在 Finder 里的顺序。</p>
+  <div class="copy-stack">
+    <h3>按你的工作流整理</h3>
+    <p>文本、Markdown、JSON、Swift、HTML、CSS、Shell 默认可用；CSV、YAML、XML、JavaScript、TypeScript、Python 和 SQL 随时可打开。</p>
+    <ul class="benefit-list">
+      <li>启用、停用、排序，不堆满无关选项</li>
+      <li>保存自己的 <strong>.toml</strong>、<strong>.vue</strong> 或 <strong>.log</strong> 等文本后缀</li>
+      <li>模板和右键菜单保持同步</li>
+    </ul>
+  </div>
+</section>
+
+<section id="settings" class="landing-section">
+  <p class="section-kicker">04 / SETTINGS, WITH A PLACE FOR EVERYTHING</p>
+  <h2>设置更清楚，但不会多做任何事。</h2>
+  <p class="section-intro">FileMint 现在使用固定侧栏，让每项偏好都有明确的位置。切换页面只是在导航，不会改写设置；“新建文件…”也一直留在侧栏底部。</p>
   <div class="visual-grid visual-grid--wide">
     <div class="copy-stack">
-      <h3>按你的工作流整理</h3>
-      <p>文本、Markdown、JSON、Swift、HTML、CSS、Shell 默认可用；CSV、YAML、XML、JavaScript、TypeScript、Python 和 SQL 随时可打开。</p>
+      <h3>基础设置</h3>
       <ul class="benefit-list">
-        <li>启用、停用、排序，不堆满无关选项</li>
-        <li>保存自己的 <strong>.toml</strong>、<strong>.vue</strong> 或 <strong>.log</strong> 等文本后缀</li>
-        <li>模板和右键菜单保持同步</li>
+        <li><strong>通用</strong>：语言、登录时启动、菜单栏与自动检查更新</li>
+        <li><strong>创建行为</strong>：同名处理和创建后在 Finder 中选中结果</li>
+        <li><strong>模板与类型</strong>：管理常用格式、自定义后缀和初始内容</li>
+        <li><strong>Finder 与文件夹</strong>：扩展状态、菜单范围与文件夹授权</li>
       </ul>
     </div>
-    <figure class="screen-card">
-      <img src="/images/file-types-zh.png" alt="FileMint 文件类型管理界面">
-      <figcaption>所有类型都能在一个原生设置页里管理。</figcaption>
-    </figure>
+    <div class="copy-stack">
+      <h3>扩展功能与关于</h3>
+      <ul class="benefit-list">
+        <li><strong>扩展功能</strong>：按需开启文件（夹）工具，不影响新建文件</li>
+        <li><strong>关于</strong>：版本、许可、隐私、手动检查更新与更新并重启</li>
+        <li>侧栏支持键盘方向键，中文、英文与明暗外观都保持原生可读</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="file-tools" class="landing-section">
+  <p class="section-kicker">05 / FILE &amp; FOLDER TOOLS</p>
+  <h2>处理已选项目，仍然只在你明确点按时发生。</h2>
+  <p class="section-intro">在已授权范围内选择本地文件或文件夹，开启后的“文件（夹）工具”会以与“新建文件”并列的根菜单出现。它默认关闭，因此原有创建菜单保持不变。</p>
+  <div class="visual-grid visual-grid--wide">
+    <div class="copy-stack">
+      <h3>拷贝而不打扰</h3>
+      <ul class="benefit-list">
+        <li><strong>拷贝文件（夹）名称</strong>：保留后缀；多选时每项一行</li>
+        <li><strong>拷贝文件（夹）路径</strong>：写入完整本地路径</li>
+        <li>不会读取文件内容、扫描目录或监控剪贴板；只有点按菜单项才写入剪贴板</li>
+      </ul>
+    </div>
+    <div class="copy-stack">
+      <h3>移动，分两步确认</h3>
+      <ul class="benefit-list">
+        <li>先在源项目上选择“移动文件（夹）”；此时不会立即移动</li>
+        <li>再在目标文件夹空白处右键，选择“将所选项目移到此处”</li>
+        <li>同名项目绝不覆盖或合并；待移动项目在完成或被新选择替换前会保留</li>
+      </ul>
+    </div>
   </div>
 </section>
 
 <section id="roadmap" class="landing-section">
-  <p class="section-kicker">04 / TODO</p>
+  <p class="section-kicker">06 / TODO</p>
   <h2>未来规划，一件件慢慢做好。</h2>
   <p class="section-intro">从日常创建文件的小事出发，逐步打磨这些功能。未勾选的项目还未完成，清单会随着实际使用和反馈持续更新。</p>
 

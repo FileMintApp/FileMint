@@ -1,41 +1,79 @@
-FileMint 0.5.4 — 自动检查更新与公开规划 / Automatic updates and public roadmap
+# FileMint 0.5.5
 
-本次发布包含自动检查更新、Finder 扩展启用指引，以及中英文主页和官网的未来 TODO。TODO 中尚未勾选的功能仍是未来计划，不属于本版已实现功能。
+## 新功能 / New features
 
-This release adds automatic update checks, clearer Finder extension guidance and a bilingual public roadmap. Unchecked roadmap items remain future plans and are not included features.
+### 设置页改为侧栏结构 / Redesigned settings sidebar
 
-## 更新内容 / What's new
+- 设置不再把所有选项挤在同一页。新的固定侧栏将通用、创建行为、模板与类型、Finder 与文件夹、扩展功能和关于分开，进入后能直接看到每一页负责的内容。
+- 通用页集中管理界面语言、登录时启动、菜单栏和自动检查更新；创建行为页集中管理同名处理与创建后在 Finder 中选中结果。
+- 模板与类型仍可启用、停用、排序和编辑自定义文本类型；Finder 与文件夹页保留扩展状态、菜单范围、文件夹授权和完全磁盘访问指引。
+- 侧栏底部始终提供“新建文件…”，无需先切回某个设置页。About、检查更新和可用更新提示都在同一个设置窗口中处理。
+- 页面可用键盘方向键切换，中文、英文以及明暗外观下保持原生控件、可读的焦点和选中状态。
 
-- “通用”新增默认开启的自动检查更新开关。应用运行时每 7 天最多检查一次；首次到期检查在启动或开启开关至少 60 秒后进行。
-- 检查尝试时间持久保存，失败、重启及反复切换开关不会立即触发重复请求。关闭后仍可手动检查更新。
-- 发现新版后在设置与菜单栏中提示，不弹出窗口、不自动下载；下载和安装继续由用户主动完成。
-- 完善 Finder 扩展启用说明：macOS 管理扩展加载及启用状态，应用提供真实状态与系统设置入口。
-- 中英文 README 与官网首页新增 15 项按场景分组的未来 TODO，并提供实施路线；官网直接复用 README 清单。
+- Settings no longer place every option on one page. A persistent sidebar separates General, Creation, Templates & Types, Finder & Folders, Extensions and About, so each page has a clear purpose.
+- General now groups interface language, launch at login, menu bar visibility and automatic update checks. Creation groups collision handling and revealing the completed file in Finder.
+- Templates & Types keeps enable, disable, reorder and custom text-type editing. Finder & Folders retains extension status, menu scope, folder authorization and Full Disk Access guidance.
+- New File… is always available at the bottom of the sidebar. About, update checks and available-update notices all stay in the same settings window.
+- Arrow-key sidebar navigation, readable focus/selection states, and native controls work across Chinese, English, light and dark appearances.
 
-- General now offers automatic update checks, enabled by default. While the app runs, checks happen at most once every seven days, with a minimum 60-second delay after startup or enabling the switch.
-- Check attempts persist across failures, relaunches and preference changes. Manual checks remain available when automatic checks are disabled.
-- Available updates appear in settings and the menu bar without opening a window or starting a download. Downloading and installation remain explicit user actions.
-- Finder extension guidance explains system-managed enablement and provides the actual status and the system settings entry point.
-- Both READMEs and website homepages include 15 future TODOs grouped by use case, with implementation notes. The website reuses the README checklists.
+### 文件（夹）工具 / File & Folder Tools
 
-## 安装包 / Installer
+- 新增独立的“文件（夹）工具”模块，默认关闭。开启后，它以与“新建文件”并列的 Finder 根菜单出现，不会改变已有的新建文件菜单。
+- 总开关下可分别开启“拷贝文件（夹）名称”“拷贝文件（夹）路径”和“移动文件（夹）”。关闭总开关会隐藏菜单，但保留各子项选择，之后可继续恢复使用。
+- 拷贝名称会保留完整后缀，拷贝路径会写入完整本地路径；多选项目按 Finder 中的选择顺序逐行写入剪贴板。
+- 工具只在已授权范围内、已选中的本地文件或文件夹上显示。混入范围外项目时不会悄悄只处理其中一部分；背景、工具栏和侧栏菜单也不会出现这些选择工具。
+- 移动采用两步操作：先在源项目上选择“移动文件（夹）”，此时不会立即移动；再到目标文件夹空白处右键，选择最外层“将所选项目移到此处”。
+- 待移动批次会保存并在重启后保留，直到成功完成或被新的源选择替换。移动前会再次检查当前开关、文件夹范围和批次标识，避免在切换 Finder 窗口或改变选择后移动错误项目。
+- 同名目标绝不覆盖或合并；无效目标、已变更的源项目、将文件夹移入自身或子目录等情况会被拒绝。部分成功后，尚未完成的项目会保留以便处理问题后重试。
+- 名称、路径和移动操作均不读取文件内容、不扫描目录、不监控剪贴板，也不会把路径写入日志。只有明确点按拷贝菜单项才会写入剪贴板。
 
-0.5.4（构建 12）由开发者本机为主应用、Finder 扩展及 DMG 进行 Developer ID 签名；安装包通过 Apple 公证并附加票据后发布。随包提供 SHA-256 校验文件。不宣称 GitHub Actions 构建来源认证。
+- File & Folder Tools is a new standalone module, disabled by default. When enabled, it appears as a Finder root menu beside New File and leaves the existing creation menu unchanged.
+- Its master switch has independent Copy Names, Copy Paths and Move File / Folder switches. Turning the master switch off hides the menu but preserves each child choice for later use.
+- Copy Names retains complete suffixes, while Copy Paths writes full local paths. Multi-selection is copied to the clipboard one Finder-order item per line.
+- Tools appear only for selected local files or folders inside an authorized scope. A mixed out-of-scope selection is never processed partially, and selection tools never appear in background, toolbar or sidebar menus.
+- Moving is deliberate and two-step: choose Move File / Folder on source items without moving them yet, then right-click the target folder background and choose the root-level Move Selected Items Here action.
+- A pending batch survives relaunch until it completes or a new source selection replaces it. Before moving, FileMint rechecks the enabled switches, folder scope and batch identity so changing Finder windows or selections cannot move the wrong items.
+- Existing names are never overwritten or merged. Invalid targets, changed sources, and moving a folder into itself or a descendant are rejected. After a partial failure, unfinished items remain available to retry.
+- Names, paths and moves do not read file contents, crawl folders, monitor the clipboard or write paths to logs. The clipboard is written only after you explicitly choose a Copy menu item.
 
-Version 0.5.4 (build 12) is built locally, with Developer ID signatures for the app, Finder extension and DMG. Publication follows Apple notarization and ticket stapling. A SHA-256 checksum accompanies the download. This release does not claim GitHub Actions build provenance.
+### 应用内更新安装 / In-app update installation
 
-macOS 13+，Apple 芯片与 Intel 通用。退出旧版，将 FileMint 拖入“应用程序”替换，推出安装磁盘，再从“应用程序”打开。Finder 扩展仍需在系统设置中启用，文件夹访问仍需授权。从 0.3.0–0.5.0 升级时，请用浏览器下载新版 DMG，以避开旧版下载器的沙盒问题。
+- “关于 → 检查更新”发现新版本后，选择“更新并重启”即可下载、校验、替换应用并重新打开，不再需要先把安装包保存到 Finder。
+- 安装只接受当前选择版本的不可变 appcast；会核对版本、下载地址、文件大小和 EdDSA 签名，拒绝降级、错误仓库、重定向到不可信主机、信息项或增量包。
+- 检查和下载阶段显示进度并可以取消；进入解压和安装后才会锁定取消，避免显示已取消却已开始替换的错误状态。
+- 正在创建文件、移动项目或编辑模态内容时，更新会保留工作并要求稍后重试；不会强制关闭 Finder、丢弃草稿或修改文件夹授权。
+- 从 0.5.4 及更早版本升级时，请手动安装 0.5.5 一次；之后支持该更新器的版本可使用应用内更新。
 
-For macOS 13+, Apple silicon and Intel. Quit FileMint, drag the new copy into Applications, eject the installer volume, then reopen FileMint from Applications. Enable the Finder extension in System Settings and authorize working folders as needed. When upgrading from 0.3.0–0.5.0, download this DMG using a browser. Opening the installer does not complete installation.
+- Once About → Check for Updates finds a newer version, choose Update and Restart to download, verify, replace and reopen the app without first saving an installer in Finder.
+- Installation accepts only the selected version's immutable appcast. It checks version, download URL, size and EdDSA signature, rejecting downgrades, wrong repositories, untrusted redirects, informational items and delta packages.
+- Checking and downloading show progress and can be cancelled. Cancellation locks only after extraction and installation begin, so the UI never claims a replacement was cancelled after it has committed.
+- Updates preserve work and ask you to retry later while a file is being created or moved, or while modal editing is open. They never force Finder to quit, discard a draft or change folder authorization.
+- Upgrade manually from 0.5.4 or earlier once. Later compatible releases can use in-app updates.
 
-[安装指引 / Installation](https://github.com/FileMintApp/FileMint/blob/main/docs/INSTALL.md) · [未来规划 / Roadmap](https://github.com/FileMintApp/FileMint#未来规划) · [官网 / Website](https://filemintapp.github.io/FileMint/)
+## 文档与安装 / Documentation and installation
+
+- README、官网首页、安装页和隐私页已同步设置侧栏与文件（夹）工具的开启路径、可见范围、两步移动方式和剪贴板边界。
+- 已实现的“拷贝文件（夹）名称 / 路径”不再列在未来 TODO 中；未来规划只保留尚未实现的方向。
+- 0.5.5 支持 macOS 13 及以上，并提供 Apple 芯片与 Intel 通用 DMG。退出旧版，将 FileMint 拖入“应用程序”替换，推出安装磁盘，再从“应用程序”打开；Finder 扩展启用和文件夹访问仍由 macOS 与用户分别管理。
+
+- The README, website home, installation page and privacy page now document the sidebar, File & Folder Tools enablement, visibility rules, two-step moves and clipboard boundary.
+- Implemented Copy Names / Copy Paths are no longer listed as future TODOs; the roadmap retains only unfinished directions.
+- FileMint 0.5.5 supports macOS 13 and later in one universal DMG. Quit the old app, replace it in Applications, eject the installer volume and reopen it. Finder extension enablement and folder access remain separate macOS and user actions.
+
+## 发布包校验 / Release package verification
+
+正式安装包由开发者本机为主应用、Finder 扩展和 DMG 完成 Developer ID 签名。GitHub Release 只会在 Apple 公证接受、票据已附加、挂载镜像校验和完整 SHA-256 校验通过后发布，并随包提供 appcast.xml。该本机构建不宣称 GitHub Actions 构建来源认证。
+
+The stable installer is Developer ID signed locally for the main app, Finder extension and DMG. The GitHub Release is published only after Apple notarization is accepted, its ticket is stapled, mounted-image validation and the final SHA-256 check pass. It includes appcast.xml and does not claim GitHub Actions build provenance.
+
+~~~sh
+shasum -a 256 -c FileMint-0.5.5.dmg.sha256
+~~~
+
+详细安装与权限说明见 [安装指引 / Installation](https://github.com/FileMintApp/FileMint/blob/main/docs/INSTALL.md)。发布后的签名、公证、校验值和远端下载验证会记录在发布验证文档中。
 
 ## 许可 / License
 
 个人及非商业使用免费；商业使用须获事先书面授权或单独签发的付费商业许可。打赏不授予商业权利。
 
 Personal and non-commercial use is free; commercial use requires separate written authorization or a paid commercial license. Donations do not grant commercial rights. [License](https://github.com/FileMintApp/FileMint/blob/main/LICENSE).
-
-```sh
-shasum -a 256 -c FileMint-0.5.4.dmg.sha256
-```
