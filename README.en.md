@@ -127,7 +127,7 @@ Implementation notes and completion criteria live in the [implementation roadmap
 
 **macOS 13+**, Apple silicon and Intel in one universal DMG.
 
-**The 0.5.5 installer is Developer ID signed, Apple notarized and stapled.** Enabling the Finder extension and authorizing working folders remain separate first-use steps.
+**The 0.5.6 installer is Developer ID signed, Apple notarized and stapled.** Enabling the Finder extension and authorizing working folders remain separate first-use steps.
 
 1. [Download the latest DMG](https://github.com/FileMintApp/FileMint/releases/latest) and drag FileMint into Applications.
 2. Launch it, enable the Finder extension and authorize your working folders.
@@ -136,7 +136,7 @@ Implementation notes and completion criteria live in the [implementation roadmap
 In 0.5.5 and later builds with the new updater, choose **About → Check for Updates → Update and Restart**.
 FileMint downloads, verifies, replaces the app and restarts. Finish creating or
 editing files first; macOS may request administrator authorization.
-Older updater builds (including 0.5.4) need one manual installation of 0.5.5:
+Older updater builds (including 0.5.4) need one manual installation of 0.5.6:
 open the DMG, quit FileMint, replace it in Applications, eject the volume
 and reopen the installed app.
 

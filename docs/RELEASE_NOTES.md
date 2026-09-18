@@ -1,6 +1,6 @@
 # FileMint 0.5.6
 
-待发布版本。0.5.6 的源码、文档和官网内容可以随 `main` 推送；在 GitHub Release、DMG、校验和和更新源实际发布前，下载“最新版本”仍指向 0.5.5。
+已于 2026-09-18 发布：[GitHub Release v0.5.6](https://github.com/FileMintApp/FileMint/releases/tag/v0.5.6)。DMG、SHA-256 校验和和 `appcast.xml` 均已发布；签名、公证与远端下载核验见 [0.5.6 发布验证记录](RELEASE_VERIFICATION_0.5.6.md)。
 
 ## 新功能 / New features
 

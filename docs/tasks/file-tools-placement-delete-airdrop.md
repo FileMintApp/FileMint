@@ -1,6 +1,6 @@
 # Task: Flexible file tools, permanent deletion and AirDrop
 
-Status: complete (implementation, documentation and source push; native acceptance pending user)
+Status: complete (implementation, documentation, source push and GitHub Release; native acceptance pending user)
 Next action: User installs build/FileMint-0.5.6.dmg and performs native acceptance.
 
 ## Objective and scope
@@ -65,8 +65,15 @@ Current worktree on macOS / Xcode, 2026-09-18.
   privacy policy, roadmap and 0.5.6 release notes now describe the per-action
   menu placement, permanent deletion and system AirDrop behavior in Chinese and
   English.
-- The GitHub Release is intentionally still separate: the release notes state
-  that the public latest download remains 0.5.5 until a tagged release uploads
-  the DMG, checksum and appcast built from that exact commit.
 - Committed and pushed to `main` as `22e92fd feat: make file tools configurable`.
   The matching CI and website deployment both completed successfully.
+
+## Published release
+
+- Annotated tag `v0.5.6` points to `c5b3359`; the exact source was rebuilt as
+  universal release build 14, Developer ID signed, notarized and stapled.
+- Apple accepted notarization submission `89e1ab05-24a3-4472-9099-f6a88d058eb3`.
+- [GitHub Release v0.5.6](https://github.com/FileMintApp/FileMint/releases/tag/v0.5.6)
+  contains `FileMint-0.5.6.dmg`, its SHA-256 file and `appcast.xml`. The project
+  publish script downloaded all three and compared each byte-for-byte with the
+  local notarized release assets.
