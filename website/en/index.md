@@ -2,8 +2,8 @@
 layout: home
 hero:
   name: FileMint
-  text: A new file. Right here.
-  tagline: Right-click in Finder and create a file exactly where you are working.
+  text: Put file tools back in Finder.
+  tagline: A small native macOS app for creating, processing and organizing files and images from Finder.
   image:
     src: /filemint-icon.png
     alt: FileMint
@@ -14,143 +14,227 @@ hero:
     - theme: alt
       text: View on GitHub
       link: https://github.com/FileMintApp/FileMint
-features:
-  - icon: ⌘
-    title: Native Finder entry point
-    details: Create a familiar file type from the desktop or an authorized folder.
-  - icon: ✦
-    title: Name it before you create it
-    details: Set the filename, suffix, location and starter content in one compact panel.
-  - icon: ◌
-    title: Private and offline
-    details: No account, analytics or background scanning. Creating files needs no network.
-  - icon: ↔
-    title: Optional File & Folder Tools
-    details: Copy, move, delete permanently or use AirDrop inside authorized folders, with per-action menu placement.
 ---
 
-<section id="finder" class="landing-section">
+<div class="hero-proof" aria-label="FileMint product facts">
+  <span><strong>Swift + AppKit</strong> native app</span>
+  <span><strong>Small footprint</strong> no web runtime</span>
+  <span><strong>6</strong> image tools</span>
+  <span>Local processing, no remote detour</span>
+</div>
+
+<div class="architecture-strip">
+  <article>
+    <span class="mini-label">NATIVE MAC APP</span>
+    <h3>Native menus, windows and editing</h3>
+    <p>Swift, AppKit and SwiftUI connect directly to Finder and macOS permissions, sharing and window behavior.</p>
+  </article>
+  <article>
+    <span class="mini-label">SMALL FOOTPRINT</span>
+    <h3>Small by design, no web runtime</h3>
+    <p>No embedded web app, account or background crawl. Open it, do the work and get back to your task.</p>
+  </article>
+  <article>
+    <span class="mini-label">LOCAL PERFORMANCE</span>
+    <h3>File work stays on your Mac</h3>
+    <p>Creation, image processing and OCR do not go through a remote service; Finder acts only when you ask.</p>
+  </article>
+</div>
+
+<section id="finder" class="landing-section landing-section--quiet">
   <p class="section-kicker">01 / FINDER FIRST</p>
-  <h2>A new file, right where you are already working.</h2>
-  <p class="section-intro">No opening an editor, choosing Save As, then finding your folder again. FileMint puts the action back in Finder: right-click, choose a type, and the file is there.</p>
-  <div class="visual-grid">
-    <figure class="screen-card">
-      <img src="/images/finder-desktop-context-menu-zh.png" alt="FileMint New File menu in a desktop context menu">
-      <figcaption>Create directly from the desktop background.</figcaption>
+  <h2>Start wherever you are in Finder.</h2>
+  <p class="section-intro">No editor detour, no Save As hunt and no guessing the destination. FileMint puts the action back in the place where you are already working.</p>
+
+  <div class="feature-grid feature-grid--three">
+    <article class="feature-card">
+      <span class="feature-index">01</span>
+      <h3>Current location</h3>
+      <p>The desktop background and authorized Finder folders are both first-class entry points.</p>
+    </article>
+    <article class="feature-card">
+      <span class="feature-index">02</span>
+      <h3>Useful types</h3>
+      <p>Text, Markdown, JSON, Swift, HTML, CSS and Shell are ready when you need them.</p>
+    </article>
+    <article class="feature-card">
+      <span class="feature-index">03</span>
+      <h3>Clear boundaries</h3>
+      <p>Finder enablement and folder authorization stay separate. Nothing expands its scope silently.</p>
+    </article>
+  </div>
+
+  <div class="visual-grid visual-grid--wide">
+    <figure class="screen-card screen-card--menu">
+      <img src="/images/finder-resource-menu-zh.png" alt="Current FileMint Finder context menu with New File, File and Folder Tools, and Resource Tools">
+      <figcaption>Current install example: select longmao.navigator.png and keep the three entry layers distinct.</figcaption>
     </figure>
-    <figure class="screen-card">
-      <img src="/images/finder-folder-context-menu-zh.png" alt="FileMint New File menu in a Finder folder context menu">
-      <figcaption>In a working folder, the file stays exactly where you are.</figcaption>
-    </figure>
+    <div class="copy-stack">
+      <div class="mini-label">ONE CONTEXT MENU, CLEAR LAYERS</div>
+      <h3>Create and handle, each in its place</h3>
+      <p>New File creates. File &amp; Folder Tools acts on selected items. Resource Tools handles images. Optional modules start off, and enabling them does not turn the menu into one long list.</p>
+      <ul class="benefit-list">
+        <li>Color icons make the three entry groups easy to scan</li>
+        <li>File and Resource Tools appear only for applicable selections</li>
+        <li>Each action can live in Finder's main menu or its own submenu</li>
+      </ul>
+    </div>
   </div>
 </section>
 
 <section id="create" class="landing-section">
   <p class="section-kicker">02 / CREATE WITH CONTEXT</p>
-  <h2>When you need more control, it is still one small panel.</h2>
-  <p class="section-intro">Enter the full filename, choose a suffix, confirm the location and write the first lines if you need to. Markdown, code, notes and configuration do not need an empty-file detour.</p>
+  <h2>When you need control, it is still one small panel.</h2>
+  <p class="section-intro">Set the full filename, suffix, destination and starter content in one place. Begin with a real Markdown draft instead of creating an empty file first.</p>
+
   <div class="visual-grid visual-grid--wide">
     <figure class="screen-card screen-card--panel">
-      <img src="/images/create-panel-zh.png" alt="FileMint creation panel with filename, suffix, destination and starter content">
-      <figcaption>The full filename and suffix stay in sync; content is read only when you explicitly type or paste it.</figcaption>
+      <img src="/images/create-panel-en.png" alt="FileMint New File panel with project-kickoff.md and starter content">
+      <figcaption>The full filename and suffix stay in sync; multiline text and Unicode stay literal.</figcaption>
     </figure>
     <div class="copy-stack">
-      <h3>More than a blank file</h3>
-      <p>Put the content you need straight into the panel, then create. Multiline text, Unicode, whitespace and template tokens are saved exactly as entered.</p>
+      <div class="mini-label">CREATE ONCE, KEEP THE CONTEXT</div>
+      <h3>More than an empty file</h3>
+      <p>Enter <strong>project-kickoff.md</strong>, paste the first lines and create it. Naming, location and content stay in one path.</p>
       <ul class="benefit-list">
-        <li><strong>⌘↩</strong> creates from anywhere; <strong>Esc</strong> cancels</li>
-        <li>The full filename wins; FileMint never silently rewrites the suffix</li>
+        <li><strong>⌘↩</strong> creates; <strong>Esc</strong> cancels</li>
+        <li>Custom suffixes remain UTF-8 text instead of pretending to be another document format</li>
         <li>Quick creation increments names; custom creation asks before replacement</li>
       </ul>
     </div>
   </div>
 </section>
 
-<section id="types" class="landing-section">
-  <p class="section-kicker">03 / YOUR MENU, YOUR TYPES</p>
-  <h2>Keep only the file types you actually use.</h2>
-  <p class="section-intro">Common formats work immediately, with more available when you need them. Add your own text suffixes and starter templates, then arrange their Finder menu order.</p>
-  <div class="copy-stack">
-    <h3>Organize around your workflow</h3>
-    <p>Text, Markdown, JSON, Swift, HTML, CSS and Shell are ready from the start. CSV, YAML, XML, JavaScript, TypeScript, Python and SQL are one toggle away.</p>
-    <ul class="benefit-list">
-      <li>Enable, disable and reorder without a menu full of clutter</li>
-      <li>Keep custom text suffixes such as <strong>.toml</strong>, <strong>.vue</strong> and <strong>.log</strong></li>
-      <li>Templates and the Finder menu stay in sync</li>
-    </ul>
-  </div>
-</section>
+<section id="resources" class="landing-section landing-section--tint">
+  <p class="section-kicker">03 / RESOURCE TOOLS</p>
+  <h2>Image work, next to the selected files.</h2>
+  <p class="section-intro">Select images, choose Resource Tools from Finder, or start from the FileMint app. Six tools share one local panel for preview, parameters and output.</p>
 
-<section id="settings" class="landing-section">
-  <p class="section-kicker">04 / SETTINGS, WITH A PLACE FOR EVERYTHING</p>
-  <h2>Clearer settings, without doing anything on your behalf.</h2>
-  <p class="section-intro">FileMint now uses a persistent sidebar, so each preference has a clear home. Changing pages is navigation only; it never rewrites settings, and New File… stays at the bottom of the sidebar.</p>
   <div class="visual-grid visual-grid--wide">
+    <figure class="screen-card screen-card--panel">
+      <img src="/images/resource-tools-en.png" alt="FileMint Resource Tools page with six image actions">
+      <figcaption>Convert, compress, resize, generate icons, stitch and extract text.</figcaption>
+    </figure>
     <div class="copy-stack">
-      <h3>Basic Settings</h3>
+      <div class="mini-label">SIX SMALL TOOLS, ONE NATIVE SURFACE</div>
+      <h3>Keep repetitive image work together</h3>
       <ul class="benefit-list">
-        <li><strong>General</strong>: language, launch at login, menu bar and automatic update checks</li>
-        <li><strong>Creation</strong>: collision handling and revealing the completed file in Finder</li>
-        <li><strong>Templates &amp; Types</strong>: common formats, custom suffixes and starter content</li>
-        <li><strong>Finder &amp; Folders</strong>: extension status, menu scope and folder authorization</li>
+        <li><strong>Convert Image</strong>: JPEG, PNG, HEIC and TIFF</li>
+        <li><strong>Compress and Resize</strong>: preserve proportions without enlarging originals</li>
+        <li><strong>Generate Icons</strong>: ICNS, ICO and PNG size sets</li>
+        <li><strong>Stitch and Extract Text</strong>: reorder, preview and edit OCR output</li>
       </ul>
     </div>
+  </div>
+
+  <div class="visual-grid visual-grid--wide visual-grid--reverse">
     <div class="copy-stack">
-      <h3>Extensions and About</h3>
-      <ul class="benefit-list">
-        <li><strong>Extensions</strong>: opt into File &amp; Folder Tools without affecting New File</li>
-        <li><strong>About</strong>: version, license, privacy, manual update checks and Update and Restart</li>
-        <li>Arrow-key navigation and native readability across Chinese, English, light and dark appearances</li>
-      </ul>
+      <div class="mini-label">LOCAL PREVIEW / ORIGINALS STAY UNCHANGED</div>
+      <h3>Start with one real image</h3>
+      <p>The panel below uses <strong>longmao.navigator.png</strong>. Output format, destination and original preservation are visible before you run anything; the image never leaves your Mac.</p>
+      <div class="quote-card">
+        <span class="quote-mark">“</span>
+        <p>Preview first. Process when ready. Originals stay unchanged.</p>
+      </div>
     </div>
+    <figure class="screen-card screen-card--panel">
+      <img src="/images/resource-panel-longmao-en.png" alt="FileMint Convert Image panel using longmao.navigator.png">
+      <figcaption>Real resource example: longmao.navigator.png.</figcaption>
+    </figure>
   </div>
 </section>
 
 <section id="file-tools" class="landing-section">
-  <p class="section-kicker">05 / FILE &amp; FOLDER TOOLS</p>
+  <p class="section-kicker">04 / FILE &amp; FOLDER TOOLS</p>
   <h2>Handle selected items only when you explicitly ask.</h2>
-  <p class="section-intro">Select local files or folders inside an authorized scope, then opt into File &amp; Folder Tools. Each action can appear directly in Finder's main menu or inside the submenu. The module is off by default, so New File stays exactly as it is.</p>
+  <p class="section-intro">File &amp; Folder Tools starts off. Once enabled, each action can live in Finder's main menu or the tools submenu; New File remains independent and uncluttered.</p>
+
   <div class="visual-grid visual-grid--wide">
     <div class="copy-stack">
-      <h3>Put each action where you use it</h3>
+      <div class="mini-label">OPT IN / CHOOSE THE MENU LEVEL</div>
+      <h3>Shape the context menu around your work</h3>
       <ul class="benefit-list">
-        <li><strong>Copy Names</strong>: preserves suffixes, with one line per selected item</li>
-        <li><strong>Copy Paths</strong>: writes complete local filesystem paths</li>
-        <li>Each action can live in the main menu or File &amp; Folder Tools, never both</li>
-        <li>No file-content reads, folder crawling or clipboard monitoring; the clipboard changes only when you choose a Copy action</li>
+        <li><strong>Copy Names / Paths</strong>: one line per selected item, written only when chosen</li>
+        <li><strong>Two-step Move</strong>: capture sources first, confirm at the destination folder</li>
+        <li><strong>Delete Permanently</strong>: confirmation by default, no following symlink targets</li>
+        <li><strong>AirDrop / Send Alias to Desktop</strong>: use macOS sharing and native Finder aliases</li>
       </ul>
     </div>
-    <div class="copy-stack">
-      <h3>Move, delete and send</h3>
-      <ul class="benefit-list">
-        <li>Choose <strong>Move File / Folder</strong> on source items; nothing moves yet</li>
-        <li>Right-click the target folder background and choose <strong>Move Selected Items Here</strong>; its position is configurable too</li>
-        <li>Existing names never overwrite or merge; pending items remain until they complete or a new source selection replaces them</li>
-        <li><strong>Delete Permanently</strong> confirms by default and bypasses Trash; <strong>AirDrop</strong> opens the system recipient UI for you to choose a device</li>
-      </ul>
-    </div>
+    <figure class="screen-card screen-card--panel">
+      <img src="/images/file-tools-en.png" alt="FileMint File and Folder Tools settings with menu placement and individual switches">
+      <figcaption>Independent switches and menu placement; destructive actions start off.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="settings" class="landing-section landing-section--quiet">
+  <p class="section-kicker">05 / A QUIETER NATIVE UI</p>
+  <h2>Clear hierarchy, less searching.</h2>
+  <p class="section-intro">The current version uses a persistent sidebar for creation, extensions and preferences. Templates &amp; Types, Creation, File &amp; Folder Tools, Resource Tools, Finder &amp; Folders and About each have a clear home.</p>
+
+  <div class="feature-grid feature-grid--three">
+    <article class="feature-card">
+      <span class="feature-index">01</span>
+      <h3>Grouped by job</h3>
+      <p>Creation, extensions and preferences do not collapse into one long settings page.</p>
+    </article>
+    <article class="feature-card">
+      <span class="feature-index">02</span>
+      <h3>Opt in by design</h3>
+      <p>Resource Tools and File &amp; Folder Tools can be turned off without changing existing creation settings.</p>
+    </article>
+    <article class="feature-card">
+      <span class="feature-index">03</span>
+      <h3>Native readability</h3>
+      <p>Chinese, English, light and dark appearances share the same native window and controls.</p>
+    </article>
+  </div>
+</section>
+
+<section id="privacy" class="landing-section landing-section--tint">
+  <p class="section-kicker">06 / LOCAL BY DEFAULT</p>
+  <h2>Quiet does not mean opaque.</h2>
+  <p class="section-intro">FileMint keeps permission, network and file-processing boundaries explicit, so you know when it works and when it does not.</p>
+
+  <div class="trust-grid">
+    <article class="trust-card">
+      <span class="trust-symbol">⌁</span>
+      <h3>Local creation and processing</h3>
+      <p>File creation, conversion, compression, resizing, stitching and OCR run on your Mac.</p>
+    </article>
+    <article class="trust-card">
+      <span class="trust-symbol">∅</span>
+      <h3>No account or telemetry</h3>
+      <p>No sign-in, usage analytics, background file enumeration or file-content reads.</p>
+    </article>
+    <article class="trust-card">
+      <span class="trust-symbol">↗</span>
+      <h3>A clear network boundary</h3>
+      <p>The main app reaches GitHub only when you check for or download an update. The Finder extension stays offline.</p>
+    </article>
   </div>
 </section>
 
 <section id="roadmap" class="landing-section">
-  <p class="section-kicker">06 / TODO</p>
-  <h2>More useful, one small step at a time.</h2>
-  <p class="section-intro">These plans grow out of everyday file creation. Unchecked items are still future work, and the list will evolve with use and feedback.</p>
+  <p class="section-kicker">07 / TODO</p>
+  <h2>Keep making the small things better.</h2>
+  <p class="section-intro">Only unfinished directions belong here. Delivered capabilities do not get repackaged as roadmap promises.</p>
 
-<div class="roadmap-todos">
+  <div class="roadmap-todos">
 
 <!--@include: ../../README.en.md#roadmap-->
 
-</div>
+  </div>
 
-  <p class="roadmap-links">Read the <a href="https://github.com/FileMintApp/FileMint/blob/main/docs/ROADMAP.md">implementation roadmap (Chinese)</a> or <a href="https://github.com/FileMintApp/FileMint/issues">share your use case on GitHub</a>. Templates, translations and reproduction steps are welcome too.</p>
+  <p class="roadmap-links">Read the <a href="https://github.com/FileMintApp/FileMint/blob/main/docs/ROADMAP.md">implementation roadmap</a> or <a href="https://github.com/FileMintApp/FileMint/issues">share a use case on GitHub</a>.</p>
 </section>
 
-<section id="download" class="landing-section">
+<section id="download" class="landing-section landing-section--last">
   <div class="callout-band">
     <div>
-      <h2>Small, native and focused on one useful thing.</h2>
-      <p>For macOS 13+, with one universal build for Apple silicon and Intel Macs. File creation works offline, with no account, subscription, telemetry or background folder scanning.</p>
+      <div class="mini-label">FILEMINT 0.5.6</div>
+      <h2>Start in Finder. Finish the task. Get back to work.</h2>
+      <p>For macOS 13+, Apple silicon and Intel. Developer ID signed and Apple notarized; first use still follows macOS prompts for Finder enablement and folder authorization.</p>
     </div>
     <div class="callout-actions">
       <a href="https://github.com/FileMintApp/FileMint/releases/latest">Download the latest release</a>

@@ -30,6 +30,14 @@ File & Folder Tools is off by default. Once enabled, select one or more local fi
 - **AirDrop** starts off. When enabled, it opens macOS's native AirDrop UI and lets you choose a recipient; it never sends automatically or falls back to another sharing service.
 - The menu appears only when every currently selected item is inside an authorized scope. It does not crawl folders or monitor the clipboard.
 
+## Use Resource Tools
+
+Resource Tools is a separate extension module and starts off. Turn it on under **Settings → Extensions → Resource Tools** to choose images in the app, or select images in Finder and open **Resource Tools** from the context menu.
+
+- Convert formats, compress, resize, generate ICNS/ICO/PNG icon sets, stitch images and extract editable text with OCR.
+- The panel shows a preview and output location before processing; originals stay unchanged and outputs are sibling copies or go to a folder you explicitly choose.
+- Images and OCR results stay local. FileMint does not upload them or keep a processing history.
+
 ## Later updates
 
 In 0.5.5 and later builds with the new updater, choose **About → Check for Updates → Update and Restart**. FileMint downloads, verifies, replaces the app and restarts. Finish creating or editing first; macOS may request administrator authorization.

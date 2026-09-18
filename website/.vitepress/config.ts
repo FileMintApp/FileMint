@@ -7,7 +7,7 @@ const publicAsset = (path: string) => `${base.replace(/\/$/, '')}/${path}`
 export default defineConfig({
   base,
   title: 'FileMint',
-  description: 'Create a new file right where you are working.',
+  description: 'A small native macOS app for creating, processing and organizing files and images from Finder.',
   markdown: {
     config(md) {
       // Render the same GitHub task lists used by the README includes.
@@ -47,10 +47,11 @@ export default defineConfig({
       label: '简体中文',
       lang: 'zh-Hans',
       title: 'FileMint',
-      description: '在你正在工作的地方新建文件。',
+      description: '一个小体积的原生 macOS app，在 Finder 中创建、处理和整理文件与图片。',
       themeConfig: {
         nav: [
-          { text: '亮点', link: '/#finder' },
+          { text: '功能', link: '/#resources' },
+          { text: '为什么是 FileMint', link: '/#privacy' },
           { text: '未来规划', link: '/#roadmap' },
           { text: '安装', link: '/install' },
           { text: '隐私', link: '/privacy' },
@@ -67,10 +68,11 @@ export default defineConfig({
       lang: 'en-US',
       link: '/en/',
       title: 'FileMint',
-      description: 'Create a new file right where you are working.',
+      description: 'A small native macOS app for creating, processing and organizing files and images from Finder.',
       themeConfig: {
         nav: [
-          { text: 'Highlights', link: '/en/#finder' },
+          { text: 'Features', link: '/en/#resources' },
+          { text: 'Why FileMint', link: '/en/#privacy' },
           { text: 'Roadmap', link: '/en/#roadmap' },
           { text: 'Install', link: '/en/install' },
           { text: 'Privacy', link: '/en/privacy' },
