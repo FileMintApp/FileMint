@@ -80,7 +80,7 @@ final class FinderSync: FIFinderSync {
             let title = pending.items.count == 1 ? text(.moveSelectedHere)
                 : String(format: text(.moveSelectedHereCount), pending.items.count)
             let item = NSMenuItem(title: title, action: #selector(moveSelectedHere(_:)), keyEquivalent: "")
-            item.image = Self.menuIcon("arrow.right.square", palette: [.systemMint, .systemTeal])
+            item.image = FileToolAppearance.moveHereImage
             item.tag = actions.register([FileMenuAction(directory: destination, moveBatchID: pending.id)])[0]
             // Root-level entry; Finder owns placement relative to system rows.
             moveHereItem = item
@@ -93,7 +93,6 @@ final class FinderSync: FIFinderSync {
         if let moveHereItem {
             if layout.moveHereInMain { menu.insertItem(moveHereItem, at: 0) }
             else if layout.moveHereInSubmenu {
-                moveHereItem.image = nil
                 toolsMenu.addItem(moveHereItem)
             }
         }
@@ -102,29 +101,18 @@ final class FinderSync: FIFinderSync {
         })
         for (index, tool) in tools.enumerated() {
             let item = NSMenuItem(title: text(tool.title), action: #selector(performFileTool(_:)), keyEquivalent: "")
+            item.image = FileToolAppearance.image(for: tool)
             item.tag = toolTags[index]
             if layout.main.contains(tool) { menu.addItem(item) }
             else { toolsMenu.addItem(item) }
         }
         if layout.showsSubmenu {
             let toolsRoot = NSMenuItem(title: text(.fileTools), action: nil, keyEquivalent: "")
-            toolsRoot.image = Self.menuIcon("wrench.and.screwdriver", palette: [.systemMint, .systemBlue])
+            toolsRoot.image = FileToolAppearance.toolsImage
             toolsRoot.submenu = toolsMenu
             menu.addItem(toolsRoot)
         }
         return menu
-    }
-
-    private static func menuIcon(_ symbolName: String, palette: [NSColor]) -> NSImage? {
-        guard let source = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil),
-              let image = source.withSymbolConfiguration(NSImage.SymbolConfiguration(paletteColors: palette))
-        else { return nil }
-        image.size = NSSize(width: 16, height: 16)
-        // Preserve the FileMint palette instead of letting Finder remap this to
-        // its monochrome template color. Finder still controls the surrounding
-        // menu highlight and keeps the text contrast native.
-        image.isTemplate = false
-        return image
     }
 
     @objc private func performFileTool(_ item: NSMenuItem) {

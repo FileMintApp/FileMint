@@ -8,14 +8,22 @@ Load for: Optional Finder file/folder actions, selection snapshots and tool swit
   context menu, never a child of it. Settings has a separate page under Extensions.
 - The module defaults off, including when older preferences are loaded. Copy
   Names and Copy Paths each have a persistent child switch, initially on. Turning
-  the module off preserves child choices and hides its controls and Finder menu.
+  the module off preserves child choices and hides its Finder menu. Settings
+  keep every child section visible, grayscale and disabled, including checkboxes,
+  menu placement and deletion options; pointer and keyboard input cannot edit them.
   All children off hides the empty Finder menu. Permanent Delete and AirDrop
   have independent switches, initially off. Existing creation behavior stays unchanged.
-- Each tool has an independent Show in main menu switch, initially off; the
+- Each tool has an independent menu-position picker, initially in the submenu; the
   temporary Move Selected Items Here entry has its own placement, initially main.
   Enabled, applicable entries appear exactly once, either directly in Finder or
   inside File & Folder Tools. Hide the group when no applicable children remain.
   Preserve placement while disabled. New File and its contents stay unchanged.
+- Settings use native checkboxes for the module and child enablement. Each tool
+  has an expanded functional section with a short explanation and its own menu
+  position. A disabled child keeps its checkbox available when the module is on,
+  but its placement and secondary options are disabled. Re-enabling restores
+  all choices without resetting them. Move and deletion options stay in their
+  respective sections. Presentation owns the shared settings/Finder icon palette.
 - Tools appear only for selected items in configured folder scope. Do not use a
   background, toolbar or sidebar menu's stale selection. All selected URLs must
   be local file URLs in scope; never silently operate on a subset.
@@ -71,7 +79,7 @@ Load for: Optional Finder file/folder actions, selection snapshots and tool swit
 - Permanent Delete / 彻底删除 accepts selected files, folders, packages and links.
   It bypasses Trash; deleting a link must not delete its target. Recursive deletion
   is allowed only inside a folder explicitly selected for this operation.
-- A persistent dropdown offers Require confirmation / 需要二次确认 (default) and
+- A persistent segmented choice offers Require confirmation / 需要二次确认 (default) and
   Delete silently / 直接静默删除. The main app owns the native confirmation dialog,
   shows the selected item count, and explains that deletion cannot be undone.
   Cancel is the default. Silent mode skips this dialog, never system authorization

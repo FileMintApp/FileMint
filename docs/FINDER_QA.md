@@ -49,14 +49,28 @@ Record actual results in ACCEPTANCE.md.
 
 ## File and folder tools
 
+For isolated settings regression checks, build with
+`bash scripts/build_file_tools_settings_harness.sh` and open its printed QA app.
+It uses the production settings view and icons with disposable preferences;
+`last-state.json` beside the app supports readback after disabled-control attempts.
+The QA toolbar changes only fixture language/appearance and exposes native icon
+menus. The initial checks reject missing, template or monochrome tool icons.
+This fixture does not prove that Finder has loaded the new extension.
+
 - Start with old preferences: File & Folder Tools is off and New File is unchanged.
 - Enable the module; verify its root is a sibling of New File in item context menus.
 - Verify the tools root has a mint/blue wrench/screwdriver icon and the temporary
-  Move Selected Items Here root has a mint/teal boxed right-arrow icon. Both
-  remain readable in light, dark and highlighted menus; submenu rows retain their
-  text-only presentation.
+  Move Selected Items Here action has a mint/teal boxed right-arrow icon. Every
+  tool has its matching settings icon in either menu location: blue names,
+  indigo paths, teal move, orange deletion, purple AirDrop. Icons remain readable
+  in light, dark and highlighted menus. New-file format rows remain text-only.
 - Toggle each child independently, then disable all; no empty root remains.
 - Disable/re-enable the module and relaunch: child choices and placement are preserved.
+- With the module off, all five settings sections remain visible and grayscale.
+  Try their checkboxes, placement pickers, move destination and deletion options
+  with pointer and keyboard: none can change. The module checkbox still works.
+  Re-enable and verify all previous choices return. With only one child disabled,
+  its checkbox remains usable while its secondary settings are disabled.
 - Set tools to all main, all submenu, and mixed placements: each enabled action
   appears exactly once, empty groups disappear, and New File remains unchanged.
   Move Selected Items Here has an independent placement and remains conditional.
@@ -67,7 +81,7 @@ Record actual results in ACCEPTANCE.md.
 - Enable AirDrop for files/folders/multiple items: the system recipient window
   opens with the captured selection. Cancel without sending, then verify the next
   tool action and normal quit work. Test unavailable AirDrop and folder access.
-- Confirm small native switches and both placement/deletion controls remain
+- Confirm native checkboxes, descriptions and both placement/deletion controls remain
   readable at minimum window size in both languages and appearances.
 - Select files, folders and multiple items with Unicode/spaces/compound extensions;
   paste copied names and paths into a scratch document and compare exact lines.

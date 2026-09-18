@@ -139,7 +139,7 @@ private struct SettingsSidebarButton: View {
             .padding(.horizontal, 12).frame(height: 40)
             .background {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(isSelected ? mint.opacity(colorScheme == .dark ? 0.13 : 0.10)
+                    .fill(isSelected ? mint.opacity(colorScheme == .dark ? 0.17 : 0.13)
                           : Color.primary.opacity(isHovered ? 0.045 : 0))
             }
             .overlay {

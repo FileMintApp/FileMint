@@ -59,6 +59,15 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case enableFileTools
     case fileToolsOffHint
     case fileToolsActions
+    case fileToolsActionsHint
+    case toolMenuPosition
+    case toolSubmenu
+    case toolMainMenu
+    case moveHereMenuPosition
+    case copyNamesSettingsHint
+    case copyPathsSettingsHint
+    case moveSettingsHint
+    case deleteSettingsHint
     case showInMainMenu
     case moveHereInMainMenu
     case permanentDelete
@@ -233,9 +242,18 @@ public enum FileMintStrings {
         .basicSettings: ("Basics", "基础设置"),
         .extensions: ("Extensions", "扩展功能"),
         .fileTools: ("File & Folder Tools", "文件（夹）工具"),
-        .fileToolsHint: ("Choose file and folder actions and where they appear in Finder.", "按需启用文件或文件夹操作，并选择显示在一级菜单或子菜单。"),
+        .fileToolsHint: ("Choose the tools you need in Finder’s context menu.", "选择需要的工具，让 Finder 右键菜单更顺手。"),
         .enableFileTools: ("Enable File & Folder Tools", "启用文件（夹）工具"),
-        .fileToolsOffHint: ("Off by default. Turning this off hides its Finder menu and preserves your choices.", "默认关闭。关闭后隐藏对应的右键菜单，并保留子功能设置。"),
+        .fileToolsOffHint: ("Turning this off hides the Finder menu and preserves your choices.", "关闭后隐藏右键菜单，并保留各项设置。"),
+        .fileToolsActionsHint: ("Check to enable; choose where each tool appears.", "勾选启用；菜单位置可单独设置。"),
+        .toolMenuPosition: ("Menu location", "菜单位置"),
+        .toolSubmenu: ("Tools submenu", "工具子菜单"),
+        .toolMainMenu: ("Main menu", "一级菜单"),
+        .moveHereMenuPosition: ("“Move Here” menu location", "「移到此处」菜单位置"),
+        .copyNamesSettingsHint: ("Includes extensions, one item per line.", "包含文件后缀，多选时每项一行。"),
+        .copyPathsSettingsHint: ("Copies full paths, one item per line.", "拷贝完整路径，多选时每项一行。"),
+        .moveSettingsHint: ("Select items, then right-click their destination to move them.", "先选择项目，再到目标文件夹右键完成移动。"),
+        .deleteSettingsHint: ("Bypasses Trash. Deletion cannot be undone.", "不经过废纸篓，删除后无法撤销。"),
         .showInMainMenu: ("Show in main menu", "显示在一级菜单"),
         .moveHereInMainMenu: ("Show “Move Selected Items Here” in main menu", "将「将所选项目移到此处」显示在一级菜单"),
         .permanentDelete: ("Delete Permanently", "彻底删除"),

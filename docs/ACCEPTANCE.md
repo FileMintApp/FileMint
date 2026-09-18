@@ -3,6 +3,34 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## File tools settings polish — 2026-09-18
+
+Checked on macOS 27.0 (26A428), Apple silicon, `559fc8f` plus the UI-polish
+worktree. The isolated native fixture compiled the production settings view and
+shared tool images without loading or saving the owner's preferences.
+
+- All five expanded tool sections, native checkboxes and placement/deletion
+  controls were inspected in Chinese/light and English/dark, including the
+  632-point detail area corresponding to the app's 840-point minimum width.
+- Module off kept every section visible and grayscale. Accessibility reported
+  all child controls disabled; attempted pointer/keyboard changes to checkboxes,
+  menu location and deletion mode left fixture JSON unchanged. Child-only
+  disablement kept its enable checkbox available. Custom move location and
+  deletion mode survived module off/on.
+- All five shared symbols rendered colored, non-template images at 16 and 20
+  points. The compiled Finder adapter assigns these at either menu level and
+  retains the pending-move icon in its submenu. This is not installed Finder
+  menu/highlight verification; the existing app/extension were not replaced.
+- The follow-up Debug install at `/Applications/FileMint.app` was inspected in
+  Chinese/light appearance. Menu-position values now use system control text
+  color, and the selected File & Folder Tools sidebar row has a slightly stronger
+  mint surface while retaining its fine outline. The previous installed package
+  is recoverable from `build/local-install-backups/20260918-165507-file-tools-ui-tweak/`.
+- `make verify` passed: 104 Swift tests, 5 public cases, 10 CLI regressions and
+  3 appcast tests. The unsigned universal app/extension build also passed.
+
+See [the task record](tasks/file-tools-ui-polish.md) for local evidence and limits.
+
 ## 0.5.5 signed and notarized release — 2026-09-18
 
 Published FileMint 0.5.5 (13) from source tag v0.5.5 at commit

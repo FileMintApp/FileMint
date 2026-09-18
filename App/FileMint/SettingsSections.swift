@@ -81,65 +81,9 @@ struct FileToolsPane: View {
     @EnvironmentObject private var model: PreferencesModel
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 26) {
-                SettingsSection(title: model.text(.fileTools)) {
-                    Toggle(model.text(.enableFileTools), isOn: $model.preferences.fileTools.isEnabled)
-                        .accessibilityIdentifier("fileTools.enabled")
-                    Text(model.text(.fileToolsOffHint)).font(.caption).foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                if model.preferences.fileTools.isEnabled {
-                    SettingsSection(title: model.text(.fileToolsActions)) {
-                        ForEach(FileTool.allCases, id: \.self) { tool in
-                            if tool != FileTool.allCases.first { Divider() }
-                            VStack(alignment: .leading, spacing: 10) {
-                                Toggle(model.text(tool.title), isOn: Binding(
-                                    get: { model.preferences.fileTools.isToolEnabled(tool) },
-                                    set: { model.preferences.fileTools.setEnabled($0, for: tool) }
-                                )).accessibilityIdentifier("fileTools.\(tool.rawValue)")
-                                Toggle(model.text(.showInMainMenu), isOn: Binding(
-                                    get: { model.preferences.fileTools.mainMenuTools.contains(tool) },
-                                    set: { value in
-                                        if value { model.preferences.fileTools.mainMenuTools.insert(tool) }
-                                        else { model.preferences.fileTools.mainMenuTools.remove(tool) }
-                                    }
-                                ))
-                                .accessibilityLabel("\(model.text(tool.title)) — \(model.text(.showInMainMenu))")
-                                .accessibilityIdentifier("fileTools.\(tool.rawValue).mainMenu")
-                                .disabled(!model.preferences.fileTools.isToolEnabled(tool))
-                                .padding(.leading, 16)
-                                if tool == .move {
-                                    Toggle(model.text(.moveHereInMainMenu), isOn: $model.preferences.fileTools.moveHereInMainMenu)
-                                        .disabled(!model.preferences.fileTools.move)
-                                        .accessibilityIdentifier("fileTools.moveHere.mainMenu")
-                                        .padding(.leading, 16)
-                                }
-                                if tool == .permanentDelete {
-                                    Picker(model.text(.deleteConfirmation), selection: $model.preferences.fileTools.deleteConfirmation) {
-                                        Text(model.text(.deleteRequireConfirmation)).tag(DeleteConfirmation.required)
-                                        Text(model.text(.deleteSilently)).tag(DeleteConfirmation.silent)
-                                    }.pickerStyle(.menu)
-                                        .disabled(!model.preferences.fileTools.permanentDelete)
-                                        .accessibilityIdentifier("fileTools.deleteConfirmation")
-                                        .padding(.leading, 16)
-                                    Text(model.text(.permanentDeleteHint)).font(.caption).foregroundStyle(.secondary)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                }
-                                if tool == .airDrop {
-                                    Text(model.text(.airDropHint)).font(.caption).foregroundStyle(.secondary)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                }
-                            }
-                        }
-                        Text(model.text(.moveItemsHint)).font(.caption).foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Text(model.text(.copyItemsHint)).font(.caption).foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }.toggleStyle(SmallSettingsSwitchStyle()).padding(1)
-        }.onChange(of: model.preferences.fileTools) { _ in model.save() }
+        FileToolsSettingsView(preferences: $model.preferences.fileTools,
+                              language: model.preferences.language)
+            .onChange(of: model.preferences.fileTools) { _ in model.save() }
     }
 }
 

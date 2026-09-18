@@ -25,15 +25,32 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   accessibility labels must remain available; icons supplement text, not replace it.
 - Sidebar navigation uses a continuous background and a subdued mint selection
   with a stronger label/icon, rather than the system List's bright selection fill.
+  The selected row has a lightly visible mint surface in addition to its fine
+  outline, so the active page remains clear without becoming a solid highlight.
   Hover and keyboard focus remain distinct from the selected page; arrow keys
   move between page buttons and the current page is exposed to accessibility.
+- File & Folder Tools retains its module and Menu actions headings, using native
+  checkboxes and separate softly bordered functional sections for the five tools.
+  Align menu-position pickers on the trailing side; keep descriptions and secondary
+  options next to their tool. Use compact spacing, adaptive surfaces and mint
+  accents. Menu-position picker values use the adaptive system control text color,
+  reserving mint for enabled accents and selected controls. When the module is off
+  the entire child area stays visible, grayscale
+  and noninteractive. An individual disabled tool retains its available checkbox,
+  with a muted icon and disabled secondary controls. Preserve readable contrast,
+  wrapping, scrolling and native keyboard/accessibility behavior at minimum size.
 - The top-level New File Finder entry has the small FileMint logo; its label
   maps to the resolved app language. File & Folder Tools uses the system
   `wrench.and.screwdriver` symbol in mint/blue; the temporary Move Selected
   Items Here entry uses `arrow.right.square` in mint/teal. Both are 16 × 16
   palette-colored images that keep their theme colors in the native menu and
-  remain readable with menu selection. Format choices, submenu rows and creation
-  controls use text only. The Finder
+  remain readable with menu selection. Each file-tool action has a matching
+  colored SF Symbol in settings and Finder, at both main-menu and submenu levels:
+  names use blue `doc.on.doc`, paths indigo `link`, move teal `folder`, permanent
+  deletion orange `trash`, and AirDrop purple `airplayaudio`. The temporary move
+  destination retains its mint/teal icon in either location. Use 16 × 16 non-template
+  menu images; color supplements recognizable shapes and text. New-file format
+  choices and creation controls remain text only. The Finder
   toolbar and macOS menu bar retain the small template glyph those entry points
   require. No icon preference.
 - App logo: a distinctive folded-paper F in fresh mint on a warm porcelain
