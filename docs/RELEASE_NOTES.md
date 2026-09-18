@@ -70,7 +70,9 @@ The stable installer is Developer ID signed locally for the main app, Finder ext
 shasum -a 256 -c FileMint-0.5.5.dmg.sha256
 ~~~
 
-详细安装与权限说明见 [安装指引 / Installation](https://github.com/FileMintApp/FileMint/blob/main/docs/INSTALL.md)。发布后的签名、公证、校验值和远端下载验证会记录在发布验证文档中。
+详细安装与权限说明见 [安装指引 / Installation](https://github.com/FileMintApp/FileMint/blob/main/docs/INSTALL.md)，签名、公证、校验值和远端下载验证见 [0.5.5 发布验证记录](https://github.com/FileMintApp/FileMint/blob/main/docs/RELEASE_VERIFICATION_0.5.5.md)。
+
+For installation and permissions, read the [installation guide](https://github.com/FileMintApp/FileMint/blob/main/docs/INSTALL.md). Signing, notarization, checksums and remote-download evidence are recorded in the [0.5.5 release verification](https://github.com/FileMintApp/FileMint/blob/main/docs/RELEASE_VERIFICATION_0.5.5.md).
 
 ## 许可 / License
 

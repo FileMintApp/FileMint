@@ -3,6 +3,30 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## 0.5.5 signed and notarized release — 2026-09-18
+
+Published FileMint 0.5.5 (13) from source tag v0.5.5 at commit
+846f128ec8da4a47f0e2cd01ddd5c886f0da6a1d.
+
+- The release process reran context, Core, harness, CLI and appcast verification:
+  97 Swift tests in 9 suites, 5 JSON harness cases, 10 CLI regressions and
+  3 appcast tests passed. The base-aware Chinese and English website build,
+  unsigned universal candidate build and Sparkle driver verification also passed.
+- The locally built universal DMG, main app, Finder extension and embedded Sparkle
+  helpers passed Developer ID validation. Apple notarization submission
+  12215c00-123f-4332-b449-1c3bb7c1f31e was Accepted; stapling, mounted-image
+  validation, final SHA-256 and appcast signature validation passed before upload.
+- GitHub Release v0.5.5 contains the notarized DMG, its checksum and appcast.
+  All three downloaded assets matched the local release files byte-for-byte.
+  CI, Pages deployment and the published-release verification job succeeded; both
+  public website homepages returned HTTP 200.
+- The signed package was not installed over the owner’s existing app, and full
+  signed Finder/Sparkle runtime acceptance remains unrun. This release record
+  does not represent build or artifact checks as proof of those native scenarios.
+
+See [the 0.5.5 release record](RELEASE_VERIFICATION_0.5.5.md) for exact assets,
+hashes, release links and runtime limits.
+
 ## Finder tools menu icons — 2026-09-18
 
 Checked on macOS 27.0 (26A428), `9bbc850` plus the existing file-tools worktree
