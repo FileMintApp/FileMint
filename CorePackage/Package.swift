@@ -9,10 +9,13 @@ let package = Package(
     ],
     products: [
         .library(name: "FileMintCore", targets: ["FileMintCore"]),
+        .library(name: "FileMintImages", targets: ["FileMintImages"]),
         .executable(name: "filemint-harness", targets: ["FileMintHarness"])
     ],
     targets: [
         .target(name: "FileMintCore"),
+        .target(name: "FileMintImages", dependencies: ["FileMintCore"]),
+        .testTarget(name: "FileMintImagesTests", dependencies: ["FileMintImages", "FileMintCore"]),
         .executableTarget(
             name: "FileMintHarness",
             dependencies: ["FileMintCore"]

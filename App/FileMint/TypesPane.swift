@@ -13,15 +13,22 @@ struct TypesPane: View {
             List(selection: $selection) {
                 ForEach($model.preferences.templates) { $template in
                     HStack(spacing: 12) {
+                        Text(template.suggestedFileName.split(separator: ".").last.map(String.init)?.uppercased() ?? "TXT")
+                            .font(.system(size: 9, weight: .medium, design: .monospaced))
+                            .frame(width: 34, height: 38).background(FileMintStyle.soft, in: RoundedRectangle(cornerRadius: 5))
+                            .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(FileMintStyle.line, lineWidth: 0.7))
                         Toggle(model.templateDisplayName(for: template), isOn: $template.isEnabled)
                             .toggleStyle(.checkbox)
                             .onChange(of: template.isEnabled) { _ in model.save() }
                         Spacer()
                         Text(template.suggestedFileName.replacingOccurrences(of: "Untitled", with: ""))
                             .font(.system(.callout, design: .monospaced)).foregroundStyle(.secondary)
-                    }.padding(.vertical, 4).tag(template.id)
+                    }.padding(.vertical, 8).tag(template.id)
                 }.onMove { model.moveTemplates(fromOffsets: $0, toOffset: $1) }
-            }.listStyle(.bordered(alternatesRowBackgrounds: true))
+            }.listStyle(.plain).scrollContentBackground(.hidden)
+                .background(FileMintStyle.surface, in: RoundedRectangle(cornerRadius: 12))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(FileMintStyle.line, lineWidth: 0.7))
             HStack(spacing: 8) {
                 Button(model.text(.addType)) { editor = TypeEditorDraft() }
                 Button(model.text(.editType)) {
@@ -77,20 +84,28 @@ private struct TypeEditor: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(model.text(draft.templateID == nil ? .addType : .editType)).font(.headline)
-            TextField(model.text(.displayName), text: $draft.name).focused($nameFocused)
-            TextField(model.text(.extensionLabel), text: $draft.suffix)
+            Text(model.text(draft.templateID == nil ? .addType : .editType)).font(.system(size: 21, weight: .semibold))
+            VStack(alignment: .leading, spacing: 7) {
+                Text(model.text(.displayName)).font(.system(size: 11)).foregroundStyle(.secondary)
+                TextField(model.text(.displayName), text: $draft.name).focused($nameFocused)
+            }
+            VStack(alignment: .leading, spacing: 7) {
+                Text(model.text(.extensionLabel)).font(.system(size: 11)).foregroundStyle(.secondary)
+                TextField(model.text(.extensionLabel), text: $draft.suffix)
+            }
             Text(model.text(.initialContent)).font(.callout)
             PlainTextEditor(text: $draft.content, label: model.text(.initialContent))
-                .frame(height: 120).border(Color(nsColor: .separatorColor))
+                .frame(height: 145).clipShape(RoundedRectangle(cornerRadius: 7))
+                .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(FileMintStyle.line, lineWidth: 0.7))
             Text(model.text(.customTypeHint)).font(.caption).foregroundStyle(.secondary)
             if let error { Text(error).foregroundStyle(.red).font(.callout) }
             HStack {
                 Spacer()
-                Button(model.text(.cancel)) { dismiss() }.keyboardShortcut(.cancelAction)
-                Button(model.text(.save)) { save() }.keyboardShortcut(.defaultAction)
+                Button(model.text(.cancel)) { dismiss() }.keyboardShortcut(.cancelAction).buttonStyle(MintButtonStyle())
+                Button(model.text(.save)) { save() }.keyboardShortcut(.defaultAction).buttonStyle(MintButtonStyle(primary: true))
             }
-        }.padding(24).frame(width: 430).onAppear { nameFocused = true }
+        }.padding(26).frame(width: 470).background(FileMintStyle.background).tint(FileMintStyle.accent)
+            .textFieldStyle(.roundedBorder).onAppear { nameFocused = true }
     }
 
     private func save() {

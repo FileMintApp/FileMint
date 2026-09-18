@@ -1,12 +1,17 @@
 import AppKit
 import FileMintCore
+import UniformTypeIdentifiers
 
 /// The main app is the sole writer of pending state and user files. Requests are
 /// serialized across URL callbacks, including native authorization dialogs.
 @MainActor
 final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
     static let shared = FileOperationCoordinator()
-    private var queue: [URL] = []
+    private enum QueuedRequest {
+        case ticket(URL)
+        case selectedImages(ResourceTool, [URL], grants: [URL])
+    }
+    private var queue: [QueuedRequest] = []
     private(set) var isBusy = false
     private var access: [URL] = []
     private let store: PendingFileMoveStore
@@ -14,6 +19,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
     private let preferencesFile: URL?
     private let aliasAccessStore: DesktopAliasAccessStore
     private let desktopDirectory: URL
+    private let resourceController: ResourceToolsController
     private var sharingService: NSSharingService?
     private var sharingContinuation: CheckedContinuation<Void, Error>?
     private var operationTitle: FileMintTextKey = .moveFailed
@@ -21,25 +27,69 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
     init(store: PendingFileMoveStore = PendingFileMoveStore(),
          tickets: FileOperationTicketStore = FileOperationTicketStore(), preferencesFile: URL? = nil,
          aliasAccessStore: DesktopAliasAccessStore = DesktopAliasAccessStore(),
-         desktopDirectory: URL = DesktopAliasService.desktopDirectory) {
+         desktopDirectory: URL = DesktopAliasService.desktopDirectory,
+         resourceController: ResourceToolsController = .shared) {
         self.store = store
         self.tickets = tickets
         self.preferencesFile = preferencesFile
         self.aliasAccessStore = aliasAccessStore
         self.desktopDirectory = desktopDirectory
+        self.resourceController = resourceController
         super.init()
     }
 
     func enqueue(_ url: URL) {
-        queue.append(url)
+        queue.append(.ticket(url))
+        consumeQueue()
+    }
+
+    /// This app-local entry cannot be constructed from a URL or ticket. The
+    /// system picker provides the authority; Finder preferences are unchanged.
+    func chooseImages(for tool: ResourceTool) {
+        guard !isBusy else {
+            if !resourceController.focusExistingPanel() {
+                let alert = NSAlert()
+                alert.messageText = text(.resourceTools)
+                alert.informativeText = InterfaceText.busy.text(currentPreferences.language)
+                alert.runModal()
+            }
+            return
+        }
+        isBusy = true
+        defer { isBusy = false; consumeQueue() }
+        let picker = NSOpenPanel()
+        picker.title = tool.title(currentPreferences.language)
+        picker.message = InterfaceText.chooseImages.text(currentPreferences.language)
+        picker.canChooseDirectories = false
+        picker.allowsMultipleSelection = true
+        picker.allowedContentTypes = ResourceToolsPolicy.inputExtensions.sorted().compactMap { UTType(filenameExtension: $0) }
+        guard picker.runModal() == .OK else { return }
+        guard ResourceToolsPolicy.allowsAppSelection(picker.urls, tool: tool) else {
+            operationTitle = .resourceTools
+            show(ResourceError.invalidSelection)
+            return
+        }
+        let grants = picker.urls.filter { $0.startAccessingSecurityScopedResource() }
+        queue.append(.selectedImages(tool, picker.urls, grants: grants))
+    }
+
+    private func consumeQueue() {
         guard !isBusy else { return }
         isBusy = true
         Task {
             defer { isBusy = false }
             while !queue.isEmpty {
-                let url = queue.removeFirst()
+                let entry = queue.removeFirst()
                 let tickets = self.tickets
                 do {
+                    if case .selectedImages(let tool, let selection, let grants) = entry {
+                        operationTitle = .resourceTools
+                        access.append(contentsOf: grants)
+                        try await resourceController.present(selection: selection, tool: tool, fromFinder: false)
+                        releaseAccess()
+                        continue
+                    }
+                    guard case .ticket(let url) = entry else { continue }
                     let request = try await Task.detached(priority: .userInitiated) {
                         try tickets.consume(url)
                     }.value
@@ -49,6 +99,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
                         case .permanentDelete: operationTitle = .permanentDelete
                         case .airDrop: operationTitle = .airDrop
                         case .desktopAlias: operationTitle = .sendAliasToDesktop
+                        case .resource: operationTitle = .resourceTools
                         }
                         try await handle(request)
                     }
@@ -60,6 +111,17 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
 
     private func handle(_ request: FileOperationRequest) async throws {
         switch request {
+        case .resource(let tool, let selection):
+            guard ResourceToolsPolicy.availableTools(selection: selection, isItemMenu: true,
+                preferences: currentPreferences).contains(tool) else { throw ResourceError.disabled }
+            var bookmarks: [String: Data] = [:]
+            for parent in uniqueParents(selection) {
+                guard try authorize(parent, bookmarks: &bookmarks, readOnly: true) else { return }
+            }
+            guard ResourceToolsPolicy.availableTools(selection: selection, isItemMenu: true,
+                preferences: currentPreferences).contains(tool) else { throw ResourceError.disabled }
+            try await resourceController.present(selection: selection, tool: tool)
+
         case .prepare(let selection):
             guard FileToolsPolicy.availableTools(selection: selection, isItemMenu: true,
                 preferences: currentPreferences).contains(.move) else { throw FileMoveError.disabled }
@@ -261,6 +323,14 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
     }
 
     private func show(_ error: Error) {
+        if let error = error as? ResourceError {
+            let alert = NSAlert()
+            alert.messageText = text(.resourceTools)
+            alert.informativeText = error.message(currentPreferences.language)
+            NSApp.activate(ignoringOtherApps: true)
+            alert.runModal()
+            return
+        }
         if let failure = error as? DesktopAliasFailure {
             let alert = NSAlert()
             alert.messageText = text(.sendAliasToDesktop)

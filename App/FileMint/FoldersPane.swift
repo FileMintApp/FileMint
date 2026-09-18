@@ -13,9 +13,9 @@ struct FoldersPane: View {
                     HStack {
                         Label(model.text(model.extensionEnabled ? .ready : .permissionSetup),
                               systemImage: model.extensionEnabled ? "checkmark.circle.fill" : "info.circle")
-                            .foregroundStyle(model.extensionEnabled ? Color.green : Color.secondary)
+                            .foregroundStyle(model.extensionEnabled ? FileMintStyle.accent : Color.secondary)
                         Spacer()
-                        Button(model.text(.openExtensionSettings)) { model.openExtensionSettings() }
+                        Button(model.text(.openExtensionSettings)) { model.openExtensionSettings() }.buttonStyle(MintButtonStyle())
                     }
                     Text(model.text(.finderSetup)).font(.caption).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -25,13 +25,19 @@ struct FoldersPane: View {
                     Text(model.text(.folderHint)).font(.callout).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                     List(model.preferences.monitoredFolderURLs, id: \.self, selection: $selection) { url in
+                        HStack(spacing: 12) {
+                        Image(systemName: "folder").font(.system(size: 18)).foregroundStyle(FileMintStyle.accent)
                         VStack(alignment: .leading, spacing: 4) {
                             Text((url.path as NSString).abbreviatingWithTildeInPath)
                                 .lineLimit(1).truncationMode(.middle)
                             Text(model.preferences.monitoredFolderBookmarks[url.path] == nil ? model.text(.needsAccess) : model.text(.folderAccessSaved))
                                 .font(.caption).foregroundStyle(.secondary)
-                        }.padding(.vertical, 5).tag(url)
-                    }.listStyle(.bordered(alternatesRowBackgrounds: true)).frame(height: 200)
+                        }
+                        }.padding(.vertical, 8).tag(url)
+                    }.listStyle(.plain).scrollContentBackground(.hidden).frame(height: 210)
+                        .background(FileMintStyle.surface, in: RoundedRectangle(cornerRadius: 12))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(FileMintStyle.line, lineWidth: 0.7))
                     HStack {
                         Button(model.text(.addFolder)) { model.addMonitoredFolder() }
                         Button(model.text(.authorize)) { model.addMonitoredFolder(initial: selection) }.disabled(selection == nil)

@@ -112,7 +112,35 @@ final class FinderSync: FIFinderSync {
             toolsRoot.submenu = toolsMenu
             menu.addItem(toolsRoot)
         }
+        let resourceTools = ResourceToolsPolicy.availableTools(selection: selection,
+            isItemMenu: menuKind == .contextualMenuForItems, preferences: preferences)
+        if !resourceTools.isEmpty {
+            let resourceMenu = NSMenu(title: text(.resourceTools))
+            let resourceTags = actions.register(resourceTools.map {
+                FileMenuAction(directory: directory, resourceTool: $0, selection: selection)
+            })
+            for (index, tool) in resourceTools.enumerated() {
+                let item = NSMenuItem(title: tool.title(language), action: #selector(performResourceTool(_:)), keyEquivalent: "")
+                item.tag = resourceTags[index]
+                item.image = FileToolAppearance.image(for: tool)
+                resourceMenu.addItem(item)
+            }
+            let item = NSMenuItem(title: text(.resourceTools), action: nil, keyEquivalent: "")
+            item.image = FileToolAppearance.resourceToolsImage
+            item.submenu = resourceMenu
+            menu.addItem(item)
+        }
         return menu
+    }
+
+    @objc private func performResourceTool(_ item: NSMenuItem) {
+        guard let action = actions.take(item.tag), let tool = action.resourceTool else { return }
+        let selection = action.selection
+        Task { @MainActor in
+            guard ResourceToolsPolicy.availableTools(selection: selection, isItemMenu: true,
+                preferences: FileMintPreferencesStore().load()).contains(tool) else { return }
+            FinderActions.shared.perform(.resource(tool: tool, selection: selection), activate: true)
+        }
     }
 
     @objc private func performFileTool(_ item: NSMenuItem) {
@@ -222,13 +250,13 @@ private final class FinderActions {
         }
     }
 
-    func perform(_ request: FileOperationRequest) {
+    func perform(_ request: FileOperationRequest, activate: Bool = false) {
         Task {
             do {
                 let url = try await Task.detached(priority: .userInitiated) {
                     try FileOperationTicketStore().enqueue(request)
                 }.value
-                open(url, activate: false)
+                open(url, activate: activate)
             } catch { showError(error, title: .fileToolsErrorTitle) }
         }
     }

@@ -8,11 +8,9 @@ struct SettingsSection<Content: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(title).font(.headline).accessibilityAddTraits(.isHeader)
+            Text(title).font(.system(size: 11, weight: .medium)).foregroundStyle(.secondary).accessibilityAddTraits(.isHeader)
             VStack(alignment: .leading, spacing: 14) { content }
-                .padding(16).frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 8))
-                .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color(nsColor: .separatorColor).opacity(0.45)))
+                .mintSurface()
         }
     }
 }
@@ -23,6 +21,15 @@ struct GeneralPane: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 26) {
+                HStack(spacing: 16) {
+                    Image(nsImage: NSApplication.shared.applicationIconImage).resizable().frame(width: 48, height: 48)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(InterfaceText.prepared.text(model.preferences.language)).font(.system(size: 17, weight: .medium))
+                        Text((model.extensionEnabled ? InterfaceText.enabledFinder : .disabledFinder).text(model.preferences.language))
+                            .font(.system(size: 11)).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                }.mintSurface()
                 SettingsSection(title: model.text(.language)) {
                     HStack {
                         Text(model.text(.interfaceLanguage))
@@ -36,12 +43,12 @@ struct GeneralPane: View {
                     }
                 }
                 SettingsSection(title: model.text(.startupAndAccess)) {
-                    Toggle(isOn: Binding(
+                    PreferenceRow(title: model.text(.launchAtLogin), detail: InterfaceText.launchHint.text(model.preferences.language)) {
+                    Toggle(model.text(.launchAtLogin), isOn: Binding(
                         get: { model.preferences.launchAtLogin },
                         set: { value in Task { await model.setLaunchAtLogin(value) } }
-                    )) {
-                        Text(model.text(.launchAtLogin)).frame(maxWidth: .infinity, alignment: .leading)
-                    }.disabled(model.isUpdatingLoginItem)
+                    )).labelsHidden().disabled(model.isUpdatingLoginItem)
+                    }
                     if let hint = model.loginItemHint {
                         VStack(alignment: .leading, spacing: 8) {
                             Text(hint).font(.caption).foregroundStyle(.secondary)
@@ -55,10 +62,10 @@ struct GeneralPane: View {
                         }
                     }
                     Divider()
-                    Toggle(isOn: Binding(
+                    PreferenceRow(title: model.text(.showMenuBar), detail: InterfaceText.menuBarHint.text(model.preferences.language)) {
+                    Toggle(model.text(.showMenuBar), isOn: Binding(
                         get: { model.preferences.showMenuBar }, set: { model.setShowMenuBar($0) }
-                    )) {
-                        Text(model.text(.showMenuBar)).frame(maxWidth: .infinity, alignment: .leading)
+                    )).labelsHidden()
                     }
                 }
                 SettingsSection(title: model.text(.updates)) {

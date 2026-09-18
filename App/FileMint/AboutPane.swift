@@ -9,16 +9,15 @@ struct AboutPane: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                HStack(spacing: 14) {
+                VStack(spacing: 12) {
                     Image(nsImage: NSApplication.shared.applicationIconImage)
-                        .resizable().frame(width: 60, height: 60).accessibilityHidden(true)
+                        .resizable().frame(width: 76, height: 76).accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("FileMint").font(.title2.weight(.semibold))
+                        Text("FileMint").font(.system(size: 27, weight: .semibold))
                         Text("\(model.text(.version)) \(updater.currentVersion) (\(updater.buildNumber))")
                             .font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
                     }
-                    Spacer()
-                }
+                }.frame(maxWidth: .infinity).padding(.vertical, 12)
                 Grid(alignment: .leading, horizontalSpacing: 24, verticalSpacing: 8) {
                     GridRow {
                         Text(model.text(.copyright)).foregroundStyle(.secondary)
@@ -36,13 +35,12 @@ struct AboutPane: View {
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
-                }.font(.callout)
+                }.font(.system(size: 12)).mintSurface()
                 HStack(spacing: 18) {
                     Link(model.text(.projectPage), destination: FileMintAbout.projectURL)
                     Link(model.text(.license), destination: FileMintAbout.licenseURL)
                     Link(model.text(.privacyPolicy), destination: FileMintAbout.privacyURL)
                 }.font(.callout)
-                Divider()
                 VStack(alignment: .leading, spacing: 10) {
                     Text(model.text(.updates)).font(.headline)
                     Text(model.text(updater.statusKey))
@@ -86,7 +84,7 @@ struct AboutPane: View {
                         Text(model.text(.updateInstallHint)).font(.caption).foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
-                }
+                }.mintSurface()
             }.padding(1)
         }
     }

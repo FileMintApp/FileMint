@@ -8,8 +8,11 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
     private init() {
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 650),
-                              styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
+                              styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView], backing: .buffered, defer: false)
         window.title = "FileMint"
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.backgroundColor = FileMintStyle.backgroundNS
         window.contentMinSize = NSSize(width: 840, height: 600)
         window.isReleasedWhenClosed = false
         window.isRestorable = false

@@ -50,6 +50,8 @@ targets:
     dependencies:
       - package: Sparkle
       - package: FileMintCore
+      - package: FileMintCore
+        product: FileMintImages
       - target: FileMintFinderSync
         embed: true
     info:

@@ -23,6 +23,7 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
     public var lastUpdateCheckAttempt: Date?
     public var hasAttemptedLoginItemSetup: Bool
     public var fileTools = FileToolsPreferences()
+    public var resourceTools = ResourceToolsPreferences()
     private var folderScopeVersion = 2
 
     public init(
@@ -67,6 +68,7 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         case hasAttemptedLoginItemSetup
         case folderScopeVersion
         case fileTools
+        case resourceTools
     }
 
     public init(from decoder: Decoder) throws {
@@ -96,6 +98,7 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         lastUpdateCheckAttempt = try? container.decode(Date.self, forKey: .lastUpdateCheckAttempt)
         hasAttemptedLoginItemSetup = (try? container.decode(Bool.self, forKey: .hasAttemptedLoginItemSetup)) ?? false
         fileTools = (try? container.decode(FileToolsPreferences.self, forKey: .fileTools)) ?? FileToolsPreferences()
+        resourceTools = (try? container.decode(ResourceToolsPreferences.self, forKey: .resourceTools)) ?? ResourceToolsPreferences()
     }
 
     public static var `default`: FileMintPreferences {

@@ -21,11 +21,13 @@ info = dict(CFBundleIdentifier="io.github.daigua.filemint.move-smoke", CFBundleN
 (root / "fixtures/source/Demo.app/Contents/data").write_text("sandbox fixture")
 PY
 if [[ -f "$CORE_BUILD/libFileMintCore.a" ]]; then
-  CORE_LINK=(-I "$CORE_BUILD" "$CORE_BUILD/libFileMintCore.a")
+  CORE_LINK=(-I "$CORE_BUILD" "$CORE_BUILD/libFileMintCore.a" "$CORE_BUILD/libFileMintImages.a")
 else
-  CORE_LINK=(-I "$CORE_BUILD/Modules" "$CORE_BUILD"/FileMintCore.build/*.o)
+  CORE_LINK=(-I "$CORE_BUILD/Modules" "$CORE_BUILD"/FileMintCore.build/*.o "$CORE_BUILD"/FileMintImages.build/*.o)
 fi
 swiftc -swift-version 6 -parse-as-library \
+  App/FileMint/DesignSystem.swift App/FileMint/ResourceToolsController.swift App/FileMint/ResourceToolsView.swift \
+  App/FileMint/PlainTextEditor.swift SharedUI/CustomFileSavePanelController.swift SharedUI/FolderAccess.swift \
   App/FileMint/FileOperationCoordinator.swift scripts/move_sandbox_smoke.swift \
   "${CORE_LINK[@]}" -o "$APP_PATH/Contents/MacOS/FileMintMoveSandboxSmoke"
 codesign --force --options runtime --sign - --timestamp=none \

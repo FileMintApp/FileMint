@@ -3,6 +3,34 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Native UI/UX v1 and image resources — 2026-09-18
+
+Checked on macOS 27.0 (26A428), Apple silicon, `6bf596d` plus the uncommitted
+resource/UI worktree. See [the task](tasks/image-resource-tools.md) and
+[the approved design](design/UI_UX_V1.md).
+
+- `make verify`: 131 Swift tests (119 Core and 12 native image tests), 5 public
+  Harness cases, 10 CLI regressions, 3 appcast tests and context checks passed.
+  Unsigned Release app/extension build passed for arm64 and x86_64.
+- Production settings/views/controllers in an isolated app and preferences store
+  were inspected at 900×650 Chinese/light and 840×600 English/dark. Three sidebar
+  groups, file-tool disabled states, template editing/cancellation, folder guidance
+  and About retained readable controls. No login setup or automatic update task ran.
+- With the fixture's Finder resource master off, the main-app picker selected its
+  synthetic `Mountain.png`; the real coordinator/panel saved a 1600×1000 JPEG.
+  The saved Finder resource preference remained false.
+- The native New File panel accepted `界面验收.md`, multiline Chinese and literal
+  `{{year}}`; Command-Return created the file and its UTF-8 bytes were verified.
+- Six production image panels ran in Chinese/light and English/dark using only
+  fixture images. All completed two-image batches. Oversized stitch recovery,
+  OCR clear/retype, source preservation and result handling passed. Final run:
+  `/private/tmp/filemint-design-resource-final.log`.
+- AppKit view-cache exports miss SwiftUI layers and were not used as visual proof;
+  live native screenshots and accessibility readback were used instead.
+- The installed application was not replaced. Finder's installed callback, actual
+  sandbox source/output grants, Intel execution and macOS 13 runtime remain unrun;
+  these observations do not substitute for those scenarios. No commit or release.
+
 ## Desktop aliases — 2026-09-18
 
 Checked on macOS 27.0 (26A428), Apple silicon, `41067c3` plus the desktop-alias

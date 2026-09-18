@@ -6,10 +6,29 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 
 ## Appearance
 
+- Approved UI/UX v1 uses three explicit sidebar groups: File Creation (Templates
+  & Types, Creation), Extensions (File & Folder Tools, Resource Tools), and
+  Preferences (General, Finder & Folders, About). Arrow-key navigation follows
+  that visual order. Future implemented tools join Extensions without placeholders.
+- Use restrained adaptive porcelain/graphite surfaces and a muted mint accent,
+  shared row/section/button spacing, a quiet breadcrumb and a fixed New File action.
+  Status reflects real extension/login/update state; no sample metrics or claimed
+  permissions from the design prototype may reach the product.
+- Resource Tools separates Use Tools from Finder Menu Settings. The first shows
+  six usable actions; the second manages the default-off Finder integration.
+  Native processing windows use a bounded image preview, parameter inspector,
+  thumbnail selection and fixed bottom actions. OCR puts source and editable
+  result side-by-side; conversion never displays a fabricated compressed size.
+  The creation panel uses a filename-first form, destination and content with
+  persistent labels, familiar keyboard shortcuts and adaptive native fields.
+- No looping animation, eager model loading, remote assets or extra UI library.
+  Use a single sidebar material at most, with native reduce-transparency behavior;
+  the remaining surfaces are inexpensive adaptive colors.
+
 - Native controls and adaptive system colors. Settings switches use the native
   small control size, preserving readable labels and keyboard/accessibility support. Settings use a persistent leading
   sidebar and a resizable detail area, with General, Creation, Templates & Types,
-  Finder & Folders, File & Folder Tools under Extensions, and About. Each page has a title, concise explanation and
+  Finder & Folders, File & Folder Tools and Resource Tools under Extensions, and About, grouped as above. Each page has a title, concise explanation and
   functional sections; list actions stay next to their list. No decorative cards
   or disabled placeholders for future roadmap features. Follow system language
   by default; English and Chinese can be selected explicitly.
@@ -30,7 +49,7 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   Hover and keyboard focus remain distinct from the selected page; arrow keys
   move between page buttons and the current page is exposed to accessibility.
 - File & Folder Tools retains its module and Menu actions headings, using native
-  checkboxes and separate softly bordered functional sections for the tools.
+  small switches and softly bordered grouped rows for the tools.
   Align menu-position pickers on the trailing side; keep descriptions and secondary
   options next to their tool. Use compact spacing, adaptive surfaces and mint
   accents. Menu-position picker values use the adaptive system control text color,

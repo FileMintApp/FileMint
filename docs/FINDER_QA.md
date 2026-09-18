@@ -18,6 +18,10 @@ Record actual results in ACCEPTANCE.md.
 
 ## Types and preferences
 
+- Confirm File Creation (Templates & Types / Creation), Extensions (file tools /
+  resources), and Preferences (General / Finder & Folders / About) remain distinct
+  at 840×600. Sidebar arrow navigation follows this visual ordering.
+
 - Navigate General, Creation, Templates & Types, Finder & Folders and About
   using the sidebar and Up/Down keys. Verify selection and keyboard focus remain
   distinguishable in light/dark mode, without a bright solid selection block.
@@ -46,6 +50,47 @@ Record actual results in ACCEPTANCE.md.
 - Confirm no file-icon setting or inactive favorites setting is exposed.
 - Legacy development JSON/plist settings import through the File menu; protected
   App Group directories are never accessed automatically.
+
+## Image resource tools
+
+- With Finder resource integration off, choose an image through the main app's
+  Use Tools tab and process it. The explicit app entry must work while Finder
+  switches and monitored-folder scope remain unchanged. Cancelling the system
+  picker creates nothing; all selected-file grants end when the panel closes.
+- Inspect the preview/inspector/footer layout at 820×560 in both appearances and
+  languages. Selecting a later batch image loads a bounded preview without growing
+  the cache past 20. Changing parameters reuses previews rather than decoding again.
+- Edit OCR text, including clearing all of it and typing again. Copy/Save use the
+  edited literal text; smart quotes/replacement remain disabled. Results disappear
+  on panel close.
+
+Build `bash scripts/build_resource_tools_harness.sh` for an isolated native fixture.
+Its app automatically exercises all six production panels in Chinese/light and
+English/dark and processes only its synthetic images. Inspect visible windows
+with native screenshots; AppKit view-cache renders omit SwiftUI drawing layers.
+It neither loads owner preferences nor proves installed Finder or sandbox grants.
+
+- Use only a disposable image folder. Old preferences leave Resource Tools off;
+  toggling off/on preserves its six child choices and never changes file-tool settings.
+- Select PNG/JPEG/HEIC files in scope: Resource Tools is a sibling root. Mixed
+  images/PDF/WebP, out-of-scope selections and background/toolbar contexts have no
+  resource entries. Opening a menu does not decode images or run Vision.
+- Open each of the six production parameter panels; verify Chinese/light and
+  English/dark at minimum size, list order, labels, scrolling and Run/Cancel.
+- Cancel a folder picker and confirm no outputs. Check parent-folder authorization
+  separately from source reads; select another output folder without changing menu scope.
+- Convert transparent PNG to JPEG: white background; PNG preserves transparency.
+  Compression retains format; resize honors longest edge without enlargement.
+- ICNS/ICO contain all advertised resolutions; PNG icons create a complete new
+  folder. Repeat operations and include existing names/dangling links: no overwrite.
+- Stitch two visibly different images, change order and orientation, and inspect
+  actual pixels. Oversized canvas fails before allocation with an actionable message.
+- OCR fixture text remains local; no clipboard change before Copy. Cancel Save
+  without writing; TXT bytes match the displayed text. Empty text is not an error.
+- Cancel a batch; finished outputs remain and no partial file is published. Closing
+  or quitting during processing cannot interrupt a committed output or release grants early.
+- Verify Finder callbacks on the installed signed build, source/output sandbox grants,
+  cloud placeholders and macOS 13/Intel separately from isolated native fixtures.
 
 ## File and folder tools
 

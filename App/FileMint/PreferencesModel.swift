@@ -6,7 +6,7 @@ import Foundation
 final class PreferencesModel: ObservableObject {
     static let shared = PreferencesModel()
     enum Pane: String, CaseIterable, Identifiable {
-        case general, creation, fileTypes, folders, fileTools, about
+        case fileTypes, creation, fileTools, resourceTools, general, folders, about
         var id: String { rawValue }
     }
     @Published var selectedPane: Pane = .general
@@ -17,11 +17,12 @@ final class PreferencesModel: ObservableObject {
     @Published var loginItemError: String?
     @Published var isUpdatingLoginItem = false
     private let loginItemService = LoginItemService()
-    private let store = FileMintPreferencesStore()
+    private let store: FileMintPreferencesStore
     private let folderAccess = FolderAccess()
     private var preferenceObserver: NSObjectProtocol?
 
-    init() {
+    init(store: FileMintPreferencesStore = FileMintPreferencesStore()) {
+        self.store = store
         preferences = store.load()
         folderAccess.restore(preferences)
         refreshStatus()

@@ -18,8 +18,8 @@ Load for: Optional Finder file/folder actions, selection snapshots and tool swit
   Enabled, applicable entries appear exactly once, either directly in Finder or
   inside File & Folder Tools. Hide the group when no applicable children remain.
   Preserve placement while disabled. New File and its contents stay unchanged.
-- Settings use native checkboxes for the module and child enablement. Each tool
-  has an expanded functional section with a short explanation and its own menu
+- Settings use small native switches for the module and child enablement. Each tool
+  has a grouped row with a short explanation and its own menu
   position. A disabled child keeps its checkbox available when the module is on,
   but its placement and secondary options are disabled. Re-enabling restores
   all choices without resetting them. Move and deletion options stay in their

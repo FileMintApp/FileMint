@@ -56,6 +56,8 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case extensions
     case fileTools
     case fileToolsHint
+    case resourceTools
+    case resourceToolsHint
     case enableFileTools
     case fileToolsOffHint
     case fileToolsActions
@@ -247,6 +249,8 @@ public enum FileMintStrings {
         .extensions: ("Extensions", "扩展功能"),
         .fileTools: ("File & Folder Tools", "文件（夹）工具"),
         .fileToolsHint: ("Choose the tools you need in Finder’s context menu.", "选择需要的工具，让 Finder 右键菜单更顺手。"),
+        .resourceTools: ("Resource Tools", "资源工具"),
+        .resourceToolsHint: ("Convert, resize and process local images.", "转换格式、调整尺寸，处理本地图片。"),
         .enableFileTools: ("Enable File & Folder Tools", "启用文件（夹）工具"),
         .fileToolsOffHint: ("Turning this off hides the Finder menu and preserves your choices.", "关闭后隐藏右键菜单，并保留各项设置。"),
         .fileToolsActionsHint: ("Check to enable; choose where each tool appears.", "勾选启用；菜单位置可单独设置。"),

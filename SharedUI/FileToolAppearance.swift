@@ -14,12 +14,28 @@ enum FileToolAppearance {
         }
     }
 
+    static func image(for tool: ResourceTool, size: CGFloat = 16) -> NSImage? {
+        let palette: [NSColor] = switch tool {
+        case .convert: [.systemBlue, .systemTeal]
+        case .compress: [.systemOrange, .systemRed]
+        case .resize: [.systemIndigo, .systemBlue]
+        case .icons: [.systemPurple, .systemPink]
+        case .stitch: [.systemMint, .systemTeal]
+        case .ocr: [.systemGreen, .systemBlue]
+        }
+        return image(tool.symbol, palette: palette, size: size)
+    }
+
     static var toolsImage: NSImage? {
         image("wrench.and.screwdriver", palette: [.systemMint, .systemBlue])
     }
 
     static var moveHereImage: NSImage? {
         image("arrow.right.square", palette: [.systemMint, .systemTeal])
+    }
+
+    static var resourceToolsImage: NSImage? {
+        image("photo.on.rectangle", palette: [.systemMint, .systemBlue])
     }
 
     private static func image(_ symbol: String, palette: [NSColor], size: CGFloat = 16) -> NSImage? {

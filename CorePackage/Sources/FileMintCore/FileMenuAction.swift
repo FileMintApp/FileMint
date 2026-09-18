@@ -17,6 +17,7 @@ public struct FileMenuAction: Equatable, Sendable {
     public let directory: URL
     public let templateID: String?
     public let tool: FileTool?
+    public var resourceTool: ResourceTool? = nil
     public let selection: [URL]
     public let moveBatchID: UUID?
     public init(directory: URL, templateID: String?) {
@@ -41,6 +42,15 @@ public struct FileMenuAction: Equatable, Sendable {
         self.tool = nil
         self.selection = []
         self.moveBatchID = moveBatchID
+    }
+
+    public init(directory: URL, resourceTool: ResourceTool, selection: [URL]) {
+        self.directory = directory
+        self.templateID = nil
+        self.tool = nil
+        self.resourceTool = resourceTool
+        self.selection = selection
+        self.moveBatchID = nil
     }
 }
 

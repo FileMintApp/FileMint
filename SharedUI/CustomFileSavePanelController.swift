@@ -67,7 +67,7 @@ final class CustomFileSavePanelController: NSObject {
 
     private func makePanel() -> NSPanel {
         let creationPanel = CreationPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 540, height: 450),
+            contentRect: NSRect(x: 0, y: 0, width: 560, height: 570),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
@@ -77,6 +77,8 @@ final class CustomFileSavePanelController: NSObject {
         )
         creationPanel.onCreate = { [weak self] in self?.createRequestedFile(nil) }
         creationPanel.title = FileMintStrings.text(.customNewFile, language: language)
+        creationPanel.titlebarAppearsTransparent = true
+        creationPanel.backgroundColor = FileMintStyle.backgroundNS
         creationPanel.isReleasedWhenClosed = false
         creationPanel.hidesOnDeactivate = false
         creationPanel.isFloatingPanel = true
@@ -99,9 +101,12 @@ final class CustomFileSavePanelController: NSObject {
         let stack = NSStackView()
         stack.orientation = .vertical
         stack.alignment = .leading
-        stack.spacing = 10
+        stack.spacing = 14
         stack.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(stack)
+
+        let heading = NSTextField(labelWithString: FileMintStrings.text(.customNewFile, language: language))
+        heading.font = .systemFont(ofSize: 23, weight: .semibold)
 
         let subtitle = wrappingLabel(
             FileMintStrings.text(.customPanelSubtitle, language: language),
@@ -112,7 +117,8 @@ final class CustomFileSavePanelController: NSObject {
         nameField.placeholderString = "Untitled.txt"
         nameField.controlSize = .regular
         nameField.setAccessibilityLabel(FileMintStrings.text(.fileName, language: language))
-        nameField.font = .systemFont(ofSize: NSFont.systemFontSize)
+        nameField.font = .systemFont(ofSize: 15)
+        nameField.bezelStyle = .roundedBezel
         nameField.translatesAutoresizingMaskIntoConstraints = false
         nameField.delegate = self
         fileNameField = nameField
@@ -137,21 +143,24 @@ final class CustomFileSavePanelController: NSObject {
         comboBox.translatesAutoresizingMaskIntoConstraints = false
         formatComboBox = comboBox
 
-        let form = NSGridView(views: [
-            [formLabel(.fileName), nameField],
-            [formLabel(.saveLocation), destinationButton],
-            [formLabel(.fileFormat), comboBox]
-        ])
-        form.rowSpacing = 10
-        form.columnSpacing = 12
-        form.column(at: 0).width = 94
-        form.column(at: 0).xPlacement = .trailing
-        form.column(at: 1).xPlacement = .fill
+        let nameColumn = fieldColumn(.fileName, control: nameField)
+        let formatColumn = fieldColumn(.fileFormat, control: comboBox)
+        formatColumn.widthAnchor.constraint(equalToConstant: 130).isActive = true
+        let firstRow = NSStackView(views: [nameColumn, formatColumn])
+        firstRow.orientation = .horizontal
+        firstRow.alignment = .top
+        firstRow.spacing = 12
+        nameColumn.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        let form = NSStackView(views: [firstRow, fieldColumn(.saveLocation, control: destinationButton)])
+        form.orientation = .vertical
+        form.alignment = .leading
+        form.spacing = 17
+        for row in form.arrangedSubviews { row.widthAnchor.constraint(equalTo: form.widthAnchor).isActive = true }
         form.translatesAutoresizingMaskIntoConstraints = false
 
         let formatHint = indentedLabel(
             FileMintStrings.text(.formatHint, language: language),
-            leadingIndent: 106
+            leadingIndent: 0
         )
 
         let contentHeader = NSView()
@@ -159,7 +168,8 @@ final class CustomFileSavePanelController: NSObject {
         let contentLabel = NSTextField(
             labelWithString: FileMintStrings.text(.initialContent, language: language)
         )
-        contentLabel.font = .systemFont(ofSize: NSFont.systemFontSize)
+        contentLabel.font = .systemFont(ofSize: 11, weight: .medium)
+        contentLabel.textColor = .secondaryLabelColor
         contentLabel.translatesAutoresizingMaskIntoConstraints = false
         let encodingLabel = NSButton(title: FileMintStrings.text(.paste, language: language), target: self, action: #selector(pasteContent(_:)))
         encodingLabel.bezelStyle = .rounded
@@ -232,6 +242,8 @@ final class CustomFileSavePanelController: NSObject {
         )
         self.createButton = createButton
         createButton.bezelStyle = .rounded
+        createButton.bezelColor = FileMintStyle.accentNS
+        createButton.controlSize = .large
         createButton.keyEquivalent = "\r"
         let buttonStack = NSStackView(views: [cancelButton, createButton])
         buttonStack.orientation = .horizontal
@@ -247,18 +259,18 @@ final class CustomFileSavePanelController: NSObject {
             shortcut.centerYAnchor.constraint(equalTo: footer.centerYAnchor)
         ])
 
-        for view in [subtitle, form, formatHint, contentHeader, scrollView, placeholderHint, separator, footer] {
+        for view in [heading, subtitle, form, formatHint, contentHeader, scrollView, placeholderHint, separator, footer] {
             stack.addArrangedSubview(view)
             view.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
         }
 
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 20),
-            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -20),
-            stack.topAnchor.constraint(equalTo: container.topAnchor, constant: 18),
-            stack.bottomAnchor.constraint(lessThanOrEqualTo: container.bottomAnchor, constant: -18),
+            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 27),
+            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -27),
+            stack.topAnchor.constraint(equalTo: container.topAnchor, constant: 23),
+            stack.bottomAnchor.constraint(lessThanOrEqualTo: container.bottomAnchor, constant: -23),
 
-            nameField.heightAnchor.constraint(equalToConstant: 26),
+            nameField.heightAnchor.constraint(equalToConstant: 30),
             destinationButton.heightAnchor.constraint(equalToConstant: 26),
             comboBox.heightAnchor.constraint(equalToConstant: 26),
 
@@ -268,7 +280,7 @@ final class CustomFileSavePanelController: NSObject {
             encodingLabel.centerYAnchor.constraint(equalTo: contentHeader.centerYAnchor),
             contentHeader.heightAnchor.constraint(equalToConstant: 20),
 
-            scrollView.heightAnchor.constraint(equalToConstant: 126),
+            scrollView.heightAnchor.constraint(equalToConstant: 155),
             separator.heightAnchor.constraint(equalToConstant: 1),
             footer.heightAnchor.constraint(equalToConstant: 32),
             buttonStack.trailingAnchor.constraint(equalTo: footer.trailingAnchor),
@@ -281,9 +293,20 @@ final class CustomFileSavePanelController: NSObject {
 
     private func formLabel(_ key: FileMintTextKey) -> NSTextField {
         let label = NSTextField(labelWithString: FileMintStrings.text(key, language: language))
-        label.font = .systemFont(ofSize: NSFont.systemFontSize)
-        label.alignment = .right
+        label.font = .systemFont(ofSize: 11, weight: .medium)
+        label.textColor = .secondaryLabelColor
+        label.alignment = .left
         return label
+    }
+
+    private func fieldColumn(_ key: FileMintTextKey, control: NSView) -> NSStackView {
+        let stack = NSStackView(views: [formLabel(key), control])
+        stack.orientation = .vertical
+        stack.alignment = .leading
+        stack.spacing = 7
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        control.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+        return stack
     }
 
     private func indentedLabel(_ text: String, leadingIndent: CGFloat) -> NSView {

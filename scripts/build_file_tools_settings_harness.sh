@@ -22,7 +22,7 @@ else
   CORE_LINK=(-I "$CORE_BUILD/Modules" "$CORE_BUILD"/FileMintCore.build/*.o)
 fi
 swiftc -swift-version 6 -parse-as-library \
-  App/FileMint/FileToolsSettingsView.swift SharedUI/FileToolAppearance.swift \
+  App/FileMint/DesignSystem.swift App/FileMint/FileToolsSettingsView.swift SharedUI/FileToolAppearance.swift \
   scripts/file_tools_settings_smoke.swift "${CORE_LINK[@]}" \
   -o "$APP_PATH/Contents/MacOS/FileMintToolsUIQA"
 echo "Built isolated native settings fixture:"

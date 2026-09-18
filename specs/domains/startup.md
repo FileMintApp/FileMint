@@ -37,6 +37,11 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   Here which defaults to main. New deletion/AirDrop switches default off; deletion
   confirmation defaults to required, including absent or invalid saved values.
   Send Alias to Desktop also defaults off and retains its menu placement.
+- Resource Tools is a separate default-off module. Its six child switches default
+  on; saved choices survive off/on. An active resource panel blocks quit/restart
+  through the serialized file-operation coordinator.
+- The resource switch controls Finder exposure only. Explicit main-app file
+  selection remains available without changing this preference or menu scope.
 
 - An explicitly requested updater relaunch must wait until creation work and
   modal editing are finished. Preserve saved startup preferences and bookmarks.

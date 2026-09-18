@@ -5,6 +5,7 @@ public enum FileOperationRequest: Codable, Equatable, Sendable {
     case permanentDelete(items: [FileMoveItem], confirmation: DeleteConfirmation)
     case airDrop([URL])
     case desktopAlias([FileMoveItem])
+    case resource(tool: ResourceTool, selection: [URL])
     case perform(batchID: UUID, destination: URL)
 }
 

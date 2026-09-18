@@ -9,6 +9,13 @@ sharing service only when you explicitly choose it.
 - The clipboard is read only when you invoke Paste or a standard paste shortcut.
   Copy Names and Copy Paths write to it only after you explicitly choose either
   Finder menu action. It is never watched or saved as a clipboard history.
+- Resource Tools reads only explicitly selected local images. Conversion,
+  compression, resizing, icons, stitching and Vision text recognition run on the
+  Mac without uploading images or recognized text. Previews and OCR results are
+  held for the open panel and released on close. OCR writes the clipboard only
+  after Copy Text, and writes a TXT file only after Save. Original images are
+  preserved; owned temporary output is cleaned up on completion or cancellation.
+  Cloud placeholders must be downloaded by the user before processing.
 - Preferences contain enabled file types, custom template content, language,
   login/menu bar choices, automatic-update preference and last check attempt time,
   file-tool switches, menu placement, deletion-confirmation choice, folder paths and security-scoped bookmarks needed to remember

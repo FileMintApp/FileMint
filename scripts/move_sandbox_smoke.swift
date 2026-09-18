@@ -1,5 +1,12 @@
 import AppKit
 import FileMintCore
+import SwiftUI
+
+@MainActor
+final class PreferencesModel: ObservableObject {
+    @Published var preferences = FileMintPreferences.default
+    func save() {}
+}
 
 /// Uses the production coordinator with isolated preferences/state and synthetic
 /// external fixtures. No Finder registration or real FileMint data is touched.
