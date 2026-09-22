@@ -3,6 +3,16 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## FileMint 0.5.8 release — 2026-09-22
+
+Source tag `v0.5.8`, commit `eb487e3250dc1a7d631332cfe4500ae769b96269`, build 16.
+[Release evidence](RELEASE_VERIFICATION_0.5.8.md) records accepted Apple notarization,
+stapling, universal/nested-signature checks, copied-DMG launch and Gatekeeper,
+published asset byte comparisons, and successful source/artifact/website CI.
+Native launch was checked on macOS 27.2/Apple silicon; owner preferences were
+unchanged. This does not add installed Finder, full updater replacement,
+clean-Mac, Intel or macOS 13 runtime evidence to the feature checks below.
+
 ## Settings appearance and consistency — 2026-09-22
 
 Checked on macOS 27.2 (26B5086k), Apple silicon, `e2202df` plus the uncommitted

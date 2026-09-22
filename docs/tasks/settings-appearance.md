@@ -1,7 +1,7 @@
 # Task: Settings appearance and consistency
 
 Status: complete
-Next action: None for this implementation; installation and release remain separate work.
+Next action: None; included in [the verified 0.5.8 release](../RELEASE_VERIFICATION_0.5.8.md).
 
 ## Objective and scope
 
