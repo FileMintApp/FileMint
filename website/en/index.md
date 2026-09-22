@@ -232,7 +232,7 @@ hero:
 <section id="download" class="landing-section landing-section--last">
   <div class="callout-band">
     <div>
-      <div class="mini-label">FILEMINT 0.5.7</div>
+      <div class="mini-label">FILEMINT 0.5.8</div>
       <h2>Start in Finder. Finish the task. Get back to work.</h2>
       <p>For macOS 13+, Apple silicon and Intel. Developer ID signed and Apple notarized; first use still follows macOS prompts for Finder enablement and folder authorization.</p>
     </div>

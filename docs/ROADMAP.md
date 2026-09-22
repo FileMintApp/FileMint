@@ -13,7 +13,7 @@
 
 ## 模板与命名
 
-本轮按[图片粘贴为文件](tasks/2026-09-22-clipboard-image.md) → [同格式多模板](tasks/2026-09-22-multiple-templates.md) → [真实文档模板](tasks/2026-09-22-document-templates.md)推进，状态与验证分别记录在三个任务中。当前下载版本的支持范围不随本地实现自动变化。
+本轮已完成[图片粘贴为文件](tasks/2026-09-22-clipboard-image.md)、[同格式多模板](tasks/2026-09-22-multiple-templates.md)和[真实文档模板](tasks/2026-09-22-document-templates.md)，纳入 0.5.8；验证范围分别记录在三个任务中。公开 TODO 已移除这些完成项，后续扩展仍按下述边界推进。
 
 模板拷贝与预览、文件名规则及创建后打开保留在[后续分阶段任务](tasks/2026-09-17-template-creation-workflow.md)中；其中 T1 的实施状态统一由本轮同格式多模板任务维护。
 

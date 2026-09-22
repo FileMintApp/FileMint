@@ -10,6 +10,16 @@ Creating a file should not require opening an editor, choosing Save As and findi
 FileMint puts the action back in Finder: **right-click, choose a type and your file is there.**
 When you need a name, starter content, image processing or selected-item tools, the same native workflow continues.
 
+## What's new in 0.5.8
+
+- **Open with App**: Add your go-to apps to Finder and open selected files or folders with them.
+- **Paste Image as File**: Preview and name a copied screenshot or image, then save it as PNG.
+- **Multiple templates per format**: Keep separate content and filenames for one format, with a configurable default template.
+- **Word / Excel templates**: Import `.docx` or `.xlsx` and create independent copies with the original formatting and content.
+- **Themes and settings**: General now offers Follow System, Light and Dark, with consistent control alignment and interaction styles.
+
+[Full release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.5.8)
+
 ## Why FileMint
 
 | What matters | How FileMint approaches it |
@@ -83,10 +93,10 @@ The module starts off. Once enabled, each action can live directly in Finder's m
 The persistent sidebar groups settings by job:
 
 - **File Creation**: Templates & Types, Creation.
-- **Extensions**: File & Folder Tools, Resource Tools.
+- **Extensions**: File & Folder Tools, Resource Tools, Open with App.
 - **Preferences**: General, Finder & Folders, About.
 
-Each page has a clear responsibility, optional modules can be disabled independently, and arrow keys move between pages. Native controls stay readable in Chinese, English, light and dark appearances.
+Each page has a clear responsibility, optional modules can be disabled independently, and arrow keys move between pages. General → Appearance offers Follow System, Light and Dark; Follow System is the default.
 
 ## Use it
 
@@ -114,7 +124,7 @@ Read the complete [privacy policy](PRIVACY.md).
 
 Supports **macOS 13+**, with one universal package for Apple silicon and Intel Macs.
 
-**The 0.5.7 installer is Developer ID signed, Apple notarized and stapled.** First use still follows macOS prompts for Finder enablement and folder authorization.
+**The 0.5.8 installer is Developer ID signed, Apple notarized and stapled.** First use still follows macOS prompts for Finder enablement and folder authorization.
 
 1. [Download the latest DMG](https://github.com/FileMintApp/FileMint/releases/latest) and drag FileMint into Applications.
 2. Launch it, enable the Finder extension and authorize your working folders.
@@ -122,7 +132,7 @@ Supports **macOS 13+**, with one universal package for Apple silicon and Intel M
 
 In 0.5.5 and later builds with the new updater, choose **About → Check for Updates → Update and Restart**. FileMint verifies, replaces and restarts; finish creating or editing first because macOS may request administrator authorization.
 
-Older updater builds, including 0.5.4, need one manual installation of 0.5.7: quit FileMint, replace it in Applications, eject the installer volume and reopen the installed app.
+Older updater builds, including 0.5.4, need one manual installation of 0.5.8: quit FileMint, replace it in Applications, eject the installer volume and reopen the installed app.
 
 For full installation limitations, update notes and provenance, read the [installation guide](docs/INSTALL.md).
 
@@ -135,11 +145,9 @@ These are unfinished directions only; the list changes with real use and feedbac
 
 ### Templates and naming
 
-- [ ] **Multiple templates per format** — Keep meeting notes, project readmes and other templates for the same format.
 - [ ] **Duplicate and preview templates** — Start from an existing template and preview the filename and initial content.
 - [ ] **Filename rules** — Build names from dates, project names and other fields, with a preview of the result.
 - [ ] **Import and export templates** — Back up, move and share templates, choosing how to handle conflicts on import.
-- [ ] **Document templates** — Create copies of your own Word, Excel and other documents, preserving their format and content.
 
 </div>
 <div class="roadmap-group">
@@ -147,7 +155,6 @@ These are unfinished directions only; the list changes with real use and feedbac
 ### Creation and next steps
 
 - [ ] **Create from the clipboard** — Bring copied text into the creation panel, name it and save it as a file.
-- [ ] **Paste images as files** — Save a copied screenshot or image directly into the current folder.
 - [ ] **Open after creation** — Continue working in the default app or an editor you choose.
 
 </div>

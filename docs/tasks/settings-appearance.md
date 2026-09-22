@@ -39,7 +39,7 @@ Environment: macOS 27.2 (26B5086k), Apple silicon, Xcode toolchain selected by M
 
 | Check | Status | Result |
 | --- | --- | --- |
-| `make verify` | passed | 139 Swift tests in 16 suites, 5 public cases, 10 CLI regressions, 3 appcast tests and context checks. [Local log](/tmp/filemint-settings-verify.log). |
+| `make verify` | passed | 139 Core tests in 16 suites plus 13 image tests, 5 public cases, 10 CLI regressions, 3 appcast tests and context checks. [Local log](/tmp/filemint-settings-verify.log). |
 | `CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO make build` | passed | Final universal Release app/extension built. [Local log](/tmp/filemint-settings-build.log). |
 | `bash scripts/build_design_ui_harness.sh` | passed | Production views with an isolated store. [Local log](/tmp/filemint-settings-ui-build-final.log). |
 | Fixture `--general --minimum --english --dark --check-appearance` | passed | Immediate native window changes, clearing the override, store persistence, model reload and failed-save rollback. [Local log](/tmp/filemint-settings-native-final.log). |

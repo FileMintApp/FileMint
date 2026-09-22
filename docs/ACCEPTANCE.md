@@ -8,7 +8,7 @@ macOS 13. Release bundles contain arm64 and x86_64 executables.
 Checked on macOS 27.2 (26B5086k), Apple silicon, `e2202df` plus the uncommitted
 settings worktree. See [the task](tasks/settings-appearance.md) for commands and logs.
 
-- `make verify` passed: 139 Swift tests, 5 public cases, 10 CLI regressions,
+- `make verify` passed: 139 Core and 13 image tests, 5 public cases, 10 CLI regressions,
   3 appcast tests and context checks. The final unsigned universal app/extension built.
 - Inspected all eight settings pages in English/light and Chinese/dark at 840×600.
   General's Theme and Interface language controls align with switches; Creation

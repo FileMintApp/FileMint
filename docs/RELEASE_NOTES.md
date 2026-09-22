@@ -1,3 +1,43 @@
+# FileMint 0.5.8
+
+## 新功能
+
+- **使用 App 打开**：在「扩展功能 → 使用 App 打开」添加常用应用，然后在 Finder 中用它打开所选文件或文件夹。每个应用可独立放在一级菜单或子菜单，不改变系统默认打开方式。
+- **图片粘贴为文件**：将拷贝的截图或图片带入创建面板，预览、命名后保存为 PNG。同名时自动编号，取消不会生成文件。
+- **同格式多模板**：为同一种格式保存不同的模板、默认文件名和初始内容，并指定默认模板。在 Finder 或创建面板中按模板名称选择。
+- **Word / Excel 文档模板**：导入 `.docx`、`.xlsx`，从模板创建保留原有格式和内容的独立副本；导入后不再依赖原文件的位置。
+- **主题设置**：在「通用 → 外观 → 主题」选择跟随系统、浅色或深色。默认跟随系统，切换即时生效并保存。
+
+## 体验改进
+
+- 修正设置页下拉框的右对齐，统一控件尺寸、分组标题、说明文字、按钮反馈和禁用状态。
+- 创建面板支持 Tab / Shift-Tab 切换输入项；切换模板时保留已编辑的文件名和内容。
+- 调整中英文、浅深色和最小窗口尺寸下的布局，保持设置页与创建、图片处理窗口的视觉一致。
+
+## New features
+
+- **Open with App**: Add your go-to apps under Extensions, then open selected Finder files or folders with them. Each app can appear in the main menu or a submenu without changing default file associations.
+- **Paste Image as File**: Preview and name a copied screenshot or image, then save it as PNG. Existing names are numbered; cancelling creates no file.
+- **Multiple templates per format**: Keep separate templates, default filenames and starter content for one format. Set a default and select templates by name in Finder or the creation panel.
+- **Word / Excel document templates**: Import `.docx` or `.xlsx` and create independent copies with the original formatting and content. Imported templates no longer depend on the source file's location.
+- **Theme settings**: Choose Follow System, Light or Dark in General → Appearance → Theme. Follow System is the default; changes apply immediately and persist.
+
+## Improvements
+
+- Right-align settings pickers and standardize control sizes, section headings, supporting text, button feedback and disabled states.
+- Use Tab / Shift-Tab to move through the creation form. Edited filenames and content are preserved when switching templates.
+- Refine Chinese and English layouts in light/dark mode and at minimum window size, with consistent settings, creation and image-processing windows.
+
+## 安装与更新 / Installation and updates
+
+支持 macOS 13 及以上，Apple 芯片与 Intel 共用一个 DMG。0.5.5 及之后的版本可通过「关于 → 检查更新 → 更新并重启」升级；0.5.4 及更早版本请手动安装本版一次。
+
+Requires macOS 13 or later, with one universal DMG for Apple silicon and Intel. Version 0.5.5 and later can use About → Check for Updates → Update and Restart; upgrade manually once from 0.5.4 or earlier.
+
+正式安装包在 Developer ID 签名、Apple 公证接受、票据附加与校验通过后发布，随附 SHA-256 校验文件和签名的 `appcast.xml`。
+
+The stable installer is published after Developer ID signing, accepted Apple notarization, stapling and verification, with a SHA-256 checksum and signed `appcast.xml`.
+
 # FileMint 0.5.7
 
 ## 产品展示与文档 / Product presentation and documentation

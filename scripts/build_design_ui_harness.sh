@@ -14,8 +14,8 @@ plutil -insert CFBundleIdentifier -string "io.github.daigua.filemint.design-qa.$
 plutil -insert CFBundleName -string 'FileMint Design QA' "$DESIGN_APP/Contents/Info.plist"
 plutil -insert CFBundleExecutable -string FileMintDesignQA "$DESIGN_APP/Contents/Info.plist"
 plutil -insert CFBundlePackageType -string APPL "$DESIGN_APP/Contents/Info.plist"
-plutil -insert CFBundleShortVersionString -string 0.5.6 "$DESIGN_APP/Contents/Info.plist"
-plutil -insert CFBundleVersion -string 14 "$DESIGN_APP/Contents/Info.plist"
+plutil -insert CFBundleShortVersionString -string 0.5.8 "$DESIGN_APP/Contents/Info.plist"
+plutil -insert CFBundleVersion -string 16 "$DESIGN_APP/Contents/Info.plist"
 plutil -insert FixturePath -string "$DESIGN_FIXTURE" "$DESIGN_APP/Contents/Info.plist"
 cp Resources/IconSource/FileMint-AppIcon-1024.png "$DESIGN_FIXTURE/AppIcon.png"
 DESIGN_SOURCES=()

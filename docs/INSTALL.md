@@ -7,7 +7,7 @@ FileMint 支持 macOS 13+，兼容 Apple 芯片与 Intel。请从
 ## 首次启动
 
 1. 打开 DMG，把 FileMint 拖入“应用程序”，推出“FileMint”安装磁盘，再从“应用程序”打开。
-2. 0.5.7 使用 Developer ID 签名，已通过 Apple 公证并附加（stapled）票据。
+2. 0.5.8 使用 Developer ID 签名，已通过 Apple 公证并附加（stapled）票据。
    如果下载的是旧版 0.5.3：它在 Apple 公证仍在处理时提前发布，因此公开 DMG 没有内嵌票据。
    Apple 后续已接受这份原始 DMG 的公证提交；联网时 Gatekeeper 可获取 Apple 在线发布的票据，离线首次打开仍可能受阻。
    SHA-256 只校验下载字节，不代表安装包内嵌票据。0.5.3 之后的正式版须先完成并附加公证票据再发布。
@@ -86,7 +86,7 @@ FileMint 会用书签记住它，而不是每次创建都重新选择。下方�
 ## English
 
 Drag FileMint from the DMG into Applications, eject the FileMint installer volume,
-then open FileMint from Applications. Version 0.5.7 is Developer ID signed,
+then open FileMint from Applications. Version 0.5.8 is Developer ID signed,
 Apple notarized and stapled. The older version 0.5.3 is Developer ID signed and
 was published while Apple notarization was in progress, without a stapled ticket.
 Apple later accepted that exact DMG submission and published its ticket online.
@@ -126,12 +126,12 @@ apply to published versions through 0.5.1, not to locally built releases from 0.
 
 0.5.5 起包含新更新器的版本提供“更新并重启”：下载并校验后自动安装、退出并重新启动。
 不再需要保存 DMG 或拖拽覆盖。请先完成创建或编辑，避免重启中断未保存内容。
-macOS 可能要求管理员授权。旧版用户需要手动安装一次 0.5.7。
+macOS 可能要求管理员授权。旧版用户需要手动安装一次 0.5.8。
 
 Version 0.5.5 and later builds with the new updater offer Update and Restart: the signed update is
 installed and FileMint relaunches automatically. Finish creation/editing first;
 macOS may request administrator authorization. Older clients need one manual
-installation of 0.5.7.
+installation of 0.5.8.
 
 从 0.3.0–0.5.0 升级时，本次请用浏览器从 GitHub Release 下载新版 DMG。旧版
 内置下载器可能让安装包带上沙盒禁止执行标记，出现“应用程序无法打开”；仅重复

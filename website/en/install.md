@@ -7,7 +7,7 @@ description: Install and enable FileMint on macOS.
 
 FileMint supports **macOS 13 and later**. One DMG works on both Apple silicon and Intel Macs.
 
-The 0.5.7 installer is Developer ID signed, Apple notarized and stapled.
+The 0.5.8 installer is Developer ID signed, Apple notarized and stapled.
 
 ## First install
 
@@ -42,7 +42,7 @@ Resource Tools is a separate extension module and starts off. Turn it on under *
 
 In 0.5.5 and later builds with the new updater, choose **About → Check for Updates → Update and Restart**. FileMint downloads, verifies, replaces the app and restarts. Finish creating or editing first; macOS may request administrator authorization.
 
-Version 0.5.4 and earlier need one manual installation of 0.5.7:
+Version 0.5.4 and earlier need one manual installation of 0.5.8:
 
 1. Quit FileMint.
 2. Drag the new version into Applications to replace the old copy.
