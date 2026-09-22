@@ -27,6 +27,15 @@ final class CustomFileSavePanelController: NSObject {
     private var revealAfterCreation = true
     private var isUpdatingFormatField = false
     private var isUpdatingContentField = false
+    private var imageData: Data?
+    private var imagePreview: NSImage?
+    private var hasEditedFileName = false
+    private var selectedTemplateLabel: NSTextField?
+    private var contentLabel: NSTextField?
+    private var pasteButton: NSButton?
+    private var contentHint: NSTextField?
+    private var formatHintView: NSView?
+    private var documentTemplates = DocumentTemplateStore()
 
     private override init() {}
 
@@ -39,7 +48,10 @@ final class CustomFileSavePanelController: NSObject {
     func present(
         in defaultDirectory: URL,
         preferences: FileMintPreferences,
-        templateID: String? = nil
+        templateID: String? = nil,
+        imageData: Data? = nil,
+        imagePreview: NSImage? = nil,
+        documentTemplates: DocumentTemplateStore = DocumentTemplateStore()
     ) {
         if panel != nil {
             bringPanelForward(selectFileName: false)
@@ -47,15 +59,20 @@ final class CustomFileSavePanelController: NSObject {
         }
 
         templates = preferences.templates
+        self.imageData = imageData
+        self.imagePreview = imagePreview
+        self.documentTemplates = documentTemplates
         language = preferences.language
         revealAfterCreation = preferences.revealAfterCreation
-        draft = CustomFileDraft(templates: templates)
+        hasEditedFileName = false
+        draft = CustomFileDraft(templates: templates, defaultTemplateIDs: preferences.defaultTemplateIDs)
         allOptions = FileFormatCatalog.options(from: templates)
         suggestions = allOptions
         if let option = allOptions.first(where: { $0.templateID == templateID }) {
             draft.selectFormat(option, templates: templates)
         }
         appliedExtension = draft.extensionInput
+        if imageData != nil { appliedExtension = "png" }
         locationSelection = CustomFileLocationSelection(directoryURL: defaultDirectory)
 
         let creationPanel = makePanel()
@@ -76,7 +93,7 @@ final class CustomFileSavePanelController: NSObject {
             "io.github.daigua.filemint.custom-file"
         )
         creationPanel.onCreate = { [weak self] in self?.createRequestedFile(nil) }
-        creationPanel.title = FileMintStrings.text(.customNewFile, language: language)
+        creationPanel.title = FileMintStrings.text(imageData == nil ? .customNewFile : .pasteImageFile, language: language)
         creationPanel.titlebarAppearsTransparent = true
         creationPanel.backgroundColor = FileMintStyle.backgroundNS
         creationPanel.isReleasedWhenClosed = false
@@ -95,7 +112,7 @@ final class CustomFileSavePanelController: NSObject {
         return creationPanel
     }
 
-    private func makeContentView(for creationPanel: NSPanel) -> NSView {
+    private func makeContentView(for creationPanel: CreationPanel) -> NSView {
         let container = NSView()
 
         let stack = NSStackView()
@@ -105,15 +122,16 @@ final class CustomFileSavePanelController: NSObject {
         stack.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(stack)
 
-        let heading = NSTextField(labelWithString: FileMintStrings.text(.customNewFile, language: language))
+        let heading = NSTextField(labelWithString: creationPanel.title)
         heading.font = .systemFont(ofSize: 23, weight: .semibold)
 
         let subtitle = wrappingLabel(
-            FileMintStrings.text(.customPanelSubtitle, language: language),
-            maximumNumberOfLines: 1
+            FileMintStrings.text(imageData == nil ? .customPanelSubtitle : .clipboardImageHint, language: language),
+            maximumNumberOfLines: imageData == nil ? 1 : 2
         )
 
-        let nameField = NSTextField(string: "Untitled.\(draft.extensionInput)")
+        let nameField = NSTextField(string: selectedTemplate?.suggestedFileName ?? "Untitled.\(draft.extensionInput)")
+        if imageData != nil { nameField.stringValue = FileMintStrings.text(.imageFileName, language: language) }
         nameField.placeholderString = "Untitled.txt"
         nameField.controlSize = .regular
         nameField.setAccessibilityLabel(FileMintStrings.text(.fileName, language: language))
@@ -123,13 +141,13 @@ final class CustomFileSavePanelController: NSObject {
         nameField.delegate = self
         fileNameField = nameField
 
-        let destinationButton = NSPopUpButton(frame: .zero, pullsDown: false)
+        let destinationButton = CreationPopUpButton(frame: .zero, pullsDown: false)
         destinationButton.controlSize = .small
         destinationButton.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
         destinationButton.translatesAutoresizingMaskIntoConstraints = false
         destinationPopUpButton = destinationButton
 
-        let comboBox = NSComboBox()
+        let comboBox = CreationComboBox()
         comboBox.controlSize = .small
         comboBox.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
         comboBox.isEditable = true
@@ -139,6 +157,7 @@ final class CustomFileSavePanelController: NSObject {
         comboBox.dataSource = self
         comboBox.delegate = self
         comboBox.stringValue = draft.extensionInput
+        if imageData != nil { comboBox.stringValue = "png"; comboBox.isEnabled = false }
         comboBox.numberOfVisibleItems = min(8, allOptions.count)
         comboBox.translatesAutoresizingMaskIntoConstraints = false
         formatComboBox = comboBox
@@ -151,7 +170,12 @@ final class CustomFileSavePanelController: NSObject {
         firstRow.alignment = .top
         firstRow.spacing = 12
         nameColumn.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        let form = NSStackView(views: [firstRow, fieldColumn(.saveLocation, control: destinationButton)])
+        let templateLabel = NSTextField(labelWithString: templateLabelText)
+        templateLabel.font = .systemFont(ofSize: 11)
+        templateLabel.textColor = .secondaryLabelColor
+        templateLabel.isHidden = imageData != nil
+        selectedTemplateLabel = templateLabel
+        let form = NSStackView(views: [firstRow, templateLabel, fieldColumn(.saveLocation, control: destinationButton)])
         form.orientation = .vertical
         form.alignment = .leading
         form.spacing = 17
@@ -162,6 +186,7 @@ final class CustomFileSavePanelController: NSObject {
             FileMintStrings.text(.formatHint, language: language),
             leadingIndent: 0
         )
+        formatHintView = formatHint
 
         let contentHeader = NSView()
         contentHeader.translatesAutoresizingMaskIntoConstraints = false
@@ -171,12 +196,18 @@ final class CustomFileSavePanelController: NSObject {
         contentLabel.font = .systemFont(ofSize: 11, weight: .medium)
         contentLabel.textColor = .secondaryLabelColor
         contentLabel.translatesAutoresizingMaskIntoConstraints = false
-        let encodingLabel = NSButton(title: FileMintStrings.text(.paste, language: language), target: self, action: #selector(pasteContent(_:)))
+        self.contentLabel = contentLabel
+        let encodingLabel = CreationButton(title: FileMintStrings.text(.paste, language: language), target: self, action: #selector(pasteContent(_:)))
         encodingLabel.bezelStyle = .rounded
         encodingLabel.controlSize = .small
         encodingLabel.translatesAutoresizingMaskIntoConstraints = false
+        pasteButton = encodingLabel
         contentHeader.addSubview(contentLabel)
         contentHeader.addSubview(encodingLabel)
+        if imageData != nil {
+            contentLabel.stringValue = FileMintStrings.text(.imagePreview, language: language)
+            encodingLabel.isHidden = true
+        }
 
         let scrollView = NSScrollView()
         scrollView.borderType = .lineBorder
@@ -215,11 +246,23 @@ final class CustomFileSavePanelController: NSObject {
         textView.textContainer?.widthTracksTextView = true
         scrollView.documentView = textView
         contentTextView = textView
+        var contentArea: NSView = scrollView
+        if imageData != nil {
+            let preview = NSImageView(frame: NSRect(x: 0, y: 0, width: 500, height: 155))
+            preview.image = imagePreview
+            preview.imageScaling = .scaleProportionallyUpOrDown
+            preview.translatesAutoresizingMaskIntoConstraints = false
+            preview.imageFrameStyle = .grayBezel
+            preview.setAccessibilityLabel(FileMintStrings.text(.imagePreview, language: language))
+            contentArea = preview
+        }
 
         let placeholderHint = wrappingLabel(
             FileMintStrings.text(.contentHint, language: language),
             maximumNumberOfLines: 2
         )
+        contentHint = placeholderHint
+        if imageData != nil { formatHint.isHidden = true; placeholderHint.isHidden = true }
 
         let separator = NSBox()
         separator.boxType = .separator
@@ -227,7 +270,7 @@ final class CustomFileSavePanelController: NSObject {
 
         let footer = NSView()
         footer.translatesAutoresizingMaskIntoConstraints = false
-        let cancelButton = NSButton(
+        let cancelButton = CreationButton(
             title: FileMintStrings.text(.cancel, language: language),
             target: self,
             action: #selector(cancelPanel(_:))
@@ -235,7 +278,7 @@ final class CustomFileSavePanelController: NSObject {
         self.cancelButton = cancelButton
         cancelButton.bezelStyle = .rounded
         cancelButton.keyEquivalent = "\u{1b}"
-        let createButton = NSButton(
+        let createButton = CreationButton(
             title: FileMintStrings.text(.create, language: language),
             target: self,
             action: #selector(createRequestedFile(_:))
@@ -259,7 +302,7 @@ final class CustomFileSavePanelController: NSObject {
             shortcut.centerYAnchor.constraint(equalTo: footer.centerYAnchor)
         ])
 
-        for view in [heading, subtitle, form, formatHint, contentHeader, scrollView, placeholderHint, separator, footer] {
+        for view in [heading, subtitle, form, formatHint, contentHeader, contentArea, placeholderHint, separator, footer] {
             stack.addArrangedSubview(view)
             view.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
         }
@@ -280,7 +323,7 @@ final class CustomFileSavePanelController: NSObject {
             encodingLabel.centerYAnchor.constraint(equalTo: contentHeader.centerYAnchor),
             contentHeader.heightAnchor.constraint(equalToConstant: 20),
 
-            scrollView.heightAnchor.constraint(equalToConstant: 155),
+            contentArea.heightAnchor.constraint(equalToConstant: 155),
             separator.heightAnchor.constraint(equalToConstant: 1),
             footer.heightAnchor.constraint(equalToConstant: 32),
             buttonStack.trailingAnchor.constraint(equalTo: footer.trailingAnchor),
@@ -288,6 +331,8 @@ final class CustomFileSavePanelController: NSObject {
         ])
 
         creationPanel.defaultButtonCell = createButton.cell as? NSButtonCell
+        creationPanel.focusOrder = [nameField, comboBox, destinationButton, textView, encodingLabel, cancelButton, createButton]
+        if imageData == nil { updateContentField() }
         return container
     }
 
@@ -451,6 +496,12 @@ final class CustomFileSavePanelController: NSObject {
     }
 
     private func resolvedFileName() -> String? {
+        if imageData != nil, let value = fileNameField?.stringValue {
+            return FilenamePolicy.fileName(value, applyingFileExtension: "png")
+        }
+        if let document = selectedTemplate?.document, let value = fileNameField?.stringValue {
+            return FilenamePolicy.fileName(value, applyingFileExtension: document.kind.rawValue)
+        }
         guard let fileExtension = draft.normalizedFileExtension,
               let fieldValue = fileNameField?.stringValue else {
             return nil
@@ -465,22 +516,27 @@ final class CustomFileSavePanelController: NSObject {
     ) {
         guard !isCreating else { return }
         isCreating = true
+        setDraftInputsEnabled(false)
         createButton?.isEnabled = false
         cancelButton?.isEnabled = false
         panel?.standardWindowButton(.closeButton)?.isEnabled = false
-        let template = FileTemplate(id: "custom", displayName: "Custom", suggestedFileName: fileName,
+        let textTemplate = FileTemplate(id: "custom", displayName: "Custom", suggestedFileName: fileName,
                                     group: "Custom", content: draft.content, rank: 0)
+        let template = selectedTemplate?.document != nil && imageData == nil ? selectedTemplate! : textTemplate
         let request = FileCreationRequest(destinationDirectory: directoryURL, template: template,
                                           requestedFileName: fileName,
-                                          collisionStrategy: replacingExistingFile ? .replace : .fail,
-                                          contentMode: draft.hasEditedContent ? .verbatim : .template)
+                                          collisionStrategy: imageData != nil || template.document != nil ? .increment : (replacingExistingFile ? .replace : .fail),
+                                          contentMode: draft.hasEditedContent ? .verbatim : .template,
+                                          fileData: imageData)
+        let assets = documentTemplates
         Task {
             let accessed = directoryURL.startAccessingSecurityScopedResource()
             defer { if accessed { directoryURL.stopAccessingSecurityScopedResource() } }
             let outcome = await Task.detached(priority: .userInitiated) {
-                Result { try FileCreationService().createFile(request) }
+                Result { try FileCreationService(documentTemplates: assets).createFile(request) }
             }.value
             isCreating = false
+            setDraftInputsEnabled(true)
             createButton?.isEnabled = true
             cancelButton?.isEnabled = true
             panel?.standardWindowButton(.closeButton)?.isEnabled = true
@@ -514,6 +570,14 @@ final class CustomFileSavePanelController: NSObject {
             // A different folder is a new create request, never an implicit replace.
             self.createRequestedFile(nil)
         }
+    }
+
+    private func setDraftInputsEnabled(_ enabled: Bool) {
+        fileNameField?.isEnabled = enabled
+        formatComboBox?.isEnabled = enabled && imageData == nil
+        destinationPopUpButton?.isEnabled = enabled
+        contentTextView?.isEditable = enabled && imageData == nil && selectedTemplate?.document == nil
+        pasteButton?.isEnabled = enabled
     }
 
     @objc private func pasteContent(_ sender: Any?) {
@@ -581,16 +645,34 @@ final class CustomFileSavePanelController: NSObject {
     }
 
     private func updateContentField() {
-        guard let contentTextView, contentTextView.string != draft.content else {
+        selectedTemplateLabel?.stringValue = templateLabelText
+        let document = selectedTemplate?.document != nil
+        contentLabel?.stringValue = FileMintStrings.text(document ? .documentTemplate : .initialContent, language: language)
+        pasteButton?.isHidden = document
+        contentHint?.stringValue = FileMintStrings.text(document ? .documentTemplateHint : .contentHint, language: language)
+        contentHint?.isHidden = document
+        formatHintView?.isHidden = document
+        formatComboBox?.isEditable = !document
+        contentTextView?.isEditable = !document
+        contentTextView?.font = document ? .systemFont(ofSize: 13) : .monospacedSystemFont(ofSize: 12.5, weight: .regular)
+        contentTextView?.textContainerInset = document ? NSSize(width: 12, height: 12) : NSSize(width: 7, height: 6)
+        contentTextView?.setAccessibilityLabel(FileMintStrings.text(document ? .documentTemplate : .initialContent, language: language))
+        let value = document ? FileMintStrings.text(.documentTemplateHint, language: language) : draft.content
+        guard let contentTextView, contentTextView.string != value else {
             return
         }
 
         isUpdatingContentField = true
-        contentTextView.string = draft.content
+        contentTextView.string = value
         isUpdatingContentField = false
     }
 
     private func updateFileNameExtension() {
+        if !hasEditedFileName, let template = selectedTemplate {
+            fileNameField?.stringValue = template.suggestedFileName
+            appliedExtension = template.fileExtension
+            return
+        }
         guard let fileNameField,
               let fileExtension = draft.normalizedFileExtension,
               let updatedName = FilenamePolicy.fileName(
@@ -610,6 +692,16 @@ final class CustomFileSavePanelController: NSObject {
         }
         let name = FileMintStrings.templateDisplayName(for: template, language: language)
         return "\(name) (.\(option.fileExtension))"
+    }
+
+    private var selectedTemplate: FileTemplate? {
+        templates.first { $0.id == draft.selectedTemplateID }
+    }
+
+    private var templateLabelText: String {
+        let name = selectedTemplate.map { FileMintStrings.templateDisplayName(for: $0, language: language) }
+            ?? FileMintStrings.text(.noTemplate, language: language)
+        return String(format: FileMintStrings.text(.selectedTemplate, language: language), name)
     }
 
     private func invalidExtensionError() -> NSError {
@@ -632,7 +724,8 @@ final class CustomFileSavePanelController: NSObject {
 
         let alert = NSAlert()
         alert.messageText = FileMintStrings.text(.createFileErrorTitle, language: language)
-        alert.informativeText = error.localizedDescription
+        alert.informativeText = (error as? DocumentTemplateError).map { FileMintStrings.text($0.textKey, language: language) }
+            ?? error.localizedDescription
         alert.alertStyle = .warning
         alert.addButton(withTitle: "OK")
         alert.beginSheetModal(for: panel)
@@ -648,11 +741,11 @@ extension CustomFileSavePanelController: NSComboBoxDataSource, NSComboBoxDelegat
         guard suggestions.indices.contains(index) else {
             return nil
         }
-        return suggestions[index].fileExtension
+        return localizedTitle(for: suggestions[index])
     }
 
     func comboBox(_ comboBox: NSComboBox, completedString string: String) -> String? {
-        FileFormatCatalog.matching(string, in: allOptions).first?.fileExtension
+        nil
     }
 
     func comboBoxWillPopUp(_ notification: Notification) {
@@ -671,6 +764,13 @@ extension CustomFileSavePanelController: NSComboBoxDataSource, NSComboBoxDelegat
         }
 
         let option = suggestions[comboBox.indexOfSelectedItem]
+        if templates.first(where: { $0.id == option.templateID })?.document != nil,
+           draft.hasEditedContent, !draft.content.isEmpty {
+            comboBox.stringValue = draft.extensionInput
+            showError(NSError(domain: "FileMint", code: 1, userInfo: [NSLocalizedDescriptionKey:
+                FileMintStrings.text(.documentDraftEdited, language: language)]))
+            return
+        }
         draft.selectFormat(option, templates: templates)
         isUpdatingFormatField = true
         comboBox.stringValue = option.fileExtension
@@ -685,10 +785,17 @@ extension CustomFileSavePanelController: NSComboBoxDataSource, NSComboBoxDelegat
     }
 
     func controlTextDidChange(_ notification: Notification) {
+        guard imageData == nil else { return }
         if let field = notification.object as? NSTextField, field === fileNameField {
+            hasEditedFileName = true
+            if selectedTemplate?.document != nil { return }
             if let suffix = FilenamePolicy.inferredFileExtension(from: field.stringValue,
                 knownExtensions: allOptions.map(\.fileExtension) + [appliedExtension]) {
-                draft.updateExtensionInput(suffix, templates: templates)
+                guard draft.updateExtensionInput(suffix, templates: templates) else {
+                    updateFileNameExtension()
+                    showDocumentDraftMessage()
+                    return
+                }
                 appliedExtension = suffix
                 isUpdatingFormatField = true
                 formatComboBox?.stringValue = suffix
@@ -703,10 +810,19 @@ extension CustomFileSavePanelController: NSComboBoxDataSource, NSComboBoxDelegat
             return
         }
 
-        draft.updateExtensionInput(comboBox.stringValue, templates: templates)
+        guard draft.updateExtensionInput(comboBox.stringValue, templates: templates) else {
+            comboBox.stringValue = draft.extensionInput
+            showDocumentDraftMessage()
+            return
+        }
         updateSuggestions(for: comboBox.stringValue)
         updateContentField()
         updateFileNameExtension()
+    }
+
+    private func showDocumentDraftMessage() {
+        showError(NSError(domain: "FileMint", code: 1, userInfo: [NSLocalizedDescriptionKey:
+            FileMintStrings.text(.documentDraftEdited, language: language)]))
     }
 }
 
@@ -741,6 +857,13 @@ extension CustomFileSavePanelController: NSWindowDelegate {
         locationSelection = nil
         createButton = nil
         cancelButton = nil
+        imageData = nil
+        imagePreview = nil
+        selectedTemplateLabel = nil
+        contentLabel = nil
+        pasteButton = nil
+        contentHint = nil
+        formatHintView = nil
     }
 }
 
@@ -749,6 +872,33 @@ extension CustomFileSavePanelController: NSWindowDelegate {
 @MainActor
 private final class CreationPanel: NSPanel {
     var onCreate: (() -> Void)?
+    var focusOrder: [NSView] = []
+
+    override func sendEvent(_ event: NSEvent) {
+        if event.type == .keyDown, event.keyCode == 48, attachedSheet == nil,
+           event.modifierFlags.intersection([.command, .control, .option]).isEmpty,
+           moveFocus(backward: event.modifierFlags.contains(.shift)) { return }
+        super.sendEvent(event)
+    }
+
+    private func moveFocus(backward: Bool) -> Bool {
+        let candidates = focusOrder.filter { view in
+            guard view.window === self, !view.isHiddenOrHasHiddenAncestor else { return false }
+            if let control = view as? NSControl, !control.isEnabled { return false }
+            if let editor = view as? NSTextView, !editor.isEditable { return false }
+            return true
+        }
+        guard !candidates.isEmpty else { return false }
+        let current = candidates.firstIndex { view in
+            view === firstResponder || (view as? NSControl)?.currentEditor() === firstResponder
+        } ?? (backward ? 0 : candidates.count - 1)
+        let direction = backward ? -1 : 1
+        for step in 1...candidates.count {
+            let index = (current + direction * step + candidates.count) % candidates.count
+            if makeFirstResponder(candidates[index]) { return true }
+        }
+        return false
+    }
 
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
         let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
@@ -768,6 +918,21 @@ private final class CreationPanel: NSPanel {
         }
         return super.performKeyEquivalent(with: event)
     }
+}
+
+@MainActor
+private final class CreationButton: NSButton {
+    override var acceptsFirstResponder: Bool { true }
+}
+
+@MainActor
+private final class CreationPopUpButton: NSPopUpButton {
+    override var acceptsFirstResponder: Bool { true }
+}
+
+@MainActor
+private final class CreationComboBox: NSComboBox {
+    override var acceptsFirstResponder: Bool { true }
 }
 
 @MainActor

@@ -110,6 +110,8 @@ struct ContentView: View {
                         Text("⌘N").foregroundStyle(.secondary)
                     }.padding(.vertical, 3)
                 }.keyboardShortcut("n").buttonStyle(MintButtonStyle())
+                Button(model.text(.pasteImageFile)) { model.pasteImageFile() }
+                    .font(.callout).buttonStyle(.plain)
                 Button { model.selectedPane = .folders } label: {
                     HStack(spacing: 6) {
                         Circle().fill(model.extensionEnabled ? FileMintStyle.accent : Color.secondary).frame(width: 5, height: 5)

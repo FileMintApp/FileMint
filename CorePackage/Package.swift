@@ -22,7 +22,8 @@ let package = Package(
         ),
         .testTarget(
             name: "FileMintCoreTests",
-            dependencies: ["FileMintCore"]
+            dependencies: ["FileMintCore"],
+            resources: [.copy("Fixtures")]
         )
     ]
 )

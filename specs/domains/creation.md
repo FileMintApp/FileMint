@@ -27,6 +27,11 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   SwiftUI primary-window creation or restoration during URL handling.
 - Return creates from single-line fields; Return in the content editor inserts a
   newline; Command-Return creates anywhere; Escape cancels; Tab moves focus.
+- Tab and Shift-Tab cycle explicitly through filename, format, destination,
+  editable content, Paste, Cancel and Create. Skip hidden/disabled controls,
+  including fixed image formats, without requiring the system's full keyboard
+  navigation setting. Tab in the editor navigates rather than inserting a tab;
+  it never creates a file. Focus remains visible and wraps within the panel.
 - The editor supports standard copy/paste, select-all and undo. A visible Paste
   button inserts clipboard text at the selection. Clipboard is read only at the
   user's explicit paste action. Non-text clipboard data produces a short message.
@@ -39,6 +44,8 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   render supported placeholders (`{{fileName}}`, `{{date}}`, `{{isoDate}}`, `{{year}}`).
   Date placeholders use UTC for deterministic output.
 - The extension selector searches preset names, aliases and saved custom types.
+  Same-suffix templates remain distinct choices by template ID, and the selected
+  template name is visible. Unedited names use its saved default filename.
   Its menu can always show all choices, even after a format has been selected.
 - A full filename typed or pasted into Name is authoritative: `demo.js` is saved
   as exactly `demo.js`, and synchronizes the extension selector to `js`, even if
@@ -52,6 +59,39 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - An update-triggered restart waits for an open draft or in-flight creation;
   it never discards the draft or interrupts a file write.
 - Drafts are not stored. Cancelling never creates a file or changes the destination.
+
+## Clipboard image creation
+
+- Paste Image as File is an explicit New File menu action in Finder and the app.
+  Building a menu never reads the clipboard. Finder passes only an expiring,
+  single-use private ticket containing the captured in-scope destination.
+- The main app captures one PNG/TIFF bitmap on the action, then decodes/encodes
+  off the main thread. File references and multiple clipboard items are rejected;
+  never fetch paths, URLs or remote content. No clipboard writes or monitoring.
+- Accept one static image, at most 64 MiB encoded, 16 million pixels and 16,384
+  pixels per dimension. Normalize orientation, preserve transparency and displayed
+  dimensions, produce PNG and a bounded 512-pixel preview using system Image I/O.
+- Reuse the single creation panel with image preview, filename and destination.
+  Keep PNG fixed; hold captured bytes until cancellation/creation. An existing
+  draft is focused unchanged without reading a new clipboard image.
+- Only Create writes the encoded bytes. Collisions increment; cancel creates
+  nothing. Missing authorization offers the existing directory picker. Preparation
+  and open drafts block updater relaunch. Errors never discard another draft.
+- Binary creation receives explicit bytes; a filename extension alone never
+  changes text into an image/document. Binary bytes bypass template rendering.
+
+## Creating an Office document
+
+- Quick creation and the shared panel use the selected template's managed asset.
+  The panel identifies the document template, fixes its suffix, and replaces the
+  text editor with a concise original-format/content notice. It does not render
+  binary data as text or apply text variables to Office package bytes.
+- Selecting a document template while a text draft contains edited content is
+  rejected with guidance to save/cancel that draft first. Filename edits are
+  preserved, applying the document's correct suffix. Image drafts stay separate.
+- Both paths create an independent exact-byte copy. Same-name documents are
+  never replaced. Import/validation and creation block updater relaunch while
+  active; failed imports do not expand Finder folder scope or clipboard access.
 
 ## Safe creation and performance
 
@@ -73,10 +113,11 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   dispatched explicitly to the main actor.
 - Preference refresh is notification-driven, with no polling timers or background
   directory enumeration. File I/O runs away from the main thread, and duplicate submission
-  is disabled until it completes. An actionable error keeps the draft intact.
+  is disabled until it completes. Draft inputs are locked during the write so
+  completion cannot discard edits made after submission. An actionable error keeps the draft intact.
 
 ## Working context
 
-- Implementation entry points: `FilenamePolicy.swift`, `TemplateRenderer.swift`, `CustomFileDraft.swift`, `FileCreationService.swift`, `CreationRoute.swift`, `QuickCreationTicket.swift`; `SharedUI/CustomFileSavePanelController.swift`, `App/FileMint/PlainTextEditor.swift` and creation handling in `PreferencesModel.swift`.
+- Implementation entry points: `FilenamePolicy.swift`, `TemplateRenderer.swift`, `CustomFileDraft.swift`, `FileCreationService.swift`, `BinaryFileWriter.swift`, `CreationRoute.swift`, `QuickCreationTicket.swift`, `ClipboardImageEncoder.swift`; `SharedUI/CustomFileSavePanelController.swift`, `App/FileMint/PlainTextEditor.swift` and creation handling in `PreferencesModel.swift`.
 - Verification: [Core checks](../verification/core.md), [Finder/native checks](../verification/finder.md) when UI or routing changes.
 - Expand context only when needed: Load [templates](templates.md) when format selection or saved types change; [Finder and permissions](finder-permissions.md) for target scope, tickets or authorization; [startup](startup.md) for settings-window ownership.

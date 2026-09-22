@@ -45,6 +45,9 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - Open with App has an initially empty persistent application list. Explicitly
   adding an app enables its entry; its independent placement defaults to submenu.
   See [Open with App](open-with.md) for validation and opening behavior.
+- Per-suffix default template IDs are saved independently of ordering. Missing
+  old fields fall back deterministically without losing user templates or other
+  preferences; invalid references are removed when settings are saved.
 
 - An explicitly requested updater relaunch must wait until creation work and
   modal editing are finished. Preserve saved startup preferences and bookmarks.

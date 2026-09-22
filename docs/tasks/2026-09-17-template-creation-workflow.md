@@ -1,13 +1,13 @@
 # Task: 多模板、复制与预览、文件名规则、创建后打开
 
 Status: planned
-Next action: [设置入口重构](2026-09-17-settings-navigation.md)已完成本地实现与布局验证；从 T1 开始更新模板、创建及偏好迁移契约，沿新 TypesPane 实现按模板 ID 选择和同后缀默认模板规则。按当前 HARNESS 选择实施后的验证。
+Next action: T1 的实施与验证统一移至[同格式多模板任务](2026-09-22-multiple-templates.md)。本文保留 T2/T3/T4 的未来规划，避免重复维护 T1 状态。
 
 ## Objective and scope
 
 - 用户结果：同一种后缀保存多份场景模板；复制并预览模板；用日期和项目名称生成文件名；成功创建后继续在应用中编辑。
 - 来源：[实施路线](../ROADMAP.md)的四项 TODO。按 T1 → T2 → T3 → T4 逐步交付，每项独立验证；这份记录是唯一任务入口。
-- 当前仅完成拆解，产品实现尚未开始；以下为实施方案，开始各项时先更新对应 SPEC。
+- T1 的实现与验证已转入[独立任务](2026-09-22-multiple-templates.md)；T2/T3/T4 仍是未来实施方案，开始各项时先更新对应 SPEC。
 - 范围：现有 UTF-8 文本模板、主应用设置、原生创建面板、Finder 快速创建和本地偏好迁移。
 - 不包含：二进制文档模板、模板导入导出、目录模板、脚本执行、Shell 命令、自定义脚本表达式和发布。
 - 完成条件：四项各自验收通过后，才勾选中英文 README 对应 TODO；未发布功能不得描述为当前下载版已支持。
@@ -54,7 +54,7 @@ Next action: [设置入口重构](2026-09-17-settings-navigation.md)已完成本
 
 ## T1 — 同后缀多模板
 
-Status: planned
+Status: tracked in [同格式多模板任务](2026-09-22-multiple-templates.md)
 Dependencies: none
 
 - [ ] SPEC：后缀不再唯一，模板 ID 唯一；为后缀、默认文件名和模板身份明确独立语义，停止依赖 `Untitled.` 前缀反推后缀。

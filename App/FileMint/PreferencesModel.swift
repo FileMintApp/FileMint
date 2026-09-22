@@ -1,5 +1,7 @@
 import AppKit
 import FileMintCore
+import FileMintImages
+import UniformTypeIdentifiers
 import Foundation
 
 @MainActor
@@ -19,11 +21,14 @@ final class PreferencesModel: ObservableObject {
     @Published var isChoosingOpenWithApp = false
     private let loginItemService = LoginItemService()
     private let store: FileMintPreferencesStore
+    let documentTemplates: DocumentTemplateStore
+    @Published var isImportingDocument = false
     private let folderAccess = FolderAccess()
     private var preferenceObserver: NSObjectProtocol?
 
-    init(store: FileMintPreferencesStore = FileMintPreferencesStore()) {
+    init(store: FileMintPreferencesStore = FileMintPreferencesStore(), documentTemplates: DocumentTemplateStore = DocumentTemplateStore()) {
         self.store = store
+        self.documentTemplates = documentTemplates
         preferences = store.load()
         folderAccess.restore(preferences)
         refreshStatus()
@@ -129,6 +134,7 @@ final class PreferencesModel: ObservableObject {
     @discardableResult
     func save() -> Bool {
         do {
+            preferences.defaultTemplateIDs = TemplateCatalog.validDefaults(preferences.defaultTemplateIDs, in: preferences.templates)
             try store.save(preferences)
             DistributedNotificationCenter.default().post(
                 name: Notification.Name(FileMintAppGroup.preferencesDidChangeNotification), object: nil
@@ -164,18 +170,80 @@ final class PreferencesModel: ObservableObject {
 
     func isCustom(_ id: String) -> Bool { !TemplateCatalog.builtInTemplates.contains { $0.id == id } }
 
-    func saveType(name: String, suffix: String, content: String, id: String?) throws {
-        let type = try TemplateCatalog.customTemplate(name: name, fileExtension: suffix, content: content,
-                                                       id: id, in: preferences.templates)
+    func saveType(name: String, suffix: String, content: String, id: String?, suggestedFileName: String? = nil) throws {
+        let previous = preferences
+        let document = preferences.templates.first { $0.id == id }?.document
+        if let document, suffix.lowercased() != document.kind.rawValue { throw DocumentTemplateError.unsupported }
+        var type = try TemplateCatalog.customTemplate(name: name, fileExtension: suffix, content: document == nil ? content : "",
+                                                       id: id, in: preferences.templates, suggestedFileName: suggestedFileName)
+        type.document = document
         if let index = preferences.templates.firstIndex(where: { $0.id == type.id }) { preferences.templates[index] = type }
         else { preferences.templates.append(type) }
-        save()
+        if !save() { preferences = previous }
     }
 
     func removeType(_ id: String) {
         guard isCustom(id) else { return }
+        let previous = preferences
+        let document = preferences.templates.first { $0.id == id }?.document
         preferences.templates.removeAll { $0.id == id }
-        save()
+        if !save() { preferences = previous; return }
+        if let document, !preferences.templates.contains(where: { $0.document?.id == document.id }) {
+            let assets = documentTemplates
+            Task.detached(priority: .utility) { try? assets.remove(document) }
+        }
+    }
+
+    func setDefaultTemplate(_ template: FileTemplate) {
+        guard template.isEnabled else { return }
+        let previous = preferences
+        preferences.defaultTemplateIDs[template.fileExtension.lowercased()] = template.id
+        if !save() { preferences = previous }
+    }
+
+    func isDefaultTemplate(_ template: FileTemplate) -> Bool {
+        TemplateCatalog.defaultTemplate(forExtension: template.fileExtension, in: preferences.templates,
+            defaults: preferences.defaultTemplateIDs)?.id == template.id
+    }
+
+    func importDocumentTemplate() {
+        guard !isImportingDocument else { return }
+        let picker = NSOpenPanel()
+        picker.canChooseDirectories = false
+        picker.allowsMultipleSelection = false
+        picker.allowedContentTypes = [UTType(filenameExtension: "docx"), UTType(filenameExtension: "xlsx")].compactMap { $0 }
+        picker.title = text(.importDocumentTemplate)
+        picker.resolvesAliases = false
+        guard picker.runModal() == .OK, let source = picker.url else { return }
+        Task { await importDocumentTemplate(from: source) }
+    }
+
+    func importDocumentTemplate(from source: URL) async {
+        guard !isImportingDocument else { return }
+        isImportingDocument = true
+        pendingCreationCount += 1
+        let access = source.startAccessingSecurityScopedResource()
+        defer {
+            if access { source.stopAccessingSecurityScopedResource() }
+            isImportingDocument = false
+            pendingCreationCount -= 1
+        }
+        let assets = documentTemplates
+        do {
+            let reference = try await Task.detached(priority: .userInitiated) { try assets.importDocument(at: source) }.value
+            let previous = preferences
+            var template = FileTemplate(id: "document-\(reference.id.uuidString)", displayName: source.deletingPathExtension().lastPathComponent,
+                suggestedFileName: source.lastPathComponent, group: "Custom", content: "",
+                rank: (preferences.templates.map(\.rank).max() ?? 0) + 10, fileExtension: reference.kind.rawValue)
+            template.document = reference
+            preferences.templates.append(template)
+            if !save() {
+                preferences = previous
+                _ = await Task.detached(priority: .utility) { try? assets.remove(reference) }.value
+            }
+        } catch {
+            lastError = text((error as? DocumentTemplateError)?.textKey ?? .documentImportFailed)
+        }
     }
 
     func addMonitoredFolder(initial: URL? = nil) {
@@ -217,7 +285,7 @@ final class PreferencesModel: ObservableObject {
             try FolderAccess.remember(url, in: &preferences)
             save()
             folderAccess.restore(preferences)
-            CustomFileSavePanelController.shared.present(in: url, preferences: preferences)
+            CustomFileSavePanelController.shared.present(in: url, preferences: preferences, documentTemplates: documentTemplates)
         } catch { lastError = error.localizedDescription }
     }
 
@@ -237,6 +305,46 @@ final class PreferencesModel: ObservableObject {
     }
 
     private(set) var pendingCreationCount = 0
+    private var preparingClipboardImage = false
+
+    func pasteImageFile() {
+        guard !preparingClipboardImage, !CustomFileSavePanelController.shared.focusExistingPanel() else { return }
+        let directory = preferences.monitoredFolderURLs.first ?? FileManager.default.homeDirectoryForCurrentUser
+        Task { await presentClipboardImage(in: directory) }
+    }
+
+    func presentClipboardImage(in directory: URL, pasteboard: NSPasteboard = .general) async {
+        guard !preparingClipboardImage, !CustomFileSavePanelController.shared.focusExistingPanel() else { return }
+        preparingClipboardImage = true
+        pendingCreationCount += 1
+        defer { preparingClipboardImage = false; pendingCreationCount -= 1 }
+        do {
+            guard let items = pasteboard.pasteboardItems, items.count == 1,
+                  !items[0].types.contains(.fileURL),
+                  let data = items[0].data(forType: .png) ?? items[0].data(forType: .tiff) else {
+                throw ClipboardImageError.unsupported
+            }
+            let image = try await Task.detached(priority: .userInitiated) {
+                try ClipboardImageEncoder.encode(data)
+            }.value
+            // A different creation action may have opened a draft while decoding.
+            guard !CustomFileSavePanelController.shared.focusExistingPanel() else { return }
+            CustomFileSavePanelController.shared.present(in: directory, preferences: preferences,
+                imageData: image.png, imagePreview: NSImage(data: image.preview))
+        } catch {
+            let key: FileMintTextKey
+            switch error {
+            case ClipboardImageError.tooLarge: key = .clipboardImageTooLarge
+            case ClipboardImageError.unsupported: key = .clipboardImageUnsupported
+            default: key = .clipboardImageFailed
+            }
+            let alert = NSAlert()
+            alert.messageText = text(.pasteImageFile)
+            alert.informativeText = text(key)
+            NSApp.activate(ignoringOtherApps: true)
+            alert.runModal()
+        }
+    }
 
     func handle(url: URL) {
         if url.scheme == "filemint", url.host == "move" {
@@ -245,7 +353,7 @@ final class PreferencesModel: ObservableObject {
         }
         if let directory = CreationRoute.directory(from: url) {
             CustomFileSavePanelController.shared.present(in: directory, preferences: preferences,
-                                                          templateID: CreationRoute.templateID(from: url))
+                                                          templateID: CreationRoute.templateID(from: url), documentTemplates: documentTemplates)
             return
         }
         pendingCreationCount += 1
@@ -257,7 +365,8 @@ final class PreferencesModel: ObservableObject {
                     try QuickCreationTicketStore().consume(url, preferences: snapshot)
                 }.value
                 guard let ticket else { return }
-                await quickCreate(ticket)
+                if ticket.clipboardImage == true { await presentClipboardImage(in: ticket.directory) }
+                else { await quickCreate(ticket) }
             } catch { lastError = error.localizedDescription }
         }
     }
@@ -266,8 +375,9 @@ final class PreferencesModel: ObservableObject {
         guard let template = TemplateCatalog.template(withID: ticket.templateID, in: preferences.templates) else { return }
         let request = FileCreationRequest(destinationDirectory: ticket.directory, template: template,
                                            collisionStrategy: preferences.collisionStrategy == .replace ? .increment : preferences.collisionStrategy)
+        let assets = documentTemplates
         let result = await Task.detached(priority: .userInitiated) {
-            Result { try FileCreationService().createFile(request) }
+            Result { try FileCreationService(documentTemplates: assets).createFile(request) }
         }.value
         switch result {
         case .success(let created):
@@ -275,11 +385,12 @@ final class PreferencesModel: ObservableObject {
         case .failure(let error):
             if FolderAccess.isPermissionError(error) {
                 // The retry remains an explicit user action in the single creation panel.
-                CustomFileSavePanelController.shared.present(in: ticket.directory, preferences: preferences, templateID: ticket.templateID)
+                CustomFileSavePanelController.shared.present(in: ticket.directory, preferences: preferences, templateID: ticket.templateID,
+                    documentTemplates: documentTemplates)
             } else {
                 let alert = NSAlert()
                 alert.messageText = text(.createFileErrorTitle)
-                alert.informativeText = error.localizedDescription
+                alert.informativeText = (error as? DocumentTemplateError).map { text($0.textKey) } ?? error.localizedDescription
                 NSApp.activate(ignoringOtherApps: true)
                 alert.runModal()
             }

@@ -10,10 +10,17 @@ struct TypesPane: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Button(model.text(.addType)) { editor = TypeEditorDraft() }
+                Button(model.text(.importDocumentTemplate)) { model.importDocumentTemplate() }
+                    .disabled(model.isImportingDocument)
+                if model.isImportingDocument { ProgressView().controlSize(.small) }
+                Spacer()
+            }
             List(selection: $selection) {
                 ForEach($model.preferences.templates) { $template in
                     HStack(spacing: 12) {
-                        Text(template.suggestedFileName.split(separator: ".").last.map(String.init)?.uppercased() ?? "TXT")
+                        Text(template.fileExtension.uppercased())
                             .font(.system(size: 9, weight: .medium, design: .monospaced))
                             .frame(width: 34, height: 38).background(FileMintStyle.soft, in: RoundedRectangle(cornerRadius: 5))
                             .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(FileMintStyle.line, lineWidth: 0.7))
@@ -21,6 +28,9 @@ struct TypesPane: View {
                             .toggleStyle(.checkbox)
                             .onChange(of: template.isEnabled) { _ in model.save() }
                         Spacer()
+                        if model.isDefaultTemplate(template) {
+                            Text(model.text(.defaultTemplate)).font(.caption).foregroundStyle(.secondary)
+                        }
                         Text(template.suggestedFileName.replacingOccurrences(of: "Untitled", with: ""))
                             .font(.system(.callout, design: .monospaced)).foregroundStyle(.secondary)
                     }.padding(.vertical, 8).tag(template.id)
@@ -30,12 +40,16 @@ struct TypesPane: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(FileMintStyle.line, lineWidth: 0.7))
             HStack(spacing: 8) {
-                Button(model.text(.addType)) { editor = TypeEditorDraft() }
                 Button(model.text(.editType)) {
                     if let type = model.preferences.templates.first(where: { $0.id == selection }) { editor = TypeEditorDraft(type) }
                 }.disabled(selection == nil || !model.isCustom(selection ?? ""))
                 Button(model.text(.remove)) { removing = true }
                     .disabled(selection == nil || !model.isCustom(selection ?? ""))
+                Button(model.text(.makeDefaultTemplate)) {
+                    if let template = model.preferences.templates.first(where: { $0.id == selection }) {
+                        model.setDefaultTemplate(template)
+                    }
+                }.disabled(!model.preferences.templates.contains { $0.id == selection && $0.isEnabled && !model.isDefaultTemplate($0) })
                 Spacer()
                 Button(model.text(.moveUp)) { if let selection { model.moveTemplate(id: selection, by: -1) } }
                     .disabled(!model.canMoveTemplate(id: selection ?? "", by: -1))
@@ -66,12 +80,16 @@ private struct TypeEditorDraft: Identifiable {
     var name = ""
     var suffix = ""
     var content = ""
+    var suggestedFileName = ""
+    var isDocument = false
     init() {}
     init(_ type: FileTemplate) {
         templateID = type.id
         name = type.displayName
-        suffix = String(type.suggestedFileName.dropFirst("Untitled.".count))
+        suffix = type.fileExtension
+        suggestedFileName = type.suggestedFileName
         content = type.content
+        isDocument = type.document != nil
     }
 }
 
@@ -91,13 +109,22 @@ private struct TypeEditor: View {
             }
             VStack(alignment: .leading, spacing: 7) {
                 Text(model.text(.extensionLabel)).font(.system(size: 11)).foregroundStyle(.secondary)
-                TextField(model.text(.extensionLabel), text: $draft.suffix)
+                TextField(model.text(.extensionLabel), text: $draft.suffix).disabled(draft.isDocument)
             }
-            Text(model.text(.initialContent)).font(.callout)
-            PlainTextEditor(text: $draft.content, label: model.text(.initialContent))
-                .frame(height: 145).clipShape(RoundedRectangle(cornerRadius: 7))
-                .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(FileMintStyle.line, lineWidth: 0.7))
-            Text(model.text(.customTypeHint)).font(.caption).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 7) {
+                Text(model.text(.defaultFileName)).font(.system(size: 11)).foregroundStyle(.secondary)
+                TextField("Untitled.\(draft.suffix.isEmpty ? "txt" : draft.suffix)", text: $draft.suggestedFileName)
+            }
+            if draft.isDocument {
+                Text(model.text(.documentTemplateHint)).font(.callout).foregroundStyle(.secondary)
+            } else {
+                Text(model.text(.initialContent)).font(.callout)
+                    .padding(.top, 2)
+                PlainTextEditor(text: $draft.content, label: model.text(.initialContent))
+                    .frame(height: 145).clipShape(RoundedRectangle(cornerRadius: 7))
+                    .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(FileMintStyle.line, lineWidth: 0.7))
+                Text(model.text(.customTypeHint)).font(.caption).foregroundStyle(.secondary)
+            }
             if let error { Text(error).foregroundStyle(.red).font(.callout) }
             HStack {
                 Spacer()
@@ -110,7 +137,8 @@ private struct TypeEditor: View {
 
     private func save() {
         do {
-            try model.saveType(name: draft.name, suffix: draft.suffix, content: draft.content, id: draft.templateID)
+            try model.saveType(name: draft.name, suffix: draft.suffix, content: draft.content, id: draft.templateID,
+                suggestedFileName: draft.suggestedFileName)
             if let error = model.lastError { self.error = error } else { dismiss() }
         } catch TemplateValidationError.duplicateExtension { error = model.text(.duplicateType) }
         catch TemplateValidationError.emptyName { error = model.text(.emptyTypeName) }

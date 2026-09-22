@@ -13,10 +13,27 @@ Record actual results in ACCEPTANCE.md.
 - Type an unknown suffix; verify it is used verbatim without being registered.
 - Cancel the destination picker; verify the previous location and draft remain.
 - Return in the editor inserts a newline; paste, select-all and undo work.
+- Without changing system keyboard settings, Tab/Shift-Tab cycles through name,
+  format, destination, content, Paste, Cancel and Create with visible focus.
+  Tab from the content editor must not insert text or submit. PNG drafts skip
+  the fixed format and absent text controls; verify forward and reverse wrap.
 - Existing-name confirmation defaults to Cancel. Cancelling preserves the file;
   confirming replaces only the selected file.
+- Clipboard images: use an owned PNG/TIFF fixture, inspect the full preview,
+  create twice and verify PNG dimensions/alpha, numbered names and preserved
+  original bytes. Cancel writes nothing; an existing draft remains unchanged.
+- Office templates: import owned DOCX/XLSX files through the picker, then create
+  with both Finder quick actions and the panel. Compare bytes with the source and
+  managed asset; remove the source and repeat. Missing/damaged assets must not
+  create a file. Text already entered in a draft must survive attempted document
+  selection. No Office app is launched by creating a copy.
 
 ## Types and preferences
+
+- Save two same-suffix templates with different default filenames and contents.
+  Select each by name, change the format default, disable/remove that default,
+  restart and check fallback and migration. Imported document templates retain
+  their format/content while display name and default filename remain editable.
 
 - Confirm File Creation (Templates & Types / Creation), Extensions (file tools /
   resources / Open with App), and Preferences (General / Finder & Folders / About) remain distinct

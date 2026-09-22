@@ -16,19 +16,22 @@ public struct FileCreationRequest: Sendable {
     public var requestedFileName: String?
     public var collisionStrategy: NameCollisionStrategy
     public var contentMode: FileContentMode
+    public var fileData: Data?
 
     public init(
         destinationDirectory: URL,
         template: FileTemplate,
         requestedFileName: String? = nil,
         collisionStrategy: NameCollisionStrategy = .increment,
-        contentMode: FileContentMode = .template
+        contentMode: FileContentMode = .template,
+        fileData: Data? = nil
     ) {
         self.destinationDirectory = destinationDirectory
         self.template = template
         self.requestedFileName = requestedFileName
         self.collisionStrategy = collisionStrategy
         self.contentMode = contentMode
+        self.fileData = fileData
     }
 }
 
@@ -59,9 +62,11 @@ public enum FileMintError: Error, LocalizedError {
 
 public final class FileCreationService {
     private let fileManager: FileManager
+    private let documentTemplates: DocumentTemplateStore
 
-    public init(fileManager: FileManager = .default) {
+    public init(fileManager: FileManager = .default, documentTemplates: DocumentTemplateStore = DocumentTemplateStore()) {
         self.fileManager = fileManager
+        self.documentTemplates = documentTemplates
     }
 
     public func createFile(_ request: FileCreationRequest, now: Date = Date()) throws -> FileCreationResult {
@@ -72,6 +77,16 @@ public final class FileCreationService {
         }
 
         let requestedName = request.requestedFileName ?? request.template.suggestedFileName
+        if let reference = request.template.document {
+            guard request.template.fileExtension == reference.kind.rawValue else { throw DocumentTemplateError.unavailable }
+            let data = try documentTemplates.data(for: reference)
+            let name = FilenamePolicy.fileName(requestedName, applyingFileExtension: reference.kind.rawValue)!
+            return try BinaryFileWriter.create(data, in: request.destinationDirectory, name: name, collision: request.collisionStrategy)
+        }
+        if let data = request.fileData {
+            return try BinaryFileWriter.create(data, in: request.destinationDirectory,
+                name: requestedName, collision: request.collisionStrategy)
+        }
         let naiveURL = request.destinationDirectory.appendingPathComponent(
             FilenamePolicy.sanitizedFileName(requestedName),
             isDirectory: false

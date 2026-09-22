@@ -41,18 +41,28 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
         preferences.resourceTools.isEnabled = false
         preferences.launchAtLogin = false
         preferences.automaticallyChecksForUpdates = false
+        preferences.revealAfterCreation = false
+        if CommandLine.arguments.contains("--templates") {
+            for (id, name, filename, content) in [("meeting", "会议纪要", "会议.md", "# 会议\n"),
+                                                  ("weekly", "工作周报", "周报.md", "# 周报\n")] {
+                preferences.templates.append(try TemplateCatalog.customTemplate(name: name, fileExtension: "md", content: content,
+                    id: id, in: preferences.templates, suggestedFileName: filename))
+            }
+        }
         let file = root.appendingPathComponent("fixture-preferences.json")
         let store = FileMintPreferencesStore(fileURL: file)
-        try store.save(preferences)
-        model = PreferencesModel(store: store)
+        if CommandLine.arguments.contains("--resume-fixture") { preferences = store.load() }
+        else { try store.save(preferences) }
+        model = PreferencesModel(store: store, documentTemplates: DocumentTemplateStore(directory: root.appendingPathComponent("template-assets")))
         model.selectedPane = CommandLine.arguments.contains("--open-with") ? .openWith : .resourceTools
+        if CommandLine.arguments.contains("--templates") { model.selectedPane = .fileTypes }
         resourceController = ResourceToolsController(preferencesFile: file)
         coordinator = FileOperationCoordinator(store: PendingFileMoveStore(file: root.appendingPathComponent("pending.json")),
             tickets: FileOperationTicketStore(directory: root.appendingPathComponent("tickets")), preferencesFile: file,
             aliasAccessStore: DesktopAliasAccessStore(file: root.appendingPathComponent("aliases.json")),
             desktopDirectory: root, resourceController: resourceController)
         if let icon = NSImage(contentsOf: root.appendingPathComponent("AppIcon.png")) { NSApp.applicationIconImage = icon }
-        NSApp.appearance = NSAppearance(named: .aqua)
+        NSApp.appearance = NSAppearance(named: CommandLine.arguments.contains("--dark") ? .darkAqua : .aqua)
         let updater = UpdateModel()
         window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 650),
             styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView], backing: .buffered, defer: false)
@@ -71,6 +81,7 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
         let actions = NSMenu()
         for (title, selector) in [("中文 / English", #selector(language)), ("Light / Dark", #selector(appearance)),
                                   ("Minimum size", #selector(minimum)), ("Creation panel", #selector(creation)),
+                                  ("Clipboard image fixture", #selector(clipboardImage)),
                                   ("Quit fixture", #selector(quit))] {
             let item = NSMenuItem(title: title, action: selector, keyEquivalent: "")
             item.target = self
@@ -81,6 +92,14 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
         NSApp.mainMenu = bar
         NSApp.activate(ignoringOtherApps: true)
         print("READY isolated FileMint UI: \(root.path)")
+        if CommandLine.arguments.contains("--clipboard-image") {
+            clipboardImage()
+        }
+        if CommandLine.arguments.contains("--document-preview"),
+           let template = model.preferences.templates.first(where: { $0.document != nil }) {
+            CustomFileSavePanelController.shared.present(in: root, preferences: model.preferences,
+                templateID: template.id, documentTemplates: model.documentTemplates)
+        }
     }
 
     @objc private func language() {
@@ -93,10 +112,21 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
     @objc private func minimum() { window.setContentSize(NSSize(width: 840, height: 600)) }
     @objc private func creation() {
         if let folder = model.preferences.monitoredFolderURLs.first {
-            CustomFileSavePanelController.shared.present(in: folder, preferences: model.preferences)
+            CustomFileSavePanelController.shared.present(in: folder, preferences: model.preferences, documentTemplates: model.documentTemplates)
         }
     }
     @objc private func quit() { NSApp.terminate(nil) }
+    @objc private func clipboardImage() {
+        guard let root = model.preferences.monitoredFolderURLs.first,
+              let data = try? Data(contentsOf: root.appendingPathComponent("Mountain.png")) else { return }
+        let clipboard = NSPasteboard(name: NSPasteboard.Name("FileMint-QA-\(UUID())"))
+        clipboard.setData(data, forType: .png)
+        Task {
+            await model.presentClipboardImage(in: root, pasteboard: clipboard)
+            clipboard.releaseGlobally()
+            print("READY clipboard image draft using isolated pasteboard")
+        }
+    }
 
     private func fixture(_ url: URL, variant: Int) throws {
         guard let context = CGContext(data: nil, width: 1600, height: 1000, bitsPerComponent: 8, bytesPerRow: 6400,

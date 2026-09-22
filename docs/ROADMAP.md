@@ -6,14 +6,16 @@
 
 - 选择一个具体场景，先写清用户输入、目标目录、输出及失败时的行为，再更新 SPEC。
 - 命名、模板、配置迁移和创建规则放在 `CorePackage`；设置放在 `App/FileMint`；原生创建面板放在 `SharedUI`；Finder 接口保留在 `FinderSyncExtension`。
-- 开始改动前运行 `make verify`。实现后补足相关 Harness / 单元覆盖，再运行验证；涉及 Finder 的部分按 [Finder 验收清单](FINDER_QA.md) 实机检查。
+- 完成实现后按 [HARNESS](../specs/HARNESS.md) 选择验证；分析和规划不默认跑测试。涉及 Finder 的部分按 [Finder 验收清单](FINDER_QA.md) 实机检查。
 - 只有实现和验证都完成，才勾选中英文 README 对应项目；在发布说明里写明可用版本。未发布成果不写成当前下载版本已经支持。
 - 官网通过 VitePress include 复用中英文 README 的 `roadmap` 区域。修改清单时保持区域标记、主题分组和 `- [ ]` / `- [x]` 格式；官网状态无需单独维护。
 - 更新清单或官网后运行 `SITE_BASE=/FileMint/ pnpm run site:build`，检查中文和英文首页。README 变更已纳入 Pages 工作流触发范围，推送到主分支后才会触发线上部署。
 
 ## 模板与命名
 
-同格式多模板、模板拷贝与预览、文件名规则及创建后打开已拆为[分阶段实施任务](tasks/2026-09-17-template-creation-workflow.md)，按 T1 → T2 → T3 → T4 推进；当前状态为 planned，尚未实现。
+本轮按[图片粘贴为文件](tasks/2026-09-22-clipboard-image.md) → [同格式多模板](tasks/2026-09-22-multiple-templates.md) → [真实文档模板](tasks/2026-09-22-document-templates.md)推进，状态与验证分别记录在三个任务中。当前下载版本的支持范围不随本地实现自动变化。
+
+模板拷贝与预览、文件名规则及创建后打开保留在[后续分阶段任务](tasks/2026-09-17-template-creation-workflow.md)中；其中 T1 的实施状态统一由本轮同格式多模板任务维护。
 
 ### 同格式多模板
 

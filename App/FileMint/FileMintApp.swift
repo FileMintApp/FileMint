@@ -28,6 +28,7 @@ private struct FileMintCommands: Commands {
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
             Button(model.text(.customNewFile)) { model.newFile() }.keyboardShortcut("n")
+            Button(model.text(.pasteImageFile)) { model.pasteImageFile() }
             Button(model.text(.importSettings)) { model.importSettings() }
         }
         CommandGroup(replacing: .appSettings) {
@@ -53,6 +54,7 @@ private struct FileMintMenu: View {
 
     var body: some View {
         Button(model.text(.customNewFile)) { model.newFile() }.keyboardShortcut("n")
+        Button(model.text(.pasteImageFile)) { model.pasteImageFile() }
         Button(model.text(.openFileMint)) {
             SettingsWindowController.shared.show()
         }.keyboardShortcut(",")

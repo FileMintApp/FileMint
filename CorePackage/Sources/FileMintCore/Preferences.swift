@@ -11,6 +11,7 @@ public enum FileMintAppGroup {
 
 public struct FileMintPreferences: Codable, Equatable, Sendable {
     public var templates: [FileTemplate]
+    public var defaultTemplateIDs: [String: String] = [:]
     public var monitoredFolderURLs: [URL]
     public var monitoredFolderBookmarks: [String: Data]
     public var collisionStrategy: NameCollisionStrategy
@@ -56,6 +57,7 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case templates
+        case defaultTemplateIDs
         case monitoredFolderURLs
         case monitoredFolderBookmarks
         case collisionStrategy
@@ -79,6 +81,8 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
 
         templates = (try? container.decode([FileTemplate].self, forKey: .templates)) ?? defaults.templates
         templates = TemplateCatalog.migratingTemplates(templates)
+        defaultTemplateIDs = TemplateCatalog.validDefaults(
+            (try? container.decode([String: String].self, forKey: .defaultTemplateIDs)) ?? [:], in: templates)
         monitoredFolderBookmarks = (try? container.decode([String: Data].self, forKey: .monitoredFolderBookmarks)) ?? [:]
         monitoredFolderURLs = (try? container.decode([URL].self, forKey: .monitoredFolderURLs)) ?? defaults.monitoredFolderURLs
         let savedFolderScopeVersion = (try? container.decode(Int.self, forKey: .folderScopeVersion)) ?? 1

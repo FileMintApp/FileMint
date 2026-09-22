@@ -4,6 +4,8 @@ public struct FileTemplate: Codable, Equatable, Identifiable, Sendable {
     public var id: String
     public var displayName: String
     public var suggestedFileName: String
+    public var fileExtension: String
+    public var document: DocumentTemplateReference? = nil
     public var group: String
     public var content: String
     public var isEnabled: Bool
@@ -16,15 +18,44 @@ public struct FileTemplate: Codable, Equatable, Identifiable, Sendable {
         group: String,
         content: String,
         isEnabled: Bool = true,
-        rank: Int
+        rank: Int,
+        fileExtension: String? = nil
     ) {
         self.id = id
         self.displayName = displayName
         self.suggestedFileName = suggestedFileName
+        self.fileExtension = fileExtension ?? Self.legacyExtension(suggestedFileName)
         self.group = group
         self.content = content
         self.isEnabled = isEnabled
         self.rank = rank
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, displayName, suggestedFileName, fileExtension, document, group, content, isEnabled, rank
+    }
+
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        id = try values.decode(String.self, forKey: .id)
+        displayName = try values.decode(String.self, forKey: .displayName)
+        suggestedFileName = try values.decode(String.self, forKey: .suggestedFileName)
+        fileExtension = try values.decodeIfPresent(String.self, forKey: .fileExtension) ?? Self.legacyExtension(suggestedFileName)
+        if values.contains(.document), try !values.decodeNil(forKey: .document) {
+            // A malformed asset reference must remain unavailable, never become
+            // a text template or discard otherwise valid neighboring templates.
+            document = (try? values.decode(DocumentTemplateReference.self, forKey: .document))
+                ?? DocumentTemplateReference(id: UUID(uuidString: "00000000-0000-0000-0000-000000000000")!,
+                    kind: OfficeDocumentKind(rawValue: fileExtension) ?? .docx, byteCount: 0, sha256: "")
+        }
+        group = try values.decode(String.self, forKey: .group)
+        content = try values.decode(String.self, forKey: .content)
+        isEnabled = try values.decode(Bool.self, forKey: .isEnabled)
+        rank = try values.decode(Int.self, forKey: .rank)
+    }
+
+    private static func legacyExtension(_ name: String) -> String {
+        name.hasPrefix("Untitled.") ? String(name.dropFirst("Untitled.".count)) : (name as NSString).pathExtension
     }
 }
 
@@ -145,7 +176,7 @@ public enum TemplateCatalog {
 
     private static func menuRankSort(_ left: FileTemplate, _ right: FileTemplate) -> Bool {
         if left.rank == right.rank {
-            return left.displayName.localizedStandardCompare(right.displayName) == .orderedAscending
+            return left.id < right.id
         }
         return left.rank < right.rank
     }
@@ -167,20 +198,35 @@ public enum TemplateValidationError: Error, LocalizedError {
 
 extension TemplateCatalog {
     public static func customTemplate(name: String, fileExtension: String, content: String,
-                                      id: String? = nil, in templates: [FileTemplate]) throws -> FileTemplate {
+                                      id: String? = nil, in templates: [FileTemplate],
+                                      suggestedFileName: String? = nil) throws -> FileTemplate {
         let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty else { throw TemplateValidationError.emptyName }
         guard let suffix = FilenamePolicy.normalizedFileExtension(fileExtension)?.lowercased() else {
             throw TemplateValidationError.invalidExtension
         }
-        guard !templates.contains(where: {
-            $0.id != id && $0.suggestedFileName.lowercased() == "untitled.\(suffix)"
-        }) else { throw TemplateValidationError.duplicateExtension }
         let existing = templates.first { $0.id == id }
+        let requestedName = (suggestedFileName ?? existing?.suggestedFileName)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let filename = FilenamePolicy.fileName(requestedName?.isEmpty == false ? requestedName! : "Untitled.\(suffix)",
+            applyingFileExtension: suffix, replacingFileExtension: existing?.fileExtension)!
         return FileTemplate(id: id ?? "custom-\(UUID().uuidString)", displayName: name,
-                            suggestedFileName: "Untitled.\(suffix)", group: "Custom", content: content,
+                            suggestedFileName: filename, group: existing?.group ?? "Custom", content: content,
                             isEnabled: existing?.isEnabled ?? true,
-                            rank: existing?.rank ?? ((templates.map(\.rank).max() ?? 0) + 10))
+                            rank: existing?.rank ?? ((templates.map(\.rank).max() ?? 0) + 10), fileExtension: suffix)
+    }
+
+    public static func defaultTemplate(forExtension suffix: String, in templates: [FileTemplate],
+                                       defaults: [String: String] = [:]) -> FileTemplate? {
+        let matches = enabledTemplates(from: templates).filter { $0.fileExtension.caseInsensitiveCompare(suffix) == .orderedSame }
+        return matches.first { $0.id == defaults[suffix.lowercased()] } ?? matches.first
+    }
+
+    public static func validDefaults(_ defaults: [String: String], in templates: [FileTemplate]) -> [String: String] {
+        defaults.filter { suffix, id in
+            suffix == suffix.lowercased() && templates.contains {
+                $0.id == id && $0.isEnabled && $0.fileExtension.caseInsensitiveCompare(suffix) == .orderedSame
+            }
+        }
     }
 
     public static func migratingTemplates(_ templates: [FileTemplate]) -> [FileTemplate] {

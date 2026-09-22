@@ -66,6 +66,8 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - The internal FileMintImages library uses only system Image I/O, Core Graphics
   and Vision. Link it into the main app, not the Finder extension; it is not an
   external package dependency. No WebP encoder or other image library is bundled.
+- Office template validation uses system zlib, Foundation XML and CryptoKit;
+  no Office, ZIP or third-party package dependency is added.
 
 - Implementation entry points: `project.yml`, `Config/`, `CorePackage/Package.swift`, build/release scripts and `.github/workflows/ci.yml` / `release.yml`.
 - Verification: [Distribution procedure](../../docs/DISTRIBUTION.md) and the release row of the [verification matrix](../HARNESS.md#choose-checks-by-change).

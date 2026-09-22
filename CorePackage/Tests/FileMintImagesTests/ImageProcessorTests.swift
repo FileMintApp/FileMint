@@ -8,6 +8,33 @@ import FileMintCore
 
 @Suite("Native offline image processing", .serialized)
 struct ImageProcessorTests {
+    @Test("clipboard PNG preserves alpha and orientation with a bounded preview")
+    func clipboardPNG() throws {
+        try workspace { root in
+            let file = root.appendingPathComponent("clipboard.png")
+            try fixture(file, width: 1600, height: 800, color: CGColor(gray: 0, alpha: 0), orientation: 6)
+            let captured = try Data(contentsOf: file)
+            let result = try ClipboardImageEncoder.encode(captured)
+            #expect(result.width == 800 && result.height == 1600)
+            let source = try #require(CGImageSourceCreateWithData(result.png as CFData, nil))
+            let image = try #require(CGImageSourceCreateImageAtIndex(source, 0, nil))
+            #expect(image.width == 800 && image.height == 1600)
+            #expect(try pixels(image)[3] == 0)
+            let tiff = NSMutableData()
+            let destination = try #require(CGImageDestinationCreateWithData(tiff, "public.tiff" as CFString, 1, nil))
+            CGImageDestinationAddImage(destination, image, nil)
+            #expect(CGImageDestinationFinalize(destination))
+            let fromTIFF = try ClipboardImageEncoder.encode(tiff as Data)
+            #expect(fromTIFF.width == 800 && fromTIFF.height == 1600)
+            let preview = try #require(CGImageSourceCreateWithData(result.preview as CFData, nil))
+            let thumbnail = try #require(CGImageSourceCreateImageAtIndex(preview, 0, nil))
+            #expect(thumbnail.width == 256 && thumbnail.height == 512)
+            #expect(try Data(contentsOf: file) == captured)
+            #expect(throws: ClipboardImageError.self) { try ClipboardImageEncoder.encode(Data("not an image".utf8)) }
+            try fixture(file, frames: 2)
+            #expect(throws: ClipboardImageError.self) { try ClipboardImageEncoder.encode(Data(contentsOf: file)) }
+        }
+    }
     @Test("preview is bounded and reports real oriented source dimensions")
     func boundedPreview() throws {
         try workspace { root in

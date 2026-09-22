@@ -277,7 +277,7 @@ struct FocusedCreationTests {
         #expect(FilenamePolicy.inferredFileExtension(from: "demo") == nil)
     }
 
-    @Test("saved custom suffixes are searchable, seeded and protected from duplicates")
+    @Test("saved custom templates are searchable and allow independent same-suffix entries")
     func customTypes() throws {
         var types = TemplateCatalog.builtInTemplates
         let type = try TemplateCatalog.customTemplate(name: "Config", fileExtension: " .TOML ", content: "key = 1\n", in: types)
@@ -285,9 +285,8 @@ struct FocusedCreationTests {
         #expect(type.suggestedFileName == "Untitled.toml")
         #expect(FileFormatCatalog.matching("config", in: FileFormatCatalog.options(from: types)).first?.fileExtension == "toml")
         #expect(CustomFileDraft(extensionInput: "toml", templates: types).content == "key = 1\n")
-        #expect(throws: TemplateValidationError.self) {
-            try TemplateCatalog.customTemplate(name: "duplicate", fileExtension: "TOML", content: "", in: types)
-        }
+        let other = try TemplateCatalog.customTemplate(name: "Other config", fileExtension: "TOML", content: "other", in: types)
+        #expect(other.id != type.id && other.fileExtension == type.fileExtension)
         #expect(throws: TemplateValidationError.self) {
             try TemplateCatalog.customTemplate(name: "", fileExtension: "conf", content: "", in: types)
         }

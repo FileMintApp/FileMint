@@ -55,10 +55,12 @@ final class FinderSync: FIFinderSync {
         })
         custom.tag = tags[0]
         submenu.addItem(custom)
+        let pasteImage = NSMenuItem(title: text(.pasteImageFile), action: #selector(pasteImageFile(_:)), keyEquivalent: "")
+        pasteImage.tag = actions.register([FileMenuAction(directory: directory, templateID: nil)])[0]
+        submenu.addItem(pasteImage)
         if !templates.isEmpty { submenu.addItem(.separator()) }
         for (index, template) in templates.enumerated() {
-            let suffix = template.suggestedFileName.replacingOccurrences(of: "Untitled", with: "")
-            let title = "\(FileMintStrings.templateDisplayName(for: template, language: language)) (\(suffix))"
+            let title = "\(FileMintStrings.templateDisplayName(for: template, language: language)) (.\(template.fileExtension))"
             let item = NSMenuItem(title: title, action: #selector(createFile(_:)), keyEquivalent: "")
             item.tag = tags[index + 1]
             submenu.addItem(item)
@@ -233,6 +235,11 @@ final class FinderSync: FIFinderSync {
         let directory = action.directory
         Task { @MainActor in FinderActions.shared.create(templateID: id, in: directory) }
     }
+
+    @objc private func pasteImageFile(_ item: NSMenuItem) {
+        guard let action = actions.take(item.tag) else { return }
+        Task { @MainActor in FinderActions.shared.pasteImage(in: action.directory) }
+    }
 }
 
 @MainActor
@@ -260,6 +267,17 @@ private final class FinderActions {
                     try QuickCreationTicketStore().enqueue(directory: directory, templateID: templateID)
                 }.value
                 open(url, activate: false)
+            } catch { showError(error) }
+        }
+    }
+
+    func pasteImage(in directory: URL) {
+        Task {
+            do {
+                let url = try await Task.detached(priority: .userInitiated) {
+                    try QuickCreationTicketStore().enqueueClipboardImage(directory: directory)
+                }.value
+                open(url, activate: true)
             } catch { showError(error) }
         }
     }

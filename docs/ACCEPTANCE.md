@@ -808,3 +808,27 @@ release/install instructions require a fresh browser download for that upgrade.
   Diagnostic processes had exited; their temporary builds, unpublished 0.4.99
   installers and test caches were cleaned up. The public 0.5.1 installer remains
   in Downloads. Existing app settings were not reset.
+
+
+## 2026-09-22 — Creation workflow implementation, isolated fixtures
+
+Worktree based on `4788db0`, macOS 27.2 / Apple silicon, Xcode. These observations
+cover the development worktree, not the installed Finder extension or a release.
+
+- [Clipboard image task](tasks/2026-09-22-clipboard-image.md): native synthetic
+  PNG preview, 1600×1000 output, identical numbered copy and cancel-without-write;
+  real PNG/TIFF encoding and alpha/orientation regression coverage.
+- [Multiple-template task](tasks/2026-09-22-multiple-templates.md): same-suffix
+  choices, persisted format default, independent name/content, exact native
+  meeting-note output. Tab/Shift-Tab cycles through text/image controls, skips
+  disabled controls and preserves content; Cmd-Return still creates.
+- [Office-template task](tasks/2026-09-22-document-templates.md): native DOCX/XLSX
+  import, managed reference readback, exact-byte native creation and numbered
+  output. Independent document readers verified text, formatting and a formula.
+  Chinese/light and English/dark surfaces inspected; template settings fit 840×600.
+- Final `make verify`: 137 Core + 13 image tests, 5 public cases, 10 CLI and 3
+  appcast tests passed (`/tmp/filemint-final-verify.log`). Unsigned universal
+  build passed (`/tmp/filemint-final-build.log`).
+- Installed Finder callbacks, sandbox permission cancellation, macOS 13/Intel
+  runtime and Microsoft Office runtime remain not run. No installation, Developer ID signing,
+  commit or publication was performed.

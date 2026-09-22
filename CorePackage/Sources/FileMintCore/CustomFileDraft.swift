@@ -1,7 +1,7 @@
 import Foundation
 
 public struct FileFormatOption: Equatable, Identifiable, Sendable {
-    public var id: String { fileExtension }
+    public var id: String { templateID }
     public let fileExtension: String
     public let templateID: String
     public let aliases: [String]
@@ -53,14 +53,8 @@ public enum FileFormatCatalog {
     ]
 
     public static func options(from templates: [FileTemplate]) -> [FileFormatOption] {
-        var seen = Set<String>()
         return TemplateCatalog.enabledTemplates(from: templates).compactMap { template in
-            let prefix = "Untitled."
-            let suffix = template.suggestedFileName.hasPrefix(prefix)
-                ? String(template.suggestedFileName.dropFirst(prefix.count))
-                : (template.suggestedFileName as NSString).pathExtension
-            guard let normalized = FilenamePolicy.normalizedFileExtension(suffix),
-                  seen.insert(normalized.lowercased()).inserted else { return nil }
+            guard let normalized = FilenamePolicy.normalizedFileExtension(template.fileExtension) else { return nil }
             let aliases = builtInOptions.first { $0.templateID == template.id }?.aliases ?? []
             return FileFormatOption(fileExtension: normalized, templateID: template.id,
                                     aliases: aliases + [template.displayName])
@@ -159,6 +153,8 @@ public struct CustomFileDraft: Equatable, Sendable {
     public private(set) var extensionInput: String
     public private(set) var content: String
     public private(set) var hasEditedContent: Bool
+    public private(set) var selectedTemplateID: String?
+    private var defaultTemplateIDs: [String: String]
 
     public var normalizedFileExtension: String? {
         FilenamePolicy.normalizedFileExtension(extensionInput)
@@ -168,32 +164,54 @@ public struct CustomFileDraft: Equatable, Sendable {
         extensionInput: String = "txt",
         content: String? = nil,
         hasEditedContent: Bool = false,
-        templates: [FileTemplate] = TemplateCatalog.builtInTemplates
+        templates: [FileTemplate] = TemplateCatalog.builtInTemplates,
+        defaultTemplateIDs: [String: String] = [:]
     ) {
         self.extensionInput = extensionInput
         self.hasEditedContent = hasEditedContent
+        self.defaultTemplateIDs = defaultTemplateIDs
+        let selected = TemplateCatalog.defaultTemplate(forExtension: extensionInput, in: templates, defaults: defaultTemplateIDs)
+        self.selectedTemplateID = selected?.id
 
         if let content {
             self.content = content
         } else {
-            self.content = Self.presetContent(for: extensionInput, templates: templates)
+            self.content = selected?.content ?? ""
         }
     }
 
+    @discardableResult
     public mutating func updateExtensionInput(
         _ value: String,
         templates: [FileTemplate] = TemplateCatalog.builtInTemplates
-    ) {
+    ) -> Bool {
+        let normalized = FilenamePolicy.normalizedFileExtension(value) ?? ""
+        let current = templates.first { $0.id == selectedTemplateID && $0.isEnabled && $0.fileExtension.caseInsensitiveCompare(normalized) == .orderedSame }
+        let candidate = current ?? TemplateCatalog.defaultTemplate(forExtension: normalized, in: templates, defaults: defaultTemplateIDs)
+        guard candidate?.document == nil || !hasEditedContent || content.isEmpty else { return false }
         extensionInput = value
+        if let selected = templates.first(where: { $0.id == selectedTemplateID && $0.isEnabled }),
+           selected.fileExtension.caseInsensitiveCompare(normalizedFileExtension ?? "") == .orderedSame {
+            // Preserve explicitly selected templates when a complete name is typed.
+        } else {
+            selectedTemplateID = TemplateCatalog.defaultTemplate(forExtension: normalizedFileExtension ?? "", in: templates,
+                defaults: defaultTemplateIDs)?.id
+        }
         updatePresetIfNeeded(templates: templates)
+        return true
     }
 
+    @discardableResult
     public mutating func selectFormat(
         _ option: FileFormatOption,
         templates: [FileTemplate] = TemplateCatalog.builtInTemplates
-    ) {
+    ) -> Bool {
+        guard let selected = templates.first(where: { $0.id == option.templateID && $0.isEnabled && $0.fileExtension == option.fileExtension }),
+              selected.document == nil || !hasEditedContent || content.isEmpty else { return false }
         extensionInput = option.fileExtension
+        selectedTemplateID = option.templateID
         updatePresetIfNeeded(templates: templates)
+        return true
     }
 
     public mutating func updateContent(_ value: String) {
@@ -205,17 +223,6 @@ public struct CustomFileDraft: Equatable, Sendable {
         guard !hasEditedContent else {
             return
         }
-        content = Self.presetContent(for: extensionInput, templates: templates)
-    }
-
-    private static func presetContent(
-        for fileExtension: String,
-        templates: [FileTemplate]
-    ) -> String {
-        guard let option = FileFormatCatalog.option(forFileExtension: fileExtension, in: FileFormatCatalog.options(from: templates)),
-              let template = TemplateCatalog.template(withID: option.templateID, in: templates) else {
-            return ""
-        }
-        return template.content
+        content = templates.first { $0.id == selectedTemplateID }?.content ?? ""
     }
 }

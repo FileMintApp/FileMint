@@ -30,6 +30,11 @@ public enum AppLanguage: String, Codable, CaseIterable, Identifiable, Sendable {
 }
 
 public enum FileMintTextKey: String, CaseIterable, Sendable {
+    case pasteImageFile, clipboardImageHint, clipboardImageUnsupported, clipboardImageTooLarge, clipboardImageFailed
+    case imagePreview, imageFileName
+    case defaultFileName, defaultTemplate, makeDefaultTemplate, selectedTemplate, noTemplate
+    case importDocumentTemplate, documentTemplate, documentTemplateHint, documentUnsupported
+    case documentTooLarge, documentInvalid, documentUnavailable, documentImportFailed, documentDraftEdited
     case followSystem
     case launchAtLogin
     case showMenuBar
@@ -248,6 +253,27 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
 
 public enum FileMintStrings {
     private static let focused: [FileMintTextKey: (String, String)] = [
+        .pasteImageFile: ("Paste Image as File…", "图片粘贴为文件…"),
+        .clipboardImageHint: ("Save the copied image as PNG. Existing files get a new numbered name.", "将拷贝的图片保存为 PNG。同名时自动编号。"),
+        .clipboardImageUnsupported: ("Copy one screenshot or image, then try again. File references and animated images are not supported.", "请先拷贝一张截图或图片，再试一次。暂不支持文件引用或动画图片。"),
+        .clipboardImageTooLarge: ("Use an image up to 16 million pixels, 16,384 pixels per side and 64 MB.", "请选择不超过 1600 万像素、单边 16384 像素、64 MB 的图片。"),
+        .clipboardImageFailed: ("The image could not be converted to PNG. Copy it again and retry.", "图片无法转换为 PNG，请重新拷贝后再试。"),
+        .imagePreview: ("Image Preview", "图片预览"),
+        .imageFileName: ("Image.png", "图片.png"),
+        .defaultFileName: ("Default File Name", "默认文件名"),
+        .defaultTemplate: ("Default", "默认"),
+        .makeDefaultTemplate: ("Make Default", "设为默认"),
+        .selectedTemplate: ("Template: %@", "模板：%@"),
+        .noTemplate: ("Plain text", "纯文本"),
+        .importDocumentTemplate: ("Import Document Template…", "导入文档模板…"),
+        .documentTemplate: ("Document Template", "文档模板"),
+        .documentTemplateHint: ("Creates an independent copy with the template’s original content and formatting.", "创建独立副本，保留模板原有的内容和排版。"),
+        .documentUnsupported: ("Choose a downloaded DOCX or XLSX document. Links, folders and macro-enabled formats are not supported.", "请选择已下载的 DOCX 或 XLSX 文档。暂不支持链接、文件夹或启用宏的格式。"),
+        .documentTooLarge: ("Use a document up to 64 MB, with at most 4,096 package items and 128 MB expanded content.", "请选择不超过 64 MB、内部项目不超过 4096 个、展开后不超过 128 MB 的文档。"),
+        .documentInvalid: ("The document is damaged or its format is unsupported. Save a fresh DOCX or XLSX in your office app, then import it again.", "文档已损坏或格式不受支持。请用办公软件重新保存为 DOCX 或 XLSX，再导入。"),
+        .documentUnavailable: ("The saved template is missing or damaged. Remove this template and import the original document again.", "保存的模板已丢失或损坏。请移除此模板，并重新导入原文档。"),
+        .documentImportFailed: ("The document template could not be saved. Check file access and available disk space, then retry.", "文档模板无法保存。请检查文件访问权限和剩余磁盘空间后重试。"),
+        .documentDraftEdited: ("Save or cancel the text you entered before switching to a document template.", "请先保存或取消已输入的文本，再切换到文档模板。"),
         .settingsLabel: ("Settings", "设置"),
         .basicSettings: ("Basics", "基础设置"),
         .extensions: ("Extensions", "扩展功能"),
@@ -400,7 +426,7 @@ public enum FileMintStrings {
         .updateRateLimited: ("GitHub is limiting requests. Try again later or visit the release page.", "GitHub 暂时限制了请求频率，请稍后重试或前往发布页面。"),
         .updateDownloadFailed: ("Could not save the installer. Check available disk space and retry the download.", "无法保存安装包，请检查磁盘剩余空间后重新下载。"),
         .updateOpenFailed: ("The verified installer could not be opened. Try reopening it or visit the release page.", "已校验安装包，但未能打开。请重新打开或前往发布页面。"),
-        .addType: ("Add Type…", "添加类型…"),
+        .addType: ("New Text Template…", "新建文本模板…"),
         .editType: ("Edit…", "编辑…"),
         .remove: ("Remove", "移除"),
         .displayName: ("Name", "名称"),
@@ -419,7 +445,7 @@ public enum FileMintStrings {
         .productTagline: ("A new file. Right here.", "新文件，就在此刻。"),
         .productDetail: ("Right-click in Finder to create a file. Use New File… when you want to name it or paste content first.", "在 Finder 右键创建文件。需要命名或粘贴内容时，选择“新建文件…”。"),
         .finderSetup: ("macOS requires you to enable the Finder extension. Click Open Extension Settings, enable FileMint, then return here to refresh its status. You can also use New File… in the sidebar.", "Finder 扩展需要你在 macOS 中开启。点击“打开扩展设置”，开启 FileMint 后返回这里，状态会自动刷新。也可使用侧栏中的“新建文件…”。"),
-        .fileTypeHint: ("Checked types appear in Finder and the format picker. Drag to reorder, or use Move Up / Down.", "勾选后显示在 Finder 和后缀选择器中。拖动排序，或使用上移、下移。"),
+        .fileTypeHint: ("Save different templates for the same format. Enabled templates appear in Finder and the creation panel.", "为同一种格式保存不同模板。勾选后显示在 Finder 和创建面板中。"),
         .customTypeHint: ("Creates UTF-8 text with this suffix. A suffix does not convert text into PDF, images or Office files.", "以此后缀创建 UTF-8 文本；不能通过更改后缀生成 PDF、图片或 Office 文件。"),
         .restoreConfirm: ("Restore built-in types? Custom types will be kept.", "恢复内置类型？自定义类型会保留。"),
         .duplicateType: ("This extension already exists. Edit or enable the existing type.", "这个后缀已存在，请编辑或启用已有类型。"),
@@ -563,7 +589,7 @@ public enum FileMintStrings {
         case .customNewFile:
             return "New File…"
         case .customPanelSubtitle:
-            return "Name it. Choose a type. Add content if you need it."
+            return "Choose a template or format, then name your file."
         case .fileName:
             return "File Name"
         case .saveLocation:
@@ -657,7 +683,7 @@ public enum FileMintStrings {
         case .customNewFile:
             return "新建文件…"
         case .customPanelSubtitle:
-            return "起个名字，选个后缀，需要时再加点内容。"
+            return "选择模板或格式，起个名字，然后创建。"
         case .fileName:
             return "文件名"
         case .saveLocation:
