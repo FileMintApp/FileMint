@@ -68,6 +68,10 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   the installer or strip quarantine to bypass a macOS execution block.
 - Existing clients without Sparkle need one manual installation of the first
   Sparkle-enabled release; later upgrades use the automatic replacement path.
+  Released 0.5.7/0.5.8 also require manual installation of 0.5.9: their installed
+  signatures contain incorrect installer Mach permissions, which cannot be
+  repaired through an update feed. Keep this migration limit explicit in release
+  and installation guidance.
   Keep the legacy download client and smoke harness for testing old-client
   compatibility, not as a second production installation path.
 - Verify this from a real sandboxed app with signed old/new bundles. Core tests

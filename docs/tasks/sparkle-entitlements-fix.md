@@ -1,7 +1,7 @@
 # Task: Repair Sparkle sandbox installer entitlements
 
-Status: in-progress
-Next action: Build from clean v0.5.9/build 17, notarize with the existing FileMint profile, then publish and verify the uploaded assets.
+Status: complete
+Next action: Affected users manually install 0.5.9 once; the fix is published and verified.
 
 ## Objective and scope
 
@@ -64,3 +64,8 @@ Next action: Build from clean v0.5.9/build 17, notarize with the existing FileMi
   `/tmp/filemint-release-0.5.9.md`.
 - Test app registrations and loopback servers were closed/removed. The user's
   installed FileMint 0.5.7 was inspected, not modified or replaced.
+- The final release was rebuilt from clean tag `v0.5.9` at
+  `6f9c3061f671e86026cb721a539393aa9a802194`, notarized, stapled and published.
+  Uploaded bytes and release description were read back; source CI, published-DMG
+  verification and website deployment passed. The pre-release candidate above
+  was not uploaded. See [final release evidence](../RELEASE_VERIFICATION_0.5.9.md).

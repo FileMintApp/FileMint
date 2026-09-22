@@ -3,6 +3,14 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## FileMint 0.5.9 release — 2026-09-22
+
+Source tag `v0.5.9`, commit `6f9c3061f671e86026cb721a539393aa9a802194`, build 17.
+[Release evidence](RELEASE_VERIFICATION_0.5.9.md) records accepted notarization,
+stapling, corrected embedded sandbox permissions, copied-DMG startup, published
+byte comparisons and successful release/source/website checks. Confirmed affected
+0.5.7/0.5.8 users need one manual installation of 0.5.9.
+
 ## Sparkle signed entitlement repair — 2026-09-22
 
 Follow-up to the user's installed 0.5.7 → 0.5.8 failure. See
@@ -22,8 +30,9 @@ Follow-up to the user's installed 0.5.7 → 0.5.8 failure. See
 - The native fixture uses a minimal user driver and a local feed; the production
   driver's callback regression passed separately. Installed Finder refresh,
   production-feed/custom-driver end-to-end, Intel and macOS 13 runtime remain unrun.
-- 0.5.9 is a local, unnotarized candidate at this point. Old affected installations
-  need one manual replacement; a feed cannot repair their current signed permissions.
+- The tested local candidate was followed by the signed/notarized 0.5.9 release
+  above. Old affected installations need one manual replacement; a feed cannot
+  repair their current signed permissions.
 
 ## FileMint 0.5.8 release — 2026-09-22
 

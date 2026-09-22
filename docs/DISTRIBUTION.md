@@ -150,6 +150,12 @@ need a browser download because their private-cache download path could create
 a sandbox execution block. `UpdateClient`, `make verify-updates` and the old
 sandbox harness remain solely for compatibility checks, not production installs.
 
+Released 0.5.7 and 0.5.8 contain unexpanded installer Mach service entitlements
+from manual signing. Users must manually install 0.5.9 once; a new feed cannot
+change the running old app's signed permissions. The 0.5.9 signing flow resolves
+variables before codesign and reads the embedded entitlements during bundle/release
+verification. See [0.5.9 release evidence](RELEASE_VERIFICATION_0.5.9.md).
+
 No updater forcibly quits Finder or enables the extension. Test a real signed
 sandbox installation and Finder refresh before release; a build and Core tests
 are not installation proof. A standard-user or managed installation may require
