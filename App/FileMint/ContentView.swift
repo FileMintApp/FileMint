@@ -42,6 +42,7 @@ struct ContentView: View {
             }.background(FileMintStyle.background)
         }
         .frame(minWidth: 840, minHeight: 600).tint(FileMintStyle.accent)
+        .buttonStyle(MintButtonStyle())
         .ignoresSafeArea(.container, edges: .top)
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             model.refreshStatus()
@@ -101,7 +102,7 @@ struct ContentView: View {
                     Button { model.selectedPane = .about } label: {
                         Label("\(model.text(.availableVersion)) \(update.version.description)", systemImage: "arrow.down.circle")
                             .font(.caption).fixedSize(horizontal: false, vertical: true)
-                    }.buttonStyle(.plain).foregroundStyle(Color.accentColor)
+                    }.buttonStyle(.plain).foregroundStyle(FileMintStyle.accent)
                 }
                 Button { model.newFile() } label: {
                     HStack {
@@ -144,8 +145,6 @@ private struct SettingsSidebarButton: View {
     let isFocused: Bool
     let action: () -> Void
     @State private var isHovered = false
-    @Environment(\.colorScheme) private var colorScheme
-
     private var mint: Color { FileMintStyle.accent }
 
     var body: some View {

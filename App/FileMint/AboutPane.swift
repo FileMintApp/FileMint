@@ -31,6 +31,7 @@ struct AboutPane: View {
                         Text(model.text(.specialThanks)).foregroundStyle(.secondary)
                         VStack(alignment: .leading, spacing: 4) {
                             Link(FileMintAbout.specialThanksName, destination: FileMintAbout.specialThanksURL)
+                                .buttonStyle(.link)
                             Text(model.text(.signingThanks)).font(.caption).foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
@@ -40,9 +41,8 @@ struct AboutPane: View {
                     Link(model.text(.projectPage), destination: FileMintAbout.projectURL)
                     Link(model.text(.license), destination: FileMintAbout.licenseURL)
                     Link(model.text(.privacyPolicy), destination: FileMintAbout.privacyURL)
-                }.font(.callout)
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(model.text(.updates)).font(.headline)
+                }.font(.callout).buttonStyle(.link)
+                SettingsSection(title: model.text(.updates)) {
                     Text(model.text(updater.statusKey))
                         .font(.callout).foregroundStyle(updater.isFailure ? Color.red : Color.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -71,7 +71,7 @@ struct AboutPane: View {
                             Button(model.text(.checkForUpdates)) { updater.checkForUpdates() }
                             if updater.canDownload {
                                 Button(model.text(.downloadUpdate)) { updater.downloadUpdate() }
-                                    .buttonStyle(.borderedProminent)
+                                    .buttonStyle(MintButtonStyle(primary: true))
                             }
                         }
                         if updater.state == .waitingToRestart {
@@ -79,12 +79,13 @@ struct AboutPane: View {
                         }
                         Spacer()
                         Link(model.text(.releaseNotes), destination: updater.update?.releaseURL ?? FileMintAbout.releasesURL)
+                            .buttonStyle(.link)
                     }
                     if updater.update != nil {
                         Text(model.text(.updateInstallHint)).font(.caption).foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
-                }.mintSurface()
+                }
             }.padding(1)
         }
     }

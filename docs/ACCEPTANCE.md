@@ -3,6 +3,28 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Settings appearance and consistency — 2026-09-22
+
+Checked on macOS 27.2 (26B5086k), Apple silicon, `e2202df` plus the uncommitted
+settings worktree. See [the task](tasks/settings-appearance.md) for commands and logs.
+
+- `make verify` passed: 139 Swift tests, 5 public cases, 10 CLI regressions,
+  3 appcast tests and context checks. The final unsigned universal app/extension built.
+- Inspected all eight settings pages in English/light and Chinese/dark at 840×600.
+  General's Theme and Interface language controls align with switches; Creation
+  and tool pickers share the trailing treatment. Native menu choices, sidebar
+  Up/Down, long-page scrolling, disabled icons/controls and About links were checked.
+- The isolated production model passed immediate appearance application, clearing
+  the app override, store reload and failed-save rollback. Relaunching the fixture
+  retained Dark and English. Follow System read back as `system` and restored the
+  current system appearance. New/missing/invalid theme values have Core coverage.
+- Existing creation and resource-processing windows changed light/dark without
+  reopening. Template editor and creation Escape cancellation worked. Open with
+  App's populated layout was checked by adding Preview to fixture preferences.
+- Native tests used disposable preferences and generated images; no installed app,
+  user files or owner preferences were changed. Actual OS appearance toggling,
+  Intel and macOS 13 runtime remain unrun; no publication was performed.
+
 ## Open with App — 2026-09-22
 
 Checked on macOS 27.2, Apple silicon, `55d9a1f` plus the uncommitted Open with App

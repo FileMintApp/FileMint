@@ -4,6 +4,36 @@ import Testing
 
 @Suite("Startup preferences and localization")
 struct StartupPreferencesTests {
+    @Test("appearance defaults and malformed values follow the system without resetting preferences")
+    func appearanceMigration() throws {
+        #expect(FileMintPreferences.default.appearance == .system)
+        for value in [nil, "\"sepia\"", "null", "false", "42", "[]", "{}"] as [String?] {
+            let field = value.map { ",\"appearance\":\($0)" } ?? ""
+            let data = Data("{\"language\":\"en\",\"showMenuBar\":false,\"launchAtLogin\":false,\"revealAfterCreation\":false\(field)}".utf8)
+            let preferences = try FileMintPreferencesStore.decode(data)
+            #expect(preferences.appearance == .system)
+            #expect(preferences.language == .english)
+            #expect(!preferences.showMenuBar && !preferences.launchAtLogin && !preferences.revealAfterCreation)
+        }
+    }
+
+    @Test("all appearance choices survive store reload and settings import", arguments: AppAppearance.allCases)
+    func appearancePersistence(appearance: AppAppearance) throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let file = root.appendingPathComponent("preferences.json")
+        let store = FileMintPreferencesStore(fileURL: file)
+        var preferences = FileMintPreferences.default
+        preferences.appearance = appearance
+        preferences.language = .chinese
+        preferences.showMenuBar = false
+        preferences.monitoredFolderBookmarks = ["/fixture": Data([1, 2, 3])]
+        preferences.templates[0].isEnabled = false
+        try store.save(preferences)
+        #expect(FileMintPreferencesStore(fileURL: file).load() == preferences)
+        #expect(try FileMintPreferencesStore.decode(Data(contentsOf: file)) == preferences)
+    }
+
     @Test("home menus follow different usernames and relocated home directories")
     func dynamicHomeScope() {
         for path in ["/Users/alex", "/Volumes/People/改名用户"] {
@@ -105,6 +135,7 @@ struct StartupPreferencesTests {
         for key in [FileMintTextKey.settingsLabel, .creationSettings, .templatesAndTypes,
                     .finderAndFolders, .generalSettingsHint, .creationSettingsHint,
                     .finderFoldersHint, .interfaceLanguage, .startupAndAccess,
+                    .appearance, .theme, .lightAppearance, .darkAppearance,
                     .viewUpdateSettings, .quickCreation, .quickCollisionHint,
                     .afterCreationHint, .manageTemplates, .finderExtension, .menuFolders, .enabledTypes] {
             let english = FileMintStrings.text(key, language: .english)

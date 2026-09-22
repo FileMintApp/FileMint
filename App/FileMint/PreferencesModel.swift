@@ -12,7 +12,11 @@ final class PreferencesModel: ObservableObject {
         var id: String { rawValue }
     }
     @Published var selectedPane: Pane = .general
-    @Published var preferences: FileMintPreferences
+    @Published var preferences: FileMintPreferences {
+        didSet {
+            if preferences.appearance != oldValue.appearance { applyAppearance() }
+        }
+    }
     @Published var lastError: String?
     @Published var extensionEnabled = false
     @Published var loginItemState: LoginItemState = .notRegistered
@@ -30,6 +34,7 @@ final class PreferencesModel: ObservableObject {
         self.store = store
         self.documentTemplates = documentTemplates
         preferences = store.load()
+        applyAppearance()
         folderAccess.restore(preferences)
         refreshStatus()
         preferenceObserver = DistributedNotificationCenter.default().addObserver(
@@ -108,6 +113,23 @@ final class PreferencesModel: ObservableObject {
         guard preferences.showMenuBar != visible else { return }
         preferences.showMenuBar = visible
         save()
+    }
+
+    func setAppearance(_ appearance: AppAppearance) {
+        guard preferences.appearance != appearance else { return }
+        let previous = preferences.appearance
+        preferences.appearance = appearance
+        if !save() { preferences.appearance = previous }
+    }
+
+    private func applyAppearance() {
+        // AppKit propagates this to both SwiftUI hosts and native panels/sheets.
+        // nil restores live system following instead of freezing today's scheme.
+        NSApplication.shared.appearance = switch preferences.appearance {
+        case .system: nil
+        case .light: NSAppearance(named: .aqua)
+        case .dark: NSAppearance(named: .darkAqua)
+        }
     }
 
     func setAutomaticallyChecksForUpdates(_ enabled: Bool) {

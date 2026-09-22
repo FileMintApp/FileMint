@@ -21,8 +21,8 @@ struct FoldersPane: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(model.text(.menuFolders)).font(.headline).accessibilityAddTraits(.isHeader)
-                    Text(model.text(.folderHint)).font(.callout).foregroundStyle(.secondary)
+                    SettingsSectionTitle(title: model.text(.menuFolders))
+                    Text(model.text(.folderHint)).font(.system(size: 11)).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                     List(model.preferences.monitoredFolderURLs, id: \.self, selection: $selection) { url in
                         HStack(spacing: 12) {
@@ -58,7 +58,7 @@ struct FoldersPane: View {
                     }.font(.caption).fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading).padding(.top, 12)
                 } label: {
-                    Text(model.text(.fullDiskAccess)).font(.headline)
+                    Text(model.text(.fullDiskAccess)).font(.system(size: 13, weight: .medium))
                 }
             }.padding(1)
         }

@@ -50,6 +50,13 @@ Record actual results in ACCEPTANCE.md.
 - Restore built-ins; verify custom types remain after explicit confirmation.
 - Choose a working folder once, relaunch, and verify access is remembered.
 - Switch Follow System/English/Chinese; verify settings, Finder menus and panel labels agree.
+- In General, Theme and Interface language pickers share the switches' trailing
+  edge in both languages. Check the same alignment in Creation and tool settings.
+- Switch Theme between Follow System, Light and Dark. Verify the sidebar, native
+  controls, title bar, open creation/resource panels and sheets update immediately.
+  Relaunch and import settings to check persistence. Return to Follow System and
+  change the system appearance; FileMint follows without rewriting the saved choice.
+  Finder and the system appearance remain independently controlled by macOS.
 - Toggle Show in menu bar off/on, relaunch, and verify the choice survives.
 - Install in Applications; verify default login registration and the actual
   ServiceManagement status. Disable/re-enable through both app and macOS

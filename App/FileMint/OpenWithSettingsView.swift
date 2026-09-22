@@ -43,7 +43,7 @@ struct OpenWithSettingsView: View {
                     }.frame(maxWidth: .infinity).padding(.vertical, 32).mintSurface()
                 } else {
                     HStack {
-                        Text(text(.openWithConfiguredApps)).font(.system(size: 13, weight: .medium))
+                        SettingsSectionTitle(title: text(.openWithConfiguredApps))
                         Text("\(preferences.applications.count)").font(.system(size: 11)).foregroundStyle(.secondary)
                         Spacer()
                         addButton
@@ -105,8 +105,7 @@ private struct OpenWithApplicationRow: View {
             Picker(text(.toolMenuPosition), selection: $placement) {
                 Text(text(.openWithSubmenu)).tag(OpenWithMenuPlacement.submenu)
                 Text(text(.toolMainMenu)).tag(OpenWithMenuPlacement.main)
-            }.labelsHidden().pickerStyle(.menu).controlSize(.small).tint(.primary)
-                .frame(width: language.resolved() == .chinese ? 112 : 124)
+            }.settingsMenu(width: language.resolved() == .chinese ? 119 : 138)
                 .accessibilityLabel("\(application.name) — \(text(.toolMenuPosition))")
                 .accessibilityIdentifier("openWith.\(application.id).placement")
             Button(action: remove) {

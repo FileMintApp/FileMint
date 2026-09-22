@@ -36,6 +36,7 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case importDocumentTemplate, documentTemplate, documentTemplateHint, documentUnsupported
     case documentTooLarge, documentInvalid, documentUnavailable, documentImportFailed, documentDraftEdited
     case followSystem
+    case appearance, theme, lightAppearance, darkAppearance
     case launchAtLogin
     case showMenuBar
     case automaticallyCheckForUpdates
@@ -253,6 +254,10 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
 
 public enum FileMintStrings {
     private static let focused: [FileMintTextKey: (String, String)] = [
+        .appearance: ("Appearance", "外观"),
+        .theme: ("Theme", "主题"),
+        .lightAppearance: ("Light", "浅色"),
+        .darkAppearance: ("Dark", "深色"),
         .pasteImageFile: ("Paste Image as File…", "图片粘贴为文件…"),
         .clipboardImageHint: ("Save the copied image as PNG. Existing files get a new numbered name.", "将拷贝的图片保存为 PNG。同名时自动编号。"),
         .clipboardImageUnsupported: ("Copy one screenshot or image, then try again. File references and animated images are not supported.", "请先拷贝一张截图或图片，再试一次。暂不支持文件引用或动画图片。"),

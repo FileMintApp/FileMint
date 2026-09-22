@@ -26,21 +26,61 @@ enum FileMintStyle {
 struct MintButtonStyle: ButtonStyle {
     var primary = false
     @Environment(\.isEnabled) private var enabled
+    @Environment(\.isFocused) private var focused
+    @State private var hovered = false
     func makeBody(configuration: Configuration) -> some View {
         configuration.label.font(.system(size: 12, weight: primary ? .medium : .regular))
             .padding(.horizontal, 13).padding(.vertical, 8)
-            .foregroundStyle(primary ? FileMintStyle.onStrong : Color.primary)
-            .background(primary ? FileMintStyle.strong : FileMintStyle.surface, in: RoundedRectangle(cornerRadius: 7))
-            .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(primary ? Color.clear : FileMintStyle.line, lineWidth: 0.7))
+            .foregroundStyle(configuration.role == .destructive ? Color.red : primary ? FileMintStyle.onStrong : Color.primary)
+            .background(primary ? FileMintStyle.strong : hovered && enabled ? FileMintStyle.soft : FileMintStyle.surface,
+                        in: RoundedRectangle(cornerRadius: 7))
+            .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(
+                focused && enabled ? FileMintStyle.accent : primary ? Color.clear : FileMintStyle.line,
+                lineWidth: focused && enabled ? 1.5 : 0.7))
+            .contentShape(RoundedRectangle(cornerRadius: 7))
             .opacity(enabled ? (configuration.isPressed ? 0.75 : 1) : 0.4)
+            .onHover { hovered = $0 }
     }
 }
 
 extension View {
+    func settingsMenu(width: CGFloat = 180) -> some View {
+        self.labelsHidden().pickerStyle(.menu).controlSize(.small).tint(.primary)
+            .fixedSize().frame(width: width, alignment: .trailing)
+    }
+
     func mintSurface(padding: CGFloat = 17) -> some View {
         self.padding(padding).frame(maxWidth: .infinity, alignment: .leading)
             .background(FileMintStyle.surface, in: RoundedRectangle(cornerRadius: FileMintStyle.radius))
             .overlay(RoundedRectangle(cornerRadius: FileMintStyle.radius).strokeBorder(FileMintStyle.line, lineWidth: 0.7))
+    }
+}
+
+struct SettingsSectionTitle: View {
+    let title: String
+    var body: some View {
+        Text(title).font(.system(size: 11, weight: .medium)).foregroundStyle(.secondary)
+            .accessibilityAddTraits(.isHeader)
+    }
+}
+
+/// A functional preference group shared by settings pages, not a persistence layer.
+struct SettingsSection<Content: View>: View {
+    let title: String
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SettingsSectionTitle(title: title)
+            VStack(alignment: .leading, spacing: 14) { content }.mintSurface()
+        }
+    }
+}
+
+struct SmallSettingsSwitchStyle: ToggleStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        Toggle(isOn: configuration.$isOn) { configuration.label }
+            .toggleStyle(.switch).controlSize(.small)
     }
 }
 

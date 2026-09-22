@@ -35,7 +35,9 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
         for i in 0..<2 { try fixture(root.appendingPathComponent(i == 0 ? "Mountain.png" : "Lake.png"), variant: i) }
         var preferences = FileMintPreferences.default
         preferences.monitoredFolderURLs = [root]
-        preferences.language = .chinese
+        preferences.language = CommandLine.arguments.contains("--english") ? .english : .chinese
+        if CommandLine.arguments.contains("--dark") { preferences.appearance = .dark }
+        if CommandLine.arguments.contains("--light") { preferences.appearance = .light }
         preferences.fileTools.isEnabled = true
         // Finder remains off; explicit main-app selection must still work.
         preferences.resourceTools.isEnabled = false
@@ -56,19 +58,20 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
         model = PreferencesModel(store: store, documentTemplates: DocumentTemplateStore(directory: root.appendingPathComponent("template-assets")))
         model.selectedPane = CommandLine.arguments.contains("--open-with") ? .openWith : .resourceTools
         if CommandLine.arguments.contains("--templates") { model.selectedPane = .fileTypes }
+        if CommandLine.arguments.contains("--general") { model.selectedPane = .general }
         resourceController = ResourceToolsController(preferencesFile: file)
         coordinator = FileOperationCoordinator(store: PendingFileMoveStore(file: root.appendingPathComponent("pending.json")),
             tickets: FileOperationTicketStore(directory: root.appendingPathComponent("tickets")), preferencesFile: file,
             aliasAccessStore: DesktopAliasAccessStore(file: root.appendingPathComponent("aliases.json")),
             desktopDirectory: root, resourceController: resourceController)
         if let icon = NSImage(contentsOf: root.appendingPathComponent("AppIcon.png")) { NSApp.applicationIconImage = icon }
-        NSApp.appearance = NSAppearance(named: CommandLine.arguments.contains("--dark") ? .darkAqua : .aqua)
         let updater = UpdateModel()
         window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 650),
             styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView], backing: .buffered, defer: false)
         window.title = "FileMint Design QA"
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
+        window.backgroundColor = FileMintStyle.backgroundNS
         window.contentMinSize = NSSize(width: 840, height: 600)
         window.isReleasedWhenClosed = false
         let coordinator = coordinator!
@@ -76,10 +79,12 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
             .environmentObject(model).environmentObject(updater))
         window.center()
         window.makeKeyAndOrderFront(nil)
+        if CommandLine.arguments.contains("--minimum") { minimum() }
         let bar = NSMenu()
         let app = NSMenuItem()
         let actions = NSMenu()
         for (title, selector) in [("中文 / English", #selector(language)), ("Light / Dark", #selector(appearance)),
+                                  ("Follow System", #selector(systemAppearance)),
                                   ("Minimum size", #selector(minimum)), ("Creation panel", #selector(creation)),
                                   ("Clipboard image fixture", #selector(clipboardImage)),
                                   ("Quit fixture", #selector(quit))] {
@@ -92,6 +97,7 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
         NSApp.mainMenu = bar
         NSApp.activate(ignoringOtherApps: true)
         print("READY isolated FileMint UI: \(root.path)")
+        if CommandLine.arguments.contains("--check-appearance") { try checkAppearance(store: store, root: root) }
         if CommandLine.arguments.contains("--clipboard-image") {
             clipboardImage()
         }
@@ -107,8 +113,9 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
         model.save()
     }
     @objc private func appearance() {
-        NSApp.appearance = NSAppearance(named: NSApp.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? .aqua : .darkAqua)
+        model.setAppearance(NSApp.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? .light : .dark)
     }
+    @objc private func systemAppearance() { model.setAppearance(.system) }
     @objc private func minimum() { window.setContentSize(NSSize(width: 840, height: 600)) }
     @objc private func creation() {
         if let folder = model.preferences.monitoredFolderURLs.first {
@@ -116,6 +123,38 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
         }
     }
     @objc private func quit() { NSApp.terminate(nil) }
+
+    private func checkAppearance(store: FileMintPreferencesStore, root: URL) throws {
+        let original = model.preferences
+        for choice in [AppAppearance.dark, .light, .system] {
+            model.setAppearance(choice)
+            guard store.load().appearance == choice else { throw ResourceError.failed }
+            if choice == .system {
+                guard NSApp.appearance == nil else { throw ResourceError.failed }
+            } else {
+                let expected: NSAppearance.Name = choice == .dark ? .darkAqua : .aqua
+                guard window.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == expected else { throw ResourceError.failed }
+            }
+        }
+        // Loading a stored choice must take effect before any new window is shown.
+        model.setAppearance(.dark)
+        NSApp.appearance = nil
+        let reloaded = PreferencesModel(store: store, documentTemplates: model.documentTemplates)
+        guard reloaded.preferences.appearance == .dark, NSApp.appearance?.name == .darkAqua else { throw ResourceError.failed }
+        // A failed save restores the visible choice as well as the model value.
+        let blocked = root.appendingPathComponent("not-a-directory")
+        try Data().write(to: blocked)
+        let failed = PreferencesModel(store: FileMintPreferencesStore(fileURL: blocked.appendingPathComponent("preferences.json")),
+                                      documentTemplates: model.documentTemplates)
+        failed.setAppearance(.dark)
+        guard failed.preferences.appearance == .system, failed.lastError != nil, NSApp.appearance == nil else { throw ResourceError.failed }
+        model.preferences = original
+        // The temporary model above changed the process override; restore via the
+        // production setter even when the original fixture was already dark.
+        model.setAppearance(original.appearance == .light ? .dark : .light)
+        model.setAppearance(original.appearance)
+        print("PASS appearance: immediate window update, system reset, persistence, reload and failed-save rollback")
+    }
     @objc private func clipboardImage() {
         guard let root = model.preferences.monitoredFolderURLs.first,
               let data = try? Data(contentsOf: root.appendingPathComponent("Mountain.png")) else { return }

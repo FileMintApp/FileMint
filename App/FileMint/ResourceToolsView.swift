@@ -51,11 +51,11 @@ struct ResourceToolsPane: View {
     }
 
     private var settings: some View {
-        VStack(alignment: .leading, spacing: 22) {
+        VStack(alignment: .leading, spacing: 26) {
             PreferenceRow(title: InterfaceText.menuEnabled.text(model.preferences.language),
                 detail: ResourceText.hint.text(model.preferences.language)) {
                 Toggle(InterfaceText.menuEnabled.text(model.preferences.language), isOn: $model.preferences.resourceTools.isEnabled)
-                    .labelsHidden().toggleStyle(.switch).controlSize(.small)
+                    .labelsHidden().toggleStyle(SmallSettingsSwitchStyle())
                     .onChange(of: model.preferences.resourceTools.isEnabled) { _ in model.save() }
             }.mintSurface()
             VStack(spacing: 15) {
@@ -69,12 +69,13 @@ struct ResourceToolsPane: View {
                                 if value { model.preferences.resourceTools.enabledTools.insert(tool) }
                                 else { model.preferences.resourceTools.enabledTools.remove(tool) }
                                 model.save()
-                            })).labelsHidden().toggleStyle(.switch).controlSize(.small)
+                            })).labelsHidden().toggleStyle(SmallSettingsSwitchStyle())
                             .accessibilityIdentifier("resourceTools.\(tool.rawValue)")
                     }
                 }
             }.mintSurface().disabled(!model.preferences.resourceTools.isEnabled)
-                .opacity(model.preferences.resourceTools.isEnabled ? 1 : 0.45)
+                .saturation(model.preferences.resourceTools.isEnabled ? 1 : 0)
+                .opacity(model.preferences.resourceTools.isEnabled ? 1 : 0.5)
         }.padding(1)
     }
 }

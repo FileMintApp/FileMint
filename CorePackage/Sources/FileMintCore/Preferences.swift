@@ -9,6 +9,20 @@ public enum FileMintAppGroup {
     public static let preferencesDidChangeNotification = "io.github.daigua.filemint.preferencesDidChange"
 }
 
+public enum AppAppearance: String, Codable, CaseIterable, Identifiable, Sendable {
+    case system, light, dark
+
+    public var id: String { rawValue }
+
+    public var title: FileMintTextKey {
+        switch self {
+        case .system: .followSystem
+        case .light: .lightAppearance
+        case .dark: .darkAppearance
+        }
+    }
+}
+
 public struct FileMintPreferences: Codable, Equatable, Sendable {
     public var templates: [FileTemplate]
     public var defaultTemplateIDs: [String: String] = [:]
@@ -18,6 +32,7 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
     public var revealAfterCreation: Bool
     public var favoritesFirst: Bool
     public var language: AppLanguage
+    public var appearance: AppAppearance
     public var launchAtLogin: Bool
     public var showMenuBar: Bool
     public var automaticallyChecksForUpdates: Bool
@@ -35,6 +50,7 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         revealAfterCreation: Bool,
         favoritesFirst: Bool,
         language: AppLanguage = .system,
+        appearance: AppAppearance = .system,
         launchAtLogin: Bool = true,
         showMenuBar: Bool = true,
         hasAttemptedLoginItemSetup: Bool = false,
@@ -48,6 +64,7 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         self.revealAfterCreation = revealAfterCreation
         self.favoritesFirst = favoritesFirst
         self.language = language
+        self.appearance = appearance
         self.launchAtLogin = launchAtLogin
         self.showMenuBar = showMenuBar
         self.automaticallyChecksForUpdates = automaticallyChecksForUpdates
@@ -64,6 +81,7 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         case revealAfterCreation
         case favoritesFirst
         case language
+        case appearance
         case launchAtLogin
         case showMenuBar
         case automaticallyChecksForUpdates
@@ -98,6 +116,7 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
             ?? defaults.revealAfterCreation
         favoritesFirst = (try? container.decode(Bool.self, forKey: .favoritesFirst)) ?? defaults.favoritesFirst
         language = (try? container.decode(AppLanguage.self, forKey: .language)) ?? defaults.language
+        appearance = (try? container.decode(AppAppearance.self, forKey: .appearance)) ?? .system
         launchAtLogin = (try? container.decode(Bool.self, forKey: .launchAtLogin)) ?? true
         showMenuBar = (try? container.decode(Bool.self, forKey: .showMenuBar)) ?? true
         automaticallyChecksForUpdates = (try? container.decode(Bool.self, forKey: .automaticallyChecksForUpdates)) ?? true

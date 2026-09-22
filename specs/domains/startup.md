@@ -1,6 +1,6 @@
 # Startup, settings and preferences
 
-Load for: App/window lifecycle, login items, menu bar visibility, language and persistent defaults.
+Load for: App/window lifecycle, login items, menu bar visibility, language, appearance and persistent defaults.
 
 Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; other documents link here.
 
@@ -25,6 +25,11 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   settings window is closed or the menu bar item is hidden.
 - New preferences follow the system's supported language; explicit saved English
   or Chinese choices remain authoritative. Users can also select Follow System.
+- General offers Follow System, Light and Dark appearance choices. Follow System
+  is the default for new, missing or invalid saved values. Explicit choices persist
+  across relaunch and settings import, apply immediately to all app-owned windows
+  and sheets, and do not change macOS or Finder's appearance. Follow System removes
+  the app override so subsequent system appearance changes remain live.
 
 - Settings has one resizable sidebar window. Switching pages preserves the
   in-session page selection without saving navigation into user preferences.

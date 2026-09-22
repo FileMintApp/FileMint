@@ -32,7 +32,12 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   functional sections; list actions stay next to their list. No decorative cards
   or disabled placeholders for future roadmap features. Follow system language
   by default; English and Chinese can be selected explicitly.
-- General owns language, startup/menu bar and automatic-check preferences.
+- General owns appearance, language, startup/menu bar and automatic-check preferences.
+  Its Appearance group contains Theme (Follow System, Light, Dark) and interface
+  language. Settings pickers use native small menu controls with adaptive primary
+  text and a shared trailing edge aligned with switches; fixed control columns
+  must not center a narrower visible control. Preference labels, supporting text,
+  section headings and secondary actions share the same sizing and spacing.
   Creation owns quick-creation collisions and reveal-after-creation. Templates &
   Types owns the existing enabled/order/custom-type management. Finder & Folders
   owns extension status, folder scope/access and optional Full Disk Access guidance.
