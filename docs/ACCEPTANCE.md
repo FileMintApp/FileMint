@@ -3,6 +3,29 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Open with App — 2026-09-22
+
+Checked on macOS 27.2, Apple silicon, `55d9a1f` plus the uncommitted Open with App
+worktree. See [the task](tasks/2026-09-22-open-with-app.md).
+
+- `make verify` passed: 127 Core tests, 12 image tests, 5 public cases, 10 CLI
+  regressions, 3 appcast tests and context checks. The unsigned universal app and
+  Finder extension built after the final stack/app-icon changes.
+- An isolated production settings window added VS Code through the real picker,
+  defaulted to submenu, retained main placement when re-added, and removed its last
+  entry. JSON readback confirmed bookmark/placement/removal persistence.
+- Chinese light/dark and English dark at 840×600 were inspected through native
+  screenshots. The final stack entry icon was inspected in Chinese/light. These
+  fixtures used their own preferences and did not launch VS Code or run login setup.
+- The ad-hoc-signed sandbox fixture ran the production operation coordinator and
+  NSWorkspace opening. A separate native app received the full Unicode file/folder
+  batch in order; wrong app identity and ordinary-directory app selection were
+  rejected. The ticket was single-use, the busy guard released, and source bytes,
+  folder and clipboard remained intact. Log: `/tmp/filemint-open-with-native.log`.
+- Installed Finder callbacks, visible Finder child icons, actual third-party
+  support, external-folder picker cancellation, keyboard-only navigation, Intel
+  and macOS 13 runtime remain unrun. No installation, enablement or publication.
+
 ## Native UI/UX v1 and image resources — 2026-09-18
 
 Checked on macOS 27.0 (26A428), Apple silicon, `6bf596d` plus the uncommitted

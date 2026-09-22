@@ -100,6 +100,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
                         case .airDrop: operationTitle = .airDrop
                         case .desktopAlias: operationTitle = .sendAliasToDesktop
                         case .resource: operationTitle = .resourceTools
+                        case .openWith: operationTitle = .openWithApps
                         }
                         try await handle(request)
                     }
@@ -111,6 +112,24 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
 
     private func handle(_ request: FileOperationRequest) async throws {
         switch request {
+        case .openWith(let reference, let selection):
+            guard let application = OpenWithPolicy.application(for: reference, selection: selection,
+                preferences: currentPreferences) else { throw OpenWithError.changedConfiguration }
+            let applicationURL = try OpenWithApplicationAccess.resolve(application)
+            if applicationURL.startAccessingSecurityScopedResource() { access.append(applicationURL) }
+            try OpenWithApplicationAccess.validate(application, at: applicationURL)
+            var bookmarks: [String: Data] = [:]
+            for parent in uniqueParents(selection) {
+                guard try authorize(parent, bookmarks: &bookmarks, readOnly: true) else { return }
+            }
+            guard OpenWithPolicy.application(for: reference, selection: selection,
+                preferences: currentPreferences) != nil else { throw OpenWithError.changedConfiguration }
+            try OpenWithApplicationAccess.validate(application, at: applicationURL)
+            guard selection.allSatisfy({ FileManager.default.isReadableFile(atPath: $0.path) }) else {
+                throw OpenWithError.missingSelection
+            }
+            try await OpenWithApplicationAccess.open(selection, with: applicationURL)
+
         case .resource(let tool, let selection):
             guard ResourceToolsPolicy.availableTools(selection: selection, isItemMenu: true,
                 preferences: currentPreferences).contains(tool) else { throw ResourceError.disabled }
@@ -323,6 +342,10 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
     }
 
     private func show(_ error: Error) {
+        if operationTitle == .openWithApps {
+            showMessage((error as? OpenWithError)?.messageKey ?? .openWithFailed)
+            return
+        }
         if let error = error as? ResourceError {
             let alert = NSAlert()
             alert.messageText = text(.resourceTools)

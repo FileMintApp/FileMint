@@ -58,6 +58,10 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case fileToolsHint
     case resourceTools
     case resourceToolsHint
+    case openWithApps, openWithAppsHint, openWithAppName, addApplication, openWithEmptyTitle
+    case openWithEmptyHint, openWithMenuHint, openWithSubmenu, openWithChooseHint, openWithRemove
+    case openWithInvalidApp, openWithUnavailableApp, openWithChanged, openWithMissingSelection, openWithFailed
+    case openWithUnavailable, openWithConfiguredApps
     case enableFileTools
     case fileToolsOffHint
     case fileToolsActions
@@ -251,6 +255,23 @@ public enum FileMintStrings {
         .fileToolsHint: ("Choose the tools you need in Finder’s context menu.", "选择需要的工具，让 Finder 右键菜单更顺手。"),
         .resourceTools: ("Resource Tools", "资源工具"),
         .resourceToolsHint: ("Convert, resize and process local images.", "转换格式、调整尺寸，处理本地图片。"),
+        .openWithApps: ("Open with App", "使用 App 打开"),
+        .openWithAppsHint: ("Your go-to apps, right in Finder’s context menu.", "把常用 App，放进 Finder 右键菜单。"),
+        .openWithAppName: ("Open with %@", "使用「%@」打开"),
+        .addApplication: ("Add App", "添加 App"),
+        .openWithConfiguredApps: ("Applications", "应用列表"),
+        .openWithEmptyTitle: ("Keep your favorite apps close", "添加常用 App"),
+        .openWithEmptyHint: ("Choose an app, then open selected files and folders with it from Finder.", "添加后，在 Finder 中选中文件或文件夹，右键即可使用它打开。"),
+        .openWithMenuHint: ("Submenu entries appear under Open with App. If none remain, the group is hidden.", "二级菜单收纳在「使用 App 打开」中；没有二级项目时，自动隐藏分组入口。"),
+        .openWithSubmenu: ("Submenu", "二级菜单"),
+        .openWithChooseHint: ("Choose apps to add to Finder’s context menu.", "选择要添加到 Finder 右键菜单的应用程序。"),
+        .openWithRemove: ("Remove %@", "移除 %@"),
+        .openWithInvalidApp: ("Choose a valid macOS application (.app).", "请选择有效的 macOS 应用程序（.app）。"),
+        .openWithUnavailableApp: ("This app is unavailable. Add it again in Open with App settings to update its location or access.", "此 App 已不可用。请在「使用 App 打开」中重新添加，更新位置或访问权限。"),
+        .openWithChanged: ("The app or folder settings changed. Select the items and open the Finder menu again.", "应用或文件夹设置已更改，请重新选中项目并打开 Finder 右键菜单。"),
+        .openWithMissingSelection: ("Some selected items are no longer available. Select the files or folders again.", "部分所选项目已不可用，请重新选择文件或文件夹。"),
+        .openWithFailed: ("The app could not open the selection. Check that it supports these files or folders and try again.", "无法使用此 App 打开所选项目。请确认它支持这些文件或文件夹后重试。"),
+        .openWithUnavailable: ("Unavailable · add again to repair", "App 不可用 · 请重新添加"),
         .enableFileTools: ("Enable File & Folder Tools", "启用文件（夹）工具"),
         .fileToolsOffHint: ("Turning this off hides the Finder menu and preserves your choices.", "关闭后隐藏右键菜单，并保留各项设置。"),
         .fileToolsActionsHint: ("Check to enable; choose where each tool appears.", "勾选启用；菜单位置可单独设置。"),

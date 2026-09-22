@@ -45,7 +45,7 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
         let store = FileMintPreferencesStore(fileURL: file)
         try store.save(preferences)
         model = PreferencesModel(store: store)
-        model.selectedPane = .resourceTools
+        model.selectedPane = CommandLine.arguments.contains("--open-with") ? .openWith : .resourceTools
         resourceController = ResourceToolsController(preferencesFile: file)
         coordinator = FileOperationCoordinator(store: PendingFileMoveStore(file: root.appendingPathComponent("pending.json")),
             tickets: FileOperationTicketStore(directory: root.appendingPathComponent("tickets")), preferencesFile: file,

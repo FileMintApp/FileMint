@@ -3,6 +3,8 @@ import FileMintCore
 
 /// One native symbol palette for settings and both Finder menu locations.
 enum FileToolAppearance {
+    static let openWithSymbol = "square.stack.3d.up"
+
     static func image(for tool: FileTool, size: CGFloat = 16) -> NSImage? {
         switch tool {
         case .copyNames: image("doc.on.doc", palette: [.systemBlue, .systemCyan], size: size)
@@ -36,6 +38,17 @@ enum FileToolAppearance {
 
     static var resourceToolsImage: NSImage? {
         image("photo.on.rectangle", palette: [.systemMint, .systemBlue])
+    }
+
+    static var openWithImage: NSImage? {
+        image(openWithSymbol, palette: [.systemMint, .systemTeal])
+    }
+
+    static func applicationImage(at url: URL, size: CGFloat = 16) -> NSImage? {
+        guard let image = NSWorkspace.shared.icon(forFile: url.path).copy() as? NSImage else { return nil }
+        image.size = NSSize(width: size, height: size)
+        image.isTemplate = false
+        return image
     }
 
     private static func image(_ symbol: String, palette: [NSColor], size: CGFloat = 16) -> NSImage? {

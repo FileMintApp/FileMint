@@ -6,7 +6,7 @@ import Foundation
 final class PreferencesModel: ObservableObject {
     static let shared = PreferencesModel()
     enum Pane: String, CaseIterable, Identifiable {
-        case fileTypes, creation, fileTools, resourceTools, general, folders, about
+        case fileTypes, creation, fileTools, resourceTools, openWith, general, folders, about
         var id: String { rawValue }
     }
     @Published var selectedPane: Pane = .general
@@ -16,6 +16,7 @@ final class PreferencesModel: ObservableObject {
     @Published var loginItemState: LoginItemState = .notRegistered
     @Published var loginItemError: String?
     @Published var isUpdatingLoginItem = false
+    @Published var isChoosingOpenWithApp = false
     private let loginItemService = LoginItemService()
     private let store: FileMintPreferencesStore
     private let folderAccess = FolderAccess()

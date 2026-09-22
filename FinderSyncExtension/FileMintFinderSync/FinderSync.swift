@@ -130,7 +130,36 @@ final class FinderSync: FIFinderSync {
             item.submenu = resourceMenu
             menu.addItem(item)
         }
+        let applications = OpenWithPolicy.availableApplications(selection: selection,
+            isItemMenu: menuKind == .contextualMenuForItems, preferences: preferences)
+        let appLayout = OpenWithMenuLayout(applications: applications)
+        let appMenu = NSMenu(title: text(.openWithApps))
+        let appTags = actions.register(applications.map {
+            FileMenuAction(directory: directory, openWithApplication: $0.reference, selection: selection)
+        })
+        for (index, application) in applications.enumerated() {
+            let item = NSMenuItem(title: application.menuTitle(language: language),
+                                 action: #selector(openWithApplication(_:)), keyEquivalent: "")
+            item.image = FileToolAppearance.applicationImage(at: application.url)
+            item.tag = appTags[index]
+            if application.placement == .main { menu.addItem(item) }
+            else { appMenu.addItem(item) }
+        }
+        if appLayout.showsSubmenu {
+            let item = NSMenuItem(title: text(.openWithApps), action: nil, keyEquivalent: "")
+            item.image = FileToolAppearance.openWithImage
+            item.submenu = appMenu
+            menu.addItem(item)
+        }
         return menu
+    }
+
+    @objc private func openWithApplication(_ item: NSMenuItem) {
+        guard let action = actions.take(item.tag), let application = action.openWithApplication else { return }
+        let selection = action.selection
+        Task { @MainActor in
+            FinderActions.shared.openWith(application, selection: selection)
+        }
     }
 
     @objc private func performResourceTool(_ item: NSMenuItem) {
@@ -210,6 +239,15 @@ final class FinderSync: FIFinderSync {
 private final class FinderActions {
     static let shared = FinderActions()
 
+    func openWith(_ application: OpenWithApplicationReference, selection: [URL]) {
+        guard OpenWithPolicy.application(for: application, selection: selection,
+            preferences: FileMintPreferencesStore().load()) != nil else {
+            showError(OpenWithError.changedConfiguration, title: .openWithApps)
+            return
+        }
+        perform(.openWith(application: application, selection: selection), errorTitle: .openWithApps)
+    }
+
     func openPanel(in directory: URL) {
         guard let url = CreationRoute.url(for: directory) else { return }
         open(url, activate: true)
@@ -250,14 +288,14 @@ private final class FinderActions {
         }
     }
 
-    func perform(_ request: FileOperationRequest, activate: Bool = false) {
+    func perform(_ request: FileOperationRequest, activate: Bool = false, errorTitle: FileMintTextKey = .fileToolsErrorTitle) {
         Task {
             do {
                 let url = try await Task.detached(priority: .userInitiated) {
                     try FileOperationTicketStore().enqueue(request)
                 }.value
                 open(url, activate: activate)
-            } catch { showError(error, title: .fileToolsErrorTitle) }
+            } catch { showError(error, title: errorTitle) }
         }
     }
 
@@ -278,7 +316,9 @@ private final class FinderActions {
         let alert = NSAlert()
         let language = FileMintPreferencesStore().load().language
         alert.messageText = FileMintStrings.text(title, language: language)
-        alert.informativeText = error.localizedDescription
+        if let error = error as? OpenWithError {
+            alert.informativeText = FileMintStrings.text(error.messageKey, language: language)
+        } else { alert.informativeText = error.localizedDescription }
         NSApp.activate(ignoringOtherApps: true)
         alert.runModal()
     }

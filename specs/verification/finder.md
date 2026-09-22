@@ -22,3 +22,11 @@ Use only the affected sections of [Finder QA](../../docs/FINDER_QA.md).
 A Core test does not prove a visible menu, native authorization, Dock state or
 a successful installation. Record the tested build, environment, scenario and
 observed result; mark unavailable checks as not run.
+
+For Open with App, `OpenWithTests` covers migration, malformed/duplicate entries,
+menu partitioning, captured app/selection identity, scope and ticket replay/expiry.
+`bash scripts/build_open_with_harness.sh` builds a disposable sandboxed app whose
+production coordinator sends a real file/folder batch to a native receiver app.
+It checks the received selection, source preservation, clipboard, busy guard and
+single-use ticket. This does not prove installed Finder callbacks or compatibility
+with every chosen application. See [Open with App QA](../../docs/FINDER_QA.md#open-with-app).

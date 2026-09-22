@@ -30,7 +30,7 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   in-session page selection without saving navigation into user preferences.
   About/update commands select About in that same window; page navigation does
   not change the explicit-launch and Finder-creation window ownership rules.
-- Optional tool modules have their own settings entry under Extensions. Their
+- File & Folder Tools and Resource Tools have their own settings entry under Extensions. Their
   master switches default off on new installs and migration, preserve child
   choices and menu placement when disabled, and never alter existing creation
   preferences. File-tool placements default to submenu, except Move Selected Items
@@ -42,6 +42,9 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   through the serialized file-operation coordinator.
 - The resource switch controls Finder exposure only. Explicit main-app file
   selection remains available without changing this preference or menu scope.
+- Open with App has an initially empty persistent application list. Explicitly
+  adding an app enables its entry; its independent placement defaults to submenu.
+  See [Open with App](open-with.md) for validation and opening behavior.
 
 - An explicitly requested updater relaunch must wait until creation work and
   modal editing are finished. Preserve saved startup preferences and bookmarks.

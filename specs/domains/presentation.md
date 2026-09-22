@@ -7,7 +7,7 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 ## Appearance
 
 - Approved UI/UX v1 uses three explicit sidebar groups: File Creation (Templates
-  & Types, Creation), Extensions (File & Folder Tools, Resource Tools), and
+  & Types, Creation), Extensions (File & Folder Tools, Resource Tools, Open with App), and
   Preferences (General, Finder & Folders, About). Arrow-key navigation follows
   that visual order. Future implemented tools join Extensions without placeholders.
 - Use restrained adaptive porcelain/graphite surfaces and a muted mint accent,
@@ -28,7 +28,7 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - Native controls and adaptive system colors. Settings switches use the native
   small control size, preserving readable labels and keyboard/accessibility support. Settings use a persistent leading
   sidebar and a resizable detail area, with General, Creation, Templates & Types,
-  Finder & Folders, File & Folder Tools and Resource Tools under Extensions, and About, grouped as above. Each page has a title, concise explanation and
+  Finder & Folders, File & Folder Tools, Resource Tools and Open with App under Extensions, and About, grouped as above. Each page has a title, concise explanation and
   functional sections; list actions stay next to their list. No decorative cards
   or disabled placeholders for future roadmap features. Follow system language
   by default; English and Chinese can be selected explicitly.
@@ -80,6 +80,10 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   The generated Xcode project is never edited directly.
 - Optional modules show enabled, applicable entries at their configured main-menu
   or submenu level; empty submenu roots are hidden. Chinese copy uses 拷贝 for Copy; the file-tools root is 文件（夹）工具.
+- Open with App uses the same grouped rows and trailing menu-position controls,
+  with real application icons and a nearby Add App action. Its empty state is
+  functional and concise; the entry and Finder group use `square.stack.3d.up` and child
+  entries use the selected app's native icon.
 
 ## Product presentation
 

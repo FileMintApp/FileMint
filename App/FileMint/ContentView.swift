@@ -129,6 +129,7 @@ struct ContentView: View {
         case .folders: FoldersPane()
         case .fileTools: FileToolsPane()
         case .resourceTools: ResourceToolsPane(launchTool: launchResourceTool)
+        case .openWith: OpenWithPane()
         case .about: AboutPane()
         }
     }
@@ -187,7 +188,7 @@ extension PreferencesModel.Pane {
     func groupTitle(_ language: AppLanguage) -> String {
         switch self {
         case .fileTypes, .creation: InterfaceText.fileCreation.text(language)
-        case .fileTools, .resourceTools: FileMintStrings.text(.extensions, language: language)
+        case .fileTools, .resourceTools, .openWith: FileMintStrings.text(.extensions, language: language)
         default: InterfaceText.preferences.text(language)
         }
     }
@@ -200,6 +201,7 @@ extension PreferencesModel.Pane {
         case .folders: InterfaceText.foldersSubtitle.text(language)
         case .fileTools: InterfaceText.filesSubtitle.text(language)
         case .resourceTools: InterfaceText.resourceSubtitle.text(language)
+        case .openWith: FileMintStrings.text(.openWithAppsHint, language: language)
         case .about: FileMintStrings.text(.productTagline, language: language)
         }
     }
@@ -211,6 +213,7 @@ extension PreferencesModel.Pane {
         case .folders: .finderAndFolders
         case .fileTools: .fileTools
         case .resourceTools: .resourceTools
+        case .openWith: .openWithApps
         case .about: .about
         }
     }
@@ -223,6 +226,7 @@ extension PreferencesModel.Pane {
         case .folders: .finderFoldersHint
         case .fileTools: .fileToolsHint
         case .resourceTools: .resourceToolsHint
+        case .openWith: .openWithAppsHint
         case .about: .productTagline
         }
     }
@@ -235,6 +239,7 @@ extension PreferencesModel.Pane {
         case .folders: "folder"
         case .fileTools: "wrench.and.screwdriver"
         case .resourceTools: "photo.on.rectangle"
+        case .openWith: FileToolAppearance.openWithSymbol
         case .about: "info.circle"
         }
     }

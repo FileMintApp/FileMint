@@ -19,7 +19,7 @@ Record actual results in ACCEPTANCE.md.
 ## Types and preferences
 
 - Confirm File Creation (Templates & Types / Creation), Extensions (file tools /
-  resources), and Preferences (General / Finder & Folders / About) remain distinct
+  resources / Open with App), and Preferences (General / Finder & Folders / About) remain distinct
   at 840×600. Sidebar arrow navigation follows this visual ordering.
 
 - Navigate General, Creation, Templates & Types, Finder & Folders and About
@@ -166,6 +166,29 @@ This fixture does not prove that Finder has loaded the new extension.
   `bash scripts/build_move_sandbox_harness.sh` and run the generated app explicitly.
   It uses synthetic external fixtures and its own preferences/container. This
   does not prove the installed Finder extension's visible menu behavior.
+
+## Open with App
+
+- In the Extensions settings page, add VS Code using the native picker. Check
+  default submenu placement, app icon, name and location. Cancel adding and verify
+  no changes. Add multiple apps; re-add one and verify no duplicate or placement reset.
+- Switch entries between main/submenu; relaunch and check persistence. Remove the
+  last entry and verify the empty state. Removal must not uninstall the application.
+- Check Chinese/English, light/dark and 840×600, including keyboard controls,
+  long app names, unavailable apps and scrolling with a long list. Add again after
+  moving an app to repair its saved location/access.
+- In installed Finder, select a file, folder and mixed batch in scope. Each entry
+  appears once at its configured level, using the app's native icon. The group uses
+  the shared stack symbol and disappears when all entries are main-level or absent.
+  Background/toolbar/sidebar and partly out-of-scope selections have no app entries.
+- Open using a configured app; observe the complete batch and settings-window
+  isolation. Open an older menu after changing selection/configuration: never open
+  the new selection or a removed/replaced app. Include Unicode and literal symbols.
+- Remove/move the target app or source file, cancel any exact-parent authorization,
+  and use an app that cannot open folders. Verify clear errors, no default-app or
+  clipboard changes, and no remaining busy guard after completion/cancellation.
+- Use `bash scripts/build_open_with_harness.sh` for the isolated sandbox transport
+  and NSWorkspace check; it does not replace installed Finder or third-party QA.
 
 ## Finder
 

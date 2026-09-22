@@ -20,6 +20,7 @@ not instructions to recursively read everything.
 | Presets/custom types, order, restoration, template content; `FileTemplate`, type editing in `ContentView` / `PreferencesModel` | [Templates](domains/templates.md) |
 | Finder menus, targets, folder scope/bookmarks, permission guidance, extension cleanup; `FinderSyncExtension/`, `SharedUI/FolderAccess`, `FolderScope`, `FileMenuAction` | [Finder and permissions](domains/finder-permissions.md) |
 | Optional file/folder tools, selection snapshots, moves and clipboard actions; `FileTools`, `FileMove*`, `PendingFileMove`, tools in `FinderSync` / settings | [File tools](domains/file-tools.md) |
+| Configured apps, opening selections and app menu placement; `OpenWith*` | [Open with App](domains/open-with.md) |
 | Image conversion, compression, resize, icons, stitch, OCR; `ResourceTools*`, `FileMintImages` | [Resource tools](domains/resource-tools.md) |
 | Launch, windows, login items, menu bar, language, persistent defaults; `FileMintApp`, `AppDelegate`, `SettingsWindowController`, `LoginItemService`, `LoginItemPolicy` | [Startup and preferences](domains/startup.md) |
 | About, checks, download, quarantine, update scheduling; `AboutPane`, `UpdateModel`, `UpdateClient`, `AppUpdate`, `AutomaticUpdatePolicy`, `InstallerQuarantinePolicy`, update smoke scripts | [Updates](domains/updates.md) |

@@ -6,6 +6,7 @@ public enum FileOperationRequest: Codable, Equatable, Sendable {
     case airDrop([URL])
     case desktopAlias([FileMoveItem])
     case resource(tool: ResourceTool, selection: [URL])
+    case openWith(application: OpenWithApplicationReference, selection: [URL])
     case perform(batchID: UUID, destination: URL)
 }
 
