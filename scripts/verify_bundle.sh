@@ -4,6 +4,7 @@ cd "$(dirname "$0")/.."
 APP="${1:-$PWD/build/DerivedData/Build/Products/Release/FileMint.app}"
 EXT="$APP/Contents/PlugIns/FileMintFinderSync.appex"
 codesign --verify --deep --strict "$APP"
+xcrun swift scripts/verify_signed_entitlements.swift "$APP"
 [[ -f "$APP/Contents/Resources/LICENSE" ]]
 for executable in "$APP/Contents/MacOS/FileMint" "$EXT/Contents/MacOS/FileMintFinderSync"; do
   ARCHITECTURES="$(lipo -archs "$executable")"

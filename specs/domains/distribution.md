@@ -50,6 +50,11 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - Pin Sparkle in project.yml; embed its framework and installer tools only in the
   main application. Sign nested XPC services, Autoupdate and Updater.app before
   the framework and host app, with the release identity and hardened runtime.
+- Manual signing must expand entitlement build variables using the actual target
+  bundle identifier before codesign. Signed app entitlements must contain the
+  exact `<bundle-id>-spks` and `<bundle-id>-spki` Mach service names and no unresolved
+  build variables. Verify the embedded entitlements in both app and extension;
+  valid signatures/notarization alone do not prove sandbox communication works.
 - Publish appcast.xml alongside the existing DMG and checksum. Generate the
   EdDSA signature only after notarization/stapling fixes the final DMG bytes.
   The feed binds the numeric build, marketing version, exact GitHub asset URL,

@@ -1,4 +1,30 @@
+# FileMint 0.5.9
+
+## 修复
+
+- 修复正式包签名时未展开 Sparkle 安装器权限的问题，避免应用内更新在安装阶段被 macOS 沙盒拒绝。
+- 发布流程新增签名内权限校验，阻止错误权限的安装包通过构建和发布验证。
+- 增加真实沙盒应用的下载、替换与自动重启验证。
+
+## 升级说明
+
+已确认 0.5.7 和 0.5.8 受此问题影响。请退出旧版，手动将本版拖入“应用程序”替换，推出安装磁盘后重新打开。旧版自身的签名权限无法通过远端更新修正，因此需要手动安装这一次。
+
+## Fixes
+
+- Resolve Sparkle installer entitlement variables during release signing so the macOS sandbox permits in-app installation.
+- Validate the entitlements embedded in signed bundles and reject incorrectly configured release artifacts.
+- Add a real sandboxed update check covering download, replacement and automatic relaunch.
+
+## Upgrading
+
+Versions 0.5.7 and 0.5.8 are confirmed affected. Quit the old app, manually replace it in Applications, eject the installer and reopen FileMint. A remote update cannot repair the running old app's signed permissions, so this upgrade requires one manual installation.
+
 # FileMint 0.5.8
+
+> 后续确认：0.5.7/0.5.8 的更新安装权限有误，需要手动安装 0.5.9 一次。下文保留本版原始功能记录。
+>
+> Follow-up: 0.5.7/0.5.8 have incorrect updater entitlements. Manually install 0.5.9 once. The original feature notes are retained below.
 
 ## 新功能
 

@@ -3,6 +3,28 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Sparkle signed entitlement repair — 2026-09-22
+
+Follow-up to the user's installed 0.5.7 → 0.5.8 failure. See
+[diagnosis and evidence](tasks/sparkle-entitlements-fix.md).
+
+- Installed 0.5.7 and published 0.5.8 both contained literal build variables in
+  the signed installer Mach permissions. Unified logs confirmed sandbox denial;
+  this was not caught by earlier signature/notarization/startup checks.
+- Manual signing now resolves bundle IDs first. A Security-framework check reads
+  the embedded entitlements, rejects unresolved variables/wrong service names,
+  and preserves Finder sandbox/network boundaries. The old installed app fails
+  the new gate; the complete signed 0.5.9 local candidate passes after mounting.
+- Two isolated Developer ID-signed sandbox hosts completed download, extraction,
+  replacement and relaunch with Sparkle. Old PID 60859 exited and new PID 60910
+  launched build 2 at the same fixture path. Signature and entitlement checks
+  passed after replacement. No production app/preferences were used by this test.
+- The native fixture uses a minimal user driver and a local feed; the production
+  driver's callback regression passed separately. Installed Finder refresh,
+  production-feed/custom-driver end-to-end, Intel and macOS 13 runtime remain unrun.
+- 0.5.9 is a local, unnotarized candidate at this point. Old affected installations
+  need one manual replacement; a feed cannot repair their current signed permissions.
+
 ## FileMint 0.5.8 release — 2026-09-22
 
 Source tag `v0.5.8`, commit `eb487e3250dc1a7d631332cfe4500ae769b96269`, build 16.

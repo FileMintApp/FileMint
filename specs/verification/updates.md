@@ -20,6 +20,22 @@ and installation handoff evidence in `docs/ACCEPTANCE.md`.
 
 ## Sparkle installation checks
 
+Manual signing resolves entitlement variables before codesign. Both signing and
+bundle verification read the actual embedded DER/XML entitlements through Security
+and reject unresolved variables or incorrect installer Mach service names.
+`make verify-signing-entitlements` covers resolution, unchanged Finder permissions
+and invalid-input rejection without signing keys.
+
+`bash scripts/build_sparkle_installation_harness.sh` creates an isolated sandbox
+host and signed update, using the production signing script and an in-memory
+fixture-only Ed25519 key. Serve its `server` directory on the loopback port in
+`fixture.json`, launch `installation/UpgradeQA.app`, and choose Run isolated update.
+The QA driver accepts download/install for that explicit test action. Require a running build 2 at the same
+installation path, with both launch PIDs recorded in that fixture's private
+container (also displayed in the QA window). It uses a minimal QA driver and an inert extension bundle;
+it proves sandbox installer replacement/relaunch, not FileMint's custom driver,
+public-feed restrictions, installed Finder callbacks or clean-Mac permissions.
+
 `UpdateInstallationTests` binds the selected release version, URL and size,
 rejects informational/delta updates and covers restart protection. The Python
 appcast tests reject mismatched metadata, unexpected payloads and malformed

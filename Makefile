@@ -1,12 +1,12 @@
 -include .local/signing.mk
 
-.PHONY: verify verify-appcast verify-sparkle-driver verify-context verify-harness-cli verify-updates update-sandbox-harness test harness project build dmg package release-local publish-local doctor icon clean
+.PHONY: verify verify-appcast verify-signing-entitlements verify-sparkle-driver verify-context verify-harness-cli verify-updates update-sandbox-harness test harness project build dmg package release-local publish-local doctor icon clean
 
 DEVELOPER_DIR ?= /Applications/Xcode.app/Contents/Developer
 export DEVELOPER_DIR
 export DEVELOPMENT_TEAM
 
-verify: verify-context test harness verify-harness-cli verify-appcast
+verify: verify-context test harness verify-harness-cli verify-appcast verify-signing-entitlements
 
 verify-context:
 	python3 scripts/verify_context.py
@@ -20,6 +20,9 @@ verify-sparkle-driver:
 
 verify-appcast:
 	python3 scripts/test_update_appcast.py
+
+verify-signing-entitlements:
+	python3 scripts/test_signing_entitlements.py
 
 verify-updates:
 	bash scripts/verify_updates.sh

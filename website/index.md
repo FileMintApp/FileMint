@@ -232,7 +232,7 @@ hero:
 <section id="download" class="landing-section landing-section--last">
   <div class="callout-band">
     <div>
-      <div class="mini-label">FILEMINT 0.5.8</div>
+      <div class="mini-label">FILEMINT 0.5.9</div>
       <h2>从 Finder 开始，做完，然后回到你的工作。</h2>
       <p>支持 macOS 13+、Apple 芯片和 Intel。Developer ID 签名并通过 Apple 公证；首次使用仍需按系统提示启用 Finder 扩展和文件夹授权。</p>
     </div>

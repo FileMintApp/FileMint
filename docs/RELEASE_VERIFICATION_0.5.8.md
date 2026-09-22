@@ -2,6 +2,17 @@
 
 Published on 2026-09-22. Release version **0.5.8**, build **16**.
 
+## Follow-up: automatic installation failure
+
+A user-reported 0.5.7 → 0.5.8 installation failure on 2026-09-22 exposed a
+manual-signing defect: both versions embed unexpanded build-variable strings
+instead of the actual Sparkle installer Mach service names. Sandbox logs confirm
+the installed 0.5.7 is denied those lookups. The signature, notarization and
+startup results below remain valid, but did not establish working in-app updates.
+The old installed permissions cannot be repaired by an appcast; a corrected
+installer requires one manual replacement. Existing published bytes are preserved.
+See [the diagnosis and fix](tasks/sparkle-entitlements-fix.md).
+
 ## Source and checks
 
 - Source tag: `v0.5.8`.
