@@ -80,6 +80,23 @@ public struct OpenWithPreferences: Codable, Equatable, Sendable {
         } else { applications.append(app) }
         applications = OpenWithPolicy.normalized(applications)
     }
+
+    /// A row dropped on a later row moves after it; one dropped on an earlier
+    /// row moves before it. This keeps the saved array as the menu's source order.
+    public mutating func move(_ id: UUID, to targetID: UUID) {
+        guard let source = applications.firstIndex(where: { $0.id == id }),
+              let target = applications.firstIndex(where: { $0.id == targetID }),
+              source != target else { return }
+        let application = applications.remove(at: source)
+        applications.insert(application, at: target)
+    }
+
+    public mutating func move(_ id: UUID, by offset: Int) {
+        guard offset == -1 || offset == 1,
+              let source = applications.firstIndex(where: { $0.id == id }),
+              applications.indices.contains(source + offset) else { return }
+        move(id, to: applications[source + offset].id)
+    }
 }
 
 public enum OpenWithPolicy {

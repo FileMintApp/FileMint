@@ -23,6 +23,10 @@ public enum AppAppearance: String, Codable, CaseIterable, Identifiable, Sendable
     }
 }
 
+public enum NewFileMenuPlacement: String, Codable, CaseIterable, Sendable {
+    case submenu, main
+}
+
 public struct FileMintPreferences: Codable, Equatable, Sendable {
     public var templates: [FileTemplate]
     public var defaultTemplateIDs: [String: String] = [:]
@@ -41,6 +45,7 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
     public var fileTools = FileToolsPreferences()
     public var resourceTools = ResourceToolsPreferences()
     public var openWith = OpenWithPreferences()
+    public var newFileMenuPlacement: NewFileMenuPlacement = .submenu
     private var folderScopeVersion = 2
 
     public init(
@@ -91,6 +96,7 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         case fileTools
         case resourceTools
         case openWith
+        case newFileMenuPlacement
     }
 
     public init(from decoder: Decoder) throws {
@@ -125,6 +131,7 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         fileTools = (try? container.decode(FileToolsPreferences.self, forKey: .fileTools)) ?? FileToolsPreferences()
         resourceTools = (try? container.decode(ResourceToolsPreferences.self, forKey: .resourceTools)) ?? ResourceToolsPreferences()
         openWith = (try? container.decode(OpenWithPreferences.self, forKey: .openWith)) ?? OpenWithPreferences()
+        newFileMenuPlacement = (try? container.decode(NewFileMenuPlacement.self, forKey: .newFileMenuPlacement)) ?? .submenu
     }
 
     public static var `default`: FileMintPreferences {

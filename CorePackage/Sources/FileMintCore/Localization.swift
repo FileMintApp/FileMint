@@ -67,7 +67,7 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case openWithApps, openWithAppsHint, openWithAppName, addApplication, openWithEmptyTitle
     case openWithEmptyHint, openWithMenuHint, openWithSubmenu, openWithChooseHint, openWithRemove
     case openWithInvalidApp, openWithUnavailableApp, openWithChanged, openWithMissingSelection, openWithFailed
-    case openWithUnavailable, openWithConfiguredApps
+    case openWithUnavailable, openWithConfiguredApps, openWithReorderHint
     case enableFileTools
     case fileToolsOffHint
     case fileToolsActions
@@ -127,6 +127,7 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case startupAndAccess
     case viewUpdateSettings
     case quickCreation
+    case newFileMenuPosition, newFileMenuPositionHint
     case quickCollisionHint
     case afterCreationHint
     case manageTemplates
@@ -305,6 +306,9 @@ public enum FileMintStrings {
         .openWithMissingSelection: ("Some selected items are no longer available. Select the files or folders again.", "部分所选项目已不可用，请重新选择文件或文件夹。"),
         .openWithFailed: ("The app could not open the selection. Check that it supports these files or folders and try again.", "无法使用此 App 打开所选项目。请确认它支持这些文件或文件夹后重试。"),
         .openWithUnavailable: ("Unavailable · add again to repair", "App 不可用 · 请重新添加"),
+        .openWithReorderHint: ("Drag the handle to set app order in Finder. You can also use the arrow buttons.", "拖动把手调整 App 在 Finder 菜单中的顺序，也可使用上下按钮。"),
+        .newFileMenuPosition: ("New File menu location", "新建文件菜单位置"),
+        .newFileMenuPositionHint: ("Keep creation actions under New File, or show them directly in Finder’s menu.", "可将各项新建文件操作收在「新建文件」中，或直接显示在 Finder 右键菜单。"),
         .enableFileTools: ("Enable File & Folder Tools", "启用文件（夹）工具"),
         .fileToolsOffHint: ("Turning this off hides the Finder menu and preserves your choices.", "关闭后隐藏右键菜单，并保留各项设置。"),
         .fileToolsActionsHint: ("Check to enable; choose where each tool appears.", "勾选启用；菜单位置可单独设置。"),

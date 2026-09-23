@@ -49,7 +49,11 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   selection remains available without changing this preference or menu scope.
 - Open with App has an initially empty persistent application list. Explicitly
   adding an app enables its entry; its independent placement defaults to submenu.
-  See [Open with App](open-with.md) for validation and opening behavior.
+  Saved list order controls each Finder menu level. See [Open with App](open-with.md)
+  for validation and opening behavior.
+- New File's Finder menu location persists independently of template order and
+  defaults to submenu when older or malformed settings are loaded. See
+  [creation](creation.md) for its menu behavior.
 - Per-suffix default template IDs are saved independently of ordering. Missing
   old fields fall back deterministically without losing user templates or other
   preferences; invalid references are removed when settings are saved.

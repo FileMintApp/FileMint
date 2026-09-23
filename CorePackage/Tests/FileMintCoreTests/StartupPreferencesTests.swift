@@ -4,6 +4,24 @@ import Testing
 
 @Suite("Startup preferences and localization")
 struct StartupPreferencesTests {
+    @Test("New File location defaults to submenu and survives an explicit main-menu choice")
+    func newFileMenuPlacement() throws {
+        #expect(FileMintPreferences.default.newFileMenuPlacement == .submenu)
+        for field in ["", ",\"newFileMenuPlacement\":\"unknown\"",
+                      ",\"newFileMenuPlacement\":null", ",\"newFileMenuPlacement\":false"] {
+            let data = Data("{\"language\":\"zh-Hans\",\"showMenuBar\":false\(field)}".utf8)
+            let restored = try FileMintPreferencesStore.decode(data)
+            #expect(restored.newFileMenuPlacement == .submenu)
+            #expect(restored.language == .chinese && !restored.showMenuBar)
+        }
+        var value = FileMintPreferences.default
+        value.newFileMenuPlacement = .main
+        value.templates[0].isEnabled = false
+        let saved = try JSONDecoder().decode(FileMintPreferences.self, from: JSONEncoder().encode(value))
+        #expect(saved.newFileMenuPlacement == .main)
+        #expect(saved.templates == value.templates)
+    }
+
     @Test("appearance defaults and malformed values follow the system without resetting preferences")
     func appearanceMigration() throws {
         #expect(FileMintPreferences.default.appearance == .system)
@@ -136,7 +154,8 @@ struct StartupPreferencesTests {
                     .finderAndFolders, .generalSettingsHint, .creationSettingsHint,
                     .finderFoldersHint, .interfaceLanguage, .startupAndAccess,
                     .appearance, .theme, .lightAppearance, .darkAppearance,
-                    .viewUpdateSettings, .quickCreation, .quickCollisionHint,
+                    .viewUpdateSettings, .quickCreation, .newFileMenuPosition, .newFileMenuPositionHint,
+                    .quickCollisionHint,
                     .afterCreationHint, .manageTemplates, .finderExtension, .menuFolders, .enabledTypes] {
             let english = FileMintStrings.text(key, language: .english)
             let chinese = FileMintStrings.text(key, language: .chinese)

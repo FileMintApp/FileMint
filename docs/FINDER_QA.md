@@ -203,6 +203,9 @@ This fixture does not prove that Finder has loaded the new extension.
   no changes. Add multiple apps; re-add one and verify no duplicate or placement reset.
 - Switch entries between main/submenu; relaunch and check persistence. Remove the
   last entry and verify the empty state. Removal must not uninstall the application.
+- Drag apps up and down, then check their order in each Finder menu level and after
+  relaunch. Re-add a reordered app and verify it keeps its saved position. Check
+  the keyboard reorder buttons too.
 - Check Chinese/English, light/dark and 840×600, including keyboard controls,
   long app names, unavailable apps and scrolling with a long list. Add again after
   moving an app to repair its saved location/access.
@@ -230,8 +233,12 @@ This fixture does not prove that Finder has loaded the new extension.
   targets must never become Desktop requests. A known Downloads target must
   remain Downloads. Default settings must show menus for the dynamically resolved
   home background and files, including after upgrading the old three-folder defaults.
-- Background and file context menus within monitored folders show text-only
-  New File actions; the root entry has the FileMint logo. Other apps may contribute similarly named menus.
+- Background and file context menus within monitored folders show New File under
+  its own submenu by default; its root entry has the FileMint logo and action rows
+  are text-only. Switch its location to the main menu and verify New File…,
+  Paste Image as File and each enabled type appear directly, once and in template
+  order; switch back and relaunch to check persistence. Other apps may contribute
+  similarly named menus.
 - Verify each quick action creates on disk, then verify automatic name increments.
 - Create at least three files consecutively from fresh context menus. After each
   completed creation/reveal, right-click again and confirm FileMint is still

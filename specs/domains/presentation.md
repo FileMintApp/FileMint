@@ -38,7 +38,7 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   text and a shared trailing edge aligned with switches; fixed control columns
   must not center a narrower visible control. Preference labels, supporting text,
   section headings and secondary actions share the same sizing and spacing.
-  Creation owns quick-creation collisions and reveal-after-creation. Templates &
+  Creation owns New File menu location, quick-creation collisions and reveal-after-creation. Templates &
   Types owns the existing enabled/order/custom-type management. Finder & Folders
   owns extension status, folder scope/access and optional Full Disk Access guidance.
   About retains its credits and update actions. New File remains reachable from
@@ -63,8 +63,8 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   and noninteractive. An individual disabled tool retains its available checkbox,
   with a muted icon and disabled secondary controls. Preserve readable contrast,
   wrapping, scrolling and native keyboard/accessibility behavior at minimum size.
-- The top-level New File Finder entry has the small FileMint logo; its label
-  maps to the resolved app language. File & Folder Tools uses the system
+- In submenu mode, the New File Finder entry has the small FileMint logo and a
+  localized label. In main-menu mode, New File… carries that logo. File & Folder Tools uses the system
   `wrench.and.screwdriver` symbol in mint/blue; the temporary Move Selected
   Items Here entry uses `arrow.right.square` in mint/teal. Both are 16 × 16
   palette-colored images that keep their theme colors in the native menu and
@@ -75,7 +75,7 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   `arrowshape.turn.up.right`. The temporary move
   destination retains its mint/teal icon in either location. Use 16 × 16 non-template
   menu images; color supplements recognizable shapes and text. New-file format
-  choices and creation controls remain text only. The Finder
+  choices and the other creation controls remain text only. The Finder
   toolbar and macOS menu bar retain the small template glyph those entry points
   require. No icon preference.
 - App logo: a distinctive folded-paper F in fresh mint on a warm porcelain
@@ -86,7 +86,8 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - Optional modules show enabled, applicable entries at their configured main-menu
   or submenu level; empty submenu roots are hidden. Chinese copy uses 拷贝 for Copy; the file-tools root is 文件（夹）工具.
 - Open with App uses the same grouped rows and trailing menu-position controls,
-  with real application icons and a nearby Add App action. Its empty state is
+  with real application icons, a visible drag handle, keyboard reorder buttons
+  and a nearby Add App action. Its empty state is
   functional and concise; the entry and Finder group use `square.stack.3d.up` and child
   entries use the selected app's native icon.
 

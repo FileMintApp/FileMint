@@ -48,25 +48,29 @@ final class FinderSync: FIFinderSync {
             root.image = logo
         }
         let submenu = NSMenu(title: text(.newFile))
+        let creationMenu = preferences.newFileMenuPlacement == .submenu ? submenu : menu
         let custom = NSMenuItem(title: text(.customNewFile), action: #selector(showCustomFile(_:)), keyEquivalent: "")
         let templates = TemplateCatalog.enabledTemplates(from: preferences.templates)
         let tags = actions.register([FileMenuAction(directory: directory, templateID: nil)] + templates.map {
             FileMenuAction(directory: directory, templateID: $0.id)
         })
         custom.tag = tags[0]
-        submenu.addItem(custom)
+        if preferences.newFileMenuPlacement == .main { custom.image = root.image }
+        creationMenu.addItem(custom)
         let pasteImage = NSMenuItem(title: text(.pasteImageFile), action: #selector(pasteImageFile(_:)), keyEquivalent: "")
         pasteImage.tag = actions.register([FileMenuAction(directory: directory, templateID: nil)])[0]
-        submenu.addItem(pasteImage)
-        if !templates.isEmpty { submenu.addItem(.separator()) }
+        creationMenu.addItem(pasteImage)
+        if !templates.isEmpty { creationMenu.addItem(.separator()) }
         for (index, template) in templates.enumerated() {
             let title = "\(FileMintStrings.templateDisplayName(for: template, language: language)) (.\(template.fileExtension))"
             let item = NSMenuItem(title: title, action: #selector(createFile(_:)), keyEquivalent: "")
             item.tag = tags[index + 1]
-            submenu.addItem(item)
+            creationMenu.addItem(item)
         }
-        root.submenu = submenu
-        menu.addItem(root)
+        if preferences.newFileMenuPlacement == .submenu {
+            root.submenu = submenu
+            menu.addItem(root)
+        }
         let selection = menuKind == .contextualMenuForItems
             ? FIFinderSyncController.default().selectedItemURLs() ?? [] : []
         // Use the clicked folder for item menus, not a later Finder selection.

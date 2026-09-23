@@ -112,6 +112,20 @@ struct CreationSettingsPane: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 26) {
                 SettingsSection(title: model.text(.quickCreation)) {
+                    PreferenceRow(title: model.text(.newFileMenuPosition), detail: model.text(.newFileMenuPositionHint)) {
+                        Picker(model.text(.newFileMenuPosition), selection: Binding(
+                            get: { model.preferences.newFileMenuPlacement },
+                            set: { value in
+                                let previous = model.preferences.newFileMenuPlacement
+                                model.preferences.newFileMenuPlacement = value
+                                if !model.save() { model.preferences.newFileMenuPlacement = previous }
+                            }
+                        )) {
+                            Text(model.text(.openWithSubmenu)).tag(NewFileMenuPlacement.submenu)
+                            Text(model.text(.toolMainMenu)).tag(NewFileMenuPlacement.main)
+                        }.settingsMenu().accessibilityIdentifier("settings.newFileMenuPlacement")
+                    }
+                    Divider()
                     PreferenceRow(title: model.text(.whenFileExists), detail: model.text(.quickCollisionHint)) {
                         Picker(model.text(.whenFileExists), selection: $model.preferences.collisionStrategy) {
                             Text(model.text(.autoIncrement)).tag(NameCollisionStrategy.increment)

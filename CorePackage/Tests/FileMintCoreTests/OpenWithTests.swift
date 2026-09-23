@@ -50,6 +50,28 @@ struct OpenWithTests {
         }
     }
 
+    @Test("reordering persists and sets relative order at both Finder menu levels")
+    func reorderedMenu() throws {
+        var value = preferences([app("A", placement: .main), app("B"),
+                                 app("C", placement: .main), app("D")])
+        let ids = value.openWith.applications.map(\.id)
+        value.openWith.move(ids[3], to: ids[0])
+        value.openWith.move(ids[0], to: ids[2])
+        #expect(value.openWith.applications.map(\.name) == ["D", "B", "C", "A"])
+        value.openWith.move(ids[1], by: -1)
+        #expect(value.openWith.applications.map(\.name) == ["B", "D", "C", "A"])
+        value.openWith.move(ids[1], by: -1)
+        value.openWith.move(ids[3], to: UUID())
+        let saved = try JSONDecoder().decode(FileMintPreferences.self, from: JSONEncoder().encode(value))
+        let available = OpenWithPolicy.availableApplications(selection: [root.appendingPathComponent("sample.txt")],
+            isItemMenu: true, preferences: saved)
+        let layout = OpenWithMenuLayout(applications: available)
+        #expect(saved.openWith.applications.map(\.name) == ["B", "D", "C", "A"])
+        #expect(layout.main.map(\.name) == ["C", "A"])
+        #expect(layout.submenu.map(\.name) == ["B", "D"])
+        #expect(saved.openWith.applications.map(\.id) == [ids[1], ids[3], ids[2], ids[0]])
+    }
+
     @Test("files, folders and mixed selections are allowed only for a complete local in-scope item menu")
     func selectionScope() {
         let preferences = preferences([app()])
@@ -166,7 +188,7 @@ struct OpenWithTests {
         #expect(app.menuTitle(language: .english) == "Open with Code %@ 资料")
         for key in [FileMintTextKey.openWithApps, .openWithAppsHint, .addApplication, .openWithEmptyTitle,
                     .openWithEmptyHint, .openWithSubmenu, .openWithMenuHint, .openWithUnavailableApp,
-                    .openWithChanged, .openWithMissingSelection, .openWithFailed] {
+                    .openWithChanged, .openWithMissingSelection, .openWithFailed, .openWithReorderHint] {
             #expect(FileMintStrings.text(key, language: .english) != key.rawValue)
             #expect(FileMintStrings.text(key, language: .english) != FileMintStrings.text(key, language: .chinese))
         }

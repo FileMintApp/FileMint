@@ -51,15 +51,24 @@ struct OpenWithSettingsView: View {
                     VStack(spacing: 0) {
                         ForEach(preferences.applications) { app in
                             if app.id != preferences.applications.first?.id { Divider().padding(.horizontal, 17) }
+                            let index = preferences.applications.firstIndex(where: { $0.id == app.id }) ?? 0
                             OpenWithApplicationRow(application: app, language: language, placement: Binding(
                                 get: { preferences.applications.first(where: { $0.id == app.id })?.placement ?? .submenu },
                                 set: { placement in
                                     guard let index = preferences.applications.firstIndex(where: { $0.id == app.id }) else { return }
                                     preferences.applications[index].placement = placement
-                                }), remove: { preferences.applications.removeAll { $0.id == app.id } })
+                                }), canMoveUp: index > 0, canMoveDown: index < preferences.applications.count - 1,
+                                moveUp: { preferences.move(app.id, by: -1) },
+                                moveDown: { preferences.move(app.id, by: 1) },
+                                remove: { preferences.applications.removeAll { $0.id == app.id } })
                                 .padding(17)
+                                .onDrop(of: [UTType.plainText.identifier], isTargeted: nil) { providers in
+                                    dropApplication(providers, on: app.id)
+                                }
                         }
                     }.mintSurface(padding: 0)
+                    Text(text(.openWithReorderHint)).font(.system(size: 11)).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true).padding(.horizontal, 2)
                 }
                 Label(text(.openWithMenuHint), systemImage: "info.circle")
                     .font(.system(size: 11)).foregroundStyle(.secondary)
@@ -73,12 +82,27 @@ struct OpenWithSettingsView: View {
             .buttonStyle(MintButtonStyle(primary: true)).disabled(isChoosing)
             .accessibilityIdentifier("openWith.add")
     }
+
+    private func dropApplication(_ providers: [NSItemProvider], on targetID: UUID) -> Bool {
+        guard let provider = providers.first(where: { $0.canLoadObject(ofClass: NSString.self) }) else { return false }
+        provider.loadObject(ofClass: NSString.self) { object, _ in
+            guard let value = object as? String, let sourceID = UUID(uuidString: value) else { return }
+            DispatchQueue.main.async {
+                preferences.move(sourceID, to: targetID)
+            }
+        }
+        return true
+    }
 }
 
 private struct OpenWithApplicationRow: View {
     let application: OpenWithApplication
     let language: AppLanguage
     @Binding var placement: OpenWithMenuPlacement
+    let canMoveUp: Bool
+    let canMoveDown: Bool
+    let moveUp: () -> Void
+    let moveDown: () -> Void
     let remove: () -> Void
     @State private var icon: NSImage?
     @State private var location = ""
@@ -88,6 +112,11 @@ private struct OpenWithApplicationRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
+            Image(systemName: "line.3.horizontal")
+                .font(.system(size: 13)).foregroundStyle(.secondary)
+                .frame(width: 16, height: 28).contentShape(Rectangle())
+                .onDrag { NSItemProvider(object: application.id.uuidString as NSString) }
+                .help(text(.openWithReorderHint)).accessibilityHidden(true)
             Group {
                 if let icon { Image(nsImage: icon).resizable() }
                 else { Image(systemName: "app.dashed").resizable().foregroundStyle(.secondary) }
@@ -108,6 +137,18 @@ private struct OpenWithApplicationRow: View {
             }.settingsMenu(width: language.resolved() == .chinese ? 119 : 138)
                 .accessibilityLabel("\(application.name) — \(text(.toolMenuPosition))")
                 .accessibilityIdentifier("openWith.\(application.id).placement")
+            HStack(spacing: 2) {
+                Button(action: moveUp) { Image(systemName: "chevron.up").frame(width: 17, height: 28) }
+                    .disabled(!canMoveUp)
+                    .help(text(.moveUp))
+                    .accessibilityLabel("\(text(.moveUp)) \(application.name)")
+                    .accessibilityIdentifier("openWith.\(application.id).moveUp")
+                Button(action: moveDown) { Image(systemName: "chevron.down").frame(width: 17, height: 28) }
+                    .disabled(!canMoveDown)
+                    .help(text(.moveDown))
+                    .accessibilityLabel("\(text(.moveDown)) \(application.name)")
+                    .accessibilityIdentifier("openWith.\(application.id).moveDown")
+            }.buttonStyle(.plain).foregroundStyle(.secondary)
             Button(action: remove) {
                 Image(systemName: "minus.circle").font(.system(size: 15)).frame(width: 24, height: 28)
             }.buttonStyle(.plain).foregroundStyle(.secondary)

@@ -11,12 +11,15 @@ Load for: Configured applications, their Finder menu placement and opening selec
   one or more application bundles. Validate real application bundles and store
   their display name, bundle identifier, URL and read-only security-scoped bookmark.
   Do not crawl Applications or launch an app while adding it.
-- Preserve insertion order and reject duplicates by bundle identifier or canonical
-  URL. Choosing an existing app refreshes its location/bookmark while preserving
-  its stable ID and placement. Malformed entries must not discard valid neighbors.
+- Preserve the saved list order and reject duplicates by bundle identifier or
+  canonical URL. Users can drag rows to reorder them; each menu level follows
+  that relative order. Choosing an existing app refreshes its location/bookmark
+  while preserving its stable ID, order and placement. Malformed entries must not
+  discard valid neighbors.
 - Each row shows the native app icon, name, location, menu-position picker and
-  remove action. New entries default to Submenu / 二级菜单; Main menu / 一级菜单
-  is independently configurable. Removal changes configuration only.
+  remove action, with a visible drag handle and keyboard-accessible reorder
+  controls. New entries default to Submenu / 二级菜单; Main menu / 一级菜单 is
+  independently configurable. Removal changes configuration only.
 - Match existing adaptive surfaces, spacing and mint accents. Include a concise
   empty state with Add App and explain where entries appear. Support Chinese,
   English, keyboard/accessibility navigation, light/dark appearance and minimum

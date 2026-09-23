@@ -7,8 +7,13 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 ## The two creation paths
 
 - Finder → New File → a file type creates immediately in the captured target
-  directory. Menu labels include the extension. The top-level entry shows the
-  FileMint logo plus localized “New File” / “新建文件”; submenu rows remain text only.
+  directory. Menu labels include the extension. The New File menu location is
+  configurable and defaults to a second-level submenu. In that mode, its
+  top-level entry shows the FileMint logo plus localized “New File” / “新建文件”;
+  submenu rows remain text only. Choosing the main menu instead places New File…,
+  Paste Image as File and each enabled file type directly in the Finder menu,
+  exactly once and in the same order. Changing location does not alter creation
+  routes, destination snapshots or template order.
 - Finder → New File → New File… opens one compact persistent native panel.
   Name, editable extension selector, destination, optional plain-text content,
   Cancel and Create are the whole flow. The main app owns this single panel;
