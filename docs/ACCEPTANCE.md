@@ -895,3 +895,13 @@ cover the development worktree, not the installed Finder extension or a release.
 - Installed Finder callbacks, sandbox permission cancellation, macOS 13/Intel
   runtime and Microsoft Office runtime remain not run. No installation, Developer ID signing,
   commit or publication was performed.
+
+## 2026-09-23 — Published 0.5.10
+
+The [0.5.10 release verification](RELEASE_VERIFICATION_0.5.10.md) records the
+clean tagged build, Accepted Apple notarization, stapled DMG, downloaded GitHub
+asset comparison, successful CI/site/release jobs and native acceptance. An
+isolated copy of public 0.5.9 upgraded through the production About UI and
+public feed to 0.5.10 (18), replacing and relaunching at the same temporary
+path. The user's `/Applications/FileMint.app` remained at 0.5.9; installed
+Finder refresh, Intel/macOS 13 and managed-device paths remain untested.
