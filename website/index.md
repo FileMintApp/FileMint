@@ -3,7 +3,7 @@ layout: home
 hero:
   name: FileMint
   text: 把文件工具，放回 Finder。
-  tagline: 一个小体积的原生 macOS app：右键创建、处理、整理文件与图片。离线、按需启用。
+  tagline: 在 Finder 里新建文件、复用文档模板、打开常用 App，顺手处理文件与图片。原生 macOS 应用，本地完成，按需启用。
   image:
     src: /filemint-icon.png
     alt: FileMint
@@ -16,12 +16,23 @@ hero:
       link: https://github.com/FileMintApp/FileMint
 ---
 
+<p class="guide-entry">第一次使用？从 <a href="./guide.html">使用指南</a> 开始，跟着步骤完成第一份文件。</p>
+
 <div class="hero-proof" aria-label="FileMint product facts">
   <span><strong>Swift + AppKit</strong> 原生应用</span>
   <span><strong>小体积</strong> 无网页运行时</span>
   <span><strong>6</strong> 个图片资源工具</span>
   <span>本地处理，不绕远程服务</span>
 </div>
+
+<nav class="feature-nav" aria-label="功能导航">
+  <a href="#finder">Finder</a>
+  <a href="#create">新建文件</a>
+  <a href="#templates">模板与图片粘贴</a>
+  <a href="#open-with">使用 App 打开</a>
+  <a href="#resources">图片工具</a>
+  <a href="#file-tools">文件工具</a>
+</nav>
 
 <div class="architecture-strip">
   <article>
@@ -55,7 +66,7 @@ hero:
     <article class="feature-card">
       <span class="feature-index">02</span>
       <h3>常用类型</h3>
-      <p>文本、Markdown、JSON、Swift、HTML、CSS、Shell 等格式一键创建。</p>
+      <p>14 种内置文本与代码格式，可按需启用、排序，也能添加自己的模板。</p>
     </article>
     <article class="feature-card">
       <span class="feature-index">03</span>
@@ -64,22 +75,6 @@ hero:
     </article>
   </div>
 
-  <div class="visual-grid visual-grid--wide">
-    <figure class="screen-card screen-card--menu">
-      <img src="/images/finder-resource-menu-zh.png" alt="当前安装版 Finder 右键菜单，展示新建文件、文件工具和资源工具">
-      <figcaption>当前安装版示例：选中 longmao.navigator.png 后，三类入口各自保持清楚。</figcaption>
-    </figure>
-    <div class="copy-stack">
-      <div class="mini-label">ONE CONTEXT MENU, CLEAR LAYERS</div>
-      <h3>创建和处理，各有自己的位置</h3>
-      <p>“新建文件”负责创建；“文件（夹）工具”负责已选项目；“资源工具”负责图片。可选模块默认关闭，开启后也不会把所有操作混成一条长菜单。</p>
-      <ul class="benefit-list">
-        <li>彩色图标帮助你快速区分三类入口</li>
-        <li>文件工具和资源工具只在适用的选中范围内出现</li>
-        <li>每项操作可以放在一级菜单或自己的子菜单</li>
-      </ul>
-    </div>
-  </div>
 </section>
 
 <section id="create" class="landing-section">
@@ -89,31 +84,78 @@ hero:
 
   <div class="visual-grid visual-grid--wide">
     <figure class="screen-card screen-card--panel">
-      <img src="/images/create-panel-zh.png" alt="FileMint 当前版本的新建文件面板，填写 project-kickoff.md 和初始内容">
-      <figcaption>完整文件名与后缀同步；多行文本、中文、空格和模板符号按原文保存。</figcaption>
+      <div class="screen-window screen-window--creation"><img width="1120" height="1226" loading="lazy" decoding="async" src="/images/create-panel-zh.jpg" alt="FileMint 当前版本的新建文件面板，填写 project-kickoff.md 和初始内容"></div>
+      <figcaption>FileMint 0.5.9 · Markdown 草稿；文件名与后缀同步，初始内容原样保存。</figcaption>
     </figure>
     <div class="copy-stack">
       <div class="mini-label">CREATE ONCE, KEEP THE CONTEXT</div>
-      <h3>不是“先建空文件再打开编辑器”</h3>
+      <h3>文件名、位置、内容，一次写好</h3>
       <p>输入 <strong>project-kickoff.md</strong>，粘贴第一段内容，然后创建。命名、位置和内容都在同一条路径里完成。</p>
       <ul class="benefit-list">
         <li><strong>⌘↩</strong> 创建，<strong>Esc</strong> 取消</li>
         <li>自定义后缀仍然是 UTF-8 文本，不会假装转换成别的文档格式</li>
-        <li>同名时快速创建自动递增；自定义创建在替换前询问</li>
+        <li>快速创建默认自动编号，也可设为报错；文本草稿替换前会询问</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="templates" class="landing-section landing-section--quiet">
+  <p class="section-kicker">03 / START FROM A TEMPLATE</p>
+  <h2>常用的起点，不必每次重写。</h2>
+  <p class="section-intro">同一种格式，可以有不同用途的模板。会议记录、项目说明、工作表，各自保留名称和内容，从 Finder 或创建面板直接选择。</p>
+  <div class="visual-grid visual-grid--wide">
+    <figure class="screen-card screen-card--panel">
+      <div class="screen-window"><img width="1800" height="1300" loading="lazy" decoding="async" src="/images/file-types-zh.jpg" alt="FileMint 0.5.9 模板与类型页面，显示新建文本模板和导入文档模板入口"></div>
+      <figcaption>内置类型按需启用；同格式可保存多个模板，并指定默认项。</figcaption>
+    </figure>
+    <div class="copy-stack">
+      <div class="mini-label">TEXT / WORD / EXCEL</div>
+      <h3>从空白文件，到你的文档模板</h3>
+      <ul class="benefit-list">
+        <li><strong>文本模板</strong>：保存默认文件名与初始内容，支持文件名、日期和年份变量</li>
+        <li><strong>Word / Excel</strong>：导入 .docx 或 .xlsx，创建保留原格式与内容的独立副本</li>
+        <li><strong>本地保存</strong>：导入后不再依赖原文档的位置，也不会修改原文档</li>
+      </ul>
+    </div>
+  </div>
+  <div class="feature-grid feature-grid--three">
+    <article class="feature-card"><span class="feature-index">COPY</span><h3>图片粘贴为文件</h3><p>拷贝一张截图或图片，在 FileMint 或 Finder 的新建文件菜单中选择“图片粘贴为文件”。</p></article>
+    <article class="feature-card"><span class="feature-index">PREVIEW</span><h3>先预览，再命名</h3><p>创建面板显示图片预览，填写文件名并确认保存位置。只有明确点按时才读取剪贴板。</p></article>
+    <article class="feature-card"><span class="feature-index">PNG</span><h3>保存为 PNG</h3><p>保留透明度，同名自动编号。点击创建才写入；取消就不生成文件。</p></article>
+  </div>
+</section>
+
+<section id="open-with" class="landing-section">
+  <p class="section-kicker">04 / OPEN WITH YOUR APPS</p>
+  <h2>选好文件，交给顺手的 App。</h2>
+  <p class="section-intro">把常用编辑器、终端或其他应用加入 Finder 右键菜单。文件、文件夹和多选项目都能一起交给所选 App，由它决定支持的类型。</p>
+  <div class="visual-grid visual-grid--wide">
+    <figure class="screen-card screen-card--panel">
+      <div class="screen-window"><img width="1800" height="1300" loading="lazy" decoding="async" src="/images/open-with-zh.jpg" alt="FileMint 使用 App 打开页面，展示三个已添加应用及独立菜单位置"></div>
+      <figcaption>FileMint 0.5.9 · 已添加应用的示例；新安装时列表为空，由你选择应用。</figcaption>
+    </figure>
+    <div class="copy-stack">
+      <div class="mini-label">YOUR APPS / YOUR MENU</div>
+      <h3>常用的放外面，其他的收起来</h3>
+      <ul class="benefit-list">
+        <li>每个 App 独立选择一级菜单或“使用 App 打开”子菜单</li>
+        <li>保留系统默认打开方式，只为当前选择增加一个入口</li>
+        <li>添加、移除和调整位置，都在同一个设置页完成</li>
       </ul>
     </div>
   </div>
 </section>
 
 <section id="resources" class="landing-section landing-section--tint">
-  <p class="section-kicker">03 / RESOURCE TOOLS</p>
+  <p class="section-kicker">05 / RESOURCE TOOLS</p>
   <h2>图片处理，也回到你选中的文件旁边。</h2>
-  <p class="section-intro">选中图片，右键打开“资源工具”，或从 FileMint 主应用直接选择。六个工具共享同一个本地面板，预览、参数和输出位置都在眼前。</p>
+  <p class="section-intro">从主应用选择图片，或启用 Finder 菜单后在选中的图片旁直接开始。六个工具都在本机处理，先看预览，再确定参数和输出位置。</p>
 
   <div class="visual-grid visual-grid--wide">
     <figure class="screen-card screen-card--panel">
-      <img src="/images/resource-tools-zh.png" alt="FileMint 资源工具页面，显示六个图片处理工具">
-      <figcaption>转换、压缩、调整尺寸、生成图标、拼接和提取文字。</figcaption>
+      <div class="screen-window"><img width="1800" height="1300" loading="lazy" decoding="async" src="/images/resource-tools-zh.jpg" alt="FileMint 资源工具页面，显示六个图片处理工具"></div>
+      <figcaption>FileMint 0.5.9 · 六个本地图片工具，原图保留，输出单独保存。</figcaption>
     </figure>
     <div class="copy-stack">
       <div class="mini-label">SIX SMALL TOOLS, ONE NATIVE SURFACE</div>
@@ -127,25 +169,10 @@ hero:
     </div>
   </div>
 
-  <div class="visual-grid visual-grid--wide visual-grid--reverse">
-    <div class="copy-stack">
-      <div class="mini-label">LOCAL PREVIEW / ORIGINALS STAY UNCHANGED</div>
-      <h3>从一张真实图片开始</h3>
-      <p>下面的面板使用 <strong>longmao.navigator.png</strong> 作为示例。输出格式、保存位置和原图保护都明确可见；处理在你的 Mac 上完成，不上传图片。</p>
-      <div class="quote-card">
-        <span class="quote-mark">“</span>
-        <p>先看预览，再点处理。原图始终保留。</p>
-      </div>
-    </div>
-    <figure class="screen-card screen-card--panel">
-      <img src="/images/resource-panel-longmao-zh.png" alt="FileMint 使用 longmao.navigator.png 的图片格式转换面板">
-      <figcaption>真实资源示例：longmao.navigator.png。</figcaption>
-    </figure>
-  </div>
 </section>
 
 <section id="file-tools" class="landing-section">
-  <p class="section-kicker">04 / FILE &amp; FOLDER TOOLS</p>
+  <p class="section-kicker">06 / FILE &amp; FOLDER TOOLS</p>
   <h2>处理已选项目，但只在你明确点按时发生。</h2>
   <p class="section-intro">文件（夹）工具默认关闭。开启后，每项操作都可以放在 Finder 一级菜单或工具子菜单里；新建文件菜单保持独立，不会被挤乱。</p>
 
@@ -161,16 +188,16 @@ hero:
       </ul>
     </div>
     <figure class="screen-card screen-card--panel">
-      <img src="/images/file-tools-zh.png" alt="FileMint 文件与文件夹工具设置页面，显示菜单位置和独立开关">
-      <figcaption>每项工具独立开关、独立菜单位置；危险操作默认关闭。</figcaption>
+      <div class="screen-window"><img width="1800" height="1300" loading="lazy" decoding="async" src="/images/file-tools-zh.jpg" alt="FileMint 文件与文件夹工具设置页面，显示菜单位置和独立开关"></div>
+      <figcaption>FileMint 0.5.9 · 已启用工具的配置示例；各项开关与菜单位置独立设置。</figcaption>
     </figure>
   </div>
 </section>
 
 <section id="settings" class="landing-section landing-section--quiet">
-  <p class="section-kicker">05 / A QUIETER NATIVE UI</p>
+  <p class="section-kicker">07 / A QUIETER NATIVE UI</p>
   <h2>层次清晰，设置少找一步。</h2>
-  <p class="section-intro">当前版本用固定侧栏把创建、扩展和偏好分开：模板与类型、创建行为、文件工具、资源工具、Finder 与文件夹、关于，各自有清楚的位置。</p>
+  <p class="section-intro">文件创建、扩展功能、偏好设置，三组固定侧栏。主题可选择跟随系统、浅色或深色；界面语言支持中文、英文和跟随系统。</p>
 
   <div class="feature-grid feature-grid--three">
     <article class="feature-card">
@@ -186,13 +213,17 @@ hero:
     <article class="feature-card">
       <span class="feature-index">03</span>
       <h3>原生可读</h3>
-      <p>中文、英文、浅色和深色外观共享同一套原生窗口与控件，不用记另一套网页交互。</p>
+      <p>主题即时应用到 FileMint 的设置、创建和图片处理窗口，不改变 macOS 的外观。</p>
     </article>
   </div>
+  <figure class="screen-card screen-card--settings">
+    <div class="screen-window"><img width="1800" height="1300" loading="lazy" decoding="async" src="/images/settings-zh.jpg" alt="FileMint 通用设置中的主题、界面语言和启动选项"></div>
+    <figcaption>FileMint 0.5.9 · 外观与语言各自选择，设置随时可改。</figcaption>
+  </figure>
 </section>
 
 <section id="privacy" class="landing-section landing-section--tint">
-  <p class="section-kicker">06 / LOCAL BY DEFAULT</p>
+  <p class="section-kicker">08 / LOCAL BY DEFAULT</p>
   <h2>安静，不等于不透明。</h2>
   <p class="section-intro">FileMint 把权限、联网和文件处理边界写在产品里：你知道它什么时候工作，也知道它什么时候不会工作。</p>
 
@@ -210,15 +241,15 @@ hero:
     <article class="trust-card">
       <span class="trust-symbol">↗</span>
       <h3>联网边界清楚</h3>
-      <p>主应用只在你检查或下载更新时访问 GitHub；Finder 扩展不需要网络。</p>
+      <p>主应用可每 7 天最多自动检查一次更新，也支持手动检查；下载与安装由你决定。Finder 扩展不联网。</p>
     </article>
   </div>
 </section>
 
 <section id="roadmap" class="landing-section">
-  <p class="section-kicker">07 / TODO</p>
+  <p class="section-kicker">09 / TODO</p>
   <h2>未来规划，继续把小事做好。</h2>
-  <p class="section-intro">下面只列还没有完成的方向，不把已经交付的能力重新包装成路线图。</p>
+  <p class="section-intro">这些是尚未完成的方向，具体进展会在项目中持续更新。</p>
 
   <div class="roadmap-todos">
 
@@ -239,6 +270,7 @@ hero:
     <div class="callout-actions">
       <a href="https://github.com/FileMintApp/FileMint/releases/latest">下载最新版本</a>
       <a href="./install.html">查看安装指引</a>
+      <a href="./guide.html">阅读使用指南</a>
     </div>
   </div>
 </section>

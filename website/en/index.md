@@ -3,7 +3,7 @@ layout: home
 hero:
   name: FileMint
   text: Put file tools back in Finder.
-  tagline: A small native macOS app for creating, processing and organizing files and images from Finder.
+  tagline: Create files, reuse document templates, open your go-to apps and handle images right from Finder. Native to macOS. Processed locally.
   image:
     src: /filemint-icon.png
     alt: FileMint
@@ -16,12 +16,23 @@ hero:
       link: https://github.com/FileMintApp/FileMint
 ---
 
+<p class="guide-entry">New to FileMint? Follow the <a href="./guide.html">user guide</a> to create your first file.</p>
+
 <div class="hero-proof" aria-label="FileMint product facts">
   <span><strong>Swift + AppKit</strong> native app</span>
   <span><strong>Small footprint</strong> no web runtime</span>
   <span><strong>6</strong> image tools</span>
   <span>Local processing, no remote detour</span>
 </div>
+
+<nav class="feature-nav" aria-label="Explore features">
+  <a href="#finder">Finder</a>
+  <a href="#create">Create</a>
+  <a href="#templates">Templates &amp; paste</a>
+  <a href="#open-with">Open with App</a>
+  <a href="#resources">Image tools</a>
+  <a href="#file-tools">File tools</a>
+</nav>
 
 <div class="architecture-strip">
   <article>
@@ -55,7 +66,7 @@ hero:
     <article class="feature-card">
       <span class="feature-index">02</span>
       <h3>Useful types</h3>
-      <p>Text, Markdown, JSON, Swift, HTML, CSS and Shell are ready when you need them.</p>
+      <p>Enable and reorder 14 built-in text and code formats, or add your own templates.</p>
     </article>
     <article class="feature-card">
       <span class="feature-index">03</span>
@@ -64,22 +75,6 @@ hero:
     </article>
   </div>
 
-  <div class="visual-grid visual-grid--wide">
-    <figure class="screen-card screen-card--menu">
-      <img src="/images/finder-resource-menu-zh.png" alt="Current FileMint Finder context menu with New File, File and Folder Tools, and Resource Tools">
-      <figcaption>Current install example: select longmao.navigator.png and keep the three entry layers distinct.</figcaption>
-    </figure>
-    <div class="copy-stack">
-      <div class="mini-label">ONE CONTEXT MENU, CLEAR LAYERS</div>
-      <h3>Create and handle, each in its place</h3>
-      <p>New File creates. File &amp; Folder Tools acts on selected items. Resource Tools handles images. Optional modules start off, and enabling them does not turn the menu into one long list.</p>
-      <ul class="benefit-list">
-        <li>Color icons make the three entry groups easy to scan</li>
-        <li>File and Resource Tools appear only for applicable selections</li>
-        <li>Each action can live in Finder's main menu or its own submenu</li>
-      </ul>
-    </div>
-  </div>
 </section>
 
 <section id="create" class="landing-section">
@@ -89,8 +84,8 @@ hero:
 
   <div class="visual-grid visual-grid--wide">
     <figure class="screen-card screen-card--panel">
-      <img src="/images/create-panel-en.png" alt="FileMint New File panel with project-kickoff.md and starter content">
-      <figcaption>The full filename and suffix stay in sync; multiline text and Unicode stay literal.</figcaption>
+      <div class="screen-window screen-window--creation"><img width="1120" height="1226" loading="lazy" decoding="async" src="/images/create-panel-en.jpg" alt="FileMint New File panel with project-kickoff.md and starter content"></div>
+      <figcaption>FileMint 0.5.9 · A Markdown draft, with a synchronized suffix and literal starter content.</figcaption>
     </figure>
     <div class="copy-stack">
       <div class="mini-label">CREATE ONCE, KEEP THE CONTEXT</div>
@@ -99,21 +94,68 @@ hero:
       <ul class="benefit-list">
         <li><strong>⌘↩</strong> creates; <strong>Esc</strong> cancels</li>
         <li>Custom suffixes remain UTF-8 text instead of pretending to be another document format</li>
-        <li>Quick creation increments names; custom creation asks before replacement</li>
+        <li>Quick creation numbers names by default, with an option to fail; text drafts ask before replacing</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="templates" class="landing-section landing-section--quiet">
+  <p class="section-kicker">03 / START FROM A TEMPLATE</p>
+  <h2>A familiar starting point, every time.</h2>
+  <p class="section-intro">Keep different templates for the same format. Meeting notes, project briefs and worksheets each retain their own name and content, ready in Finder or the creation panel.</p>
+  <div class="visual-grid visual-grid--wide">
+    <figure class="screen-card screen-card--panel">
+      <div class="screen-window"><img width="1800" height="1300" loading="lazy" decoding="async" src="/images/file-types-en.jpg" alt="FileMint 0.5.9 Templates and Types with New Text Template and Import Document Template actions"></div>
+      <figcaption>Enable the formats you need, save multiple templates per format and choose a default.</figcaption>
+    </figure>
+    <div class="copy-stack">
+      <div class="mini-label">TEXT / WORD / EXCEL</div>
+      <h3>From blank files to your own documents</h3>
+      <ul class="benefit-list">
+        <li><strong>Text templates</strong>: save a filename and starter content, with filename, date and year variables</li>
+        <li><strong>Word / Excel</strong>: import .docx or .xlsx and create independent copies with formatting and content intact</li>
+        <li><strong>Stored locally</strong>: imported templates no longer depend on the original document's location or change its contents</li>
+      </ul>
+    </div>
+  </div>
+  <div class="feature-grid feature-grid--three">
+    <article class="feature-card"><span class="feature-index">COPY</span><h3>Paste Image as File</h3><p>Copy a screenshot or image, then choose Paste Image as File in the app or Finder's New File menu.</p></article>
+    <article class="feature-card"><span class="feature-index">PREVIEW</span><h3>Preview and name it</h3><p>See the image, enter a filename and choose its destination. The clipboard is read only when you ask.</p></article>
+    <article class="feature-card"><span class="feature-index">PNG</span><h3>Save as PNG</h3><p>Keep transparency and number existing names automatically. Nothing is written until you click Create.</p></article>
+  </div>
+</section>
+
+<section id="open-with" class="landing-section">
+  <p class="section-kicker">04 / OPEN WITH YOUR APPS</p>
+  <h2>Your files. Your go-to apps.</h2>
+  <p class="section-intro">Add your editor, terminal or other applications to Finder's context menu. Pass files, folders or a mixed selection together; the chosen app decides which types it supports.</p>
+  <div class="visual-grid visual-grid--wide">
+    <figure class="screen-card screen-card--panel">
+      <div class="screen-window"><img width="1800" height="1300" loading="lazy" decoding="async" src="/images/open-with-en.jpg" alt="FileMint Open with App settings with three configured applications and menu positions"></div>
+      <figcaption>FileMint 0.5.9 · Example configuration. New installations start with an empty app list.</figcaption>
+    </figure>
+    <div class="copy-stack">
+      <div class="mini-label">YOUR APPS / YOUR MENU</div>
+      <h3>Keep frequent actions close</h3>
+      <ul class="benefit-list">
+        <li>Give each app a main-menu entry or a place in the Open with App submenu</li>
+        <li>Keep your system's default file associations unchanged</li>
+        <li>Add, remove and choose menu positions from one settings page</li>
       </ul>
     </div>
   </div>
 </section>
 
 <section id="resources" class="landing-section landing-section--tint">
-  <p class="section-kicker">03 / RESOURCE TOOLS</p>
+  <p class="section-kicker">05 / RESOURCE TOOLS</p>
   <h2>Image work, next to the selected files.</h2>
-  <p class="section-intro">Select images, choose Resource Tools from Finder, or start from the FileMint app. Six tools share one local panel for preview, parameters and output.</p>
+  <p class="section-intro">Select images, choose Resource Tools from Finder, or start from the FileMint app. The app works even with Finder menu integration off. Preview first, then choose parameters and output.</p>
 
   <div class="visual-grid visual-grid--wide">
     <figure class="screen-card screen-card--panel">
-      <img src="/images/resource-tools-en.png" alt="FileMint Resource Tools page with six image actions">
-      <figcaption>Convert, compress, resize, generate icons, stitch and extract text.</figcaption>
+      <div class="screen-window"><img width="1800" height="1300" loading="lazy" decoding="async" src="/images/resource-tools-en.jpg" alt="FileMint Resource Tools page with six image actions"></div>
+      <figcaption>FileMint 0.5.9 · Six local image tools. Originals stay intact; results are saved separately.</figcaption>
     </figure>
     <div class="copy-stack">
       <div class="mini-label">SIX SMALL TOOLS, ONE NATIVE SURFACE</div>
@@ -127,25 +169,10 @@ hero:
     </div>
   </div>
 
-  <div class="visual-grid visual-grid--wide visual-grid--reverse">
-    <div class="copy-stack">
-      <div class="mini-label">LOCAL PREVIEW / ORIGINALS STAY UNCHANGED</div>
-      <h3>Start with one real image</h3>
-      <p>The panel below uses <strong>longmao.navigator.png</strong>. Output format, destination and original preservation are visible before you run anything; the image never leaves your Mac.</p>
-      <div class="quote-card">
-        <span class="quote-mark">“</span>
-        <p>Preview first. Process when ready. Originals stay unchanged.</p>
-      </div>
-    </div>
-    <figure class="screen-card screen-card--panel">
-      <img src="/images/resource-panel-longmao-en.png" alt="FileMint Convert Image panel using longmao.navigator.png">
-      <figcaption>Real resource example: longmao.navigator.png.</figcaption>
-    </figure>
-  </div>
 </section>
 
 <section id="file-tools" class="landing-section">
-  <p class="section-kicker">04 / FILE &amp; FOLDER TOOLS</p>
+  <p class="section-kicker">06 / FILE &amp; FOLDER TOOLS</p>
   <h2>Handle selected items only when you explicitly ask.</h2>
   <p class="section-intro">File &amp; Folder Tools starts off. Once enabled, each action can live in Finder's main menu or the tools submenu; New File remains independent and uncluttered.</p>
 
@@ -161,16 +188,16 @@ hero:
       </ul>
     </div>
     <figure class="screen-card screen-card--panel">
-      <img src="/images/file-tools-en.png" alt="FileMint File and Folder Tools settings with menu placement and individual switches">
-      <figcaption>Independent switches and menu placement; destructive actions start off.</figcaption>
+      <div class="screen-window"><img width="1800" height="1300" loading="lazy" decoding="async" src="/images/file-tools-en.jpg" alt="FileMint File and Folder Tools settings with menu placement and individual switches"></div>
+      <figcaption>FileMint 0.5.9 · An example with tools enabled, each with its own switch and menu position.</figcaption>
     </figure>
   </div>
 </section>
 
 <section id="settings" class="landing-section landing-section--quiet">
-  <p class="section-kicker">05 / A QUIETER NATIVE UI</p>
+  <p class="section-kicker">07 / A QUIETER NATIVE UI</p>
   <h2>Clear hierarchy, less searching.</h2>
-  <p class="section-intro">The current version uses a persistent sidebar for creation, extensions and preferences. Templates &amp; Types, Creation, File &amp; Folder Tools, Resource Tools, Finder &amp; Folders and About each have a clear home.</p>
+  <p class="section-intro">Three sidebar groups keep creation, extensions and preferences together. Choose Follow System, Light or Dark, and use English, Chinese or your system language.</p>
 
   <div class="feature-grid feature-grid--three">
     <article class="feature-card">
@@ -186,13 +213,17 @@ hero:
     <article class="feature-card">
       <span class="feature-index">03</span>
       <h3>Native readability</h3>
-      <p>Chinese, English, light and dark appearances share the same native window and controls.</p>
+      <p>Theme changes apply immediately to FileMint settings, creation and image windows without changing macOS appearance.</p>
     </article>
   </div>
+  <figure class="screen-card screen-card--settings">
+    <div class="screen-window"><img width="1800" height="1300" loading="lazy" decoding="async" src="/images/settings-en.jpg" alt="FileMint General settings with theme, language and startup options"></div>
+    <figcaption>FileMint 0.5.9 · Independent theme and language choices, ready to change at any time.</figcaption>
+  </figure>
 </section>
 
 <section id="privacy" class="landing-section landing-section--tint">
-  <p class="section-kicker">06 / LOCAL BY DEFAULT</p>
+  <p class="section-kicker">08 / LOCAL BY DEFAULT</p>
   <h2>Quiet does not mean opaque.</h2>
   <p class="section-intro">FileMint keeps permission, network and file-processing boundaries explicit, so you know when it works and when it does not.</p>
 
@@ -210,15 +241,15 @@ hero:
     <article class="trust-card">
       <span class="trust-symbol">↗</span>
       <h3>A clear network boundary</h3>
-      <p>The main app reaches GitHub only when you check for or download an update. The Finder extension stays offline.</p>
+      <p>The app can check for updates at most once every 7 days, or when you ask. Downloads and installation are your choice. Finder stays offline.</p>
     </article>
   </div>
 </section>
 
 <section id="roadmap" class="landing-section">
-  <p class="section-kicker">07 / TODO</p>
+  <p class="section-kicker">09 / TODO</p>
   <h2>Keep making the small things better.</h2>
-  <p class="section-intro">Only unfinished directions belong here. Delivered capabilities do not get repackaged as roadmap promises.</p>
+  <p class="section-intro">These features are still planned. Follow the project for progress as they take shape.</p>
 
   <div class="roadmap-todos">
 
@@ -239,6 +270,7 @@ hero:
     <div class="callout-actions">
       <a href="https://github.com/FileMintApp/FileMint/releases/latest">Download the latest release</a>
       <a href="./install.html">Read installation help</a>
+      <a href="./guide.html">Read the user guide</a>
     </div>
   </div>
 </section>

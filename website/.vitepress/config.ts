@@ -7,7 +7,7 @@ const publicAsset = (path: string) => `${base.replace(/\/$/, '')}/${path}`
 export default defineConfig({
   base,
   title: 'FileMint',
-  description: 'A small native macOS app for creating, processing and organizing files and images from Finder.',
+  description: 'Create files from text and Office templates, open your apps and process images locally from Finder.',
   markdown: {
     config(md) {
       // Render the same GitHub task lists used by the README includes.
@@ -47,13 +47,15 @@ export default defineConfig({
       label: '简体中文',
       lang: 'zh-Hans',
       title: 'FileMint',
-      description: '一个小体积的原生 macOS app，在 Finder 中创建、处理和整理文件与图片。',
+      description: '在 Finder 中创建文件、复用文本与 Office 模板、使用常用 App 打开项目，并在本机处理图片。',
       themeConfig: {
+        outline: { level: 'deep', label: '本页目录' },
         nav: [
-          { text: '功能', link: '/#resources' },
+          { text: '功能', link: '/#finder' },
           { text: '为什么是 FileMint', link: '/#privacy' },
           { text: '未来规划', link: '/#roadmap' },
           { text: '安装', link: '/install' },
+          { text: '使用指南', link: '/guide' },
           { text: '隐私', link: '/privacy' },
           { text: 'GitHub', link: repository }
         ],
@@ -68,13 +70,14 @@ export default defineConfig({
       lang: 'en-US',
       link: '/en/',
       title: 'FileMint',
-      description: 'A small native macOS app for creating, processing and organizing files and images from Finder.',
+      description: 'Create files from text and Office templates, open your apps and process images locally from Finder.',
       themeConfig: {
         nav: [
-          { text: 'Features', link: '/en/#resources' },
+          { text: 'Features', link: '/en/#finder' },
           { text: 'Why FileMint', link: '/en/#privacy' },
           { text: 'Roadmap', link: '/en/#roadmap' },
           { text: 'Install', link: '/en/install' },
+          { text: 'User Guide', link: '/en/guide' },
           { text: 'Privacy', link: '/en/privacy' },
           { text: 'GitHub', link: repository }
         ],

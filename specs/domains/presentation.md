@@ -92,6 +92,16 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 
 ## Product presentation
 
+- Website homepages present the current creation, text/Office templates,
+  clipboard-image creation, Open with App, file tools, image tools and appearance
+  choices in both languages. Use real app captures with matching-language captions;
+  identify example configuration without implying those apps or switches are defaults.
+  Installation and privacy copy must also cover explicit clipboard-image capture,
+  local document-template storage and optional weekly update metadata checks.
+- The website provides a discoverable bilingual usage guide with task-based steps,
+  matching-language screenshots with text alternatives, keyboard guidance and
+  remedies for missing Finder menus or folder access. Keep installation details
+  linked rather than duplicating release-specific download instructions.
 - README leads with the pain solved, actual features, screenshots, download and
   a brief install guide. Chinese first, English separate. Developer instructions
   live in docs. Optional donations link the supplied ReceivePayment images.

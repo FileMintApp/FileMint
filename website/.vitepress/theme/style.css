@@ -73,6 +73,39 @@ body {
   background: linear-gradient(145deg, var(--vp-c-bg-soft) 0%, var(--vp-c-bg) 100%);
 }
 
+.guide-entry {
+  margin: 0 auto 26px;
+  padding: 0 24px;
+  color: var(--vp-c-text-2);
+  text-align: center;
+}
+
+.guide-entry a {
+  color: var(--vp-c-brand-1);
+  font-weight: 650;
+}
+
+.guide-entry a:focus-visible {
+  outline: 2px solid var(--vp-c-brand-1);
+  outline-offset: 3px;
+}
+
+.guide-page .vp-doc img {
+  display: block;
+  width: 100%;
+  max-width: 760px;
+  height: auto;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(24, 48, 42, 0.08);
+}
+
+.guide-page .vp-doc .guide-caption {
+  margin-top: -8px;
+  color: var(--vp-c-text-2);
+  font-size: 0.88rem;
+}
+
 .hero-proof {
   display: flex;
   flex-wrap: wrap;
@@ -108,6 +141,36 @@ body {
   max-width: 1152px;
   margin: 0 auto 18px;
   padding: 0 24px;
+}
+
+.feature-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  max-width: 1152px;
+  margin: 0 auto 32px;
+  padding: 0 24px;
+}
+
+.feature-nav a {
+  padding: 9px 15px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 999px;
+  color: var(--vp-c-text-2);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.feature-nav a:hover,
+.feature-nav a:focus-visible {
+  border-color: var(--vp-c-brand-1);
+  color: var(--vp-c-brand-1);
+  background: var(--vp-c-brand-soft);
+}
+
+.landing-section {
+  scroll-margin-top: 80px;
 }
 
 .architecture-strip article {
@@ -163,16 +226,18 @@ body {
   text-transform: uppercase;
 }
 
-.landing-section h2 {
+.vp-doc .landing-section h2 {
   max-width: 780px;
   margin: 0;
+  padding-top: 0;
+  border-top: 0;
   color: var(--vp-c-text-1);
   font-size: clamp(2.1rem, 5vw, 3.85rem);
   letter-spacing: -0.055em;
-  line-height: 1.06;
+  line-height: 1.18;
 }
 
-.section-intro {
+.vp-doc .section-intro {
   max-width: 720px;
   margin: 22px 0 42px;
   color: var(--vp-c-text-2);
@@ -241,7 +306,12 @@ body {
   order: 1;
 }
 
-.visual-grid--reverse > .copy-stack {
+.visual-grid--reverse > .screen-card--settings {
+  max-width: 900px;
+  margin-inline: auto;
+}
+
+.copy-stack {
   order: 2;
 }
 
@@ -260,6 +330,20 @@ body {
   height: auto;
 }
 
+/* Present the window content without macOS capture/title-bar chrome.
+   Keep the original captures unmodified in public/images. */
+.screen-window {
+  overflow: hidden;
+}
+
+.screen-window img {
+  margin-top: -5.333334%;
+}
+
+.screen-window--creation img {
+  margin-top: -6%;
+}
+
 .screen-card figcaption {
   padding: 14px 17px 17px;
   color: var(--vp-c-text-2);
@@ -276,20 +360,20 @@ body {
   gap: 17px;
 }
 
-.copy-stack h3 {
+.vp-doc .copy-stack h3 {
   margin: 0;
   color: var(--vp-c-text-1);
   font-size: 1.38rem;
   letter-spacing: -0.025em;
 }
 
-.copy-stack p {
+.vp-doc .copy-stack p {
   margin: 0;
   color: var(--vp-c-text-2);
   line-height: 1.75;
 }
 
-.benefit-list {
+.vp-doc .benefit-list {
   display: grid;
   gap: 12px;
   margin: 8px 0 0;
@@ -297,7 +381,8 @@ body {
   list-style: none;
 }
 
-.benefit-list li {
+.vp-doc .benefit-list li {
+  margin-top: 0;
   position: relative;
   padding-inline-start: 24px;
   color: var(--vp-c-text-2);
@@ -353,7 +438,7 @@ body {
   background: linear-gradient(135deg, var(--vp-c-brand-soft), transparent 72%);
 }
 
-.callout-band h2 {
+.vp-doc .callout-band h2 {
   max-width: 620px;
   font-size: clamp(1.9rem, 4vw, 2.75rem);
 }
