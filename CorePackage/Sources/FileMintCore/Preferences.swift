@@ -1,6 +1,8 @@
 import Foundation
 #if canImport(Darwin)
 import Darwin
+#else
+import Glibc
 #endif
 
 public enum FileMintAppGroup {
@@ -108,7 +110,9 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         defaultTemplateIDs = TemplateCatalog.validDefaults(
             (try? container.decode([String: String].self, forKey: .defaultTemplateIDs)) ?? [:], in: templates)
         monitoredFolderBookmarks = (try? container.decode([String: Data].self, forKey: .monitoredFolderBookmarks)) ?? [:]
-        monitoredFolderURLs = (try? container.decode([URL].self, forKey: .monitoredFolderURLs)) ?? defaults.monitoredFolderURLs
+        // A missing or malformed scope in an existing file is never a request
+        // to restore the broader first-run home scope.
+        monitoredFolderURLs = (try? container.decode([URL].self, forKey: .monitoredFolderURLs)) ?? []
         let savedFolderScopeVersion = (try? container.decode(Int.self, forKey: .folderScopeVersion)) ?? 1
         if savedFolderScopeVersion < 2 {
             monitoredFolderURLs = DefaultFolders.migratingHomeScope(monitoredFolderURLs,
@@ -177,7 +181,25 @@ public enum DefaultFolders {
     }
 }
 
+public enum FileMintPreferencesStoreError: Error, LocalizedError {
+    case tooLarge, invalidFile, recoveryRequired
+
+    public var errorDescription: String? {
+        switch self {
+        case .tooLarge: "The settings file is too large. Keep it below 32 MiB."
+        case .invalidFile: "The settings file is damaged or unavailable."
+        case .recoveryRequired: "Saved settings could not be read. Import a valid settings file to recover them; the original is preserved."
+        }
+    }
+}
+
+public struct FileMintPreferencesLoadResult {
+    public let preferences: FileMintPreferences
+    public let requiresRecovery: Bool
+}
+
 public final class FileMintPreferencesStore {
+    public static let maximumBytes = 32 * 1024 * 1024
     private let fileURL: URL?
 
     public init(fileURL: URL? = nil) {
@@ -185,6 +207,7 @@ public final class FileMintPreferencesStore {
     }
 
     public static func decode(_ data: Data) throws -> FileMintPreferences {
+        guard data.count <= maximumBytes else { throw FileMintPreferencesStoreError.tooLarge }
         if let value = try? JSONDecoder().decode(FileMintPreferences.self, from: data) { return value }
         let plist = try PropertyListSerialization.propertyList(from: data, format: nil)
         guard let dictionary = plist as? [String: Any], let payload = dictionary[FileMintAppGroup.preferencesKey] as? Data else {
@@ -194,12 +217,33 @@ public final class FileMintPreferencesStore {
     }
 
     public func load() -> FileMintPreferences {
-        if let fileURL, let data = try? Data(contentsOf: fileURL),
-           let preferences = try? JSONDecoder().decode(FileMintPreferences.self, from: data) { return preferences }
-        return .default
+        loadWithStatus().preferences
     }
 
-    public func save(_ preferences: FileMintPreferences) throws {
+    public func loadWithStatus() -> FileMintPreferencesLoadResult {
+        guard let fileURL else { return .init(preferences: .default, requiresRecovery: false) }
+        do {
+            guard let data = try Self.readBoundedFile(at: fileURL) else {
+                return .init(preferences: .default, requiresRecovery: false)
+            }
+            return .init(preferences: try JSONDecoder().decode(FileMintPreferences.self, from: data), requiresRecovery: false)
+        } catch {
+            var restricted = FileMintPreferences.default
+            restricted.monitoredFolderURLs = []
+            restricted.monitoredFolderBookmarks = [:]
+            restricted.fileTools.isEnabled = false
+            restricted.resourceTools.isEnabled = false
+            restricted.openWith = OpenWithPreferences()
+            return .init(preferences: restricted, requiresRecovery: true)
+        }
+    }
+
+    public static func decodeFile(at url: URL) throws -> FileMintPreferences {
+        guard let data = try readBoundedFile(at: url) else { throw FileMintPreferencesStoreError.invalidFile }
+        return try decode(data)
+    }
+
+    public func save(_ preferences: FileMintPreferences, recoveringInvalidFile: Bool = false) throws {
         guard let fileURL else {
             throw NSError(domain: "FileMintPreferences", code: 1, userInfo: [NSLocalizedDescriptionKey:
                 "FileMint could not access its shared settings folder. Reinstall the app and try again."])
@@ -207,8 +251,56 @@ public final class FileMintPreferencesStore {
         let directory = fileURL.deletingLastPathComponent()
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         let data = try JSONEncoder().encode(preferences)
-        try data.write(to: fileURL, options: .atomic)
-        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: fileURL.path)
+        guard data.count <= Self.maximumBytes else { throw FileMintPreferencesStoreError.tooLarge }
+        var invalidExisting = false
+        do {
+            if let existing = try Self.readBoundedFile(at: fileURL) {
+                _ = try JSONDecoder().decode(FileMintPreferences.self, from: existing)
+            }
+        } catch { invalidExisting = true }
+        if invalidExisting && !recoveringInvalidFile { throw FileMintPreferencesStoreError.recoveryRequired }
+        let backup = invalidExisting ? directory.appendingPathComponent("preferences-recovery-\(UUID().uuidString).json") : nil
+        if let backup { try StagedFileEntry.renameExclusive(fileURL, to: backup) }
+        do {
+            try data.write(to: fileURL, options: .atomic)
+            try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: fileURL.path)
+        } catch {
+            if let backup { try? StagedFileEntry.renameExclusive(backup, to: fileURL) }
+            throw error
+        }
+    }
+
+    private static func readBoundedFile(at url: URL) throws -> Data? {
+        guard url.isFileURL else { throw FileMintPreferencesStoreError.invalidFile }
+        var before = stat()
+        let status = url.withUnsafeFileSystemRepresentation { path in
+            path.map { lstat($0, &before) } ?? -1
+        }
+        if status != 0 {
+            if errno == ENOENT { return nil }
+            throw FileMintPreferencesStoreError.invalidFile
+        }
+        guard before.st_mode & S_IFMT == S_IFREG, before.st_size >= 0 else {
+            throw FileMintPreferencesStoreError.invalidFile
+        }
+        guard before.st_size <= Int64(maximumBytes) else { throw FileMintPreferencesStoreError.tooLarge }
+        let descriptor = url.withUnsafeFileSystemRepresentation { path in
+            path.map { open($0, O_RDONLY | O_NOFOLLOW | O_CLOEXEC) } ?? -1
+        }
+        guard descriptor >= 0 else { throw FileMintPreferencesStoreError.invalidFile }
+        let handle = FileHandle(fileDescriptor: descriptor, closeOnDealloc: true)
+        defer { try? handle.close() }
+        var opened = stat()
+        guard fstat(descriptor, &opened) == 0, opened.st_mode & S_IFMT == S_IFREG,
+              opened.st_dev == before.st_dev, opened.st_ino == before.st_ino,
+              opened.st_size <= Int64(maximumBytes) else { throw FileMintPreferencesStoreError.invalidFile }
+        var data = Data()
+        while let chunk = try handle.read(upToCount: 1_048_576), !chunk.isEmpty {
+            guard data.count <= maximumBytes - chunk.count else { throw FileMintPreferencesStoreError.tooLarge }
+            data.append(chunk)
+        }
+        guard Int64(data.count) == opened.st_size else { throw FileMintPreferencesStoreError.invalidFile }
+        return data
     }
 }
 

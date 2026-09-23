@@ -137,13 +137,32 @@ struct FileToolExpansionTests {
             let items = try FileDeletionService.capture([a, b])
             var checks = 0
             do {
-                try FileDeletionService.perform(items: items) { checks += 1; return checks < 3 }
+                try FileDeletionService.perform(items: items) { checks += 1; return checks < 4 }
                 Issue.record("Expected partial failure")
             } catch let failure as FileDeletionFailure {
                 #expect(failure.completed == 1 && failure.total == 2)
             }
             #expect(!FileManager.default.fileExists(atPath: a.path))
             #expect(try String(contentsOf: b, encoding: .utf8) == "b")
+        }
+    }
+
+    @Test("per-item deletion policy preserves later disallowed files")
+    func perItemDeletionPolicy() throws {
+        try workspace { root in
+            let first = root.appendingPathComponent("first")
+            let second = root.appendingPathComponent("second")
+            try Data("one".utf8).write(to: first)
+            try Data("two".utf8).write(to: second)
+            let items = try FileDeletionService.capture([first, second])
+            do {
+                try FileDeletionService.performPerItem(items: items) { $0.source == first }
+                Issue.record("Expected the second item to be blocked")
+            } catch let failure as FileDeletionFailure {
+                #expect(failure.completed == 1 && failure.total == 2)
+            }
+            #expect(!FileManager.default.fileExists(atPath: first.path))
+            #expect(try String(contentsOf: second, encoding: .utf8) == "two")
         }
     }
 

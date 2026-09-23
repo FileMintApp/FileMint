@@ -55,6 +55,31 @@ struct FocusedCreationTests {
         #expect(!FolderScope.contains(documents, in: [URL(string: "https://example.com/")!]))
     }
 
+    @Test("execution scope rejects symlinked parent escapes but allows the link itself")
+    func resolvedFolderScope() throws {
+        let root = try workspace()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let allowed = root.appendingPathComponent("allowed", isDirectory: true)
+        let outside = root.appendingPathComponent("outside", isDirectory: true)
+        try FileManager.default.createDirectory(at: allowed, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: outside, withIntermediateDirectories: true)
+        let link = allowed.appendingPathComponent("escape", isDirectory: true)
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: outside)
+        let escapedFile = link.appendingPathComponent("file.txt")
+        try Data("keep".utf8).write(to: outside.appendingPathComponent("file.txt"))
+
+        #expect(FolderScope.contains(escapedFile, in: [allowed]))
+        #expect(!FolderScope.containsResolvedDirectory(link, in: [allowed]))
+        #expect(!FolderScope.containsResolvedItem(escapedFile, in: [allowed]))
+        #expect(FolderScope.containsResolvedItem(link, in: [allowed]))
+
+        var preferences = FileMintPreferences.default
+        preferences.monitoredFolderURLs = [allowed]
+        let store = QuickCreationTicketStore(directory: root.appendingPathComponent("requests"))
+        let ticket = try store.enqueue(directory: link, templateID: "plain-text")
+        #expect(try store.consume(ticket, preferences: preferences) == nil)
+    }
+
     @Test("a desktop background action creates in Desktop through the existing single-use ticket flow")
     func desktopMenuCreation() throws {
         let parent = try workspace()

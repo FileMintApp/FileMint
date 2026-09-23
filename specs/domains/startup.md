@@ -57,6 +57,9 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - Per-suffix default template IDs are saved independently of ordering. Missing
   old fields fall back deterministically without losing user templates or other
   preferences; invalid references are removed when settings are saved.
+- Limit the persisted settings document to 32 MiB. A missing file initializes
+  defaults; a present corrupt or oversized file leaves Finder scope empty and is
+  preserved for explicit recovery instead of being overwritten during startup.
 
 - An explicitly requested updater relaunch must wait until creation work and
   modal editing are finished. Preserve saved startup preferences and bookmarks.

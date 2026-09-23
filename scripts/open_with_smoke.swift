@@ -65,6 +65,21 @@ final class OpenWithSmoke: NSObject, NSApplicationDelegate {
             _ = try OpenWithApplicationAccess.capture(folder)
             throw SmokeFailure("Ordinary directory was accepted as an app")
         } catch OpenWithError.invalidApplication {}
+        let oversizedApp = root.appendingPathComponent("Oversized.app")
+        let executableDirectory = oversizedApp.appendingPathComponent("Contents/MacOS")
+        try FileManager.default.createDirectory(at: executableDirectory, withIntermediateDirectories: true)
+        _ = FileManager.default.createFile(atPath: executableDirectory.appendingPathComponent("runner").path,
+            contents: Data([0]), attributes: [.posixPermissions: 0o755])
+        let oversizedInfo: [String: String] = [
+            "CFBundlePackageType": "APPL", "CFBundleIdentifier": "example.oversized",
+            "CFBundleExecutable": "runner", "Padding": String(repeating: "x", count: 1_048_576)
+        ]
+        let plist = try PropertyListSerialization.data(fromPropertyList: oversizedInfo, format: .xml, options: 0)
+        try plist.write(to: oversizedApp.appendingPathComponent("Contents/Info.plist"))
+        do {
+            _ = try OpenWithApplicationAccess.capture(oversizedApp)
+            throw SmokeFailure("Oversized application metadata was accepted")
+        } catch OpenWithError.invalidApplication {}
         var preferences = FileMintPreferences.default
         preferences.monitoredFolderURLs = [root]
         preferences.openWith.add(app)

@@ -29,11 +29,16 @@ final class PreferencesModel: ObservableObject {
     @Published var isImportingDocument = false
     private let folderAccess = FolderAccess()
     private var preferenceObserver: NSObjectProtocol?
+    private var isImportingSettings = false
 
     init(store: FileMintPreferencesStore = FileMintPreferencesStore(), documentTemplates: DocumentTemplateStore = DocumentTemplateStore()) {
         self.store = store
         self.documentTemplates = documentTemplates
-        preferences = store.load()
+        let loaded = store.loadWithStatus()
+        preferences = loaded.preferences
+        if loaded.requiresRecovery {
+            lastError = FileMintStrings.text(.preferencesRecoveryRequired, language: loaded.preferences.language)
+        }
         applyAppearance()
         folderAccess.restore(preferences)
         refreshStatus()
@@ -158,10 +163,10 @@ final class PreferencesModel: ObservableObject {
     }
 
     @discardableResult
-    func save() -> Bool {
+    func save(recoveringInvalidFile: Bool = false) -> Bool {
         do {
             preferences.defaultTemplateIDs = TemplateCatalog.validDefaults(preferences.defaultTemplateIDs, in: preferences.templates)
-            try store.save(preferences)
+            try store.save(preferences, recoveringInvalidFile: recoveringInvalidFile)
             DistributedNotificationCenter.default().post(
                 name: Notification.Name(FileMintAppGroup.preferencesDidChangeNotification), object: nil
             )
@@ -316,15 +321,28 @@ final class PreferencesModel: ObservableObject {
     }
 
     func importSettings() {
+        guard !isImportingSettings else { return }
         let panel = NSOpenPanel()
         panel.canChooseDirectories = false
         guard panel.runModal() == .OK, let url = panel.url else { return }
+        isImportingSettings = true
+        Task { await importSettings(from: url) }
+    }
+
+    private func importSettings(from url: URL) async {
+        defer { isImportingSettings = false }
+        let granted = url.startAccessingSecurityScopedResource()
+        defer { if granted { url.stopAccessingSecurityScopedResource() } }
         do {
             let attemptedHere = preferences.hasAttemptedLoginItemSetup
-            preferences = try FileMintPreferencesStore.decode(Data(contentsOf: url))
+            let imported = try await Task.detached(priority: .userInitiated) {
+                try FileMintPreferencesStore.decodeFile(at: url)
+            }.value
+            let previous = preferences
+            preferences = imported
             preferences.hasAttemptedLoginItemSetup = attemptedHere
             let launchAtLogin = preferences.launchAtLogin
-            save()
+            guard save(recoveringInvalidFile: true) else { preferences = previous; return }
             folderAccess.restore(preferences)
             Task { await setLaunchAtLogin(launchAtLogin) }
         } catch { lastError = error.localizedDescription }
@@ -398,7 +416,9 @@ final class PreferencesModel: ObservableObject {
     }
 
     private func quickCreate(_ ticket: QuickCreationTicket) async {
-        guard let template = TemplateCatalog.template(withID: ticket.templateID, in: preferences.templates) else { return }
+        guard let template = TemplateCatalog.template(withID: ticket.templateID, in: preferences.templates),
+              template.isEnabled,
+              FolderScope.containsResolvedDirectory(ticket.directory, in: preferences.monitoredFolderURLs) else { return }
         let request = FileCreationRequest(destinationDirectory: ticket.directory, template: template,
                                            collisionStrategy: preferences.collisionStrategy == .replace ? .increment : preferences.collisionStrategy)
         let assets = documentTemplates

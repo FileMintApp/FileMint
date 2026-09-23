@@ -14,6 +14,11 @@ final class FolderAccess {
             guard let url = try? URL(resolvingBookmarkData: data, options: [.withSecurityScope, .withoutUI],
                                      relativeTo: nil, bookmarkDataIsStale: &stale),
                   url.startAccessingSecurityScopedResource() else { return nil }
+            guard url.resolvingSymlinksInPath().standardizedFileURL ==
+                    pathURL.resolvingSymlinksInPath().standardizedFileURL else {
+                url.stopAccessingSecurityScopedResource()
+                return nil
+            }
             return url
         }
     }

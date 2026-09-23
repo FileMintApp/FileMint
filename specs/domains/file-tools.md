@@ -66,6 +66,12 @@ Load for: Optional Finder file/folder actions, selection snapshots and tool swit
   through symbolic-link parents). Never overwrite or merge existing targets.
   Symbolic links are moved as links, not their targets. Cross-volume operations
   use the native file manager; a reported failure is not treated as success.
+- Before a move or permanent deletion becomes irreversible, claim the source
+  entry into a private sibling staging location and verify that the claimed entry
+  is still the captured filesystem object. Restore an unexpected replacement
+  exclusively and stop; never act on it. Keep same-volume publication exclusive
+  and copy into private destination staging before exclusive publication across
+  volumes; restore the source on copy failure.
 - Execute away from the main thread and serialize requests. Persist completion
   after each successful item; only unfinished items remain after a partial failure.
   A successful batch removes the temporary menu. An error leaves unfinished work
@@ -91,6 +97,8 @@ Load for: Optional Finder file/folder actions, selection snapshots and tool swit
   confirmation, and before deleting each item. Reject roots, duplicate/overlapping
   selections, missing/replaced items and changed parent paths. Never act on a
   newly selected Finder item or follow a selected symlink to delete its target.
+- Batch duplicate/overlap validation scales with selected path depth rather than
+  comparing every pair, so large valid selections do not cause quadratic work.
 - Only the main app deletes; reuse exact-parent sandbox authorization when needed.
   Cancelled authorization or confirmation deletes nothing. Work runs off the main
   thread, serialized with moves; quit/updater restart waits for completion.

@@ -32,6 +32,8 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   limitations; documentation must distinguish them from the first notarized
   release. Never tell users to disable Gatekeeper globally. Finder extension
   enablement remains a separate system action.
+- CI and website-deployment workflows pin third-party GitHub Actions to reviewed
+  commit IDs. Dependency lockfiles remain frozen during website builds.
 - The Developer ID certificate stays in the project's ignored local signing
   directory. The certificate, private key, exported signing identity and Apple
   notarization credentials must remain local and never be committed, uploaded

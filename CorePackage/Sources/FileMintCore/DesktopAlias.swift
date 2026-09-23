@@ -33,9 +33,14 @@ public enum DesktopAliasService {
     @discardableResult
     public static func perform(items: [FileMoveItem], in directory: URL,
                                isAllowed: () -> Bool) throws -> [URL] {
+        try performPerItem(items: items, in: directory) { _ in isAllowed() }
+    }
+
+    public static func performPerItem(items: [FileMoveItem], in directory: URL,
+                                      isAllowed: (FileMoveItem) -> Bool) throws -> [URL] {
         var created: [URL] = []
         do {
-            guard isAllowed() else { throw FileMoveError.disabled }
+            guard let first = items.first, isAllowed(first) else { throw FileMoveError.disabled }
             try validate(items)
             let destination = try FileMoveItem.capture(directory)
             let values = try directory.resolvingSymlinksInPath().resourceValues(forKeys: [.isDirectoryKey, .isPackageKey])
@@ -43,7 +48,7 @@ public enum DesktopAliasService {
                 throw FileMoveError.invalidDestination
             }
             for item in items {
-                guard isAllowed() else { throw FileMoveError.disabled }
+                guard isAllowed(item) else { throw FileMoveError.disabled }
                 try item.validateIdentity()
                 try destination.validateIdentity()
                 let data = try item.source.bookmarkData(options: .suitableForBookmarkFile,
@@ -55,7 +60,7 @@ public enum DesktopAliasService {
                 try URL.writeBookmarkData(data, to: temporaryAlias)
                 try item.validateIdentity()
                 try destination.validateIdentity()
-                guard isAllowed() else { throw FileMoveError.disabled }
+                guard isAllowed(item) else { throw FileMoveError.disabled }
                 var number = 1
                 while true {
                     let target = directory.appendingPathComponent(name(for: item, number: number))

@@ -51,7 +51,7 @@ public struct QuickCreationTicketStore: Sendable {
         let ticket = try JSONDecoder().decode(QuickCreationTicket.self, from: data)
         guard (0...60).contains(now.timeIntervalSince(ticket.issuedAt)), ticket.directory.isFileURL,
               ticket.clipboardImage == true || preferences.templates.contains(where: { $0.id == ticket.templateID && $0.isEnabled }) else { return nil }
-        guard FolderScope.contains(ticket.directory, in: preferences.monitoredFolderURLs) else { return nil }
+        guard FolderScope.containsResolvedDirectory(ticket.directory, in: preferences.monitoredFolderURLs) else { return nil }
         return ticket
     }
 }

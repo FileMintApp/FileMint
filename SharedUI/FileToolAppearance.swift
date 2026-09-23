@@ -4,6 +4,7 @@ import FileMintCore
 /// One native symbol palette for settings and both Finder menu locations.
 enum FileToolAppearance {
     static let openWithSymbol = "square.stack.3d.up"
+    private static let applicationIcons = ApplicationIconCache()
 
     static func image(for tool: FileTool, size: CGFloat = 16) -> NSImage? {
         switch tool {
@@ -45,10 +46,7 @@ enum FileToolAppearance {
     }
 
     static func applicationImage(at url: URL, size: CGFloat = 16) -> NSImage? {
-        guard let image = NSWorkspace.shared.icon(forFile: url.path).copy() as? NSImage else { return nil }
-        image.size = NSSize(width: size, height: size)
-        image.isTemplate = false
-        return image
+        applicationIcons.image(at: url, size: size)
     }
 
     private static func image(_ symbol: String, palette: [NSColor], size: CGFloat = 16) -> NSImage? {
@@ -60,5 +58,25 @@ enum FileToolAppearance {
         // Finder must retain the palette, including when an item is highlighted.
         image.isTemplate = false
         return image
+    }
+}
+
+private final class ApplicationIconCache: @unchecked Sendable {
+    private let lock = NSLock()
+    private let icons: NSCache<NSString, NSImage> = {
+        let cache = NSCache<NSString, NSImage>()
+        cache.countLimit = 64
+        return cache
+    }()
+
+    func image(at url: URL, size: CGFloat) -> NSImage? {
+        lock.lock(); defer { lock.unlock() }
+        let key = "\(url.standardizedFileURL.path)#\(Int(size))" as NSString
+        if let cached = icons.object(forKey: key) { return cached.copy() as? NSImage }
+        guard let image = NSWorkspace.shared.icon(forFile: url.path).copy() as? NSImage else { return nil }
+        image.size = NSSize(width: size, height: size)
+        image.isTemplate = false
+        icons.setObject(image, forKey: key)
+        return image.copy() as? NSImage
     }
 }

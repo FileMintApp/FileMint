@@ -217,9 +217,11 @@ final class ResourceToolsController: NSObject, ObservableObject, NSWindowDelegat
         let worker = Task.detached(priority: .utility) {
             ImageProcessor.run(tool: tool, inputs: inputs, options: options, destination: destination,
                 canContinue: {
-                    fromFinder ? ResourceToolsPolicy.availableTools(selection: selection, isItemMenu: true,
-                        preferences: FileMintPreferencesStore(fileURL: preferencesFile).load()).contains(tool)
-                        : ResourceToolsPolicy.allowsAppSelection(selection, tool: tool)
+                    guard fromFinder else { return ResourceToolsPolicy.allowsAppSelection(selection, tool: tool) }
+                    let preferences = FileMintPreferencesStore(fileURL: preferencesFile).load()
+                    return ResourceToolsPolicy.availableTools(selection: selection, isItemMenu: true,
+                        preferences: preferences).contains(tool) &&
+                        selection.allSatisfy { FolderScope.containsResolvedItem($0, in: preferences.monitoredFolderURLs) }
                 }, progress: progress)
         }
         self.worker = worker

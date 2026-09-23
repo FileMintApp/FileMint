@@ -1,4 +1,4 @@
-import FileMintCore
+@testable import FileMintCore
 import Foundation
 import Testing
 
@@ -91,6 +91,26 @@ struct FileMoveTests {
         }
     }
 
+    @Test("per-item policy stops a batch after the last allowed source")
+    func perItemPolicy() throws {
+        try workspace { _, source, target, store in
+            let first = source.appendingPathComponent("first")
+            let second = source.appendingPathComponent("second")
+            try Data("one".utf8).write(to: first)
+            try Data("two".utf8).write(to: second)
+            let pending = try PendingFileMove.capture(selection: [first, second])
+            try store.save(pending)
+            #expect(throws: FileMoveError.disabled) {
+                try FileMoveService().performPerItem(batchID: pending.id, to: target, store: store) {
+                    $0.source == first
+                }
+            }
+            #expect(try String(contentsOf: target.appendingPathComponent("first"), encoding: .utf8) == "one")
+            #expect(try String(contentsOf: second, encoding: .utf8) == "two")
+            #expect(try store.load()?.items.map(\.source) == [second])
+        }
+    }
+
     @Test("replaced sources and disabled actions never move the wrong item")
     func identityAndSwitches() throws {
         try workspace { _, source, target, store in
@@ -108,6 +128,57 @@ struct FileMoveTests {
             }
             #expect(try String(contentsOf: file, encoding: .utf8) == "replacement")
             #expect(try store.load() == pending)
+        }
+    }
+
+    @Test("a replacement arriving between identity check and claim is restored, not moved")
+    func replacementDuringClaim() throws {
+        try workspace { _, source, _, _ in
+            let file = source.appendingPathComponent("note")
+            try Data("original".utf8).write(to: file)
+            let captured = try FileMoveItem.capture(file)
+            #expect(throws: FileMoveError.sourceChanged) {
+                try StagedFileEntry.claim(captured) {
+                    try Data("replacement".utf8).write(to: file, options: .atomic)
+                }
+            }
+            #expect(try String(contentsOf: file, encoding: .utf8) == "replacement")
+            #expect(try FileManager.default.contentsOfDirectory(atPath: source.path) == ["note"])
+        }
+    }
+
+    @Test("large flat selections validate without pairwise path comparisons")
+    func largeSelection() throws {
+        try workspace { _, source, _, _ in
+            let files = (0..<256).map { source.appendingPathComponent("item-\($0)") }
+            for file in files { try Data().write(to: file) }
+            #expect(try PendingFileMove.capture(selection: files).items.count == files.count)
+        }
+    }
+
+    @Test("copy fallback publishes files and symlinks exclusively and restores on collision")
+    func copyFallback() throws {
+        try workspace { _, source, target, _ in
+            let file = source.appendingPathComponent("note")
+            let link = source.appendingPathComponent("link")
+            try Data("source".utf8).write(to: file)
+            try FileManager.default.createSymbolicLink(at: link, withDestinationURL: file)
+            let service = FileMoveService()
+            try service.move(item: FileMoveItem.capture(link), to: target, forceCopy: true)
+            #expect(try FileManager.default.destinationOfSymbolicLink(atPath: target.appendingPathComponent("link").path) == file.path)
+            #expect(!FileManager.default.fileExists(atPath: link.path))
+
+            try Data("existing".utf8).write(to: target.appendingPathComponent("note"))
+            #expect(throws: FileMoveError.destinationExists) {
+                try service.move(item: FileMoveItem.capture(file), to: target, forceCopy: true)
+            }
+            #expect(try String(contentsOf: file, encoding: .utf8) == "source")
+            #expect(try String(contentsOf: target.appendingPathComponent("note"), encoding: .utf8) == "existing")
+
+            try FileManager.default.removeItem(at: target.appendingPathComponent("note"))
+            try service.move(item: FileMoveItem.capture(file), to: target, forceCopy: true)
+            #expect(try String(contentsOf: target.appendingPathComponent("note"), encoding: .utf8) == "source")
+            #expect(!FileManager.default.fileExists(atPath: file.path))
         }
     }
 

@@ -98,6 +98,8 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case airDropHint
     case airDropUnavailable
     case fileOperationFailed
+    case fileOperationRecoveryPath
+    case preferencesRecoveryRequired
     case fileOperationAuthorize
     case copyItemNames
     case copyItemPaths
@@ -338,6 +340,8 @@ public enum FileMintStrings {
         .airDropHint: ("Open the system AirDrop window for the selected files and folders.", "为选中的文件或文件夹打开系统隔空投送窗口。"),
         .airDropUnavailable: ("AirDrop cannot share these items right now. Check that AirDrop is available and the selected items are accessible.", "暂时无法隔空投送这些项目，请检查隔空投送是否可用，以及所选项目是否可访问。"),
         .fileOperationFailed: ("The operation could not be completed. Check the selected items, folder access and tool settings, then try again.", "操作未能完成。请检查所选项目、文件夹权限和功能开关后重试。"),
+        .fileOperationRecoveryPath: ("A changed item was preserved at %@. Move it back manually.", "已将发生变化的项目保留在 %@，请手动移回。"),
+        .preferencesRecoveryRequired: ("Saved settings could not be read. Finder actions are disabled. Import a valid settings file to recover; the original is preserved.", "无法读取已保存的设置，Finder 操作已停用。请导入有效的设置文件进行恢复；原文件已保留。"),
         .fileOperationAuthorize: ("Choose this exact folder to allow access to the selected items.", "请选择当前文件夹，以允许访问所选项目。"),
         .fileToolsActions: ("Menu actions", "菜单功能"),
         .copyItemNames: ("Copy File / Folder Names", "拷贝文件（夹）名称"),

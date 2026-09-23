@@ -3,6 +3,7 @@ import Foundation
 public struct FileDeletionFailure: Error, Sendable {
     public let completed: Int
     public let total: Int
+    public let recoveryURL: URL?
 }
 
 /// No background traversal: only remove items captured by an explicit menu click.
@@ -29,20 +30,33 @@ public enum FileDeletionService {
     }
 
     public static func perform(items: [FileMoveItem], isAllowed: () -> Bool) throws {
+        try performPerItem(items: items) { _ in isAllowed() }
+    }
+
+    public static func performPerItem(items: [FileMoveItem], isAllowed: (FileMoveItem) -> Bool) throws {
         var completed = 0
         do {
-            guard isAllowed() else { throw FileMoveError.disabled }
+            guard let first = items.first, isAllowed(first) else { throw FileMoveError.disabled }
             // Validate the whole batch before the first irreversible action.
             try validate(items)
             for item in items {
-                guard isAllowed() else { throw FileMoveError.disabled }
-                try item.validateIdentity()
-                // removeItem removes a selected symlink itself, not its target.
-                try FileManager.default.removeItem(at: item.source)
+                guard isAllowed(item) else { throw FileMoveError.disabled }
+                let claim = try StagedFileEntry.claim(item)
+                defer { claim.cleanup() }
+                do {
+                    guard isAllowed(item) else { throw FileMoveError.disabled }
+                    try claim.validateIdentity()
+                    // The private staged path cannot become another selected item.
+                    try FileManager.default.removeItem(at: claim.staged)
+                } catch {
+                    if (try? FileMoveItem.capture(claim.staged)) != nil { try claim.restore() }
+                    throw error
+                }
                 completed += 1
             }
         } catch {
-            throw FileDeletionFailure(completed: completed, total: items.count)
+            throw FileDeletionFailure(completed: completed, total: items.count,
+                                      recoveryURL: (error as? FileMoveError)?.recoveryURL)
         }
     }
 }

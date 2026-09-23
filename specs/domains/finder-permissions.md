@@ -18,6 +18,12 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   access. Both menus and quick requests must still check the configured folder
   scope; unrelated home folders receive no FileMint menu. Never scan directory
   contents or badge files, and do not request broad filesystem entitlements.
+- Menu construction may use path-only scope checks to stay fast in Finder. Before
+  the main app executes a request, resolve the configured roots and the selected
+  item's parent or destination directory on disk. Reject a path that enters an
+  unconfigured folder through a symlink. A selected symlink itself belongs to its
+  parent folder and may still be moved or deleted as a link. Resolution failure
+  grants no scope.
 - Folder selection uses NSOpenPanel. Persist security-scoped bookmarks alongside
   paths, restore access on launch, and release access when folders are removed.
 - Preferences are an atomically replaced private JSON file in
@@ -28,6 +34,9 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   short-lived request tickets, not user files. Old development App Group data
   is left untouched; users can explicitly import an old JSON/plist settings file
   via the app's File menu. Never silently read a protected legacy container.
+- A missing preferences file uses first-run defaults. A present but unreadable,
+  oversized or invalid file must not restore the broader default Finder scope or
+  be silently overwritten. Keep its bytes for explicit user recovery/import.
 - Existing preferences without bookmarks still load. If a write lacks permission,
   hand the draft to the main app, authorize the destination using a directory
   picker there, and retry after the user chooses Create. All creation and

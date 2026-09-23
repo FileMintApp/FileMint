@@ -33,6 +33,7 @@ struct BinaryCreationTests {
         defer { try? FileManager.default.removeItem(at: root) }
         let store = QuickCreationTicketStore(directory: root)
         let destination = root.appendingPathComponent("目标")
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
         var preferences = FileMintPreferences.default
         preferences.monitoredFolderURLs = [destination]
         preferences.templates = []

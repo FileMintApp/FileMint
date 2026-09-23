@@ -4,6 +4,36 @@ import Testing
 
 @Suite("Startup preferences and localization")
 struct StartupPreferencesTests {
+    @Test("damaged saved settings preserve bytes and fail closed until explicit recovery")
+    func damagedPreferences() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let file = root.appendingPathComponent("preferences.json")
+        let store = FileMintPreferencesStore(fileURL: file)
+        #expect(!store.loadWithStatus().requiresRecovery)
+        #expect(!store.load().monitoredFolderURLs.isEmpty)
+
+        let damaged = Data("{broken".utf8)
+        try damaged.write(to: file)
+        let result = store.loadWithStatus()
+        #expect(result.requiresRecovery)
+        #expect(result.preferences.monitoredFolderURLs.isEmpty)
+        #expect(throws: FileMintPreferencesStoreError.self) { try store.save(.default) }
+        #expect(try Data(contentsOf: file) == damaged)
+
+        var recovered = FileMintPreferences.default
+        recovered.monitoredFolderURLs = [root]
+        try store.save(recovered, recoveringInvalidFile: true)
+        #expect(store.load() == recovered)
+        let backups = try FileManager.default.contentsOfDirectory(atPath: root.path)
+            .filter { $0.hasPrefix("preferences-recovery-") }
+        #expect(backups.count == 1)
+        if let backup = backups.first {
+            #expect(try Data(contentsOf: root.appendingPathComponent(backup)) == damaged)
+        }
+    }
+
     @Test("New File location defaults to submenu and survives an explicit main-menu choice")
     func newFileMenuPlacement() throws {
         #expect(FileMintPreferences.default.newFileMenuPlacement == .submenu)

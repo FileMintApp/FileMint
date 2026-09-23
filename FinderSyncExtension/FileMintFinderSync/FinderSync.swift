@@ -3,9 +3,10 @@ import FileMintCore
 import FinderSync
 
 // Finder invokes these callbacks on its XPC queue, not necessarily the main
-// thread. Keep this adapter stateless and copy values before dispatching UI.
+// thread. Keep menu actions as value snapshots and copy values before dispatching UI.
 final class FinderSync: FIFinderSync {
     private let actions = LockedMenuActions()
+    private let cachedPreferences = LockedFinderPreferences()
     override init() {
         super.init()
         reloadPreferences()
@@ -15,7 +16,7 @@ final class FinderSync: FIFinderSync {
     deinit { DistributedNotificationCenter.default().removeObserver(self) }
     override var toolbarItemName: String { "FileMint" }
     override var toolbarItemToolTip: String {
-        FileMintStrings.text(.createNewFileTooltip, language: FileMintPreferencesStore().load().language)
+        FileMintStrings.text(.createNewFileTooltip, language: cachedPreferences.snapshot().language)
     }
     override var toolbarItemImage: NSImage {
         let image = Bundle(for: Self.self).image(forResource: "FinderMenuIcon")?.copy() as? NSImage ?? NSImage()
@@ -25,7 +26,7 @@ final class FinderSync: FIFinderSync {
     }
 
     override func menu(for menuKind: FIMenuKind) -> NSMenu? {
-        let preferences = FileMintPreferencesStore().load()
+        let preferences = cachedPreferences.snapshot()
         let language = preferences.language.resolved()
         func text(_ key: FileMintTextKey) -> String {
             FileMintStrings.text(key, language: language)
@@ -216,6 +217,7 @@ final class FinderSync: FIFinderSync {
 
     @objc private func reloadPreferences() {
         let preferences = FileMintPreferencesStore().load()
+        cachedPreferences.replace(preferences)
         FIFinderSyncController.default().directoryURLs = FolderScope.observationRoots(
             for: preferences.monitoredFolderURLs,
             home: DefaultFolders.resolvedUserHomeDirectory(fileManager: .default)
@@ -243,6 +245,21 @@ final class FinderSync: FIFinderSync {
     @objc private func pasteImageFile(_ item: NSMenuItem) {
         guard let action = actions.take(item.tag) else { return }
         Task { @MainActor in FinderActions.shared.pasteImage(in: action.directory) }
+    }
+}
+
+private final class LockedFinderPreferences: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value = FileMintPreferences.default
+
+    func replace(_ preferences: FileMintPreferences) {
+        lock.lock(); defer { lock.unlock() }
+        value = preferences
+    }
+
+    func snapshot() -> FileMintPreferences {
+        lock.lock(); defer { lock.unlock() }
+        return value
     }
 }
 

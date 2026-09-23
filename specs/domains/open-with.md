@@ -11,6 +11,9 @@ Load for: Configured applications, their Finder menu placement and opening selec
   one or more application bundles. Validate real application bundles and store
   their display name, bundle identifier, URL and read-only security-scoped bookmark.
   Do not crawl Applications or launch an app while adding it.
+- Bound each application Info.plist read to 1 MiB and perform bundle validation away from the
+  main UI thread; a malformed or unusually large Info.plist fails validation
+  without hanging the settings panel.
 - Preserve the saved list order and reject duplicates by bundle identifier or
   canonical URL. Users can drag rows to reorder them; each menu level follows
   that relative order. Choosing an existing app refreshes its location/bookmark

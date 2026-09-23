@@ -122,6 +122,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             for parent in uniqueParents(selection) {
                 guard try authorize(parent, bookmarks: &bookmarks, readOnly: true) else { return }
             }
+            try requireResolvedSelection(selection)
             guard OpenWithPolicy.application(for: reference, selection: selection,
                 preferences: currentPreferences) != nil else { throw OpenWithError.changedConfiguration }
             try OpenWithApplicationAccess.validate(application, at: applicationURL)
@@ -137,6 +138,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             for parent in uniqueParents(selection) {
                 guard try authorize(parent, bookmarks: &bookmarks, readOnly: true) else { return }
             }
+            try requireResolvedSelection(selection)
             guard ResourceToolsPolicy.availableTools(selection: selection, isItemMenu: true,
                 preferences: currentPreferences).contains(tool) else { throw ResourceError.disabled }
             try await resourceController.present(selection: selection, tool: tool)
@@ -148,6 +150,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             for parent in uniqueParents(selection) {
                 guard try authorize(parent, bookmarks: &bookmarks) else { return }
             }
+            try requireResolvedSelection(selection)
             guard FileToolsPolicy.availableTools(selection: selection, isItemMenu: true,
                 preferences: currentPreferences).contains(.move) else { throw FileMoveError.disabled }
             let savedBookmarks = bookmarks
@@ -164,6 +167,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             for parent in uniqueParents(selection) {
                 guard try authorize(parent, bookmarks: &bookmarks) else { return }
             }
+            try requireResolvedSelection(selection)
             try require(.permanentDelete, selection: selection)
             try await Task.detached(priority: .userInitiated) { try FileDeletionService.validate(items) }.value
             let requiresConfirmation = DeleteConfirmation.isRequired(captured: confirmation, current: currentPreferences.fileTools.deleteConfirmation)
@@ -179,12 +183,15 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
                 NSApp.activate(ignoringOtherApps: true)
                 guard alert.runModal() == .alertSecondButtonReturn else { return }
             }
+            try requireResolvedSelection(selection)
+            try require(.permanentDelete, selection: selection)
             let preferencesFile = self.preferencesFile
             try await Task.detached(priority: .userInitiated) {
-                try FileDeletionService.perform(items: items) {
+                try FileDeletionService.performPerItem(items: items) { item in
                     let preferences = FileMintPreferencesStore(fileURL: preferencesFile).load()
-                    return FileToolsPolicy.availableTools(selection: selection, isItemMenu: true,
+                    return FileToolsPolicy.availableTools(selection: [item.source], isItemMenu: true,
                         preferences: preferences).contains(.permanentDelete) &&
+                        FolderScope.containsResolvedItem(item.source, in: preferences.monitoredFolderURLs) &&
                         (requiresConfirmation || preferences.fileTools.deleteConfirmation == .silent)
                 }
             }.value
@@ -195,6 +202,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             for parent in uniqueParents(selection) {
                 guard try authorize(parent, bookmarks: &bookmarks, readOnly: true) else { return }
             }
+            try requireResolvedSelection(selection)
             try require(.airDrop, selection: selection)
             guard let service = NSSharingService(named: .sendViaAirDrop), service.canPerform(withItems: selection) else {
                 showMessage(.airDropUnavailable)
@@ -220,14 +228,16 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             guard try authorize(desktopDirectory, bookmarks: &bookmarks,
                                 message: .desktopAliasAuthorize) else { return }
             try aliasAccessStore.save(bookmarks)
+            try requireResolvedSelection(selection)
             try require(.desktopAlias, selection: selection)
             let directory = desktopDirectory
             let preferencesFile = self.preferencesFile
             _ = try await Task.detached(priority: .userInitiated) {
-                try DesktopAliasService.perform(items: items, in: directory) {
+                try DesktopAliasService.performPerItem(items: items, in: directory) { item in
                     let preferences = FileMintPreferencesStore(fileURL: preferencesFile).load()
-                    return FileToolsPolicy.availableTools(selection: selection, isItemMenu: true,
+                    return FileToolsPolicy.availableTools(selection: [item.source], isItemMenu: true,
                         preferences: preferences).contains(.desktopAlias)
+                        && FolderScope.containsResolvedItem(item.source, in: preferences.monitoredFolderURLs)
                 }
             }.value
 
@@ -239,16 +249,22 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
                 guard try authorize(parent, bookmarks: &bookmarks) else { return }
             }
             guard try authorize(destination, bookmarks: &bookmarks) else { return }
+            try requireResolvedSelection(pending.items.map(\.source))
+            guard FolderScope.containsResolvedDirectory(destination, in: currentPreferences.monitoredFolderURLs) else {
+                throw FileMoveError.disabled
+            }
             // Preserve new folder grants even if a later item cannot be moved.
             pending.bookmarks = bookmarks
             try store.save(pending)
             let store = self.store
             let preferencesFile = self.preferencesFile
             try await Task.detached(priority: .userInitiated) {
-                try FileMoveService().perform(batchID: batchID, to: destination, store: store) { pending in
+                try FileMoveService().performPerItem(batchID: batchID, to: destination, store: store) { item in
                     let preferences = FileMintPreferencesStore(fileURL: preferencesFile).load()
-                    return FileMovePolicy.isEnabled(preferences, pending: pending) &&
-                        FolderScope.contains(destination, in: preferences.monitoredFolderURLs)
+                    return FileToolsPolicy.availableTools(selection: [item.source], isItemMenu: true,
+                        preferences: preferences).contains(.move) &&
+                        FolderScope.containsResolvedDirectory(destination, in: preferences.monitoredFolderURLs) &&
+                        FolderScope.containsResolvedItem(item.source, in: preferences.monitoredFolderURLs)
                 }
             }.value
         }
@@ -261,6 +277,13 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
     private func require(_ tool: FileTool, selection: [URL]) throws {
         guard FileToolsPolicy.availableTools(selection: selection, isItemMenu: true,
             preferences: currentPreferences).contains(tool) else { throw FileMoveError.disabled }
+    }
+
+    private func requireResolvedSelection(_ selection: [URL]) throws {
+        let roots = currentPreferences.monitoredFolderURLs
+        guard selection.allSatisfy({ FolderScope.containsResolvedItem($0, in: roots) }) else {
+            throw FileMoveError.disabled
+        }
     }
 
     func sharingService(_ sharingService: NSSharingService, didShareItems items: [Any]) {
@@ -366,6 +389,9 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             let alert = NSAlert()
             alert.messageText = text(.permanentDelete)
             alert.informativeText = String(format: text(.deleteFailedCount), failure.completed, failure.total - failure.completed)
+            if let url = failure.recoveryURL {
+                alert.informativeText += "\n" + String(format: text(.fileOperationRecoveryPath), url.path)
+            }
             NSApp.activate(ignoringOtherApps: true)
             alert.runModal()
             return
@@ -375,6 +401,14 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             return
         }
         if let error = error as? FileMoveError {
+            if let recovery = error.recoveryURL {
+                let alert = NSAlert()
+                alert.messageText = text(.moveFailed)
+                alert.informativeText = String(format: text(.fileOperationRecoveryPath), recovery.path)
+                NSApp.activate(ignoringOtherApps: true)
+                alert.runModal()
+                return
+            }
             let key: FileMintTextKey = switch error {
             case .invalidSelection: .moveInvalidSelection
             case .sourceChanged: .moveSourceChanged
@@ -382,6 +416,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             case .destinationExists: .moveDestinationExists
             case .staleRequest: .moveStaleRequest
             case .disabled: .moveDisabled
+            case .recoveryRequired: .moveSourceChanged
             }
             showMessage(key)
         } else {

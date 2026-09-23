@@ -1,4 +1,5 @@
 import AppKit
+import Darwin
 import FileMintCore
 
 /// AppKit and security-scoped access stay outside the deterministic Core policy.
@@ -36,7 +37,7 @@ enum OpenWithApplicationAccess {
     private static func bundleIdentifier(at url: URL) throws -> String {
         guard OpenWithPolicy.isLocalFileURL(url), url.pathExtension.lowercased() == "app",
               (try? url.resourceValues(forKeys: [.isApplicationKey]))?.isApplication == true,
-              let data = try? Data(contentsOf: url.appendingPathComponent("Contents/Info.plist")),
+              let data = try? readInfoPlist(at: url.appendingPathComponent("Contents/Info.plist")),
               let info = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
               info["CFBundlePackageType"] as? String == "APPL",
               let identifier = info["CFBundleIdentifier"] as? String, !identifier.isEmpty,
@@ -45,6 +46,27 @@ enum OpenWithApplicationAccess {
               FileManager.default.isExecutableFile(atPath: url.appendingPathComponent("Contents/MacOS")
                 .appendingPathComponent(executable).path) else { throw OpenWithError.invalidApplication }
         return identifier
+    }
+
+    private static func readInfoPlist(at url: URL) throws -> Data {
+        let maximumBytes = 1_048_576
+        var before = stat()
+        guard url.withUnsafeFileSystemRepresentation({ path in path.map { lstat($0, &before) } ?? -1 }) == 0,
+              before.st_mode & S_IFMT == S_IFREG, before.st_size > 0,
+              before.st_size <= Int64(maximumBytes) else { throw OpenWithError.invalidApplication }
+        let descriptor = url.withUnsafeFileSystemRepresentation { path in
+            path.map { Darwin.open($0, O_RDONLY | O_NOFOLLOW | O_CLOEXEC) } ?? -1
+        }
+        guard descriptor >= 0 else { throw OpenWithError.invalidApplication }
+        let handle = FileHandle(fileDescriptor: descriptor, closeOnDealloc: true)
+        defer { try? handle.close() }
+        var opened = stat()
+        guard fstat(descriptor, &opened) == 0, opened.st_mode & S_IFMT == S_IFREG,
+              opened.st_dev == before.st_dev, opened.st_ino == before.st_ino,
+              opened.st_size == before.st_size,
+              let data = try handle.read(upToCount: maximumBytes + 1),
+              Int64(data.count) == before.st_size else { throw OpenWithError.invalidApplication }
+        return data
     }
 
     @MainActor

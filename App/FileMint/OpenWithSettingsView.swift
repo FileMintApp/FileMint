@@ -156,22 +156,31 @@ private struct OpenWithApplicationRow: View {
                 .accessibilityLabel(String(format: text(.openWithRemove), application.name))
                 .accessibilityIdentifier("openWith.\(application.id).remove")
         }
-        .task(id: application) { refreshPresentation() }
+        .task(id: application) { await refreshPresentation() }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
-            refreshPresentation()
+            Task { await refreshPresentation() }
         }
     }
 
-    private func refreshPresentation() {
-        do {
-            let url = try OpenWithApplicationAccess.resolve(application)
+    private func refreshPresentation() async {
+        let app = application
+        let resolved = await Task.detached(priority: .utility) { () -> URL? in
+            do {
+                let url = try OpenWithApplicationAccess.resolve(app)
+                let started = url.startAccessingSecurityScopedResource()
+                defer { if started { url.stopAccessingSecurityScopedResource() } }
+                try OpenWithApplicationAccess.validate(app, at: url)
+                return url
+            } catch { return nil }
+        }.value
+        guard !Task.isCancelled else { return }
+        if let url = resolved {
             let started = url.startAccessingSecurityScopedResource()
             defer { if started { url.stopAccessingSecurityScopedResource() } }
-            try OpenWithApplicationAccess.validate(application, at: url)
             icon = FileToolAppearance.applicationImage(at: url, size: 32)
             location = url.deletingLastPathComponent().path
             unavailable = false
-        } catch {
+        } else {
             icon = nil
             unavailable = true
         }
@@ -194,16 +203,21 @@ extension PreferencesModel {
         isChoosingOpenWithApp = true
         let completion: (NSApplication.ModalResponse) -> Void = { [weak self] response in
             guard let self else { return }
-            defer { self.isChoosingOpenWithApp = false }
-            guard response == .OK else { return }
-            do {
-                // Validate the entire choice before changing configuration.
-                let apps = try panel.urls.map(OpenWithApplicationAccess.capture)
-                let previous = self.preferences.openWith
-                for app in apps { self.preferences.openWith.add(app) }
-                if !self.save() { self.preferences.openWith = previous }
-            } catch {
-                self.lastError = self.text((error as? OpenWithError)?.messageKey ?? .openWithInvalidApp)
+            guard response == .OK else { self.isChoosingOpenWithApp = false; return }
+            let selected = panel.urls
+            Task { @MainActor in
+                defer { self.isChoosingOpenWithApp = false }
+                do {
+                    // Validate the entire choice before changing configuration.
+                    let apps = try await Task.detached(priority: .userInitiated) {
+                        try selected.map(OpenWithApplicationAccess.capture)
+                    }.value
+                    let previous = self.preferences.openWith
+                    for app in apps { self.preferences.openWith.add(app) }
+                    if !self.save() { self.preferences.openWith = previous }
+                } catch {
+                    self.lastError = self.text((error as? OpenWithError)?.messageKey ?? .openWithInvalidApp)
+                }
             }
         }
         if let window = NSApp.keyWindow { panel.beginSheetModal(for: window, completionHandler: completion) }

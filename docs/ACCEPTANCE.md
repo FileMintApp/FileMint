@@ -3,6 +3,37 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Performance and security repair QA — 2026-09-23
+
+Checked on macOS 27.2, Apple silicon, `79c2c45` plus the uncommitted
+[performance/security worktree](tasks/2026-09-23-performance-security-audit-fixes.md).
+
+- `make verify` passed after implementation: 148 Core and 13 image tests,
+  public JSON Harness, CLI and script checks. The unsigned universal app and
+  Finder extension built; the Pages site build and six immutable Action-pin
+  assertion passed. No publication occurred.
+- The disposable sandboxed Open with App app delivered a full Unicode file/folder
+  batch to a native receiver, preserved source bytes/clipboard, and rejected an
+  oversized application Info.plist.
+- After explicit approval for only its generated `source` and `target` folders,
+  the disposable sandboxed move app prepared and completed a two-item move.
+  Pending count reached zero; the source was empty and target file/package bytes
+  matched the original fixtures. No owner preferences or user files were used.
+- A disposable HFS+ disk image on a distinct device exercised the physical
+  cross-volume Core path: file, symbolic link and App package moved intact;
+  occupied destination entries remained unchanged, the source was restored on
+  collision, and owned staging was absent. The disk image was ejected and removed.
+  This CLI observation is separate from sandboxed Finder execution.
+- The isolated Resource Tools native app completed all six tools in Chinese/light
+  and English/dark with two synthetic images each; original bytes and clipboard
+  remained intact.
+- PluginKit currently registers only the installed 0.5.9 Finder extension at
+  `/Applications/FileMint.app`, while this source builds 0.5.10. A separate local
+  ad-hoc 0.5.10 QA DMG and a verified backup of the installed 0.5.9 app are ready;
+  the installed app has not been replaced. Actual new-code Finder callbacks,
+  Intel and macOS 13 runtime remain unverified. A crash during private destructive
+  staging can leave a recoverable item in that staging folder.
+
 ## FileMint 0.5.9 release — 2026-09-22
 
 Source tag `v0.5.9`, commit `6f9c3061f671e86026cb721a539393aa9a802194`, build 17.
