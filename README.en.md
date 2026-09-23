@@ -10,11 +10,11 @@ Creating a file should not require opening an editor, choosing Save As and findi
 FileMint puts the action back in Finder: **right-click, choose a type and your file is there.**
 When you need a name, starter content, image processing or selected-item tools, the same native workflow continues.
 
-## What's new in 0.5.9
+## What's new in 0.5.10
 
-Fixes in-app installation failures by resolving installer entitlements before signing and checking the permissions embedded in the signed app. Versions 0.5.7/0.5.8 are confirmed affected; manually install 0.5.9 once.
+General now shows setup guidance and a shortcut to macOS settings when the Finder extension is disabled. The website adds task-based guides in English and Chinese. Versions 0.5.7/0.5.8 have incorrect updater permissions and still need one manual installation of a newer release.
 
-[0.5.9 release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.5.9)
+[0.5.10 release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.5.10)
 
 ## Recent features
 
@@ -130,7 +130,7 @@ Read the complete [privacy policy](PRIVACY.md).
 
 Supports **macOS 13+**, with one universal package for Apple silicon and Intel Macs.
 
-**The 0.5.9 installer is Developer ID signed, Apple notarized and stapled.** First use still follows macOS prompts for Finder enablement and folder authorization.
+**Stable installers from 0.5.9 onward are Developer ID signed, Apple notarized and stapled.** First use still follows macOS prompts for Finder enablement and folder authorization.
 
 1. [Download the latest DMG](https://github.com/FileMintApp/FileMint/releases/latest) and drag FileMint into Applications.
 2. Launch it, enable the Finder extension and authorize your working folders.
@@ -138,7 +138,7 @@ Supports **macOS 13+**, with one universal package for Apple silicon and Intel M
 
 After installing 0.5.9, use **About → Check for Updates → Update and Restart** for later releases. Finish creating or editing first; macOS may request administrator authorization.
 
-Manually install 0.5.9 once from an older release: quit FileMint, replace it in Applications, eject the installer volume and reopen it. The 0.5.7/0.5.8 updater cannot repair its own signed permissions.
+When upgrading from 0.5.7/0.5.8, manually install 0.5.9 or later once: quit FileMint, replace it in Applications, eject the installer volume and reopen it. Those older updaters cannot repair their own signed permissions.
 
 For full installation limitations, update notes and provenance, read the [installation guide](docs/INSTALL.md).
 

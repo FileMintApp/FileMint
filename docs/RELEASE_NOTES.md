@@ -1,3 +1,25 @@
+# FileMint 0.5.10
+
+## 改进
+
+- Finder 扩展未启用时，“通用”页会显示启用引导，并提供打开系统扩展设置的按钮；“Finder 与文件夹”页也会显示对应 macOS 版本的设置路径。返回应用后会刷新扩展状态。
+- 官网新增中英文使用指南，按实际操作介绍文件创建、模板、图片与文件工具，以及 Finder 菜单或文件夹访问未生效时的处理方法。
+- 发布流程加强版本、签名权限、Sparkle 安装器、Apple 公证及远端资产的一致性校验。
+
+## 升级说明
+
+已安装 0.5.9 的用户可以通过“关于 → 检查更新 → 更新并重启”升级。0.5.7/0.5.8 的安装器权限问题仍需先手动安装一次新版；旧版自身无法修复其签名权限。
+
+## Improvements
+
+- When the Finder extension is disabled, General shows setup guidance and a button to open macOS extension settings. Finder & Folders also shows the settings path for the current macOS version. The app refreshes extension status when you return.
+- The website now has bilingual task-based guides for creating files, using templates, image and file tools, and resolving missing Finder menus or folder access.
+- Release checks now validate version progression, signed permissions, the Sparkle installer, Apple notarization, and consistency of the uploaded assets.
+
+## Upgrading
+
+Users on 0.5.9 can upgrade through About → Check for Updates → Update and Restart. Versions 0.5.7/0.5.8 still require one manual installation because their existing signed installer permissions cannot be repaired remotely.
+
 # FileMint 0.5.9
 
 ## 修复

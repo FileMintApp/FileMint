@@ -7,7 +7,7 @@ description: Install and enable FileMint on macOS.
 
 FileMint supports **macOS 13 and later**. One DMG works on both Apple silicon and Intel Macs.
 
-The 0.5.9 installer is Developer ID signed, Apple notarized and stapled.
+Stable installers from 0.5.9 onward are Developer ID signed, Apple notarized and stapled.
 
 ## First install
 
@@ -65,7 +65,7 @@ Automatic update checks are enabled by default and can be disabled in **General*
 
 After installing 0.5.9, choose **About → Check for Updates → Update and Restart** for later releases. Finish creating or editing first; macOS may request administrator authorization.
 
-Manually install 0.5.9 once from an older release. Versions 0.5.7/0.5.8 have incorrect installer permissions that their own updater cannot repair:
+When upgrading from 0.5.7/0.5.8, manually install 0.5.9 or later once. Those older versions have incorrect installer permissions that their own updater cannot repair:
 
 1. Quit FileMint.
 2. Drag the new version into Applications to replace the old copy.

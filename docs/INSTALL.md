@@ -7,7 +7,7 @@ FileMint 支持 macOS 13+，兼容 Apple 芯片与 Intel。请从
 ## 首次启动
 
 1. 打开 DMG，把 FileMint 拖入“应用程序”，推出“FileMint”安装磁盘，再从“应用程序”打开。
-2. 0.5.9 使用 Developer ID 签名，已通过 Apple 公证并附加（stapled）票据。
+2. 0.5.9 及后续正式版使用 Developer ID 签名，已通过 Apple 公证并附加（stapled）票据。
    如果下载的是旧版 0.5.3：它在 Apple 公证仍在处理时提前发布，因此公开 DMG 没有内嵌票据。
    Apple 后续已接受这份原始 DMG 的公证提交；联网时 Gatekeeper 可获取 Apple 在线发布的票据，离线首次打开仍可能受阻。
    SHA-256 只校验下载字节，不代表安装包内嵌票据。0.5.3 之后的正式版须先完成并附加公证票据再发布。
@@ -86,7 +86,7 @@ FileMint 会用书签记住它，而不是每次创建都重新选择。下方�
 ## English
 
 Drag FileMint from the DMG into Applications, eject the FileMint installer volume,
-then open FileMint from Applications. Version 0.5.9 is Developer ID signed,
+then open FileMint from Applications. Stable releases from 0.5.9 onward are Developer ID signed,
 Apple notarized and stapled. The older version 0.5.3 is Developer ID signed and
 was published while Apple notarization was in progress, without a stapled ticket.
 Apple later accepted that exact DMG submission and published its ticket online.
