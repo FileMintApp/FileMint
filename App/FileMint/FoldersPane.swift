@@ -17,8 +17,12 @@ struct FoldersPane: View {
                         Spacer()
                         Button(model.text(.openExtensionSettings)) { model.openExtensionSettings() }.buttonStyle(MintButtonStyle())
                     }
-                    Text(model.text(.finderSetup)).font(.caption).foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                    if !model.extensionEnabled {
+                        Text(model.text(.finderSetup)).font(.caption).foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(model.finderSettingsPath).font(.caption).foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
                 VStack(alignment: .leading, spacing: 12) {
                     SettingsSectionTitle(title: model.text(.menuFolders))

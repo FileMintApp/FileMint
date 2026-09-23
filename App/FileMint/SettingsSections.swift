@@ -17,6 +17,23 @@ struct GeneralPane: View {
                     }
                     Spacer()
                 }.mintSurface()
+                if !model.extensionEnabled {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Label(model.text(.finderExtension), systemImage: "puzzlepiece.extension")
+                            .font(.system(size: 15, weight: .semibold))
+                        Text(model.text(.finderSetup))
+                            .font(.system(size: 12)).foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(model.finderSettingsPath)
+                            .font(.system(size: 11)).foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Button(model.text(.openExtensionSettings)) { model.openExtensionSettings() }
+                            .buttonStyle(MintButtonStyle(primary: true))
+                            .accessibilityIdentifier("onboarding.openExtensionSettings")
+                    }
+                    .mintSurface()
+                    .accessibilityIdentifier("onboarding.finderExtension")
+                }
                 SettingsSection(title: model.text(.appearance)) {
                     PreferenceRow(title: model.text(.theme)) {
                         Picker(model.text(.theme), selection: Binding(

@@ -52,6 +52,10 @@ final class PreferencesModel: ObservableObject {
 
     var enabledTemplates: [FileTemplate] { TemplateCatalog.enabledTemplates(from: preferences.templates) }
     func text(_ key: FileMintTextKey) -> String { FileMintStrings.text(key, language: preferences.language) }
+    var finderSettingsPath: String {
+        if #available(macOS 15, *) { return text(.finderSettingsPathModern) }
+        return text(.finderSettingsPathLegacy)
+    }
     func templateDisplayName(for template: FileTemplate) -> String {
         FileMintStrings.templateDisplayName(for: template, language: preferences.language)
     }

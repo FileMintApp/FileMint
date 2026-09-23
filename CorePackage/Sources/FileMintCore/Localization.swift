@@ -194,6 +194,8 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case productTagline
     case productDetail
     case finderSetup
+    case finderSettingsPathModern
+    case finderSettingsPathLegacy
     case fileTypeHint
     case customTypeHint
     case restoreConfirm
@@ -450,6 +452,8 @@ public enum FileMintStrings {
         .productTagline: ("A new file. Right here.", "新文件，就在此刻。"),
         .productDetail: ("Right-click in Finder to create a file. Use New File… when you want to name it or paste content first.", "在 Finder 右键创建文件。需要命名或粘贴内容时，选择“新建文件…”。"),
         .finderSetup: ("macOS requires you to enable the Finder extension. Click Open Extension Settings, enable FileMint, then return here to refresh its status. You can also use New File… in the sidebar.", "Finder 扩展需要你在 macOS 中开启。点击“打开扩展设置”，开启 FileMint 后返回这里，状态会自动刷新。也可使用侧栏中的“新建文件…”。"),
+        .finderSettingsPathModern: ("If needed, find FileMint in System Settings → General → Login Items & Extensions → Finder (or Added Extensions).", "如果没有直接看到 FileMint，请前往“系统设置 → 通用 → 登录项与扩展 → Finder”（或“已添加的扩展”）查找。"),
+        .finderSettingsPathLegacy: ("If needed, find FileMint in System Settings → Privacy & Security → Extensions.", "如果没有直接看到 FileMint，请前往“系统设置 → 隐私与安全性 → 扩展”查找。"),
         .fileTypeHint: ("Save different templates for the same format. Enabled templates appear in Finder and the creation panel.", "为同一种格式保存不同模板。勾选后显示在 Finder 和创建面板中。"),
         .customTypeHint: ("Creates UTF-8 text with this suffix. A suffix does not convert text into PDF, images or Office files.", "以此后缀创建 UTF-8 文本；不能通过更改后缀生成 PDF、图片或 Office 文件。"),
         .restoreConfirm: ("Restore built-in types? Custom types will be kept.", "恢复内置类型？自定义类型会保留。"),

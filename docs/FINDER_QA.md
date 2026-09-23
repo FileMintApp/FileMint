@@ -45,6 +45,11 @@ Record actual results in ACCEPTANCE.md.
 - At the 840×600 minimum content size, check both languages, list actions, editor
   sheets and scrolling of the expanded Full Disk Access guide. New File remains
   accessible from each page. About menu commands reuse the same settings window.
+- With the Finder extension disabled, open General in both languages and confirm
+  the setup card and manual Settings button are visible at 840×600. Open system
+  settings from the button; return without enabling and confirm the card remains.
+  Enable FileMint there, return to the app and confirm its actual status refreshes
+  and the card disappears. Disable it again and confirm the card returns.
 - Add `.toml` with starter content; verify it appears in the selector and Finder.
 - Edit, disable, reorder and remove that custom type. Built-ins remain intact.
 - Restore built-ins; verify custom types remain after explicit confirmation.

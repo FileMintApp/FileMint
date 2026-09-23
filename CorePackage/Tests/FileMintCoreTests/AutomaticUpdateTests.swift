@@ -76,13 +76,19 @@ struct AutomaticUpdateTests {
     func guidance(language: AppLanguage) {
         let hint = FileMintStrings.text(.automaticUpdateHint, language: language)
         let finder = FileMintStrings.text(.finderSetup, language: language)
+        let modernPath = FileMintStrings.text(.finderSettingsPathModern, language: language)
+        let legacyPath = FileMintStrings.text(.finderSettingsPathLegacy, language: language)
         #expect(hint.contains("7"))
         if language == .chinese {
             #expect(hint.contains("下载和安装由你决定"))
             #expect(finder.contains("需要你") && finder.contains("状态会自动刷新"))
+            #expect(modernPath.contains("登录项与扩展") && modernPath.contains("Finder"))
+            #expect(legacyPath.contains("隐私与安全性") && legacyPath.contains("扩展"))
         } else {
             #expect(hint.contains("Download and install when you choose"))
             #expect(finder.contains("requires you") && finder.contains("refresh its status"))
+            #expect(modernPath.contains("Login Items & Extensions") && modernPath.contains("Finder"))
+            #expect(legacyPath.contains("Privacy & Security") && legacyPath.contains("Extensions"))
         }
     }
 }
