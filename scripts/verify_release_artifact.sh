@@ -60,10 +60,11 @@ if [[ -n "$build_number" && "$app_build" != "$build_number" ]]; then
   exit 1
 fi
 
-if /usr/libexec/PlistBuddy -c 'Print :SUEnableInstallerLauncherService' "$app_path/Contents/Info.plist" >/dev/null 2>&1; then
+if [[ "$pending_053" == 0 ]]; then
+  [[ -f "$feed_path" ]] || { echo 'Missing release appcast.xml' >&2; exit 1; }
   configured_key="$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' Config/AppInfo.plist)"
   bundled_key="$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "$app_path/Contents/Info.plist")"
-  [[ "$bundled_key" == "$configured_key" ]] || { echo 'Update public key mismatch' >&2; exit 1; }
+  [[ -n "$configured_key" && "$bundled_key" == "$configured_key" ]] || { echo 'Update public key mismatch' >&2; exit 1; }
   sparkle="$app_path/Contents/Frameworks/Sparkle.framework/Versions/B"
   for component in XPCServices/Installer.xpc XPCServices/Downloader.xpc Autoupdate Updater.app; do
     bash scripts/verify_developer_id_signature.sh "$sparkle/$component"

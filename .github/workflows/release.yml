@@ -24,6 +24,9 @@ jobs:
           set -euo pipefail
           [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 2
           version="${RELEASE_TAG#v}"
+          expected="$(printf '%s\n' "FileMint-$version.dmg" "FileMint-$version.dmg.sha256" appcast.xml | sort)"
+          actual="$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' | sort)"
+          [[ "$actual" == "$expected" ]] || { echo 'Release assets do not match the required DMG, checksum and appcast.xml set' >&2; exit 1; }
           mkdir -p dist
           gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
             --pattern "FileMint-$version.dmg" --pattern "FileMint-$version.dmg.sha256" \

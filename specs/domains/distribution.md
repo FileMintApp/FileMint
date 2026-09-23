@@ -44,6 +44,16 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   releases require local ticket validation before upload. A published-release
   GitHub job may re-check the uploaded bytes without building them or claiming
   build provenance.
+- A normal stable release has one version/build source in `project.yml` and two
+  explicit stages: `release-local` checks the committed release notes and source
+  tag, then builds and verifies the notarized artifact; `publish-local` publishes
+  its exact bytes and waits for the published-asset verification job. Native
+  candidate acceptance takes place between stages. Publication can resume from
+  the verified local manifest after a remote failure without rebuilding or
+  replacing release assets. A notarization timeout retains the submitted DMG,
+  its hash and Apple submission ID so the same submission can be resumed without
+  uploading again. Preparation requires a reviewed commit and tag; development
+  commands must not publish implicitly.
 
 ## Automatic-update artifacts
 
@@ -60,6 +70,11 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   The feed binds the numeric build, marketing version, exact GitHub asset URL,
   minimum macOS version, size and signature. Release builds and publication must
   fail if the feed/signature/public-key configuration is missing or mismatched.
+- Stable release verification requires the Sparkle installer configuration and
+  signed framework/helper contents in the mounted app. A missing configuration
+  cannot turn appcast verification into an optional check. The remote release must
+  contain exactly the DMG, portable checksum and `appcast.xml`; all three must
+  match the local verified files byte for byte.
 - Keep the Sparkle EdDSA private key in the local Keychain under a FileMint-specific
   account. Only the public key belongs in source and in the app. Never export keys
   to CI, logs or release assets. Existing Apple signing credentials are unchanged.

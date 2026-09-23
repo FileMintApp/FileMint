@@ -46,22 +46,83 @@ the installed release. Do not leave packaging or mounted-image registrations
 behind after installation checks.
 
 Local `make package` still defaults to ad-hoc signing for development checks.
-For a normal notarized public version after 0.5.3, update `docs/RELEASE_NOTES.md`, commit all changes and
-create `vVERSION` at `HEAD`. Store Apple notarization credentials in a local
-`notarytool` Keychain profile named `FileMint` (or supply the supported local
-credential variables). Then run:
+For a normal notarized public version after 0.5.3, use the following sequence
+whenever the owner asks to “构建发布”. The phrase authorizes the full release; a
+request only to build, commit or prepare a candidate stops at its named stage.
+The two stages are intentionally separate so the candidate can be checked in a
+real installed environment before any public upload.
+
+### 1. Prepare the source
+
+1. Inspect the latest GitHub stable release and its appcast, the current main
+   branch, and changes since the last tag. Choose a new three-component version
+   and strictly higher numeric build. Set both once in `project.yml` under
+   `settings.base`. `build_release.sh` and `package_release.sh` use those values;
+   do not edit generated `FileMint.xcodeproj` or keep a second version default.
+2. Put the current version at the **first** `# FileMint VERSION` heading in
+   `docs/RELEASE_NOTES.md`. Write only verified shipped behavior and any migration
+   instructions. Review user-facing README/website/install copy when affected.
+   The publishing script extracts only this section for the GitHub Release body.
+3. Finish applicable feature verification, commit the release preparation on
+   `main`, and create `vVERSION` at that exact commit. The local release command
+   rejects an unclean tree, mismatched tag, stale notes, or a version/build that
+   does not exceed the latest published appcast. Do not move an existing tag.
+
+### 2. Build and inspect the candidate
+
+Keep Apple notarization credentials in the local `FileMint` Keychain profile (or
+use the supported local credential variables). Run:
 
 ```sh
-APP_VERSION=VERSION BUILD_NUMBER=NUMBER make release-local
-APP_VERSION=VERSION make publish-local
+make release-local
 ```
 
-The first command runs `make verify`, signs and notarizes in a temporary output
-directory, checks the mounted DMG, and saves the final DMG, `.sha256`, appcast and local
-source manifest under `build/`. The second checks those exact bytes and the
-tagged source again, pushes `main` and the version tag if needed, creates the GitHub Release
-and downloads its assets to confirm they match. It never uploads the local
-source manifest or any Apple credential.
+This runs `make verify`, builds both architectures, compiles/tests the production
+Sparkle driver, signs app/extension/helper contents, submits the DMG once for
+Apple notarization, staples the accepted ticket, and verifies the mounted app,
+embedded entitlements, checksum and signed `appcast.xml`. It saves the final DMG,
+`.sha256`, appcast and source manifest under `build/`. A missing Sparkle installer
+configuration or feed now fails the release, even when other signatures pass.
+Keep the final files intact. If notarization is pending or its wait times out,
+the script retains the staging DMG and its submission ID. Check that same ID at
+Apple, then resume with `FILEMINT_RESUME_STAGE=/path/printed/by/script make
+release-local`. This verifies the original DMG hash and waits on the same
+submission; it does not upload again. If Apple rejects the submission or any
+other check fails, stop and diagnose before making a new candidate.
+
+Copy the **candidate from the final DMG** into an isolated installation and
+verify Gatekeeper, launch, About version/build, and the Finder extension. Run the
+signed sandbox two-version Sparkle installation acceptance in
+[Update verification](../specs/verification/updates.md#sparkle-installation-checks)
+when changing the updater, signing, packaging or permissions, and record the
+observed replacement/relaunch and any untested production path. Report installed
+Finder, Intel, macOS 13 and managed-device evidence separately if unavailable.
+Keep this candidate evidence in the release verification record, tied to its
+commit and final DMG SHA-256.
+
+### 3. Publish and read back
+
+After candidate acceptance, run:
+
+```sh
+make publish-local
+```
+
+This rechecks the exact local DMG, checksum, appcast, source commit and certificate
+against the local manifest, pushes `main` and the tag, creates a stable GitHub
+Release if absent, and compares **all three downloaded assets byte for byte**.
+It rejects missing/extra assets, drafts and prereleases, then waits for the
+published-release GitHub verification workflow to pass. It never uploads the
+local source manifest or Apple credentials. If the remote step fails, keep the
+local manifest and rerun `make publish-local`; existing assets are only checked,
+never replaced. A mismatched remote asset requires a new version and investigation.
+
+After publication, verify the actual installed update path from a compatible old
+release to the newly published version, including replacement, relaunch and
+Finder extension refresh, when a test installation is available. Record any
+unverified platform or authorization path explicitly; GitHub asset checks do not
+prove a user's installed Sparkle upgrade. Close the release verification record
+only after recording local, remote and native results.
 
 Release evidence should include the local notarization result, downloaded asset
 checksum, published-release verification job and actual runtime results.
@@ -74,11 +135,10 @@ signed DMG to Apple and wait for review. This is the standard workflow for futur
 release requests. Keep credentials local; routine releases do not require a new
 Apple account, signing identity or credential setup.
 
-`make release-local` already runs `notarytool submit --wait`. If submission and
-waiting are performed separately, save the returned submission ID and use
-`notarytool wait` or `notarytool info` with that ID. An `In Progress` result or
-a wait timeout means to retain the submitted file and continue waiting on the
-same submission, not upload another copy merely to retry a status check.
+`make release-local` submits once, saves the returned submission ID and signed
+DMG hash, then runs `notarytool wait`. An `In Progress` result or wait timeout
+means to retain that submitted file and resume the same ID, not upload another
+copy merely to retry a status check.
 
 After `Accepted`, staple and validate the DMG ticket, then calculate the final
 SHA-256 and run the artifact checks. Only then push the source/tag and publish

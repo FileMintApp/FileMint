@@ -1,6 +1,6 @@
 # FileMint Agent Guide
 
-Use SPEC-first development with demand-loaded context.
+Use SPEC-first, demand-loaded context.
 
 1. Read [SPEC](specs/SPEC.md), the compact product overview and task router.
 2. Match the task's behavior and affected paths to its rows. Read only the selected
@@ -10,18 +10,19 @@ Use SPEC-first development with demand-loaded context.
    detailed checklists only for the affected surfaces.
 4. Load [AI Playbook](docs/AI_PLAYBOOK.md) only for cross-domain features, handoff,
    resuming a task or changing this workflow. Small fixes need no task document.
-5. Do not preload domain directories, acceptance history, roadmaps, research,
-   task archives or tool configuration. Follow a link only when the task needs it.
+5. Do not preload domain, history, roadmap, research, archive or tool files.
+   Follow links only when the task needs them.
+
+For “构建发布”, follow [Distribution](docs/DISTRIBUTION.md) through remote checks.
 
 Keep these invariants across all tasks:
 
 - Update the owning domain SPEC before intentional product behavior changes;
   bug fixes restore the existing contract. Add regression coverage for behavior.
 - Choose checks by task intent and actual changes using HARNESS. Analysis/planning
-  does not trigger tests; documentation-only edits use documentation checks.
-  Run applicable tests after completing implementation; no mandatory pre-change
-  baseline. Use a targeted pre-change test only for a concrete diagnostic need or
-  explicit request. Report any blocked applicable checks.
+  needs no tests; docs-only edits use documentation checks. Test completed
+  implementation; pre-change tests need a diagnostic reason or explicit request.
+  Report blocked applicable checks.
 - Keep deterministic rules in `CorePackage`, Finder APIs in `FinderSyncExtension`,
   SwiftUI settings in `App/FileMint`, and native creation UI in `SharedUI`.
 - Preserve user files, preferences and authorization boundaries. No folder crawling,
