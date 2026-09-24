@@ -1,3 +1,29 @@
+# FileMint 0.6.0
+
+## 改进
+
+- Finder 菜单可调整“使用 App 打开”的项目顺序，也可选择“新建文件”显示在主菜单或子菜单。
+- 文件移动和删除会在执行时重新校验授权范围、所选项目和目标；源项目变化、路径越界或目标重名时会拒绝操作。无效设置文件不会被保存覆盖。
+- “完全磁盘访问”设置入口会打开适用于 macOS 13 及更新版本的系统设置页面；权限仍需由用户在 macOS 中确认。
+
+## 系统要求与升级
+
+0.6.0 正式安装包面向运行 macOS 13 或更新版本的 M 系列 Mac。此版本不含 Intel 代码，Intel Mac 不能安装或通过应用内更新升级到 0.6.0；已发布的 0.5.10 及更早版本保留各自原有兼容范围。0.5.10 的 M 系列用户可通过“关于 → 检查更新 → 更新并重启”升级。
+
+0.5.7/0.5.8 用户仍需先手动安装 0.5.9 或更新版本一次，修复旧版自身无法修复的更新器签名权限问题。
+
+## Improvements
+
+- Reorder **Open with App** entries in Finder and choose whether **New File** appears in the main menu or a submenu.
+- File moves and deletions recheck authorized scope, item identity and destination at execution time. Changed sources, paths outside scope and name conflicts are rejected. Invalid settings files are not overwritten by saves.
+- The Full Disk Access settings shortcut opens the System Settings page used by macOS 13 and later. macOS still requires the user to confirm the permission.
+
+## System requirements and upgrading
+
+The 0.6.0 stable installer targets M-series Macs running macOS 13 or later. It contains no Intel code, so Intel Macs cannot install or update to 0.6.0. Published installers through 0.5.10 retain their original compatibility. M-series users on 0.5.10 can upgrade through **About → Check for Updates → Update and Restart**.
+
+Versions 0.5.7/0.5.8 still require one manual installation of 0.5.9 or later to fix updater signing permissions that those versions cannot repair themselves.
+
 # FileMint 0.5.10
 
 ## 改进

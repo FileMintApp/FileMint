@@ -10,11 +10,11 @@
 FileMint 把这件事放回 Finder：**右键，选一种类型，文件就在这里。**
 需要自己起名字、粘贴内容、处理图片或整理已选项目时，仍然从同一个原生工作流继续。
 
-## 0.5.10 更新
+## 0.6.0 更新
 
-Finder 扩展未启用时，“通用”页现在会显示启用引导和系统设置入口；官网新增中英文使用指南。已确认 0.5.7/0.5.8 的更新器权限有误，请手动安装新版一次。
+Finder 菜单现在可调整“使用 App 打开”的顺序和“新建文件”的菜单层级；文件移动、删除会重新校验来源与目标，完全磁盘访问设置入口也会打开新版系统设置页面。0.6.0 仅支持 macOS 13+ 的 M 系列 Mac，Intel 用户继续使用 0.5.10。
 
-[0.5.10 发布说明](https://github.com/FileMintApp/FileMint/releases/tag/v0.5.10)
+[0.6.0 发布说明](https://github.com/FileMintApp/FileMint/releases/tag/v0.6.0)
 
 ## 近期功能
 
@@ -24,7 +24,7 @@ Finder 扩展未启用时，“通用”页现在会显示启用引导和系统�
 - **Word / Excel 模板**：导入 `.docx`、`.xlsx`，创建保留原格式和内容的独立副本。
 - **主题与设置**：通用页新增跟随系统、浅色和深色，统一控件对齐与交互样式。
 
-[完整发布说明](https://github.com/FileMintApp/FileMint/releases/tag/v0.5.8)
+[完整发布说明](https://github.com/FileMintApp/FileMint/releases/tag/v0.6.0)
 
 ## 为什么是 FileMint
 
@@ -128,7 +128,7 @@ Finder 扩展未启用时，“通用”页现在会显示启用引导和系统�
 
 ## 下载与安装
 
-已发布的 0.5.10 安装包支持 macOS 13+、Apple 芯片和 Intel Mac。后续正式版将仅支持 **macOS 13+ 的 M 系列 Mac**；旧安装包的适用范围不变。
+0.6.0 正式安装包仅支持 **macOS 13+ 的 M 系列 Mac**，Intel Mac 无法安装或更新至此版。已发布的 0.5.10 及更早版本仍保留各自原有兼容范围。
 
 **0.5.9 及后续正式版安装包使用 Developer ID 签名，通过 Apple 公证并附加公证票据。** 首次使用仍需按系统提示启用 Finder 扩展和文件夹授权。
 

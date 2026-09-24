@@ -10,11 +10,11 @@ Creating a file should not require opening an editor, choosing Save As and findi
 FileMint puts the action back in Finder: **right-click, choose a type and your file is there.**
 When you need a name, starter content, image processing or selected-item tools, the same native workflow continues.
 
-## What's new in 0.5.10
+## What's new in 0.6.0
 
-General now shows setup guidance and a shortcut to macOS settings when the Finder extension is disabled. The website adds task-based guides in English and Chinese. Versions 0.5.7/0.5.8 have incorrect updater permissions and still need one manual installation of a newer release.
+Finder menus can now reorder **Open with App** entries and place **New File** in the main menu or a submenu. File moves and deletions recheck their sources and destinations, and the Full Disk Access shortcut opens the current System Settings page. Version 0.6.0 supports M-series Macs on macOS 13+; Intel users should remain on 0.5.10.
 
-[0.5.10 release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.5.10)
+[0.6.0 release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.6.0)
 
 ## Recent features
 
@@ -24,7 +24,7 @@ General now shows setup guidance and a shortcut to macOS settings when the Finde
 - **Word / Excel templates**: Import `.docx` or `.xlsx` and create independent copies with the original formatting and content.
 - **Themes and settings**: General now offers Follow System, Light and Dark, with consistent control alignment and interaction styles.
 
-[Full release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.5.8)
+[Full release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.6.0)
 
 ## Why FileMint
 
@@ -128,7 +128,7 @@ Read the complete [privacy policy](PRIVACY.md).
 
 ## Install
 
-The published 0.5.10 installer supports macOS 13+, Apple silicon and Intel Macs. Future stable releases will support **M-series Macs on macOS 13+** only; existing installers keep their original compatibility.
+The 0.6.0 stable installer supports **M-series Macs on macOS 13+** only. Intel Macs cannot install or update to this version. Published installers through 0.5.10 keep their original compatibility.
 
 **Stable installers from 0.5.9 onward are Developer ID signed, Apple notarized and stapled.** First use still follows macOS prompts for Finder enablement and folder authorization.
 

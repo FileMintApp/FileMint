@@ -5,7 +5,7 @@ description: Install and enable FileMint on macOS.
 
 # Install FileMint
 
-The published 0.5.10 DMG supports macOS 13+, Apple silicon and Intel Macs. Future stable releases will support **M-series Macs on macOS 13+** only; existing installers keep their original compatibility.
+The 0.6.0 stable installer supports **M-series Macs on macOS 13+** only and contains no Intel code. Intel Macs cannot install or update to 0.6.0; published installers through 0.5.10 keep their original compatibility.
 
 Stable installers from 0.5.9 onward are Developer ID signed, Apple notarized and stapled.
 
