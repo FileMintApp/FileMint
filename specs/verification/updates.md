@@ -20,6 +20,12 @@ and installation handoff evidence in `docs/ACCEPTANCE.md`.
 
 ## Sparkle installation checks
 
+Routine releases do not repeat isolated production-update acceptance. The owner
+confirmed public update acceptance across three recent small releases. Use the
+checks below when changing the updater, signing, packaging, installer permissions
+or appcast behavior, when investigating an update regression, or when explicitly
+requested. Exact remote release-asset readback remains required for every release.
+
 Manual signing resolves entitlement variables before codesign. Both signing and
 bundle verification read the actual embedded DER/XML entitlements through Security
 and reject unresolved variables or incorrect installer Mach service names.
@@ -46,7 +52,7 @@ Objective-C delegate selectors, cancellation, progress, restart deferral and
 errors without starting network requests or installing anything. It does not
 replace the signed sandbox installation acceptance below.
 
-For release acceptance, use two signed sandbox builds in an isolated installation:
+For targeted release acceptance, use two signed sandbox builds in an isolated installation:
 
 1. Confirm automatic discovery never downloads or opens windows; disabling it
    cancels only discovery. Manual checks remain available.

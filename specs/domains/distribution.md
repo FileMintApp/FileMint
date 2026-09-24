@@ -58,13 +58,18 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - A normal stable release has one version/build source in `project.yml` and two
   explicit stages: `release-local` checks the committed release notes and source
   tag, then builds and verifies the notarized artifact; `publish-local` publishes
-  its exact bytes and waits for the published-asset verification job. Native
-  candidate acceptance takes place between stages. Publication can resume from
-  the verified local manifest after a remote failure without rebuilding or
-  replacing release assets. A notarization timeout retains the submitted DMG,
-  its hash and Apple submission ID so the same submission can be resumed without
-  uploading again. Preparation requires a reviewed commit and tag; development
-  commands must not publish implicitly.
+  its exact bytes and waits for the published-asset verification job. The owner
+  confirmed public update acceptance across three recent small releases; routine
+  releases therefore do not require a temporary app launch/UI review, website
+  screenshot capture or repeated old-to-new installation acceptance. Run isolated
+  update acceptance when changing the updater, signing, packaging, installer
+  permissions or appcast behavior, investigating an update regression, or when
+  explicitly requested. Exact remote asset readback remains required on every
+  publication. Publication can resume from the verified local manifest after a
+  remote failure without rebuilding or replacing release assets. A notarization
+  timeout retains the submitted DMG, its hash and Apple submission ID so the same
+  submission can be resumed without uploading again. Preparation requires a
+  reviewed commit and tag; development commands must not publish implicitly.
 
 ## Automatic-update artifacts
 

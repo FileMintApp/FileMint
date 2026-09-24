@@ -1,7 +1,7 @@
 # Task: Automatic update installation
 
 Status: complete
-Next action: Before release, increase version/build and run signed sandbox old-to-new installation acceptance.
+Next action: Follow the current [Distribution procedure](../DISTRIBUTION.md); repeat isolated update acceptance only when its stated triggers apply.
 
 ## Objective and scope
 
@@ -51,6 +51,6 @@ completed it and the same pending attempt succeeded.
 
 ## Handoff
 
-- Implementation complete. Before publication: bump marketing version and build, prepare signed/notarized artifacts and run native upgrade acceptance.
-- Real signed sandbox replacement/relaunch and Finder refresh remain native acceptance checks; do not represent the callback harness as this proof.
+- Implementation complete. Before publication, bump the marketing version and build and prepare signed/notarized artifacts according to the current [Distribution procedure](../DISTRIBUTION.md).
+- The 2026-09-17 table below records checks that were not run at implementation time. Later public-update evidence is in [0.6.1 release verification](../RELEASE_VERIFICATION_0.6.1.md); future release gates follow the current [Distribution procedure](../DISTRIBUTION.md).
 - Public update key is in project.yml; private key remains in local Keychain. Never rotate it merely to repeat testing.

@@ -101,4 +101,4 @@ jq -n --arg version "$version" --arg build "$build_number" --arg tag "$tag" \
   '{version: $version, build: $build, tag: $tag, commit: $commit, dmgSHA256: $sha256, certificateSHA256: $certificate, appcastSHA256: $feed, notarySubmissionID: $notary}' \
   > "$final_manifest"
 echo "Local signed and notarized release is ready: $final_dmg"
-echo 'After native candidate acceptance, run: make publish-local'
+echo 'Local artifact checks passed. To publish and verify the remote assets, run: make publish-local'

@@ -21,7 +21,9 @@ Next action: Use the standard procedure for the next authorized stable release.
 
 ## Decisions and progress
 
-- Keep local build and public upload separate for candidate native acceptance.
+- The original workflow separated local build and public upload for candidate
+  native acceptance. The owner's 2026-09-24 decision supersedes that gate for
+  routine releases; see the current [Distribution procedure](../DISTRIBUTION.md).
 - Preserve the existing local source manifest for retry after remote failure.
 - Require the signed app's installer configuration and three matching assets;
   absence of Sparkle must fail closed.

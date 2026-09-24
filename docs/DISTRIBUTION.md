@@ -50,8 +50,13 @@ Local `make package` still defaults to ad-hoc signing for development checks.
 For a normal notarized public version after 0.5.3, use the following sequence
 whenever the owner asks to “构建发布”. The phrase authorizes the full release; a
 request only to build, commit or prepare a candidate stops at its named stage.
-The two stages are intentionally separate so the candidate can be checked in a
-real installed environment before any public upload.
+The two stages separate local artifact preparation from public upload and
+remote readback. The owner confirmed that the public update path was validated
+across three recent small releases, so routine releases do not repeat temporary
+app installation, launch/UI review, website screenshot capture or old-to-new
+installation acceptance. Repeat isolated update acceptance when changing the
+updater, signing, packaging, installer permissions or appcast behavior, when
+investigating an update regression, or when explicitly requested.
 
 ### 1. Prepare the source
 
@@ -94,19 +99,18 @@ release-local`. This verifies the original DMG hash and waits on the same
 submission; it does not upload again. If Apple rejects the submission or any
 other check fails, stop and diagnose before making a new candidate.
 
-Copy the **candidate from the final DMG** into an isolated installation and
-verify Gatekeeper, launch, About version/build, and the Finder extension. Run the
-signed sandbox two-version Sparkle installation acceptance in
+No separate temporary app launch, UI review or website screenshot is required
+for a routine release. `make release-local` checks the signed, stapled artifact,
+mounted app, entitlements, architecture, checksum and appcast. Record those
+results against the release commit and final DMG SHA-256. Run the signed
+sandbox two-version Sparkle installation acceptance in
 [Update verification](../specs/verification/updates.md#sparkle-installation-checks)
-when changing the updater, signing, packaging or permissions, and record the
-observed replacement/relaunch and any untested production path. Report installed
-Finder, minimum-supported-macOS and managed-device evidence separately if unavailable.
-Keep this candidate evidence in the release verification record, tied to its
-commit and final DMG SHA-256.
+only under the conditions above. If performed, report installed Finder,
+minimum-supported-macOS and managed-device evidence separately when unavailable.
 
 ### 3. Publish and read back
 
-After candidate acceptance, run:
+After local artifact checks pass, run:
 
 ```sh
 make publish-local
@@ -121,15 +125,17 @@ local source manifest or Apple credentials. If the remote step fails, keep the
 local manifest and rerun `make publish-local`; existing assets are only checked,
 never replaced. A mismatched remote asset requires a new version and investigation.
 
-After publication, verify the actual installed update path from a compatible old
-release to the newly published version, including replacement, relaunch and
-Finder extension refresh, when a test installation is available. Record any
-unverified platform or authorization path explicitly; GitHub asset checks do not
-prove a user's installed Sparkle upgrade. Close the release verification record
-only after recording local, remote and native results.
+Routine releases do not repeat an actual installed update from an older version.
+Run that check when updater, signing, packaging, installer permissions or appcast
+behavior changes, when investigating a reported update failure, or when explicitly
+requested. `make publish-local` remains required: it downloads and compares the
+published DMG, checksum and appcast byte for byte, then waits for GitHub's
+published-release verification. Record local artifact results and remote readback;
+record native update results when that targeted acceptance is run.
 
 Release evidence should include the local notarization result, downloaded asset
-checksum, published-release verification job and actual runtime results.
+checksum and published-release verification job. Include native runtime results
+when that targeted acceptance is run.
 
 ## Standard notarytool workflow
 
