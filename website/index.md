@@ -31,7 +31,7 @@ hero:
   <a href="#templates">模板与图片粘贴</a>
   <a href="#open-with">使用 App 打开</a>
   <a href="#resources">图片工具</a>
-  <a href="#qa-preview">QA 功能预览</a>
+  <a href="#qa-preview">0.6.1 新增</a>
   <a href="#file-tools">文件工具</a>
 </nav>
 
@@ -173,31 +173,31 @@ hero:
 </section>
 
 <section id="qa-preview" class="landing-section landing-section--quiet qa-preview-section">
-  <p class="section-kicker">06 / QA FEATURE PREVIEW</p>
-  <h2>下一组 Finder 工具，先在 QA 中见面。</h2>
-  <p class="section-intro">下面三项来自尚未发布的 QA 版本，当前稳定安装包暂不包含。界面图先用统一占位图，等 QA App 图标和截图素材更新后再替换；下载链接仍指向最新稳定版。</p>
+  <p class="section-kicker">06 / FILEMINT 0.6.1</p>
+  <h2>0.6.1 正式版新增的 Finder 与图片工具。</h2>
+  <p class="section-intro">以下功能已包含在 FileMint 0.6.1 正式版中。截图来自正式包实际运行的界面；下载按钮始终指向最新稳定版。</p>
 
   <div class="qa-preview-grid">
     <article class="qa-preview-card">
-      <img src="/images/feature-preview-placeholder-zh.svg" width="1200" height="860" loading="lazy" decoding="async" alt="Finder 隐藏项目切换功能的 QA 界面截图占位图">
+      <img src="/images/finder-hidden-items-zh.jpg" width="1322" height="948" loading="lazy" decoding="async" alt="FileMint 0.6.1 Finder 与文件夹设置页的隐藏项目切换界面">
       <div class="qa-preview-copy">
-        <span class="qa-preview-label">QA 预览 · 尚未发布</span>
+        <span class="qa-preview-label">正式版 · 0.6.1</span>
         <h3>由你点按的 Finder 显示切换</h3>
-        <p>“Finder 与文件夹”提供明确的切换入口。首次使用需要在 macOS 中授予辅助功能权限；FileMint 不猜测或保存 Finder 当前的隐藏项目状态。正式版支持范围以之后的验收与发布说明为准。</p>
+        <p>“Finder 与文件夹”提供明确的切换入口。首次使用需要在 macOS 中授予辅助功能权限；FileMint 不猜测或保存 Finder 当前的隐藏项目状态。</p>
       </div>
     </article>
     <article class="qa-preview-card">
-      <img src="/images/feature-preview-placeholder-zh.svg" width="1200" height="860" loading="lazy" decoding="async" alt="常用文件夹管理页面的 QA 界面截图占位图">
+      <img src="/images/favorite-locations-zh.jpg" width="1800" height="1300" loading="lazy" decoding="async" alt="FileMint 0.6.1 常用文件（夹）管理页">
       <div class="qa-preview-copy">
-        <span class="qa-preview-label">QA 预览 · 尚未发布</span>
+        <span class="qa-preview-label">正式版 · 0.6.1</span>
         <h3>常用文件（夹）</h3>
         <p>手动保存文件和文件夹，按名称、路径或分组搜索，并固定常用项。Finder 快捷菜单只列出有限的固定和最近项目；定位文件会在 Finder 中选中它，打开文件则是单独操作。</p>
       </div>
     </article>
     <article class="qa-preview-card">
-      <img src="/images/feature-preview-placeholder-zh.svg" width="1200" height="860" loading="lazy" decoding="async" alt="移除隐私元数据工具的 QA 界面截图占位图">
+      <img src="/images/remove-private-metadata-zh.jpg" width="1800" height="1300" loading="lazy" decoding="async" alt="FileMint 0.6.1 资源工具中的移除隐私元数据入口">
       <div class="qa-preview-copy">
-        <span class="qa-preview-label">QA 预览 · 尚未发布</span>
+        <span class="qa-preview-label">正式版 · 0.6.1</span>
         <h3>移除图片隐私元数据</h3>
         <p>在本机清理 GPS、拍摄时间、设备标识、IPTC、XMP 等元数据，再生成经过读取校验的副本，不覆盖原图。目标格式为 JPEG、PNG、TIFF 和系统支持的普通单图 HEIC；重新编码可能改变文件大小或颜色。文件名和画面中可见的信息仍由你检查。</p>
       </div>
@@ -299,7 +299,7 @@ hero:
     <div>
       <div class="mini-label">LATEST STABLE RELEASE</div>
       <h2>从 Finder 开始，做完，然后回到你的工作。</h2>
-      <p>下载按钮始终指向最新稳定版；安装要求和首次启用 Finder 的步骤见安装指引。上方标记为 QA 预览的功能尚未包含在当前稳定安装包中。</p>
+      <p>下载按钮始终指向最新稳定版；安装要求和首次启用 Finder 的步骤见安装指引。以上新增功能已包含在 0.6.1 正式版中。</p>
     </div>
     <div class="callout-actions">
       <a href="https://github.com/FileMintApp/FileMint/releases/latest">下载最新版本</a>

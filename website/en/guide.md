@@ -87,15 +87,15 @@ In the app, open **Extensions → Resource Tools → Use Tools** and choose loca
 
 Convert between JPEG, PNG, HEIC and TIFF; compress or resize; generate icons; stitch at least two images; or extract text with OCR. The processing panel shows a preview and output location before you run an action. Originals stay unchanged and results are saved separately. You can edit OCR text, then explicitly copy it or save a TXT file.
 
-## QA feature preview (not in the current stable release)
+## New in FileMint 0.6.1
 
-The steps below are from an unpublished QA build and are not available in the current stable installer. These images are consistent placeholders; real interface captures will be added after the QA preview assets are updated.
+These actions are included in the FileMint 0.6.1 stable installer. The screenshots below were captured from the official package.
 
 ### Toggle Finder hidden items
 
-![Placeholder for the QA screenshot of Finder display switching](/images/feature-preview-placeholder-en.svg)
+![FileMint 0.6.1 Finder & Folders settings with the hidden-item toggle](/images/finder-hidden-items-en.jpg)
 
-<p class="guide-caption">QA interface screenshot placeholder. This feature is not in the current stable release.</p>
+<p class="guide-caption">FileMint 0.6.1 stable interface. Finder controls the actual hidden-item state.</p>
 
 1. Open **Finder &amp; Folders** in FileMint and find Finder Display; you can also use the FileMint menu-bar command.
 2. Click **Toggle** yourself. On first use, FileMint directs you to **System Settings → Privacy &amp; Security → Accessibility** to authorize the app.
@@ -103,9 +103,9 @@ The steps below are from an unpublished QA build and are not available in the cu
 
 ### Save and find Favorite Locations
 
-![Placeholder for the QA screenshot of the Favorite Locations manager](/images/feature-preview-placeholder-en.svg)
+![FileMint 0.6.1 Favorite Locations manager](/images/favorite-locations-en.jpg)
 
-<p class="guide-caption">QA interface screenshot placeholder. Favorites include only items you add; folders are not crawled.</p>
+<p class="guide-caption">FileMint 0.6.1 stable interface. Favorites include only items you add; folders are not crawled.</p>
 
 1. Open **Extensions → Favorite Locations** and choose **Add Files or Folders…**, or drop items onto the list.
 2. In a configured Finder folder, select a file or folder and choose **Add to Favorite Locations** from its context menu. This does not expand Finder's authorized scope.
@@ -114,9 +114,9 @@ The steps below are from an unpublished QA build and are not available in the cu
 
 ### Remove private image metadata
 
-![Placeholder for the QA screenshot of private image metadata removal](/images/feature-preview-placeholder-en.svg)
+![FileMint 0.6.1 Resource Tools entry for Remove Private Metadata](/images/remove-private-metadata-en.jpg)
 
-<p class="guide-caption">QA interface screenshot placeholder. The original stays untouched; the output is a separate `-clean` copy.</p>
+<p class="guide-caption">FileMint 0.6.1 stable interface. The original stays untouched; the output is a separate `-clean` copy.</p>
 
 Choose local images in **Resource Tools → Use Tools**, or select images in Finder after enabling Resource Tools and choose **Remove Private Metadata**. The Finder menu item starts the job. It removes location, capture-time, camera, IPTC, XMP and other text metadata. Target formats are JPEG, PNG, TIFF and ordinary single-image HEIC when supported by the system. Unsupported files and failed readback checks do not produce a “clean” copy. Re-encoding can change size or color; filenames and information visible in the pixels are not removed.
 

@@ -91,15 +91,15 @@ pageClass: guide-page
 
 可转换 JPEG、PNG、HEIC、TIFF，压缩或调整尺寸，生成图标，拼接至少两张图片，或用 OCR 提取文字。处理面板会先显示预览和输出位置；选好参数后再执行。原图保持不变，结果保存为新文件。OCR 结果可以编辑，再由你选择拷贝或保存为 TXT。
 
-## QA 功能预览（当前稳定版暂未包含）
+## 0.6.1 新增功能
 
-以下操作来自尚未发布的 QA 版本，当前稳定安装包不包含这些功能。这里的图片是统一占位素材；真实界面截图会在 QA 版素材更新后补上。
+以下操作均包含在 FileMint 0.6.1 正式版中；配图来自正式包实际运行的界面。
 
 ### 切换 Finder 隐藏项目
 
-![Finder 显示切换功能的 QA 截图占位图](/images/feature-preview-placeholder-zh.svg)
+![FileMint 0.6.1 Finder 与文件夹设置页的隐藏项目切换界面](/images/finder-hidden-items-zh.jpg)
 
-<p class="guide-caption">QA 界面截图占位图。此功能当前尚未随稳定版发布。</p>
+<p class="guide-caption">FileMint 0.6.1 正式版截图。实际显示状态由 Finder 控制。</p>
 
 1. 打开 FileMint 的“Finder 与文件夹”页面，找到 Finder 显示设置；也可使用菜单栏中的 FileMint 命令。
 2. 由你点按“切换”后，首次使用会引导你前往 macOS“系统设置 → 隐私与安全性 → 辅助功能”授权 FileMint。
@@ -107,9 +107,9 @@ pageClass: guide-page
 
 ### 保存和查找常用文件（夹）
 
-![常用文件夹管理页的 QA 截图占位图](/images/feature-preview-placeholder-zh.svg)
+![FileMint 0.6.1 常用文件（夹）管理页](/images/favorite-locations-zh.jpg)
 
-<p class="guide-caption">QA 界面截图占位图。收藏只包括你主动添加的项目，不会扫描文件夹。</p>
+<p class="guide-caption">FileMint 0.6.1 正式版截图。只保存你主动添加的项目，不会扫描文件夹。</p>
 
 1. 打开“扩展功能 → 常用文件（夹）”，选择“添加文件或文件夹…”，也可以把项目拖到列表中。
 2. 在已配置的 Finder 文件夹内，选中文件或文件夹后右键选择“加入常用文件（夹）”。这不会扩大 Finder 菜单的授权范围。
@@ -118,9 +118,9 @@ pageClass: guide-page
 
 ### 移除图片隐私元数据
 
-![移除图片隐私元数据工具的 QA 截图占位图](/images/feature-preview-placeholder-zh.svg)
+![FileMint 0.6.1 资源工具中的移除隐私元数据入口](/images/remove-private-metadata-zh.jpg)
 
-<p class="guide-caption">QA 界面截图占位图。原图不会被覆盖；结果另存为带 `-clean` 后缀的副本。</p>
+<p class="guide-caption">FileMint 0.6.1 正式版截图。原图不会被覆盖；结果另存为带 `-clean` 后缀的副本。</p>
 
 在“资源工具 → 使用工具”中明确选择本地图片，或在 Finder 已启用资源工具后选中图片并使用“移除隐私元数据”。Finder 菜单项本身就是开始处理的操作。它会清理定位、拍摄时间、相机标识、IPTC、XMP 和其他文本元数据。当前目标格式为 JPEG、PNG、TIFF 和系统支持的普通单图 HEIC；超出支持范围或校验失败时不会生成“已清理”副本。重新编码可能改变文件大小或颜色。文件名和画面中可见的信息不会被移除。
 

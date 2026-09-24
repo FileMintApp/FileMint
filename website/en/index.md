@@ -31,7 +31,7 @@ hero:
   <a href="#templates">Templates &amp; paste</a>
   <a href="#open-with">Open with App</a>
   <a href="#resources">Image tools</a>
-  <a href="#qa-preview">QA preview</a>
+  <a href="#qa-preview">New in 0.6.1</a>
   <a href="#file-tools">File tools</a>
 </nav>
 
@@ -173,31 +173,31 @@ hero:
 </section>
 
 <section id="qa-preview" class="landing-section landing-section--quiet qa-preview-section">
-  <p class="section-kicker">06 / QA FEATURE PREVIEW</p>
-  <h2>Meet the next Finder tools in QA first.</h2>
-  <p class="section-intro">These three features are in an unpublished QA build and are not in the current stable installer. The images below are consistent placeholders; we will replace them after the QA app icon and capture assets are updated. Download still points to the latest stable release.</p>
+  <p class="section-kicker">06 / FILEMINT 0.6.1</p>
+  <h2>New Finder and image tools in the 0.6.1 stable release.</h2>
+  <p class="section-intro">These features are included in the FileMint 0.6.1 stable installer. The screenshots below were captured from the official package. Download still points to the latest stable release.</p>
 
   <div class="qa-preview-grid">
     <article class="qa-preview-card">
-      <img src="/images/feature-preview-placeholder-en.svg" width="1200" height="860" loading="lazy" decoding="async" alt="Placeholder for the QA screenshot of Finder hidden item switching">
+      <img src="/images/finder-hidden-items-en.jpg" width="1322" height="948" loading="lazy" decoding="async" alt="FileMint 0.6.1 Finder & Folders settings with the hidden-item toggle">
       <div class="qa-preview-copy">
-        <span class="qa-preview-label">QA preview · Unreleased</span>
+        <span class="qa-preview-label">Stable · 0.6.1</span>
         <h3>User-triggered Finder display toggle</h3>
-        <p>Finder &amp; Folders adds a deliberate toggle command. First use requires the macOS Accessibility permission. FileMint does not guess or store Finder's current hidden-item state. Stable-release support will follow installed-app acceptance and release notes.</p>
+        <p>Finder &amp; Folders adds a deliberate toggle command. First use requires the macOS Accessibility permission. FileMint does not guess or store Finder's current hidden-item state.</p>
       </div>
     </article>
     <article class="qa-preview-card">
-      <img src="/images/feature-preview-placeholder-en.svg" width="1200" height="860" loading="lazy" decoding="async" alt="Placeholder for the QA screenshot of Favorite Locations">
+      <img src="/images/favorite-locations-en.jpg" width="1800" height="1300" loading="lazy" decoding="async" alt="FileMint 0.6.1 Favorite Locations manager">
       <div class="qa-preview-copy">
-        <span class="qa-preview-label">QA preview · Unreleased</span>
+        <span class="qa-preview-label">Stable · 0.6.1</span>
         <h3>Favorite Locations</h3>
         <p>Save files and folders you choose, search saved names, paths or groups, and pin frequently used items. Finder shows a bounded list of pinned and recently located entries. Locating a file selects it in Finder; opening it is a separate action.</p>
       </div>
     </article>
     <article class="qa-preview-card">
-      <img src="/images/feature-preview-placeholder-en.svg" width="1200" height="860" loading="lazy" decoding="async" alt="Placeholder for the QA screenshot of private image metadata removal">
+      <img src="/images/remove-private-metadata-en.jpg" width="1800" height="1300" loading="lazy" decoding="async" alt="FileMint 0.6.1 Resource Tools entry for Remove Private Metadata">
       <div class="qa-preview-copy">
-        <span class="qa-preview-label">QA preview · Unreleased</span>
+        <span class="qa-preview-label">Stable · 0.6.1</span>
         <h3>Remove private image metadata</h3>
         <p>Remove GPS, capture time, device identifiers, IPTC, XMP and other metadata in a locally processed copy, then verify it by reading the output back. The original stays unchanged. Target formats are JPEG, PNG, TIFF and ordinary single-image HEIC when supported by the system. Re-encoding may change size or color. Filenames and information visible in the pixels still need your review.</p>
       </div>
@@ -299,7 +299,7 @@ hero:
     <div>
       <div class="mini-label">LATEST STABLE RELEASE</div>
       <h2>Start in Finder. Finish the task. Get back to work.</h2>
-      <p>The download always points to the latest stable release. See the installation guide for system requirements and first-time Finder setup. Features labelled QA preview above are not in the current stable installer.</p>
+      <p>The download always points to the latest stable release. See the installation guide for system requirements and first-time Finder setup. The features shown above are included in stable version 0.6.1.</p>
     </div>
     <div class="callout-actions">
       <a href="https://github.com/FileMintApp/FileMint/releases/latest">Download the latest release</a>

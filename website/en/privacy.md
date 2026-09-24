@@ -7,15 +7,13 @@ description: FileMint's local-first privacy promise.
 
 FileMint creates files, stores document templates and processes images locally. It does not require an account or collect usage analytics.
 
-## Data boundaries for the QA preview
+## Data boundaries for the 0.6.1 features
 
-These features remain in QA and are not available in the current stable release:
+These notes describe features included in the FileMint 0.6.1 stable release:
 
 - **Favorite Locations** stores bookmarks and display details only for local items you add. It does not crawl folders or read file contents.
 - **Remove Private Metadata** processes only local images you choose and writes a new copy after a readback check. Images are not uploaded and the original stays unchanged.
 - **Finder hidden-item switching** runs only after your explicit click and requires macOS Accessibility permission. FileMint does not store or infer Finder's hidden-item state.
-
-These notes describe the QA preview design; they do not mean the features are in the stable installer.
 
 ## What it does not collect
 
