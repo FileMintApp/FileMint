@@ -25,9 +25,19 @@ class AppcastTests(unittest.TestCase):
     def test_round_trip_and_tampered_archive_size(self):
         self.write()
         self.assertEqual(appcast.validate_feed(self.feed, self.archive, "0.6.0", "13"), self.signature)
+        self.assertEqual(appcast.ET.parse(self.feed).findtext("./channel/item/" + appcast.tag("minimumSystemVersion")), appcast.minimum_system_version())
+        self.assertEqual(appcast.ET.parse(self.feed).findtext("./channel/item/" + appcast.tag("hardwareRequirements")), "arm64")
         self.archive.write_bytes(b"changed archive")
         with self.assertRaises(ValueError):
             appcast.validate_feed(self.feed, self.archive, "0.6.0", "13")
+
+    def test_project_deployment_targets_must_match(self):
+        project = Path(self.directory.name) / "project.yml"
+        project.write_text('    macOS: "13.0"\n    MACOSX_DEPLOYMENT_TARGET: 13.0\n')
+        self.assertEqual(appcast.minimum_system_version(project), "13.0")
+        project.write_text('    macOS: "13.0"\n    MACOSX_DEPLOYMENT_TARGET: 14.0\n')
+        with self.assertRaises(ValueError):
+            appcast.minimum_system_version(project)
 
     def test_rejects_changed_release_and_extra_payloads(self):
         mutations = [
@@ -37,6 +47,8 @@ class AppcastTests(unittest.TestCase):
             lambda root: root.find("./channel").append(appcast.ET.Element("item")),
             lambda root: root.find("./channel/item/" + appcast.tag("version")).__setattr__("text", "14"),
             lambda root: root.find("./channel/item/" + appcast.tag("shortVersionString")).__setattr__("text", "0.7.0"),
+            lambda root: root.find("./channel/item/" + appcast.tag("minimumSystemVersion")).__setattr__("text", "0.0"),
+            lambda root: root.find("./channel/item/" + appcast.tag("hardwareRequirements")).__setattr__("text", "x86_64"),
         ]
         for mutate in mutations:
             self.write(mutate)

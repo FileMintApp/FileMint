@@ -30,11 +30,11 @@ if [[ -f "$OPEN_WITH_BUILD/libFileMintCore.a" ]]; then
 else
   OPEN_WITH_LINK=(-I "$OPEN_WITH_BUILD/Modules" "$OPEN_WITH_BUILD"/FileMintCore.build/*.o "$OPEN_WITH_BUILD"/FileMintImages.build/*.o)
 fi
-swiftc -swift-version 6 -parse-as-library -target "$(uname -m)-apple-macos13.0" -D OPEN_WITH_RECEIVER \
+swiftc -swift-version 6 -parse-as-library -target "arm64-apple-macos13.0" -D OPEN_WITH_RECEIVER \
   scripts/open_with_smoke.swift "${OPEN_WITH_LINK[@]}" \
   -o "$OPEN_WITH_RECEIVER/Contents/MacOS/OpenWithReceiver"
 codesign --force --sign - --timestamp=none "$OPEN_WITH_RECEIVER"
-swiftc -swift-version 6 -parse-as-library -target "$(uname -m)-apple-macos13.0" \
+swiftc -swift-version 6 -parse-as-library -target "arm64-apple-macos13.0" \
   App/FileMint/DesignSystem.swift App/FileMint/ResourceToolsController.swift App/FileMint/ResourceToolsView.swift \
   App/FileMint/PlainTextEditor.swift SharedUI/CustomFileSavePanelController.swift SharedUI/FolderAccess.swift \
   App/FileMint/PreferencesModel.swift App/FileMint/LoginItemService.swift SharedUI/FileToolAppearance.swift \

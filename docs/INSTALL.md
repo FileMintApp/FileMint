@@ -1,6 +1,7 @@
 # 安装 / Installation
 
-FileMint 支持 macOS 13+，兼容 Apple 芯片与 Intel。请从
+已发布的 0.5.10 安装包支持 macOS 13+、Apple 芯片与 Intel。后续正式版仅支持
+macOS 13+ 的 M 系列 Mac；旧版安装包的兼容范围不变。请从
 [FileMintApp/FileMint Releases](https://github.com/FileMintApp/FileMint/releases/latest)
 下载 DMG，而不是第三方重新打包的文件。
 

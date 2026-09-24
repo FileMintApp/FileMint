@@ -6,7 +6,16 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 
 ## Distribution
 
-- macOS 13+; universal arm64 + x86_64 Release app and DMG on GitHub Releases.
+- New Release apps and DMGs support M-series Macs running macOS 13 or later.
+  Build the main app, Finder extension and embedded Sparkle executables as
+  arm64-only. Reject any x86_64 slice in local and published bundle checks.
+  Previously published universal releases keep their original architecture
+  support and bytes.
+  The minimum macOS version is 13.0 in the release build and appcast together.
+  Arm64 does not distinguish M-series from A-series Apple silicon: A-series
+  Macs are outside the support policy, without a chip-name-based launch block.
+  The first arm64-only release notes and installation guidance identify the
+  compatibility cutoff, while older release notes remain historical records.
 - The owner explicitly chose to publish 0.5.3 while its existing `notarytool`
   submission was still `In Progress`. This one release uses the authorized
   Developer ID Application identity for the app, Finder extension and DMG,
@@ -39,7 +48,7 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   notarization credentials must remain local and never be committed, uploaded
   to GitHub Actions secrets or bundled in the app.
 - Before publishing, local release checks verify the source tag, clean checkout,
-  both architectures, nested signatures, DMG integrity and final checksum. The
+  arm64-only executables, nested signatures, DMG integrity and final checksum. The
   one-time 0.5.3 exception additionally checked and recorded the actual Apple
   `In Progress` state at publication; the later `Accepted` result establishes
   an online ticket but does not retroactively staple the uploaded DMG. Later

@@ -156,7 +156,8 @@ final class PreferencesModel: ObservableObject {
     func openLoginSettings() { loginItemService.openSettings() }
 
     func openFullDiskAccessSettings() {
-        let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles")!
+        // EndpointSecurity/ESClient.h documents this pane URL for macOS 13+.
+        let url = URL(string: "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_AllFiles")!
         if !NSWorkspace.shared.open(url) {
             NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/System Settings.app"))
         }

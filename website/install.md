@@ -5,7 +5,7 @@ description: 在 macOS 上安装并启用 FileMint。
 
 # 安装 FileMint
 
-FileMint 支持 **macOS 13 及以上**；同一份 DMG 同时兼容 Apple 芯片和 Intel Mac。
+已发布的 0.5.10 DMG 支持 macOS 13+、Apple 芯片和 Intel Mac。后续正式版仅支持 **macOS 13+ 的 M 系列 Mac**；旧版安装包的兼容范围不变。
 
 0.5.9 及后续正式版安装包使用 Developer ID 签名，已通过 Apple 公证并附加公证票据。
 

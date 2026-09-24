@@ -61,8 +61,10 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 ## Privacy permission guidance
 
 - Folder settings include an optional Full Disk Access guide and a button to
-  open its macOS privacy pane: add the installed FileMint.app, enable it, then
-  quit and reopen FileMint. Never silently change this system permission.
+  open its macOS privacy pane using the macOS 13+ Settings link, with a general
+  System Settings fallback if opening that link fails: add the installed
+  FileMint.app, enable it, then quit and reopen FileMint. Never silently change
+  this system permission.
 - The Full Disk Access guide explicitly says that FileMint cannot automatically
   read the system switch, and that the guide remaining visible does not mean
   access is denied. System Settings is the authority: an enabled FileMint switch

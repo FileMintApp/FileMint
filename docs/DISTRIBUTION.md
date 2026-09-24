@@ -28,7 +28,8 @@ release notes and installation instructions must preserve this chronology.
 The 0.5.3 asset is not replaced; a future version is required for a stapled,
 independently verified release.
 
-Subsequent public stable releases are built on the owner's Mac from a clean,
+Subsequent public stable releases are built on the owner's M-series Mac with
+full Xcode from a clean,
 tagged commit. That Mac signs the Finder extension, app and DMG with Developer
 ID Application, submits the DMG to Apple, staples its ticket, verifies the
 mounted app and final checksum, then uploads the validated DMG, checksum and appcast
@@ -62,6 +63,9 @@ real installed environment before any public upload.
 2. Put the current version at the **first** `# FileMint VERSION` heading in
    `docs/RELEASE_NOTES.md`. Write only verified shipped behavior and any migration
    instructions. Review user-facing README/website/install copy when affected.
+   The first arm64-only release must state its macOS 13 minimum and that
+   earlier Intel installations cannot update to it; keep older release records
+   accurate to their original universal artifacts.
    The publishing script extracts only this section for the GitHub Release body.
 3. Finish applicable feature verification, commit the release preparation on
    `main`, and create `vVERSION` at that exact commit. The local release command
@@ -77,7 +81,7 @@ use the supported local credential variables). Run:
 make release-local
 ```
 
-This runs `make verify`, builds both architectures, compiles/tests the production
+This runs `make verify`, builds arm64-only executables, compiles/tests the production
 Sparkle driver, signs app/extension/helper contents, submits the DMG once for
 Apple notarization, staples the accepted ticket, and verifies the mounted app,
 embedded entitlements, checksum and signed `appcast.xml`. It saves the final DMG,
@@ -96,7 +100,7 @@ signed sandbox two-version Sparkle installation acceptance in
 [Update verification](../specs/verification/updates.md#sparkle-installation-checks)
 when changing the updater, signing, packaging or permissions, and record the
 observed replacement/relaunch and any untested production path. Report installed
-Finder, Intel, macOS 13 and managed-device evidence separately if unavailable.
+Finder, minimum-supported-macOS and managed-device evidence separately if unavailable.
 Keep this candidate evidence in the release verification record, tied to its
 commit and final DMG SHA-256.
 

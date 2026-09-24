@@ -5,7 +5,7 @@ export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Develope
 mkdir -p build/sparkle-installation-harness.noindex
 SPARKLE_QA_ROOT="$(mktemp -d "$PWD/build/sparkle-installation-harness.noindex/run.XXXXXX")"
 SPARKLE_QA_FRAMEWORK="$PWD/build/SourcePackages/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64"
-swiftc -swift-version 6 -parse-as-library -target "$(uname -m)-apple-macos13.0" \
+swiftc -swift-version 6 -parse-as-library -target "arm64-apple-macos13.0" \
   scripts/sparkle_installation_smoke.swift -F "$SPARKLE_QA_FRAMEWORK" -framework Sparkle \
   -Xlinker -rpath -Xlinker @executable_path/../Frameworks -o "$SPARKLE_QA_ROOT/UpgradeQA"
 python3 - "$SPARKLE_QA_ROOT" "$SPARKLE_QA_FRAMEWORK" <<'PY'

@@ -28,6 +28,15 @@ def public_key():
     return key
 
 
+def minimum_system_version(project=ROOT / "project.yml"):
+    source = project.read_text(encoding="utf-8")
+    targets = re.findall(r'^    macOS: ["\']?([0-9]+\.[0-9]+)["\']?$', source, re.MULTILINE)
+    settings = re.findall(r'^    MACOSX_DEPLOYMENT_TARGET: ["\']?([0-9]+\.[0-9]+)["\']?$', source, re.MULTILINE)
+    if len(targets) != 1 or len(settings) != 1 or targets[0] != settings[0]:
+        raise ValueError("project.yml deployment targets must match")
+    return targets[0]
+
+
 def validate_inputs(archive, version, build):
     if not re.fullmatch(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)", version):
         raise ValueError("Invalid stable version")
@@ -48,7 +57,8 @@ def make_feed(archive, version, build, signature):
     ET.SubElement(item, "title").text = f"FileMint {version}"
     ET.SubElement(item, tag("version")).text = build
     ET.SubElement(item, tag("shortVersionString")).text = version
-    ET.SubElement(item, tag("minimumSystemVersion")).text = "13.0"
+    ET.SubElement(item, tag("minimumSystemVersion")).text = minimum_system_version()
+    ET.SubElement(item, tag("hardwareRequirements")).text = "arm64"
     ET.SubElement(item, "link").text = f"{RELEASES}/tag/v{version}"
     ET.SubElement(item, "enclosure", {
         "url": f"{RELEASES}/download/v{version}/{archive.name}",

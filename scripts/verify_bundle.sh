@@ -8,11 +8,22 @@ xcrun swift scripts/verify_signed_entitlements.swift "$APP"
 [[ -f "$APP/Contents/Resources/LICENSE" ]]
 for executable in "$APP/Contents/MacOS/FileMint" "$EXT/Contents/MacOS/FileMintFinderSync"; do
   ARCHITECTURES="$(lipo -archs "$executable")"
-  [[ " $ARCHITECTURES " == *" arm64 "* && " $ARCHITECTURES " == *" x86_64 "* ]]
+  [[ "$ARCHITECTURES" == arm64 ]] || {
+    echo "FileMint executable is not arm64-only: $executable ($ARCHITECTURES)" >&2
+    exit 1
+  }
 done
 POINT="$(/usr/libexec/PlistBuddy -c 'Print :NSExtension:NSExtensionPointIdentifier' "$EXT/Contents/Info.plist")"
 [[ "$POINT" == "com.apple.FinderSync" ]]
 [[ "$(/usr/libexec/PlistBuddy -c 'Print :LSUIElement' "$APP/Contents/Info.plist")" == "true" ]]
+MINIMUM_SYSTEM_VERSION="$(python3 -B -c 'import sys; sys.path.insert(0, "scripts"); import update_appcast; print(update_appcast.minimum_system_version())')"
+for bundle in "$APP" "$EXT"; do
+  actual="$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' "$bundle/Contents/Info.plist")"
+  [[ "$actual" == "$MINIMUM_SYSTEM_VERSION" ]] || {
+    echo "Minimum macOS version mismatch: $bundle ($actual, expected $MINIMUM_SYSTEM_VERSION)" >&2
+    exit 1
+  }
+done
 APP_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Contents/Info.plist")"
 EXT_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$EXT/Contents/Info.plist")"
 [[ "$APP_VERSION" == "$EXT_VERSION" ]]
@@ -27,9 +38,9 @@ for executable in "$SPARKLE/Sparkle" "$SPARKLE/Autoupdate" \
   "$SPARKLE/XPCServices/Installer.xpc/Contents/MacOS/Installer" \
   "$SPARKLE/XPCServices/Downloader.xpc/Contents/MacOS/Downloader"; do
   ARCHITECTURES="$(lipo -archs "$executable")"
-  [[ " $ARCHITECTURES " == *" arm64 "* && " $ARCHITECTURES " == *" x86_64 "* ]] || {
-    echo "Sparkle component is not universal: $executable" >&2
+  [[ "$ARCHITECTURES" == arm64 ]] || {
+    echo "Sparkle component is not arm64-only: $executable ($ARCHITECTURES)" >&2
     exit 1
   }
 done
-echo "Verified universal app + Finder extension, version $APP_VERSION."
+echo "Verified arm64-only app, Finder extension and Sparkle, version $APP_VERSION."

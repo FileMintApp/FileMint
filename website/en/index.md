@@ -265,7 +265,7 @@ hero:
     <div>
       <div class="mini-label">FILEMINT 0.5.9</div>
       <h2>Start in Finder. Finish the task. Get back to work.</h2>
-      <p>For macOS 13+, Apple silicon and Intel. Developer ID signed and Apple notarized; first use still follows macOS prompts for Finder enablement and folder authorization.</p>
+      <p>The published 0.5.10 release supports macOS 13+, Apple silicon and Intel. Future stable releases will support M-series Macs on macOS 13+ only. Installers are Developer ID signed and Apple notarized; first use still requires Finder enablement and folder authorization.</p>
     </div>
     <div class="callout-actions">
       <a href="https://github.com/FileMintApp/FileMint/releases/latest">Download the latest release</a>

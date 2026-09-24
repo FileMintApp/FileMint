@@ -265,7 +265,7 @@ hero:
     <div>
       <div class="mini-label">FILEMINT 0.5.9</div>
       <h2>从 Finder 开始，做完，然后回到你的工作。</h2>
-      <p>支持 macOS 13+、Apple 芯片和 Intel。Developer ID 签名并通过 Apple 公证；首次使用仍需按系统提示启用 Finder 扩展和文件夹授权。</p>
+      <p>已发布的 0.5.10 支持 macOS 13+、Apple 芯片和 Intel；后续正式版仅支持 macOS 13+ 的 M 系列 Mac。安装包使用 Developer ID 签名并通过 Apple 公证；首次使用仍需启用 Finder 扩展和文件夹授权。</p>
     </div>
     <div class="callout-actions">
       <a href="https://github.com/FileMintApp/FileMint/releases/latest">下载最新版本</a>

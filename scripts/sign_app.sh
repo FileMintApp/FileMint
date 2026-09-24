@@ -22,6 +22,29 @@ fi
 # Sign from the inside out. Code Sign on Copy does not re-sign nested helpers.
 SPARKLE="$APP_PATH/Contents/Frameworks/Sparkle.framework"
 [[ -d "$SPARKLE" ]] || { echo 'Missing Sparkle framework' >&2; exit 2; }
+# Xcode embeds Sparkle's universal XCFramework slice. Strip Intel code from the
+# copied bundle before signing so the shipped app contains arm64 executables only.
+thin_arm64() {
+  local executable="$1" architectures temporary
+  architectures="$(lipo -archs "$executable")"
+  if [[ "$architectures" == arm64 ]]; then return; fi
+  [[ " $architectures " == *" arm64 "* ]] || {
+    echo "Missing arm64 code: $executable ($architectures)" >&2
+    return 1
+  }
+  temporary="$(mktemp "${executable}.arm64.XXXXXX")"
+  if ! lipo "$executable" -thin arm64 -output "$temporary"; then
+    rm -f "$temporary"
+    return 1
+  fi
+  mv -f "$temporary" "$executable"
+}
+for executable in "$SPARKLE/Versions/B/Sparkle" "$SPARKLE/Versions/B/Autoupdate" \
+  "$SPARKLE/Versions/B/Updater.app/Contents/MacOS/Updater" \
+  "$SPARKLE/Versions/B/XPCServices/Installer.xpc/Contents/MacOS/Installer" \
+  "$SPARKLE/Versions/B/XPCServices/Downloader.xpc/Contents/MacOS/Downloader"; do
+  thin_arm64 "$executable"
+done
 for component in XPCServices/Installer.xpc XPCServices/Downloader.xpc Autoupdate Updater.app; do
   codesign "${SIGN_ARGS[@]}" --preserve-metadata=entitlements "$SPARKLE/Versions/B/$component"
 done

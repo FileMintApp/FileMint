@@ -1,7 +1,7 @@
 # Development
 
-Use full Xcode with Swift 6, Python 3.9+ for context/CLI checks, and XcodeGen
-(`brew install xcodegen`).
+Use full Xcode with Swift 6 on an M-series Mac, Python 3.9+ for context/CLI
+checks, and XcodeGen (`brew install xcodegen`).
 
 ```sh
 make verify
@@ -16,8 +16,10 @@ and real CLI regression via `make verify-harness-cli`. The CLI checks build a fr
 executable and verify both passing and deliberately failing inputs; no third-party
 test runner is needed. The current [Harness format](../specs/verification/core.md)
 and `HarnessSuite.load` are the only supported input/Swift entry points.
-`make build` generates FileMint.xcodeproj from project.yml and builds arm64 + x86_64. `make package`
-adds ad-hoc bundle signatures, checks both architectures and creates the DMG.
+`make build` generates FileMint.xcodeproj from project.yml and builds the app and
+Finder extension for arm64. `make package` removes Intel slices from embedded
+Sparkle executables, adds ad-hoc bundle signatures, checks arm64-only contents
+and creates the DMG.
 Outputs are under build/ and ignored by Git.
 
 Packaging uses an isolated temporary directory under `build/package-work.noindex`

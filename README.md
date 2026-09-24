@@ -3,7 +3,7 @@
 <p align="center"><strong>把文件工具，放回 Finder。</strong><br>一个小体积的原生 macOS app：创建、处理、整理文件与图片。</p>
 <p align="center"><strong>简体中文</strong> ｜ <a href="README.en.md"><strong>English →</strong></a></p>
 <p align="center"><a href="https://github.com/FileMintApp/FileMint/releases/latest">下载 macOS 版</a> · <a href="website/">官网源码</a> · <a href="docs/INSTALL.md">安装帮助</a> · <a href="https://github.com/FileMintApp/FileMint/issues">反馈问题</a></p>
-<p align="center"><sub>Swift + AppKit + SwiftUI · macOS 13+ · Apple 芯片与 Intel · 文件创建离线完成</sub></p>
+<p align="center"><sub>Swift + AppKit + SwiftUI · 文件创建离线完成</sub></p>
 
 想建一个文件，却要先打开编辑器、另存为、再找回刚才的文件夹？
 
@@ -128,7 +128,7 @@ Finder 扩展未启用时，“通用”页现在会显示启用引导和系统�
 
 ## 下载与安装
 
-支持 **macOS 13 及以上**，同一个安装包兼容 Apple 芯片与 Intel Mac。
+已发布的 0.5.10 安装包支持 macOS 13+、Apple 芯片和 Intel Mac。后续正式版将仅支持 **macOS 13+ 的 M 系列 Mac**；旧安装包的适用范围不变。
 
 **0.5.9 及后续正式版安装包使用 Developer ID 签名，通过 Apple 公证并附加公证票据。** 首次使用仍需按系统提示启用 Finder 扩展和文件夹授权。
 

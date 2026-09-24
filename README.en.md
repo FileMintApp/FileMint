@@ -3,7 +3,7 @@
 <p align="center"><strong>Put file tools back in Finder.</strong><br>A small native macOS app for creating, processing and organizing files and images.</p>
 <p align="center"><a href="README.md"><strong>← 简体中文</strong></a> ｜ <strong>English</strong></p>
 <p align="center"><a href="https://github.com/FileMintApp/FileMint/releases/latest">Download for macOS</a> · <a href="website/">Website source</a> · <a href="docs/INSTALL.md">Installation help</a> · <a href="https://github.com/FileMintApp/FileMint/issues">Report an issue</a></p>
-<p align="center"><sub>Swift + AppKit + SwiftUI · macOS 13+ · Apple silicon and Intel · Offline file creation</sub></p>
+<p align="center"><sub>Swift + AppKit + SwiftUI · Offline file creation</sub></p>
 
 Creating a file should not require opening an editor, choosing Save As and finding your folder again.
 
@@ -128,7 +128,7 @@ Read the complete [privacy policy](PRIVACY.md).
 
 ## Install
 
-Supports **macOS 13+**, with one universal package for Apple silicon and Intel Macs.
+The published 0.5.10 installer supports macOS 13+, Apple silicon and Intel Macs. Future stable releases will support **M-series Macs on macOS 13+** only; existing installers keep their original compatibility.
 
 **Stable installers from 0.5.9 onward are Developer ID signed, Apple notarized and stapled.** First use still follows macOS prompts for Finder enablement and folder authorization.
 

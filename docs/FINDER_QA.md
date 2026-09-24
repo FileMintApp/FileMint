@@ -119,7 +119,7 @@ It neither loads owner preferences nor proves installed Finder or sandbox grants
 - Cancel a batch; finished outputs remain and no partial file is published. Closing
   or quitting during processing cannot interrupt a committed output or release grants early.
 - Verify Finder callbacks on the installed signed build, source/output sandbox grants,
-  cloud placeholders and macOS 13/Intel separately from isolated native fixtures.
+  cloud placeholders and macOS 13 separately from isolated native fixtures.
 
 ## File and folder tools
 
@@ -254,7 +254,7 @@ This fixture does not prove that Finder has loaded the new extension.
 
 ## Distribution
 
-- `make verify`, Release build, nested signatures, both architectures, matching
+- `make verify`, Release build, nested signatures, arm64-only executables, matching
   app/extension versions, DMG verification and portable checksum all pass.
 - Launch the copied DMG app, not only the DerivedData app.
 - Repeat Gatekeeper approval and extension activation on a clean Mac when one

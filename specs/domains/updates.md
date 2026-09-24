@@ -53,6 +53,11 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   immutable appcast.xml asset, not a moving latest feed. Bind the offered item to
   the selected version, exact DMG URL and size; reject mismatches, informational
   items, deltas and downgrades. Require an EdDSA archive signature before extraction.
+  An Apple-silicon-only release appcast declares Sparkle's arm64 hardware
+  requirement, so older Intel clients cannot install a release they cannot run.
+  Existing Intel clients may still discover a newer GitHub release before
+  Sparkle filters its appcast; this must not be presented as installed success.
+  The appcast minimum macOS version matches the app's deployment target.
   Apple signing/notarization remains required for public releases. SHA-256 files
   remain available for older clients and manual downloads.
 - Show progress and cancellation during checking/download. Disable cancellation
