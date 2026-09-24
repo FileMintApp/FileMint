@@ -936,3 +936,12 @@ isolated copy of public 0.5.9 upgraded through the production About UI and
 public feed to 0.5.10 (18), replacing and relaunching at the same temporary
 path. The user's `/Applications/FileMint.app` remained at 0.5.9; installed
 Finder refresh, Intel/macOS 13 and managed-device paths remain untested.
+
+## 2026-09-24 — Published 0.6.0
+
+The [0.6.0 release verification](RELEASE_VERIFICATION_0.6.0.md) records the
+Accepted and stapled arm64-only candidate, exact published asset comparisons,
+successful source/release/Pages workflows, and public 0.5.10 → 0.6.0 update.
+The original `/Applications/FileMint.app` and loaded Finder extension remained
+at 0.5.10. Installed 0.6.0 Finder callbacks, Intel and macOS 13 runtime, and
+managed-device authorization remain unverified.
