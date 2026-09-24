@@ -34,6 +34,21 @@ struct GeneralPane: View {
                     .mintSurface()
                     .accessibilityIdentifier("onboarding.finderExtension")
                 }
+                SettingsSection(title: model.text(.fullDiskAccess)) {
+                    HStack(alignment: .top, spacing: 12) {
+                        Image(systemName: "lock.shield")
+                            .font(.system(size: 19)).foregroundStyle(FileMintStyle.accent)
+                            .frame(width: 24).accessibilityHidden(true)
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text(model.text(.fullDiskSetupHint))
+                                .font(.system(size: 12)).foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Button(model.text(.openFullDiskAccess)) { model.openFullDiskAccessSettings() }
+                                .buttonStyle(MintButtonStyle())
+                                .accessibilityIdentifier("onboarding.openFullDiskAccess")
+                        }
+                    }
+                }.accessibilityIdentifier("onboarding.fullDiskAccess")
                 SettingsSection(title: model.text(.appearance)) {
                     PreferenceRow(title: model.text(.theme)) {
                         Picker(model.text(.theme), selection: Binding(

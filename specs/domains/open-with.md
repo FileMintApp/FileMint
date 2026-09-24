@@ -16,7 +16,10 @@ Load for: Configured applications, their Finder menu placement and opening selec
   without hanging the settings panel.
 - Preserve the saved list order and reject duplicates by bundle identifier or
   canonical URL. Users can drag rows to reorder them; each menu level follows
-  that relative order. Choosing an existing app refreshes its location/bookmark
+  that relative order. During a drag, show a high-contrast insertion line at the
+  exact boundary where the app will land; animate the guide and row settling,
+  respecting Reduce Motion. Clear the guide when the drag leaves or ends.
+  Choosing an existing app refreshes its location/bookmark
   while preserving its stable ID, order and placement. Malformed entries must not
   discard valid neighbors.
 - Each row shows the native app icon, name, location, menu-position picker and

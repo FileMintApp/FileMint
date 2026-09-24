@@ -31,6 +31,7 @@ public enum NewFileMenuPlacement: String, Codable, CaseIterable, Sendable {
 
 public struct FileMintPreferences: Codable, Equatable, Sendable {
     public var templates: [FileTemplate]
+    public var removedBuiltInTemplateIDs: [String] = []
     public var defaultTemplateIDs: [String: String] = [:]
     public var monitoredFolderURLs: [URL]
     public var monitoredFolderBookmarks: [String: Data]
@@ -81,6 +82,7 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case templates
+        case removedBuiltInTemplateIDs
         case defaultTemplateIDs
         case monitoredFolderURLs
         case monitoredFolderBookmarks
@@ -106,7 +108,10 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         templates = (try? container.decode([FileTemplate].self, forKey: .templates)) ?? defaults.templates
-        templates = TemplateCatalog.migratingTemplates(templates)
+        let builtInIDs = Set(TemplateCatalog.builtInTemplates.map(\.id))
+        removedBuiltInTemplateIDs = Array(Set((try? container.decode([String].self, forKey: .removedBuiltInTemplateIDs)) ?? [])
+            .intersection(builtInIDs)).sorted()
+        templates = TemplateCatalog.migratingTemplates(templates, excludingBuiltInIDs: Set(removedBuiltInTemplateIDs))
         defaultTemplateIDs = TemplateCatalog.validDefaults(
             (try? container.decode([String: String].self, forKey: .defaultTemplateIDs)) ?? [:], in: templates)
         monitoredFolderBookmarks = (try? container.decode([String: Data].self, forKey: .monitoredFolderBookmarks)) ?? [:]

@@ -229,10 +229,10 @@ extension TemplateCatalog {
         }
     }
 
-    public static func migratingTemplates(_ templates: [FileTemplate]) -> [FileTemplate] {
+    public static func migratingTemplates(_ templates: [FileTemplate], excludingBuiltInIDs removedIDs: Set<String> = []) -> [FileTemplate] {
         let ids = Set(templates.map(\.id))
         var result = sortedTemplates(from: templates)
-        for var template in builtInTemplates where !ids.contains(template.id) {
+        for var template in builtInTemplates where !ids.contains(template.id) && !removedIDs.contains(template.id) {
             template.rank = (result.map(\.rank).max() ?? 0) + 10
             template.isEnabled = false
             result.append(template)

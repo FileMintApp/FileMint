@@ -50,6 +50,10 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   opens a broader settings page. The card disappears only after the system API
   reports the extension enabled, refreshed when FileMint becomes active. Do not
   persist a separate onboarding-complete flag or treat opening Settings as consent.
+- General also presents an immediately visible Full Disk Access setup action on
+  first launch and later visits. It opens the macOS privacy pane only on the
+  user's request and states that the system switch is authoritative, FileMint
+  cannot read it, and sandbox folder selection may still be needed.
 - macOS discovers and loads the bundled Finder extension; its enabled state is
   controlled by the user. Explain this in the setup guide and open the system
   extension management UI on request. Do not use private APIs or `pluginkit` to

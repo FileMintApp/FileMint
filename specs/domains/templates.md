@@ -12,8 +12,14 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   display name, suffix, default filename and optional initial template content.
   Multiple templates may share a suffix; stable IDs identify templates. Changes persist and refresh Finder without
   restarting the app. Enabled types are shared by quick actions and the picker.
-- Users can enable/disable and reorder types. Built-in templates have stable IDs.
-  Restoring built-ins preserves custom types and requires a confirmation.
+- Users can enable/disable, reorder, edit and remove every type, including built-in
+  templates. Built-in templates retain stable IDs when edited. A removed built-in
+  stays removed across relaunch and settings import until the user explicitly
+  restores built-ins. Restoring built-ins preserves custom types and requires a
+  confirmation. Template selection uses a quiet adaptive mint treatment rather
+  than the system's saturated blue list selection; drag reordering still shows
+  an exact insertion boundary and a restrained row-settling animation that
+  respects Reduce Motion.
 - Older preferences retain language, folder selection, template customizations,
   enabled state and order; newly added presets are appended disabled.
 - Do not expose nonfunctional favorites, icon toggles, themes or dashboards.

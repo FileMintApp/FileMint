@@ -18,12 +18,16 @@ struct OpenWithPane: View {
 
 /// Shared by production and an isolated native UI fixture.
 struct OpenWithSettingsView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Binding var preferences: OpenWithPreferences
     let language: AppLanguage
     var isChoosing = false
     let addApplication: () -> Void
+    @State private var draggedApplicationID: UUID?
+    @State private var dropTargetID: UUID?
 
     private func text(_ key: FileMintTextKey) -> String { FileMintStrings.text(key, language: language) }
+    private var dragAnimation: Animation? { reduceMotion ? nil : .easeInOut(duration: 0.18) }
 
     var body: some View {
         ScrollView {
@@ -60,13 +64,30 @@ struct OpenWithSettingsView: View {
                                 }), canMoveUp: index > 0, canMoveDown: index < preferences.applications.count - 1,
                                 moveUp: { preferences.move(app.id, by: -1) },
                                 moveDown: { preferences.move(app.id, by: 1) },
-                                remove: { preferences.applications.removeAll { $0.id == app.id } })
+                                remove: { preferences.applications.removeAll { $0.id == app.id } },
+                                beginDrag: { withAnimation(dragAnimation) { draggedApplicationID = app.id } })
                                 .padding(17)
-                                .onDrop(of: [UTType.plainText.identifier], isTargeted: nil) { providers in
+                                .overlay(alignment: .top) {
+                                    if isDropTarget(app.id, after: false) { SettingsInsertionIndicator().offset(y: -4) }
+                                }
+                                .overlay(alignment: .bottom) {
+                                    if isDropTarget(app.id, after: true) { SettingsInsertionIndicator().offset(y: 4) }
+                                }
+                                .zIndex(dropTargetID == app.id ? 1 : 0)
+                                .onDrop(of: [UTType.plainText.identifier], isTargeted: Binding(
+                                    get: { dropTargetID == app.id },
+                                    set: { targeted in
+                                        withAnimation(dragAnimation) {
+                                            if targeted { dropTargetID = app.id }
+                                            else if dropTargetID == app.id { dropTargetID = nil }
+                                        }
+                                    }
+                                )) { providers in
                                     dropApplication(providers, on: app.id)
                                 }
                         }
-                    }.mintSurface(padding: 0)
+                    }.animation(dragAnimation, value: preferences.applications.map(\.id))
+                        .mintSurface(padding: 0)
                     Text(text(.openWithReorderHint)).font(.system(size: 11)).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true).padding(.horizontal, 2)
                 }
@@ -84,14 +105,27 @@ struct OpenWithSettingsView: View {
     }
 
     private func dropApplication(_ providers: [NSItemProvider], on targetID: UUID) -> Bool {
-        guard let provider = providers.first(where: { $0.canLoadObject(ofClass: NSString.self) }) else { return false }
+        guard let sourceID = draggedApplicationID,
+              let provider = providers.first(where: { $0.canLoadObject(ofClass: NSString.self) }) else { return false }
         provider.loadObject(ofClass: NSString.self) { object, _ in
-            guard let value = object as? String, let sourceID = UUID(uuidString: value) else { return }
+            guard let value = object as? String, UUID(uuidString: value) == sourceID else { return }
             DispatchQueue.main.async {
-                preferences.move(sourceID, to: targetID)
+                withAnimation(dragAnimation) { preferences.move(sourceID, to: targetID) }
             }
         }
+        withAnimation(dragAnimation) {
+            draggedApplicationID = nil
+            dropTargetID = nil
+        }
         return true
+    }
+
+    private func isDropTarget(_ targetID: UUID, after: Bool) -> Bool {
+        guard dropTargetID == targetID, let draggedApplicationID,
+              let source = preferences.applications.firstIndex(where: { $0.id == draggedApplicationID }),
+              let target = preferences.applications.firstIndex(where: { $0.id == targetID }),
+              source != target else { return false }
+        return (source < target) == after
     }
 }
 
@@ -104,6 +138,7 @@ private struct OpenWithApplicationRow: View {
     let moveUp: () -> Void
     let moveDown: () -> Void
     let remove: () -> Void
+    let beginDrag: () -> Void
     @State private var icon: NSImage?
     @State private var location = ""
     @State private var unavailable = false
@@ -115,7 +150,10 @@ private struct OpenWithApplicationRow: View {
             Image(systemName: "line.3.horizontal")
                 .font(.system(size: 13)).foregroundStyle(.secondary)
                 .frame(width: 16, height: 28).contentShape(Rectangle())
-                .onDrag { NSItemProvider(object: application.id.uuidString as NSString) }
+                .onDrag {
+                    beginDrag()
+                    return NSItemProvider(object: application.id.uuidString as NSString)
+                }
                 .help(text(.openWithReorderHint)).accessibilityHidden(true)
             Group {
                 if let icon { Image(nsImage: icon).resizable() }

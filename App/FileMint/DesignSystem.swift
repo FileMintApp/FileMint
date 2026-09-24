@@ -64,6 +64,19 @@ struct SettingsSectionTitle: View {
     }
 }
 
+struct SettingsInsertionIndicator: View {
+    var body: some View {
+        HStack(spacing: 0) {
+            Circle().frame(width: 8, height: 8)
+            Rectangle().frame(height: 2)
+        }
+        .foregroundStyle(Color(nsColor: .systemBlue))
+        .padding(.horizontal, 12)
+        .accessibilityHidden(true)
+        .allowsHitTesting(false)
+    }
+}
+
 /// A functional preference group shared by settings pages, not a persistence layer.
 struct SettingsSection<Content: View>: View {
     let title: String

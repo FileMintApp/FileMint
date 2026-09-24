@@ -180,8 +180,10 @@ final class PreferencesModel: ObservableObject {
     }
 
     func resetTemplates() {
+        let previous = preferences
         preferences.templates = TemplateCatalog.restoringBuiltIns(in: preferences.templates)
-        save()
+        preferences.removedBuiltInTemplateIDs = []
+        if !save() { preferences = previous }
     }
 
     func moveTemplates(fromOffsets source: IndexSet, toOffset destination: Int) {
@@ -200,8 +202,6 @@ final class PreferencesModel: ObservableObject {
         return preferences.templates.indices.contains(index + offset)
     }
 
-    func isCustom(_ id: String) -> Bool { !TemplateCatalog.builtInTemplates.contains { $0.id == id } }
-
     func saveType(name: String, suffix: String, content: String, id: String?, suggestedFileName: String? = nil) throws {
         let previous = preferences
         let document = preferences.templates.first { $0.id == id }?.document
@@ -215,10 +215,13 @@ final class PreferencesModel: ObservableObject {
     }
 
     func removeType(_ id: String) {
-        guard isCustom(id) else { return }
+        guard preferences.templates.contains(where: { $0.id == id }) else { return }
         let previous = preferences
         let document = preferences.templates.first { $0.id == id }?.document
         preferences.templates.removeAll { $0.id == id }
+        if TemplateCatalog.builtInTemplates.contains(where: { $0.id == id }) {
+            preferences.removedBuiltInTemplateIDs = Array(Set(preferences.removedBuiltInTemplateIDs + [id])).sorted()
+        }
         if !save() { preferences = previous; return }
         if let document, !preferences.templates.contains(where: { $0.document?.id == document.id }) {
             let assets = documentTemplates

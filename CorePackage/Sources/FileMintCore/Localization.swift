@@ -53,6 +53,7 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case fullDiskAccessStatusHint
     case fullDiskAccessEnabledHint
     case fullDiskAccessHint
+    case fullDiskSetupHint
     case folderAccessReminder
     case folderAccessSaved
     case importSettings
@@ -136,6 +137,7 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case finderExtension
     case menuFolders
     case enabledTypes
+    case templateReorderHint
 
     case general
     case fileTypes
@@ -378,6 +380,7 @@ public enum FileMintStrings {
         .finderExtension: ("Finder extension", "Finder 扩展"),
         .menuFolders: ("Menu locations", "菜单显示范围"),
         .enabledTypes: ("enabled", "已启用"),
+        .templateReorderHint: ("Drag the handle to reorder templates, or use Move Up and Move Down.", "拖动把手调整模板顺序，也可使用上移和下移。"),
 
         .followSystem: ("Follow System", "跟随系统"),
         .launchAtLogin: ("Launch at login", "开机自动启动"),
@@ -396,6 +399,7 @@ public enum FileMintStrings {
         .fullDiskAccessStatusHint: ("FileMint cannot read this switch automatically. This guide remaining visible does not mean access is denied.", "FileMint 无法自动读取此开关。此说明仍然显示，不代表你尚未授权。"),
         .fullDiskAccessEnabledHint: ("Switch on: permission is granted. Quit and reopen FileMint after enabling it; no need to add it again.", "开关已开启：已授予权限。开启后退出并重新打开 FileMint，无需重复添加或授权。"),
         .fullDiskAccessHint: ("Switch off or FileMint missing: add the installed FileMint.app in Privacy & Security → Full Disk Access, then turn it on.", "开关关闭或没有 FileMint：在“隐私与安全性 → 完全磁盘访问权限”中添加已安装的 FileMint.app 并开启。"),
+        .fullDiskSetupHint: ("Working in protected folders? Open macOS Full Disk Access, add the installed FileMint.app if needed, and switch it on. Quit and reopen FileMint afterward. FileMint cannot read this switch; working folders may still need to be chosen once in Finder & Folders.", "需要处理受保护文件夹？打开 macOS“完全磁盘访问权限”，必要时添加已安装的 FileMint.app 并开启。随后退出并重新打开 FileMint。FileMint 无法读取此开关；工作文件夹仍可能需要在“Finder 与文件夹”中选择一次。"),
         .folderAccessReminder: ("The folder list shows saved access only. Even with Full Disk Access, choose each working folder once to let FileMint remember access.", "列表仅显示各文件夹的授权记录。即使已开启完全磁盘访问，仍需首次选择工作文件夹以记住访问权限。"),
         .folderAccessSaved: ("Folder access saved", "已保存此文件夹的授权"),
         .importSettings: ("Import Settings…", "导入设置…"),
@@ -464,11 +468,11 @@ public enum FileMintStrings {
         .finderSettingsPathLegacy: ("If needed, find FileMint in System Settings → Privacy & Security → Extensions.", "如果没有直接看到 FileMint，请前往“系统设置 → 隐私与安全性 → 扩展”查找。"),
         .fileTypeHint: ("Save different templates for the same format. Enabled templates appear in Finder and the creation panel.", "为同一种格式保存不同模板。勾选后显示在 Finder 和创建面板中。"),
         .customTypeHint: ("Creates UTF-8 text with this suffix. A suffix does not convert text into PDF, images or Office files.", "以此后缀创建 UTF-8 文本；不能通过更改后缀生成 PDF、图片或 Office 文件。"),
-        .restoreConfirm: ("Restore built-in types? Custom types will be kept.", "恢复内置类型？自定义类型会保留。"),
+        .restoreConfirm: ("Restore built-in templates? This resets edits and brings back removed built-ins. Custom templates are kept.", "恢复内置模板？这会重置修改并找回已移除的内置模板，自定义模板会保留。"),
         .duplicateType: ("This extension already exists. Edit or enable the existing type.", "这个后缀已存在，请编辑或启用已有类型。"),
         .emptyTypeName: ("Enter a name for this file type.", "请填写文件类型名称。"),
-        .deleteTypeConfirm: ("Remove this custom file type? Existing files are unaffected.", "移除此自定义类型？已创建的文件不受影响。"),
-        .noCustomSelection: ("Select a custom type to edit or remove.", "选中自定义类型后可编辑或移除。"),
+        .deleteTypeConfirm: ("Remove this template? Existing files are unaffected.", "移除此模板？已创建的文件不受影响。"),
+        .noCustomSelection: ("Select a template to edit or remove.", "选中模板后可编辑或移除。"),
         .newFileShortcut: ("⌘↩ Create", "⌘↩ 创建"),
         .sourceAvailable: ("Local. Native. No account.", "本地运行 · 原生体验 · 无需账号"),
         .viewHelp: ("Installation Help", "安装帮助"),
@@ -487,6 +491,10 @@ public enum FileMintStrings {
     }
 
     public static func templateDisplayName(for template: FileTemplate, language: AppLanguage) -> String {
+        // Preserve localized catalog labels only while the user has not renamed a preset.
+        guard TemplateCatalog.builtInTemplates.first(where: { $0.id == template.id })?.displayName == template.displayName else {
+            return template.displayName
+        }
         switch language.resolved() {
         case .english, .system:
             return template.displayName

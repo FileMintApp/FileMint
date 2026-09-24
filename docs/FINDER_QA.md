@@ -50,9 +50,18 @@ Record actual results in ACCEPTANCE.md.
   settings from the button; return without enabling and confirm the card remains.
   Enable FileMint there, return to the app and confirm its actual status refreshes
   and the card disappears. Disable it again and confirm the card returns.
+- On General at first launch, confirm the Full Disk Access action is visible
+  alongside the extension setup path. The copy must direct the user to the
+  system switch, avoid claiming its status, and explain folder selection and
+  relaunch after enabling. Returning from System Settings alone changes no status.
 - Add `.toml` with starter content; verify it appears in the selector and Finder.
-- Edit, disable, reorder and remove that custom type. Built-ins remain intact.
-- Restore built-ins; verify custom types remain after explicit confirmation.
+- Edit, disable, reorder and remove that custom type. Select a built-in template:
+  its selection should use the muted mint surface and its Edit and Remove actions
+  should be available. Edit its name/content, relaunch and verify they persist.
+  Remove it, relaunch and verify it stays absent from settings and creation.
+- Restore built-ins after confirmation; verify removed presets return with their
+  original content while custom types remain. Drag a template and inspect the
+  insertion line, then check the animated final order. Repeat with Reduce Motion.
 - Choose a working folder once, relaunch, and verify access is remembered.
 - Switch Follow System/English/Chinese; verify settings, Finder menus and panel labels agree.
 - In General, Theme and Interface language pickers share the switches' trailing
@@ -205,7 +214,9 @@ This fixture does not prove that Finder has loaded the new extension.
   last entry and verify the empty state. Removal must not uninstall the application.
 - Drag apps up and down, then check their order in each Finder menu level and after
   relaunch. Re-add a reordered app and verify it keeps its saved position. Check
-  the keyboard reorder buttons too.
+  the keyboard reorder buttons too. While dragging, the blue insertion line must
+  indicate the exact final boundary; release and check the row settles smoothly.
+  Cancel a drag and ensure no guide remains. Repeat with Reduce Motion.
 - Check Chinese/English, light/dark and 840×600, including keyboard controls,
   long app names, unavailable apps and scrolling with a long list. Add again after
   moving an app to repair its saved location/access.

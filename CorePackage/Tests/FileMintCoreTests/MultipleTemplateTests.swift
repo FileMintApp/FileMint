@@ -81,4 +81,43 @@ struct MultipleTemplateTests {
         #expect(TemplateCatalog.validDefaults(["md":"weekly"], in: restored) == ["md":"weekly"])
         #expect(restored.filter { $0.id == "weekly" }.count == 1)
     }
+
+    @Test func editedBuiltInRetainsIdentityAndUsesItsCustomName() throws {
+        let original = try #require(TemplateCatalog.builtInTemplates.first { $0.id == "plain-text" })
+        let edited = try TemplateCatalog.customTemplate(name: "My Notes", fileExtension: "txt",
+            content: "A custom start\n", id: original.id, in: [original], suggestedFileName: "Notes.txt")
+        #expect(edited.id == original.id && edited.rank == original.rank && edited.group == original.group)
+        #expect(edited.content == "A custom start\n" && edited.suggestedFileName == "Notes.txt")
+        #expect(FileMintStrings.templateDisplayName(for: edited, language: .chinese) == "My Notes")
+        #expect(FileMintStrings.templateDisplayName(for: original, language: .chinese) == "文本")
+    }
+
+    @Test func removedBuiltInStaysRemovedUntilExplicitRestoration() throws {
+        var preferences = FileMintPreferences.default
+        let custom = try TemplateCatalog.customTemplate(name: "Notes", fileExtension: "md", content: "keep",
+            in: preferences.templates, suggestedFileName: "Notes.md")
+        preferences.templates.append(custom)
+        preferences.defaultTemplateIDs = ["md": "markdown"]
+        preferences.templates.removeAll { $0.id == "markdown" }
+        preferences.removedBuiltInTemplateIDs = ["markdown"]
+
+        let restored = try FileMintPreferencesStore.decode(JSONEncoder().encode(preferences))
+        #expect(!restored.templates.contains { $0.id == "markdown" })
+        #expect(restored.templates.contains(custom))
+        #expect(restored.removedBuiltInTemplateIDs == ["markdown"])
+        #expect(restored.defaultTemplateIDs.isEmpty)
+
+        var reset = restored
+        reset.templates = TemplateCatalog.restoringBuiltIns(in: reset.templates)
+        reset.removedBuiltInTemplateIDs = []
+        let afterReset = try FileMintPreferencesStore.decode(JSONEncoder().encode(reset))
+        #expect(afterReset.templates.contains { $0.id == "markdown" })
+        #expect(afterReset.templates.contains(custom))
+        #expect(afterReset.removedBuiltInTemplateIDs.isEmpty)
+
+        var legacy = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(preferences)) as? [String: Any])
+        legacy.removeValue(forKey: "removedBuiltInTemplateIDs")
+        let migrated = try FileMintPreferencesStore.decode(JSONSerialization.data(withJSONObject: legacy))
+        #expect(migrated.templates.contains { $0.id == "markdown" && !$0.isEnabled })
+    }
 }

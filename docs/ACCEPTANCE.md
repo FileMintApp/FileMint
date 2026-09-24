@@ -3,6 +3,23 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Settings setup and template interaction — 2026-09-24
+
+Checked on macOS 27.2, Apple silicon, `7a482bb` plus the uncommitted
+[settings task worktree](tasks/2026-09-24-settings-setup-and-templates.md).
+
+- `make verify` passed 150 Core and 13 image tests plus public Harness, CLI,
+  context and release script checks. The unsigned universal app/extension built.
+- In an isolated native settings fixture at 840×600, a built-in template could be
+  selected with the muted mint style, edited and removed. The fixture preferences
+  stored the removed stable ID. General showed both manual extension setup and
+  Full Disk Access guidance without changing system permission.
+- The populated Open with App fixture showed a blue insertion guide. A drag in
+  the final build reordered rows with a short transition; the settled UI and
+  saved preference order agreed. The fixture used its own preferences.
+- Installed Finder callbacks, real permission toggles, Reduce Motion presentation,
+  macOS 13 and Intel runtime were not checked. No installed app was replaced.
+
 ## Performance and security repair QA — 2026-09-23
 
 Checked on macOS 27.2, Apple silicon, `79c2c45` plus the uncommitted

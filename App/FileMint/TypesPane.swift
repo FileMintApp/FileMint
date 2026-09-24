@@ -1,12 +1,19 @@
+import AppKit
 import FileMintCore
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct TypesPane: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @EnvironmentObject private var model: PreferencesModel
     @State private var selection: String?
     @State private var editor: TypeEditorDraft?
     @State private var restoring = false
     @State private var removing = false
+    @State private var draggedTemplateID: String?
+    @State private var dropTargetID: String?
+    @State private var hoveredTemplateID: String?
+    private var dragAnimation: Animation? { reduceMotion ? nil : .easeInOut(duration: 0.18) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -17,34 +24,24 @@ struct TypesPane: View {
                 if model.isImportingDocument { ProgressView().controlSize(.small) }
                 Spacer()
             }
-            List(selection: $selection) {
-                ForEach($model.preferences.templates) { $template in
-                    HStack(spacing: 12) {
-                        Text(template.fileExtension.uppercased())
-                            .font(.system(size: 9, weight: .medium, design: .monospaced))
-                            .frame(width: 34, height: 38).background(FileMintStyle.soft, in: RoundedRectangle(cornerRadius: 5))
-                            .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(FileMintStyle.line, lineWidth: 0.7))
-                        Toggle(model.templateDisplayName(for: template), isOn: $template.isEnabled)
-                            .toggleStyle(.checkbox)
-                            .onChange(of: template.isEnabled) { _ in model.save() }
-                        Spacer()
-                        if model.isDefaultTemplate(template) {
-                            Text(model.text(.defaultTemplate)).font(.caption).foregroundStyle(.secondary)
-                        }
-                        Text(template.suggestedFileName.replacingOccurrences(of: "Untitled", with: ""))
-                            .font(.system(.callout, design: .monospaced)).foregroundStyle(.secondary)
-                    }.padding(.vertical, 8).tag(template.id)
-                }.onMove { model.moveTemplates(fromOffsets: $0, toOffset: $1) }
-            }.listStyle(.plain).scrollContentBackground(.hidden)
+            ScrollView {
+                LazyVStack(spacing: 1) {
+                    ForEach(model.preferences.templates) { template in
+                        templateRow(template)
+                    }
+                }.padding(5)
+                    .animation(dragAnimation, value: model.preferences.templates.map(\.id))
+            }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(FileMintStyle.surface, in: RoundedRectangle(cornerRadius: 12))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(FileMintStyle.line, lineWidth: 0.7))
             HStack(spacing: 8) {
                 Button(model.text(.editType)) {
                     if let type = model.preferences.templates.first(where: { $0.id == selection }) { editor = TypeEditorDraft(type) }
-                }.disabled(selection == nil || !model.isCustom(selection ?? ""))
+                }.disabled(selection == nil)
                 Button(model.text(.remove)) { removing = true }
-                    .disabled(selection == nil || !model.isCustom(selection ?? ""))
+                    .disabled(selection == nil)
                 Button(model.text(.makeDefaultTemplate)) {
                     if let template = model.preferences.templates.first(where: { $0.id == selection }) {
                         model.setDefaultTemplate(template)
@@ -70,8 +67,109 @@ struct TypesPane: View {
             }
             .alert(model.text(.deleteTypeConfirm), isPresented: $removing) {
                 Button(model.text(.cancel), role: .cancel) {}
-                Button(model.text(.remove), role: .destructive) { if let selection { model.removeType(selection) } }
+                Button(model.text(.remove), role: .destructive) {
+                    if let selection { model.removeType(selection); self.selection = nil }
+                }
             }
+            .onChange(of: model.preferences.templates.map(\.id)) { ids in
+                if let selection, !ids.contains(selection) { self.selection = nil }
+            }
+    }
+
+    private func templateRow(_ template: FileTemplate) -> some View {
+        HStack(spacing: 12) {
+            Toggle(model.templateDisplayName(for: template), isOn: Binding(
+                get: { model.preferences.templates.first(where: { $0.id == template.id })?.isEnabled ?? false },
+                set: { enabled in
+                    guard let index = model.preferences.templates.firstIndex(where: { $0.id == template.id }) else { return }
+                    let previous = model.preferences
+                    model.preferences.templates[index].isEnabled = enabled
+                    if !model.save() { model.preferences = previous }
+                }
+            )).labelsHidden().toggleStyle(.checkbox)
+                .accessibilityLabel(model.templateDisplayName(for: template))
+            Button { selection = template.id } label: {
+                HStack(spacing: 12) {
+                    Text(template.fileExtension.uppercased())
+                        .font(.system(size: 9, weight: .medium, design: .monospaced))
+                        .frame(width: 34, height: 38)
+                        .background(FileMintStyle.soft, in: RoundedRectangle(cornerRadius: 5))
+                        .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(FileMintStyle.line, lineWidth: 0.7))
+                    Text(model.templateDisplayName(for: template)).font(.system(size: 13))
+                    Spacer(minLength: 8)
+                    if model.isDefaultTemplate(template) {
+                        Text(model.text(.defaultTemplate)).font(.caption).foregroundStyle(.secondary)
+                    }
+                    Text(template.suggestedFileName.replacingOccurrences(of: "Untitled", with: ""))
+                        .font(.system(.callout, design: .monospaced)).foregroundStyle(.secondary)
+                        .lineLimit(1).truncationMode(.middle)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }.buttonStyle(.plain)
+                .accessibilityAddTraits(selection == template.id ? .isSelected : [])
+                .accessibilityIdentifier("templates.\(template.id).select")
+            Image(systemName: "line.3.horizontal")
+                .font(.system(size: 12)).foregroundStyle(.secondary)
+                .frame(width: 20, height: 30).contentShape(Rectangle())
+                .onDrag {
+                    withAnimation(dragAnimation) { draggedTemplateID = template.id }
+                    return NSItemProvider(object: template.id as NSString)
+                }
+                .help(model.text(.templateReorderHint))
+                .accessibilityHidden(true)
+        }
+        .padding(.horizontal, 13).padding(.vertical, 10)
+        .background(selection == template.id ? FileMintStyle.selection : hoveredTemplateID == template.id ? FileMintStyle.soft : Color.clear,
+                    in: RoundedRectangle(cornerRadius: 8))
+        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(
+            selection == template.id ? FileMintStyle.accent.opacity(0.35) : Color.clear, lineWidth: 0.8))
+        .overlay(alignment: .top) {
+            if isDropTarget(template.id, after: false) { SettingsInsertionIndicator().offset(y: -4) }
+        }
+        .overlay(alignment: .bottom) {
+            if isDropTarget(template.id, after: true) { SettingsInsertionIndicator().offset(y: 4) }
+        }
+        .zIndex(dropTargetID == template.id ? 1 : 0)
+        .onHover { hoveredTemplateID = $0 ? template.id : nil }
+        .onDrop(of: [UTType.plainText.identifier], isTargeted: Binding(
+            get: { dropTargetID == template.id },
+            set: { targeted in
+                withAnimation(dragAnimation) {
+                    if targeted { dropTargetID = template.id }
+                    else if dropTargetID == template.id { dropTargetID = nil }
+                }
+            }
+        )) { providers in dropTemplate(providers, on: template.id) }
+    }
+
+    private func isDropTarget(_ targetID: String, after: Bool) -> Bool {
+        guard dropTargetID == targetID, let draggedTemplateID,
+              let source = model.preferences.templates.firstIndex(where: { $0.id == draggedTemplateID }),
+              let target = model.preferences.templates.firstIndex(where: { $0.id == targetID }),
+              source != target else { return false }
+        return (source < target) == after
+    }
+
+    private func dropTemplate(_ providers: [NSItemProvider], on targetID: String) -> Bool {
+        guard let sourceID = draggedTemplateID,
+              let provider = providers.first(where: { $0.canLoadObject(ofClass: NSString.self) }) else { return false }
+        provider.loadObject(ofClass: NSString.self) { object, _ in
+            guard object as? String == sourceID else { return }
+            DispatchQueue.main.async {
+                guard let source = model.preferences.templates.firstIndex(where: { $0.id == sourceID }),
+                      let target = model.preferences.templates.firstIndex(where: { $0.id == targetID }),
+                      source != target else { return }
+                withAnimation(dragAnimation) {
+                    model.moveTemplates(fromOffsets: IndexSet(integer: source), toOffset: target + (source < target ? 1 : 0))
+                }
+            }
+        }
+        withAnimation(dragAnimation) {
+            draggedTemplateID = nil
+            dropTargetID = nil
+        }
+        return true
     }
 }
 private struct TypeEditorDraft: Identifiable {
