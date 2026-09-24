@@ -21,7 +21,7 @@ hero:
 <div class="hero-proof" aria-label="FileMint product facts">
   <span><strong>Swift + AppKit</strong> 原生应用</span>
   <span><strong>小体积</strong> 无网页运行时</span>
-  <span><strong>6</strong> 个图片资源工具</span>
+  <span><strong>6</strong> 个正式版图片工具</span>
   <span>本地处理，不绕远程服务</span>
 </div>
 
@@ -31,6 +31,7 @@ hero:
   <a href="#templates">模板与图片粘贴</a>
   <a href="#open-with">使用 App 打开</a>
   <a href="#resources">图片工具</a>
+  <a href="#qa-preview">QA 功能预览</a>
   <a href="#file-tools">文件工具</a>
 </nav>
 
@@ -84,8 +85,8 @@ hero:
 
   <div class="visual-grid visual-grid--wide">
     <figure class="screen-card screen-card--panel">
-      <div class="screen-window screen-window--creation"><img width="1120" height="1226" loading="lazy" decoding="async" src="/images/create-panel-zh.jpg" alt="FileMint 当前版本的新建文件面板，填写 project-kickoff.md 和初始内容"></div>
-      <figcaption>FileMint 0.5.9 · Markdown 草稿；文件名与后缀同步，初始内容原样保存。</figcaption>
+      <div class="screen-window screen-window--creation"><img width="1120" height="1226" loading="lazy" decoding="async" src="/images/create-panel-zh.jpg" alt="FileMint 新建文件面板，填写 project-kickoff.md 和初始内容"></div>
+      <figcaption>界面示例 · Markdown 草稿；文件名与后缀同步，初始内容原样保存。</figcaption>
     </figure>
     <div class="copy-stack">
       <div class="mini-label">CREATE ONCE, KEEP THE CONTEXT</div>
@@ -106,7 +107,7 @@ hero:
   <p class="section-intro">同一种格式，可以有不同用途的模板。会议记录、项目说明、工作表，各自保留名称和内容，从 Finder 或创建面板直接选择。</p>
   <div class="visual-grid visual-grid--wide">
     <figure class="screen-card screen-card--panel">
-      <div class="screen-window"><img width="1800" height="1300" loading="lazy" decoding="async" src="/images/file-types-zh.jpg" alt="FileMint 0.5.9 模板与类型页面，显示新建文本模板和导入文档模板入口"></div>
+      <div class="screen-window"><img width="1800" height="1300" loading="lazy" decoding="async" src="/images/file-types-zh.jpg" alt="FileMint 模板与类型页面，显示新建文本模板和导入文档模板入口"></div>
       <figcaption>内置类型按需启用；同格式可保存多个模板，并指定默认项。</figcaption>
     </figure>
     <div class="copy-stack">
@@ -133,7 +134,7 @@ hero:
   <div class="visual-grid visual-grid--wide">
     <figure class="screen-card screen-card--panel">
       <div class="screen-window"><img width="1800" height="1300" loading="lazy" decoding="async" src="/images/open-with-zh.jpg" alt="FileMint 使用 App 打开页面，展示三个已添加应用及独立菜单位置"></div>
-      <figcaption>FileMint 0.5.9 · 已添加应用的示例；新安装时列表为空，由你选择应用。</figcaption>
+      <figcaption>配置示例 · 新安装时列表为空，由你选择要添加的应用。</figcaption>
     </figure>
     <div class="copy-stack">
       <div class="mini-label">YOUR APPS / YOUR MENU</div>
@@ -150,12 +151,12 @@ hero:
 <section id="resources" class="landing-section landing-section--tint">
   <p class="section-kicker">05 / RESOURCE TOOLS</p>
   <h2>图片处理，也回到你选中的文件旁边。</h2>
-  <p class="section-intro">从主应用选择图片，或启用 Finder 菜单后在选中的图片旁直接开始。六个工具都在本机处理，先看预览，再确定参数和输出位置。</p>
+  <p class="section-intro">从主应用选择图片，或启用 Finder 菜单后在选中的图片旁直接开始。正式版的六个工具都在本机处理，先看预览，再确定参数和输出位置。</p>
 
   <div class="visual-grid visual-grid--wide">
     <figure class="screen-card screen-card--panel">
       <div class="screen-window"><img width="1800" height="1300" loading="lazy" decoding="async" src="/images/resource-tools-zh.jpg" alt="FileMint 资源工具页面，显示六个图片处理工具"></div>
-      <figcaption>FileMint 0.5.9 · 六个本地图片工具，原图保留，输出单独保存。</figcaption>
+      <figcaption>正式版界面示例 · 六个本地图片工具，原图保留，输出单独保存。</figcaption>
     </figure>
     <div class="copy-stack">
       <div class="mini-label">SIX SMALL TOOLS, ONE NATIVE SURFACE</div>
@@ -171,8 +172,41 @@ hero:
 
 </section>
 
+<section id="qa-preview" class="landing-section landing-section--quiet qa-preview-section">
+  <p class="section-kicker">06 / QA FEATURE PREVIEW</p>
+  <h2>下一组 Finder 工具，先在 QA 中见面。</h2>
+  <p class="section-intro">下面三项来自尚未发布的 QA 版本，当前稳定安装包暂不包含。界面图先用统一占位图，等 QA App 图标和截图素材更新后再替换；下载链接仍指向最新稳定版。</p>
+
+  <div class="qa-preview-grid">
+    <article class="qa-preview-card">
+      <img src="/images/feature-preview-placeholder-zh.svg" width="1200" height="860" loading="lazy" decoding="async" alt="Finder 隐藏项目切换功能的 QA 界面截图占位图">
+      <div class="qa-preview-copy">
+        <span class="qa-preview-label">QA 预览 · 尚未发布</span>
+        <h3>由你点按的 Finder 显示切换</h3>
+        <p>“Finder 与文件夹”提供明确的切换入口。首次使用需要在 macOS 中授予辅助功能权限；FileMint 不猜测或保存 Finder 当前的隐藏项目状态。正式版支持范围以之后的验收与发布说明为准。</p>
+      </div>
+    </article>
+    <article class="qa-preview-card">
+      <img src="/images/feature-preview-placeholder-zh.svg" width="1200" height="860" loading="lazy" decoding="async" alt="常用文件夹管理页面的 QA 界面截图占位图">
+      <div class="qa-preview-copy">
+        <span class="qa-preview-label">QA 预览 · 尚未发布</span>
+        <h3>常用文件（夹）</h3>
+        <p>手动保存文件和文件夹，按名称、路径或分组搜索，并固定常用项。Finder 快捷菜单只列出有限的固定和最近项目；定位文件会在 Finder 中选中它，打开文件则是单独操作。</p>
+      </div>
+    </article>
+    <article class="qa-preview-card">
+      <img src="/images/feature-preview-placeholder-zh.svg" width="1200" height="860" loading="lazy" decoding="async" alt="移除隐私元数据工具的 QA 界面截图占位图">
+      <div class="qa-preview-copy">
+        <span class="qa-preview-label">QA 预览 · 尚未发布</span>
+        <h3>移除图片隐私元数据</h3>
+        <p>在本机清理 GPS、拍摄时间、设备标识、IPTC、XMP 等元数据，再生成经过读取校验的副本，不覆盖原图。目标格式为 JPEG、PNG、TIFF 和系统支持的普通单图 HEIC；重新编码可能改变文件大小或颜色。文件名和画面中可见的信息仍由你检查。</p>
+      </div>
+    </article>
+  </div>
+</section>
+
 <section id="file-tools" class="landing-section">
-  <p class="section-kicker">06 / FILE &amp; FOLDER TOOLS</p>
+  <p class="section-kicker">07 / FILE &amp; FOLDER TOOLS</p>
   <h2>处理已选项目，但只在你明确点按时发生。</h2>
   <p class="section-intro">文件（夹）工具默认关闭。开启后，每项操作都可以放在 Finder 一级菜单或工具子菜单里；新建文件菜单保持独立，不会被挤乱。</p>
 
@@ -189,13 +223,13 @@ hero:
     </div>
     <figure class="screen-card screen-card--panel">
       <div class="screen-window"><img width="1800" height="1300" loading="lazy" decoding="async" src="/images/file-tools-zh.jpg" alt="FileMint 文件与文件夹工具设置页面，显示菜单位置和独立开关"></div>
-      <figcaption>FileMint 0.5.9 · 已启用工具的配置示例；各项开关与菜单位置独立设置。</figcaption>
+      <figcaption>配置示例 · 各项开关与菜单位置独立设置。</figcaption>
     </figure>
   </div>
 </section>
 
 <section id="settings" class="landing-section landing-section--quiet">
-  <p class="section-kicker">07 / A QUIETER NATIVE UI</p>
+  <p class="section-kicker">08 / A QUIETER NATIVE UI</p>
   <h2>层次清晰，设置少找一步。</h2>
   <p class="section-intro">文件创建、扩展功能、偏好设置，三组固定侧栏。主题可选择跟随系统、浅色或深色；界面语言支持中文、英文和跟随系统。</p>
 
@@ -218,12 +252,12 @@ hero:
   </div>
   <figure class="screen-card screen-card--settings">
     <div class="screen-window"><img width="1800" height="1300" loading="lazy" decoding="async" src="/images/settings-zh.jpg" alt="FileMint 通用设置中的主题、界面语言和启动选项"></div>
-    <figcaption>FileMint 0.5.9 · 外观与语言各自选择，设置随时可改。</figcaption>
+    <figcaption>界面示例 · 外观与语言各自选择，设置随时可改。</figcaption>
   </figure>
 </section>
 
 <section id="privacy" class="landing-section landing-section--tint">
-  <p class="section-kicker">08 / LOCAL BY DEFAULT</p>
+  <p class="section-kicker">09 / LOCAL BY DEFAULT</p>
   <h2>安静，不等于不透明。</h2>
   <p class="section-intro">FileMint 把权限、联网和文件处理边界写在产品里：你知道它什么时候工作，也知道它什么时候不会工作。</p>
 
@@ -247,7 +281,7 @@ hero:
 </section>
 
 <section id="roadmap" class="landing-section">
-  <p class="section-kicker">09 / TODO</p>
+  <p class="section-kicker">10 / TODO</p>
   <h2>未来规划，继续把小事做好。</h2>
   <p class="section-intro">这些是尚未完成的方向，具体进展会在项目中持续更新。</p>
 
@@ -263,9 +297,9 @@ hero:
 <section id="download" class="landing-section landing-section--last">
   <div class="callout-band">
     <div>
-      <div class="mini-label">FILEMINT 0.5.9</div>
+      <div class="mini-label">LATEST STABLE RELEASE</div>
       <h2>从 Finder 开始，做完，然后回到你的工作。</h2>
-      <p>已发布的 0.5.10 支持 macOS 13+、Apple 芯片和 Intel；后续正式版仅支持 macOS 13+ 的 M 系列 Mac。安装包使用 Developer ID 签名并通过 Apple 公证；首次使用仍需启用 Finder 扩展和文件夹授权。</p>
+      <p>下载按钮始终指向最新稳定版；安装要求和首次启用 Finder 的步骤见安装指引。上方标记为 QA 预览的功能尚未包含在当前稳定安装包中。</p>
     </div>
     <div class="callout-actions">
       <a href="https://github.com/FileMintApp/FileMint/releases/latest">下载最新版本</a>

@@ -1,3 +1,39 @@
+# FileMint 0.6.1
+
+## 新功能
+
+- **常用文件（夹）**：主动保存本地文件或文件夹，按名称、路径或分组搜索、固定并快速定位。Finder 和菜单栏只展示有限的已保存项目；FileMint 不扫描目录或读取文件内容。
+- **Finder 显示切换**：在“Finder 与文件夹”或菜单栏中明确点按后切换隐藏项目显示。首次使用需要在 macOS 辅助功能设置中授权；FileMint 不猜测或保存 Finder 当前的显示状态。
+- **移除图片隐私元数据**：为支持的 JPEG、PNG、TIFF 和普通单图 HEIC 生成经读取校验的 `-clean` 副本，不修改原图。重新编码可能改变文件大小或颜色；画面中可见的信息不会被移除。
+
+## 设置改进
+
+- 可编辑或移除内置和自定义文件类型，按需恢复内置类型；拖动排序显示清晰的插入位置。模板身份、顺序和用户设置会保留。
+- 收藏管理页支持按名称、路径、分组、文件夹或可用状态查找已保存项目，并提供批量整理操作。
+
+## 系统要求与升级
+
+0.6.1 正式安装包面向运行 macOS 13 或更新版本的 M 系列 Mac，不含 Intel 代码。Intel Mac 不能安装或通过应用内更新升级到 0.6.1；0.5.10 及更早已发布安装包保留各自原有兼容范围。运行 0.6.0 的 M 系列用户可通过“关于 → 检查更新 → 更新并重启”升级。
+
+0.5.7/0.5.8 用户仍需先手动安装 0.5.9 或更新版本一次，修复旧版自身无法修复的更新器签名权限问题。
+
+## New features
+
+- **Favorite Locations**: Save local files or folders you choose, then search, group, pin and locate them. Finder and the menu bar show a bounded list of saved items; FileMint does not crawl folders or read file contents.
+- **Finder display toggle**: Click the action in Finder & Folders or the menu bar to toggle hidden items. First use requires Accessibility permission in macOS. FileMint does not guess or save Finder's current display state.
+- **Remove Private Metadata**: Create a verified `-clean` copy of supported JPEG, PNG, TIFF and ordinary single-image HEIC files without changing the original. Re-encoding may affect size or color; information visible in the pixels is outside this feature's scope.
+
+## Settings improvements
+
+- Edit or remove built-in and custom file types, restore built-ins when needed, and reorder types with a clear insertion marker. Template identity, order and user settings are retained.
+- The Favorite Locations manager can search saved items by name, path, group, kind or availability and supports batch organization.
+
+## System requirements and upgrading
+
+The 0.6.1 stable installer targets M-series Macs running macOS 13 or later and contains no Intel code. Intel Macs cannot install or update to 0.6.1; published installers through 0.5.10 retain their original compatibility. M-series users on 0.6.0 can upgrade through **About → Check for Updates → Update and Restart**.
+
+Versions 0.5.7/0.5.8 still require one manual installation of 0.5.9 or later to fix updater signing permissions that those versions cannot repair themselves.
+
 # FileMint 0.6.0
 
 ## 改进

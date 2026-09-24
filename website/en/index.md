@@ -21,7 +21,7 @@ hero:
 <div class="hero-proof" aria-label="FileMint product facts">
   <span><strong>Swift + AppKit</strong> native app</span>
   <span><strong>Small footprint</strong> no web runtime</span>
-  <span><strong>6</strong> image tools</span>
+  <span><strong>6</strong> image tools in the stable release</span>
   <span>Local processing, no remote detour</span>
 </div>
 
@@ -31,6 +31,7 @@ hero:
   <a href="#templates">Templates &amp; paste</a>
   <a href="#open-with">Open with App</a>
   <a href="#resources">Image tools</a>
+  <a href="#qa-preview">QA preview</a>
   <a href="#file-tools">File tools</a>
 </nav>
 
@@ -85,7 +86,7 @@ hero:
   <div class="visual-grid visual-grid--wide">
     <figure class="screen-card screen-card--panel">
       <div class="screen-window screen-window--creation"><img width="1120" height="1226" loading="lazy" decoding="async" src="/images/create-panel-en.jpg" alt="FileMint New File panel with project-kickoff.md and starter content"></div>
-      <figcaption>FileMint 0.5.9 · A Markdown draft, with a synchronized suffix and literal starter content.</figcaption>
+      <figcaption>Interface example · A Markdown draft, with a synchronized suffix and literal starter content.</figcaption>
     </figure>
     <div class="copy-stack">
       <div class="mini-label">CREATE ONCE, KEEP THE CONTEXT</div>
@@ -106,7 +107,7 @@ hero:
   <p class="section-intro">Keep different templates for the same format. Meeting notes, project briefs and worksheets each retain their own name and content, ready in Finder or the creation panel.</p>
   <div class="visual-grid visual-grid--wide">
     <figure class="screen-card screen-card--panel">
-      <div class="screen-window"><img width="1800" height="1300" loading="lazy" decoding="async" src="/images/file-types-en.jpg" alt="FileMint 0.5.9 Templates and Types with New Text Template and Import Document Template actions"></div>
+      <div class="screen-window"><img width="1800" height="1300" loading="lazy" decoding="async" src="/images/file-types-en.jpg" alt="FileMint Templates and Types with New Text Template and Import Document Template actions"></div>
       <figcaption>Enable the formats you need, save multiple templates per format and choose a default.</figcaption>
     </figure>
     <div class="copy-stack">
@@ -133,7 +134,7 @@ hero:
   <div class="visual-grid visual-grid--wide">
     <figure class="screen-card screen-card--panel">
       <div class="screen-window"><img width="1800" height="1300" loading="lazy" decoding="async" src="/images/open-with-en.jpg" alt="FileMint Open with App settings with three configured applications and menu positions"></div>
-      <figcaption>FileMint 0.5.9 · Example configuration. New installations start with an empty app list.</figcaption>
+      <figcaption>Example configuration · New installations start with an empty app list.</figcaption>
     </figure>
     <div class="copy-stack">
       <div class="mini-label">YOUR APPS / YOUR MENU</div>
@@ -150,12 +151,12 @@ hero:
 <section id="resources" class="landing-section landing-section--tint">
   <p class="section-kicker">05 / RESOURCE TOOLS</p>
   <h2>Image work, next to the selected files.</h2>
-  <p class="section-intro">Select images, choose Resource Tools from Finder, or start from the FileMint app. The app works even with Finder menu integration off. Preview first, then choose parameters and output.</p>
+  <p class="section-intro">Select images, choose Resource Tools from Finder, or start from the FileMint app. The six tools in the stable release work locally, even with Finder menu integration off. Preview first, then choose parameters and output.</p>
 
   <div class="visual-grid visual-grid--wide">
     <figure class="screen-card screen-card--panel">
       <div class="screen-window"><img width="1800" height="1300" loading="lazy" decoding="async" src="/images/resource-tools-en.jpg" alt="FileMint Resource Tools page with six image actions"></div>
-      <figcaption>FileMint 0.5.9 · Six local image tools. Originals stay intact; results are saved separately.</figcaption>
+      <figcaption>Stable release interface example · Six local image tools. Originals stay intact; results are saved separately.</figcaption>
     </figure>
     <div class="copy-stack">
       <div class="mini-label">SIX SMALL TOOLS, ONE NATIVE SURFACE</div>
@@ -171,8 +172,41 @@ hero:
 
 </section>
 
+<section id="qa-preview" class="landing-section landing-section--quiet qa-preview-section">
+  <p class="section-kicker">06 / QA FEATURE PREVIEW</p>
+  <h2>Meet the next Finder tools in QA first.</h2>
+  <p class="section-intro">These three features are in an unpublished QA build and are not in the current stable installer. The images below are consistent placeholders; we will replace them after the QA app icon and capture assets are updated. Download still points to the latest stable release.</p>
+
+  <div class="qa-preview-grid">
+    <article class="qa-preview-card">
+      <img src="/images/feature-preview-placeholder-en.svg" width="1200" height="860" loading="lazy" decoding="async" alt="Placeholder for the QA screenshot of Finder hidden item switching">
+      <div class="qa-preview-copy">
+        <span class="qa-preview-label">QA preview · Unreleased</span>
+        <h3>User-triggered Finder display toggle</h3>
+        <p>Finder &amp; Folders adds a deliberate toggle command. First use requires the macOS Accessibility permission. FileMint does not guess or store Finder's current hidden-item state. Stable-release support will follow installed-app acceptance and release notes.</p>
+      </div>
+    </article>
+    <article class="qa-preview-card">
+      <img src="/images/feature-preview-placeholder-en.svg" width="1200" height="860" loading="lazy" decoding="async" alt="Placeholder for the QA screenshot of Favorite Locations">
+      <div class="qa-preview-copy">
+        <span class="qa-preview-label">QA preview · Unreleased</span>
+        <h3>Favorite Locations</h3>
+        <p>Save files and folders you choose, search saved names, paths or groups, and pin frequently used items. Finder shows a bounded list of pinned and recently located entries. Locating a file selects it in Finder; opening it is a separate action.</p>
+      </div>
+    </article>
+    <article class="qa-preview-card">
+      <img src="/images/feature-preview-placeholder-en.svg" width="1200" height="860" loading="lazy" decoding="async" alt="Placeholder for the QA screenshot of private image metadata removal">
+      <div class="qa-preview-copy">
+        <span class="qa-preview-label">QA preview · Unreleased</span>
+        <h3>Remove private image metadata</h3>
+        <p>Remove GPS, capture time, device identifiers, IPTC, XMP and other metadata in a locally processed copy, then verify it by reading the output back. The original stays unchanged. Target formats are JPEG, PNG, TIFF and ordinary single-image HEIC when supported by the system. Re-encoding may change size or color. Filenames and information visible in the pixels still need your review.</p>
+      </div>
+    </article>
+  </div>
+</section>
+
 <section id="file-tools" class="landing-section">
-  <p class="section-kicker">06 / FILE &amp; FOLDER TOOLS</p>
+  <p class="section-kicker">07 / FILE &amp; FOLDER TOOLS</p>
   <h2>Handle selected items only when you explicitly ask.</h2>
   <p class="section-intro">File &amp; Folder Tools starts off. Once enabled, each action can live in Finder's main menu or the tools submenu; New File remains independent and uncluttered.</p>
 
@@ -189,13 +223,13 @@ hero:
     </div>
     <figure class="screen-card screen-card--panel">
       <div class="screen-window"><img width="1800" height="1300" loading="lazy" decoding="async" src="/images/file-tools-en.jpg" alt="FileMint File and Folder Tools settings with menu placement and individual switches"></div>
-      <figcaption>FileMint 0.5.9 · An example with tools enabled, each with its own switch and menu position.</figcaption>
+      <figcaption>Example configuration · Each action has its own switch and menu position.</figcaption>
     </figure>
   </div>
 </section>
 
 <section id="settings" class="landing-section landing-section--quiet">
-  <p class="section-kicker">07 / A QUIETER NATIVE UI</p>
+  <p class="section-kicker">08 / A QUIETER NATIVE UI</p>
   <h2>Clear hierarchy, less searching.</h2>
   <p class="section-intro">Three sidebar groups keep creation, extensions and preferences together. Choose Follow System, Light or Dark, and use English, Chinese or your system language.</p>
 
@@ -218,12 +252,12 @@ hero:
   </div>
   <figure class="screen-card screen-card--settings">
     <div class="screen-window"><img width="1800" height="1300" loading="lazy" decoding="async" src="/images/settings-en.jpg" alt="FileMint General settings with theme, language and startup options"></div>
-    <figcaption>FileMint 0.5.9 · Independent theme and language choices, ready to change at any time.</figcaption>
+    <figcaption>Interface example · Independent theme and language choices, ready to change at any time.</figcaption>
   </figure>
 </section>
 
 <section id="privacy" class="landing-section landing-section--tint">
-  <p class="section-kicker">08 / LOCAL BY DEFAULT</p>
+  <p class="section-kicker">09 / LOCAL BY DEFAULT</p>
   <h2>Quiet does not mean opaque.</h2>
   <p class="section-intro">FileMint keeps permission, network and file-processing boundaries explicit, so you know when it works and when it does not.</p>
 
@@ -247,7 +281,7 @@ hero:
 </section>
 
 <section id="roadmap" class="landing-section">
-  <p class="section-kicker">09 / TODO</p>
+  <p class="section-kicker">10 / TODO</p>
   <h2>Keep making the small things better.</h2>
   <p class="section-intro">These features are still planned. Follow the project for progress as they take shape.</p>
 
@@ -263,9 +297,9 @@ hero:
 <section id="download" class="landing-section landing-section--last">
   <div class="callout-band">
     <div>
-      <div class="mini-label">FILEMINT 0.5.9</div>
+      <div class="mini-label">LATEST STABLE RELEASE</div>
       <h2>Start in Finder. Finish the task. Get back to work.</h2>
-      <p>The published 0.5.10 release supports macOS 13+, Apple silicon and Intel. Future stable releases will support M-series Macs on macOS 13+ only. Installers are Developer ID signed and Apple notarized; first use still requires Finder enablement and folder authorization.</p>
+      <p>The download always points to the latest stable release. See the installation guide for system requirements and first-time Finder setup. Features labelled QA preview above are not in the current stable installer.</p>
     </div>
     <div class="callout-actions">
       <a href="https://github.com/FileMintApp/FileMint/releases/latest">Download the latest release</a>
