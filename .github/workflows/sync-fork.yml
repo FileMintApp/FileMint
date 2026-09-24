@@ -20,40 +20,44 @@ jobs:
     # This workflow is copied into forks with the upstream source. Never run
     # the write step in FileMintApp/FileMint itself.
     if: ${{ github.event.repository.fork == true }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - name: Check out the fork default branch
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0 (Node 24)
         with:
           ref: ${{ github.event.repository.default_branch }}
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Merge upstream changes
-        id: sync
+      - name: Fetch upstream changes
         env:
           UPSTREAM_REPOSITORY: FileMintApp/FileMint
           UPSTREAM_BRANCH: main
-          TARGET_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          git remote add upstream "https://github.com/${UPSTREAM_REPOSITORY}.git"
+          git fetch --no-tags upstream "$UPSTREAM_BRANCH"
+
+      - name: Merge upstream changes
+        id: sync
+        env:
+          UPSTREAM_BRANCH: main
         run: |
           set -euo pipefail
           echo "changed=false" >> "$GITHUB_OUTPUT"
 
-          if [[ "$GITHUB_REPOSITORY" == "$UPSTREAM_REPOSITORY" ]]; then
-            echo "The upstream repository is not a sync destination."
-            exit 0
-          fi
-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git remote add upstream "https://github.com/${UPSTREAM_REPOSITORY}.git"
-          git fetch --no-tags upstream "$UPSTREAM_BRANCH"
 
           # A normal merge preserves commits made in the fork. A conflict
           # stops the job before push so a maintainer can resolve it manually.
           before_sync=$(git rev-parse HEAD)
-          git merge --no-edit "upstream/${UPSTREAM_BRANCH}"
+          if ! git merge --no-edit "upstream/${UPSTREAM_BRANCH}"; then
+            echo "Upstream merge failed; inspect the conflict details above."
+            git status --short
+            exit 1
+          fi
           after_sync=$(git rev-parse HEAD)
 
           if [[ "$before_sync" == "$after_sync" ]]; then
@@ -61,8 +65,13 @@ jobs:
             exit 0
           fi
 
-          git push origin "HEAD:${TARGET_BRANCH}"
           echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Push merge to fork
+        if: ${{ steps.sync.outputs.changed == 'true' }}
+        env:
+          TARGET_BRANCH: ${{ github.event.repository.default_branch }}
+        run: git push origin "HEAD:${TARGET_BRANCH}"
 
       - name: Dispatch fork CI after sync
         # A manual run can retry CI dispatch after a previous post-push

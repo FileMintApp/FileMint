@@ -29,9 +29,14 @@ job explicitly dispatches the fork's `ci.yml` after a successful update.
 - Scheduled runs do not dispatch CI when the fork is already up to date. A
   manual run still dispatches CI, which also provides a recovery path after a
   transient dispatch failure.
-- A merge conflict or protected-branch rejection stops before a remote update.
-  If the post-push CI dispatch fails, the sync commit remains in the fork; fix
+- Fetch, merge and push are separate steps, so a failed run identifies which
+  operation needs attention. A merge conflict or protected-branch rejection
+  stops before a remote update.
+- If the post-push CI dispatch fails, the sync commit remains in the fork; fix
   the Actions permission or workflow name and run this workflow manually again.
+- Node runtime and runner-image notices are separate from the failed command.
+  Inspect the red step's output to distinguish a merge conflict from a push
+  permission or branch-protection rejection.
 
 If the upstream repository or branch changes, update `UPSTREAM_REPOSITORY` and
 `UPSTREAM_BRANCH` in the copied workflow before enabling the schedule. If the
