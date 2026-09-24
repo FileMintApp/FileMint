@@ -7,6 +7,7 @@ public enum ResourceText: Sendable {
     case selected, moveUp, moveDown, preparing, working, completed, cancelled, failed, noText
     case copyText, saveText, saved, copied, previewHint, showOutputs, accuracyHint
     case editOptions
+    case metadataHint, metadataDetail
 
     public func text(_ language: AppLanguage) -> String {
         let pair: (String, String) = switch self {
@@ -51,6 +52,8 @@ public enum ResourceText: Sendable {
         case .showOutputs: ("Show results in Finder", "在 Finder 显示结果")
         case .editOptions: ("Adjust options", "调整参数")
         case .accuracyHint: ("OCR uses supported Chinese/English models; input is limited to a 4096 px longest edge. Review recognized text before use.", "OCR 使用系统支持的中英文识别，输入最长边限制为 4096 像素；使用前请核对结果。")
+        case .metadataHint: ("Creates clean copies in the same format. Re-encodes in sRGB up to 16 MP; size or color may change.", "生成同格式的已清理副本。最多处理 1600 万像素，并重新编码为 sRGB；体积或色彩可能变化。")
+        case .metadataDetail: ("Removes GPS, camera/device details, dates, IPTC, XMP and text metadata. Does not clean filenames or information visible in the picture.", "移除位置、设备信息、拍摄时间、IPTC、XMP 和文字元数据。文件名及画面中可见的信息不会被清除。")
         }
         return language.resolved() == .chinese ? pair.1 : pair.0
     }
@@ -73,6 +76,9 @@ extension ResourceError {
         case .textTooLarge: ("Recognized text exceeds the result limit. Select fewer or smaller images.", "识别文字超过结果上限，请减少图片数量或尺寸。")
         case .disabled: ("The tool or its folder scope changed. Enable it and select the images again.", "工具开关或文件夹范围已变化，请启用并重新选择图片。")
         case .failed: ("Processing failed. Originals were preserved; check the image and folder access.", "处理失败，原文件已保留；请检查图片和文件夹授权。")
+        case .privateMetadataRemains: ("Private metadata remained in the new copy, so no output was saved.", "新副本仍含隐私元数据，因此未保存输出文件。")
+        case .metadataTooLarge: ("This image exceeds the 16 MP limit for privacy cleaning. The original was kept; no smaller copy was made.", "图片超过隐私清理的 1600 万像素上限。原图已保留，也未生成缩小版。")
+        case .metadataFormatUnavailable: ("This Mac cannot create a verified clean copy in the image's format.", "当前 Mac 无法生成并验证该图片格式的已清理副本。")
         }
         return language.resolved() == .chinese ? pair.1 : pair.0
     }

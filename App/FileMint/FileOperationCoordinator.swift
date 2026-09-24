@@ -62,7 +62,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
         picker.message = InterfaceText.chooseImages.text(currentPreferences.language)
         picker.canChooseDirectories = false
         picker.allowsMultipleSelection = true
-        picker.allowedContentTypes = ResourceToolsPolicy.inputExtensions.sorted().compactMap { UTType(filenameExtension: $0) }
+        picker.allowedContentTypes = ResourceToolsPolicy.extensions(for: tool).sorted().compactMap { UTType(filenameExtension: $0) }
         guard picker.runModal() == .OK else { return }
         guard ResourceToolsPolicy.allowsAppSelection(picker.urls, tool: tool) else {
             operationTitle = .resourceTools
@@ -101,6 +101,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
                         case .desktopAlias: operationTitle = .sendAliasToDesktop
                         case .resource: operationTitle = .resourceTools
                         case .openWith: operationTitle = .openWithApps
+                        case .favoriteAdd, .favoriteLocate, .favoriteSearch: operationTitle = .favoriteLocations
                         }
                         try await handle(request)
                     }
@@ -112,6 +113,28 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
 
     private func handle(_ request: FileOperationRequest) async throws {
         switch request {
+        case .favoriteAdd(let selection):
+            guard FavoriteLocationsPolicy.canAdd(selection, isItemMenu: true,
+                preferences: currentPreferences) else { throw FavoriteLocationError.invalidSelection }
+            var bookmarks: [String: Data] = [:]
+            for parent in uniqueParents(selection) {
+                guard try authorize(parent, bookmarks: &bookmarks, readOnly: true) else { return }
+            }
+            try requireResolvedSelection(selection)
+            guard FavoriteLocationsPolicy.canAdd(selection, isItemMenu: true,
+                preferences: currentPreferences) else { throw FavoriteLocationError.invalidSelection }
+            let result = try FavoriteLocationsModel.shared.add(selection)
+            let language = currentPreferences.language
+            let message = String(format: FavoriteText.added.text(language), result.added, result.duplicates)
+            FavoriteLocationsModel.shared.message = message
+            FavoriteFeedbackController.show(message)
+
+        case .favoriteLocate(let id):
+            try FavoriteLocationsModel.shared.locate(id)
+
+        case .favoriteSearch:
+            FavoriteQuickPanelController.shared.show()
+
         case .openWith(let reference, let selection):
             guard let application = OpenWithPolicy.application(for: reference, selection: selection,
                 preferences: currentPreferences) else { throw OpenWithError.changedConfiguration }
@@ -365,6 +388,14 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
     }
 
     private func show(_ error: Error) {
+        if operationTitle == .favoriteLocations {
+            let alert = NSAlert()
+            alert.messageText = text(.favoriteLocations)
+            alert.informativeText = error.localizedDescription
+            NSApp.activate(ignoringOtherApps: true)
+            alert.runModal()
+            return
+        }
         if operationTitle == .openWithApps {
             showMessage((error as? OpenWithError)?.messageKey ?? .openWithFailed)
             return

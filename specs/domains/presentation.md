@@ -7,7 +7,8 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 ## Appearance
 
 - Approved UI/UX v1 uses three explicit sidebar groups: File Creation (Templates
-  & Types, Creation), Extensions (File & Folder Tools, Resource Tools, Open with App), and
+  & Types, Creation), Extensions (File & Folder Tools, Resource Tools, Open with App,
+  Favorite Locations), and
   Preferences (General, Finder & Folders, About). Arrow-key navigation follows
   that visual order. Future implemented tools join Extensions without placeholders.
 - Use restrained adaptive porcelain/graphite surfaces and a muted mint accent,
@@ -15,7 +16,7 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   Status reflects real extension/login/update state; no sample metrics or claimed
   permissions from the design prototype may reach the product.
 - Resource Tools separates Use Tools from Finder Menu Settings. The first shows
-  six usable actions; the second manages the default-off Finder integration.
+  seven usable actions; the second manages the default-off Finder integration.
   Native processing windows use a bounded image preview, parameter inspector,
   thumbnail selection and fixed bottom actions. OCR puts source and editable
   result side-by-side; conversion never displays a fabricated compressed size.
@@ -90,6 +91,14 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   and a nearby Add App action. Its empty state is
   functional and concise; the entry and Finder group use `square.stack.3d.up` and child
   entries use the selected app's native icon.
+- Favorite Locations uses a searchable virtualized list, compact rows with native
+  icons and parent paths, clear pinned/unavailable states, adjacent add and batch
+  actions, and a focused quick-search panel. Finder's direct Add action appears
+  once; the separate submenu remains bounded to pinned/recent choices and Search
+  All. The hidden-items permission row explains the first-use system grant and
+  never displays an inferred Finder visibility state. Resource Tools adds a
+  seventh card for private metadata removal and shows progress/results without
+  an extra Run button after the user's explicit selection.
 
 ## Product presentation
 

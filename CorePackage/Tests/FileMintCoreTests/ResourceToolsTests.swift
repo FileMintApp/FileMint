@@ -20,13 +20,16 @@ struct ResourceToolsTests {
     func migration() throws {
         let old = try JSONDecoder().decode(FileMintPreferences.self, from: Data(#"{"language":"zh-Hans","showMenuBar":false}"#.utf8))
         #expect(!old.resourceTools.isEnabled)
-        #expect(old.resourceTools.enabledTools.count == 6)
+        #expect(old.resourceTools.enabledTools.count == 7)
         #expect(old.language == .chinese && !old.showMenuBar)
         var preferences = old
         preferences.resourceTools.enabledTools = [.ocr]
         let roundTrip = try JSONDecoder().decode(FileMintPreferences.self, from: JSONEncoder().encode(preferences))
         #expect(roundTrip.resourceTools.enabledTools == [.ocr])
         #expect(!roundTrip.resourceTools.isEnabled)
+        let savedSix = Data(#"{"isEnabled":true,"enabledTools":["convert","compress","resize","icons","stitch","ocr"]}"#.utf8)
+        let migrated = try JSONDecoder().decode(ResourceToolsPreferences.self, from: savedSix)
+        #expect(migrated.isEnabled && !migrated.enabledTools.contains(.removeMetadata))
     }
 
     @Test("menu scope includes all selected image names and no unrelated resources")
@@ -36,7 +39,9 @@ struct ResourceToolsTests {
         preferences.monitoredFolderURLs = [root]
         preferences.resourceTools.isEnabled = true
         let a = root.appendingPathComponent("A.PNG"), b = root.appendingPathComponent("B.heic")
-        #expect(ResourceToolsPolicy.availableTools(selection: [a], isItemMenu: true, preferences: preferences).count == 5)
+        #expect(ResourceToolsPolicy.availableTools(selection: [a], isItemMenu: true, preferences: preferences).count == 6)
+        #expect(ResourceToolsPolicy.availableTools(selection: [a], isItemMenu: true, preferences: preferences).contains(.removeMetadata))
+        #expect(!ResourceToolsPolicy.allowsAppSelection([root.appendingPathComponent("a.gif")], tool: .removeMetadata))
         #expect(ResourceToolsPolicy.availableTools(selection: [a, b], isItemMenu: true, preferences: preferences).contains(.stitch))
         for selection in [[a, a], [a, root.appendingPathComponent("b.webp")], [a, root.appendingPathComponent("b.pdf")],
                           [a, URL(fileURLWithPath: "/outside/b.png")], [root.appendingPathComponent("folder.png", isDirectory: true)]] {

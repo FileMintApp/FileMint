@@ -64,6 +64,7 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case fileTools
     case fileToolsHint
     case resourceTools
+    case favoriteLocations
     case resourceToolsHint
     case openWithApps, openWithAppsHint, openWithAppName, addApplication, openWithEmptyTitle
     case openWithEmptyHint, openWithMenuHint, openWithSubmenu, openWithChooseHint, openWithRemove
@@ -123,6 +124,8 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case creationSettings
     case templatesAndTypes
     case finderAndFolders
+    case finderDisplay, toggleFinderHiddenItems, hiddenItemsHint, hiddenItemsAuthorized
+    case hiddenItemsAuthorizeHint, hiddenItemsSent, hiddenItemsUnavailable, toggle
     case generalSettingsHint
     case creationSettingsHint
     case finderFoldersHint
@@ -292,6 +295,7 @@ public enum FileMintStrings {
         .fileTools: ("File & Folder Tools", "文件（夹）工具"),
         .fileToolsHint: ("Choose the tools you need in Finder’s context menu.", "选择需要的工具，让 Finder 右键菜单更顺手。"),
         .resourceTools: ("Resource Tools", "资源工具"),
+        .favoriteLocations: ("Favorite Locations", "常用文件（夹）"),
         .resourceToolsHint: ("Convert, resize and process local images.", "转换格式、调整尺寸，处理本地图片。"),
         .openWithApps: ("Open with App", "使用 App 打开"),
         .openWithAppsHint: ("Your go-to apps, right in Finder’s context menu.", "把常用 App，放进 Finder 右键菜单。"),
@@ -367,6 +371,14 @@ public enum FileMintStrings {
         .creationSettings: ("Creation", "创建行为"),
         .templatesAndTypes: ("Templates & Types", "模板与类型"),
         .finderAndFolders: ("Finder & Folders", "Finder 与文件夹"),
+        .finderDisplay: ("Finder display", "Finder 显示"),
+        .toggleFinderHiddenItems: ("Toggle Finder Hidden Items", "切换 Finder 隐藏项目"),
+        .hiddenItemsHint: ("Sends Finder's Command-Shift-Period shortcut on each click. Finder controls the actual visibility.", "每次点击向 Finder 发送一次 ⌘⇧. 快捷键；实际显示状态由 Finder 控制。"),
+        .hiddenItemsAuthorized: ("Accessibility access is enabled. Click Toggle to use it.", "辅助功能已授权，点击「切换」即可使用。"),
+        .hiddenItemsAuthorizeHint: ("First use: allow FileMint in System Settings → Privacy & Security → Accessibility, then click Toggle again. You can also press ⌘⇧. directly in Finder.", "首次使用：请在「系统设置 → 隐私与安全性 → 辅助功能」中允许 FileMint，然后再点击「切换」。也可以直接在 Finder 按 ⌘⇧.。"),
+        .hiddenItemsSent: ("The shortcut was sent to Finder once.", "已向 Finder 发送一次快捷键。"),
+        .hiddenItemsUnavailable: ("Finder was unavailable or did not become active. Click again while Finder is available.", "Finder 当前不可用或未能激活，请在 Finder 可用时重试。"),
+        .toggle: ("Toggle", "切换"),
         .generalSettingsHint: ("Make FileMint fit the way you work.", "设置语言、启动方式与更新偏好。"),
         .creationSettingsHint: ("Choose what happens when you create a file.", "设置同名处理与创建完成后的行为。"),
         .finderFoldersHint: ("Manage Finder integration and the folders you work in.", "管理 Finder 扩展、菜单范围与文件夹访问权限。"),

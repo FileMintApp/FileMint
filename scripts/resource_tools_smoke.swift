@@ -103,7 +103,7 @@ final class ResourceToolsSmoke: NSObject, NSApplicationDelegate {
                 panel.appearance = NSAppearance(named: appearance)
                 panel.setContentSize(NSSize(width: 820, height: 560))
                 try await Task.sleep(for: .milliseconds(180))
-                if ProcessInfo.processInfo.environment["FILEMINT_RESOURCE_INTERACTIVE"] == "1", tool == .stitch {
+                if ProcessInfo.processInfo.environment["FILEMINT_RESOURCE_INTERACTIVE"] == "1", tool == .removeMetadata {
                     print("READY interactive \(language.rawValue)")
                     try await present.value
                     activeController = nil
@@ -120,7 +120,7 @@ final class ResourceToolsSmoke: NSObject, NSApplicationDelegate {
                     guard controller.result == nil else { throw ResourceError.failed }
                     controller.options.stitchEdge = 1024
                 }
-                controller.run()
+                if tool != .removeMetadata { controller.run() }
                 try await waitUntil { !controller.isRunning && controller.result != nil }
                 guard let result = controller.result, result.failure == nil, result.completed == 2 else {
                     throw controller.result?.failure ?? ResourceError.failed

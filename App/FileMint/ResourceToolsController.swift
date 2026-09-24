@@ -107,7 +107,8 @@ final class ResourceToolsController: NSObject, ObservableObject, NSWindowDelegat
             guard let self, let panel, self.panel === panel else { return }
             self.activatePanel(panel)
         }
-        loadPreviews()
+        if tool == .removeMetadata { run() }
+        else { loadPreviews() }
         await withCheckedContinuation { continuation = $0 }
     }
 
@@ -233,7 +234,8 @@ final class ResourceToolsController: NSObject, ObservableObject, NSWindowDelegat
             isCancelling = false
             self.worker = nil
             if let error = result.failure { message = error.message(language) }
-            if let input = selectedInput, thumbnails[input.url] == nil { loadPreviews([input]) }
+            if tool == .removeMetadata { loadPreviews() }
+            else if let input = selectedInput, thumbnails[input.url] == nil { loadPreviews([input]) }
         }
     }
 

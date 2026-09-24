@@ -52,6 +52,25 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
             }
         }
         let file = root.appendingPathComponent("fixture-preferences.json")
+        let favoriteFile = root.appendingPathComponent("fixture-favorites.json")
+        let favoriteStore = FavoriteLocationsStore(file: favoriteFile)
+        let example = try FileMoveItem.capture(root.appendingPathComponent("Mountain.png"))
+        let lake = try FileMoveItem.capture(root.appendingPathComponent("Lake.png"))
+        var favoritesCatalog = FavoriteLocationsCatalog()
+        _ = try favoritesCatalog.add([
+            FavoriteLocation(url: example.source,
+                bookmark: try example.source.bookmarkData(options: .withSecurityScope,
+                    includingResourceValuesForKeys: nil, relativeTo: nil), device: example.device,
+                inode: example.inode, kind: .file, name: "Mountain.png", group: "设计", isPinned: true),
+            FavoriteLocation(url: lake.source,
+                bookmark: try lake.source.bookmarkData(options: .withSecurityScope,
+                    includingResourceValuesForKeys: nil, relativeTo: nil), device: lake.device,
+                inode: lake.inode, kind: .file, name: "Lake.png", group: "工作"),
+            FavoriteLocation(url: root.appendingPathComponent("Missing.pdf"), bookmark: Data([7, 8, 9]),
+                device: example.device, inode: UInt64.max - 1, kind: .file, name: "Missing.pdf", group: "资料")
+        ])
+        try favoriteStore.save(favoritesCatalog)
+        let favoriteModel = FavoriteLocationsModel(store: favoriteStore)
         let store = FileMintPreferencesStore(fileURL: file)
         if CommandLine.arguments.contains("--resume-fixture") { preferences = store.load() }
         else { try store.save(preferences) }
@@ -59,6 +78,7 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
         model.selectedPane = CommandLine.arguments.contains("--open-with") ? .openWith : .resourceTools
         if CommandLine.arguments.contains("--templates") { model.selectedPane = .fileTypes }
         if CommandLine.arguments.contains("--general") { model.selectedPane = .general }
+        if CommandLine.arguments.contains("--favorites") { model.selectedPane = .favoriteLocations }
         resourceController = ResourceToolsController(preferencesFile: file)
         coordinator = FileOperationCoordinator(store: PendingFileMoveStore(file: root.appendingPathComponent("pending.json")),
             tickets: FileOperationTicketStore(directory: root.appendingPathComponent("tickets")), preferencesFile: file,
@@ -75,7 +95,8 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
         window.contentMinSize = NSSize(width: 840, height: 600)
         window.isReleasedWhenClosed = false
         let coordinator = coordinator!
-        window.contentView = NSHostingView(rootView: ContentView(launchResourceTool: { coordinator.chooseImages(for: $0) })
+        window.contentView = NSHostingView(rootView: ContentView(launchResourceTool: { coordinator.chooseImages(for: $0) },
+            favoriteLocations: favoriteModel)
             .environmentObject(model).environmentObject(updater))
         window.center()
         window.makeKeyAndOrderFront(nil)

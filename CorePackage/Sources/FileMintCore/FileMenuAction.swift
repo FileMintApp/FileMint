@@ -1,5 +1,9 @@
 import Foundation
 
+public enum FavoriteMenuAction: Equatable, Sendable {
+    case add, locate(UUID), search
+}
+
 public enum FileMenuDestination {
     /// Container menus already identify a directory; they need no filesystem
     /// probe, which can fail inside the Finder extension's sandbox.
@@ -19,6 +23,7 @@ public struct FileMenuAction: Equatable, Sendable {
     public let tool: FileTool?
     public var resourceTool: ResourceTool? = nil
     public var openWithApplication: OpenWithApplicationReference? = nil
+    public var favoriteAction: FavoriteMenuAction? = nil
     public let selection: [URL]
     public let moveBatchID: UUID?
     public init(directory: URL, templateID: String?) {
@@ -59,6 +64,15 @@ public struct FileMenuAction: Equatable, Sendable {
         self.templateID = nil
         self.tool = nil
         self.openWithApplication = openWithApplication
+        self.selection = selection
+        self.moveBatchID = nil
+    }
+
+    public init(directory: URL, favoriteAction: FavoriteMenuAction, selection: [URL] = []) {
+        self.directory = directory
+        self.templateID = nil
+        self.tool = nil
+        self.favoriteAction = favoriteAction
         self.selection = selection
         self.moveBatchID = nil
     }

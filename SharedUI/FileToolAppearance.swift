@@ -25,6 +25,7 @@ enum FileToolAppearance {
         case .icons: [.systemPurple, .systemPink]
         case .stitch: [.systemMint, .systemTeal]
         case .ocr: [.systemGreen, .systemBlue]
+        case .removeMetadata: [.systemMint, .systemGreen]
         }
         return image(tool.symbol, palette: palette, size: size)
     }
@@ -39,6 +40,10 @@ enum FileToolAppearance {
 
     static var resourceToolsImage: NSImage? {
         image("photo.on.rectangle", palette: [.systemMint, .systemBlue])
+    }
+
+    static var favoriteImage: NSImage? {
+        image("star", palette: [.systemMint, .systemYellow])
     }
 
     static var openWithImage: NSImage? {

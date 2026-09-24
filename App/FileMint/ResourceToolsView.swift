@@ -260,13 +260,14 @@ struct ResourceToolsView: View {
                 DisclosureGroup(label(.more), isExpanded: $details) {
                     VStack(alignment: .leading, spacing: 9) {
                         Text(text(.limits))
-                        Text(text(model.tool == .ocr ? .accuracyHint : .originalHint))
+                        Text(text(model.tool == .ocr ? .accuracyHint :
+                            model.tool == .removeMetadata ? .metadataDetail : .originalHint))
                     }.font(.system(size: 10)).foregroundStyle(.secondary).padding(.top, 8)
                 }.font(.system(size: 11))
                 if let result = model.result {
                     Text("\(text(result.cancelled ? .cancelled : result.failure != nil ? .failed : .completed)) · \(result.completed)/\(model.inputs.count)")
                         .font(.system(size: 11, weight: .medium)).fixedSize(horizontal: false, vertical: true)
-                    if result.completed == 0, result.failure != nil {
+                    if result.completed == 0, result.failure != nil, model.tool != .removeMetadata {
                         Button(text(.editOptions)) { model.editOptions() }.buttonStyle(MintButtonStyle())
                     }
                 }
@@ -315,6 +316,7 @@ struct ResourceToolsView: View {
             }
         }
         if model.tool == .icons { Text(text(.iconHint)).font(.system(size: 10)).foregroundStyle(.secondary) }
+        if model.tool == .removeMetadata { Text(text(.metadataHint)).font(.system(size: 11)).foregroundStyle(.secondary) }
         if model.tool == .stitch {
             VStack(alignment: .leading, spacing: 10) {
                 inspectorLabel(text(.direction))
@@ -358,7 +360,7 @@ struct ResourceToolsView: View {
             Spacer()
             Button(text(model.isRunning ? .cancel : .close)) { model.cancel() }.keyboardShortcut(.cancelAction)
                 .buttonStyle(MintButtonStyle()).disabled(model.isCancelling || model.isSavingText)
-            if model.result == nil {
+            if model.result == nil && model.tool != .removeMetadata {
                 Button(model.tool == .ocr ? model.tool.title(model.language).replacingOccurrences(of: "…", with: "") : label(.start)) { model.run() }
                     .keyboardShortcut(.defaultAction).buttonStyle(MintButtonStyle(primary: true))
                     .disabled(model.isRunning || model.isPreparing || model.inputs.isEmpty)

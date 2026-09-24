@@ -24,6 +24,22 @@ struct FoldersPane: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
+                SettingsSection(title: model.text(.finderDisplay)) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text(model.text(.toggleFinderHiddenItems)).font(.callout.weight(.medium))
+                            Text(model.text(.hiddenItemsHint)).font(.caption).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Button(model.text(.toggle)) { model.toggleFinderHiddenItems() }
+                            .buttonStyle(MintButtonStyle())
+                    }
+                    Text(model.text(model.accessibilityTrusted ? .hiddenItemsAuthorized : .hiddenItemsAuthorizeHint))
+                        .font(.caption).foregroundStyle(.secondary)
+                    if let message = model.hiddenItemsMessage {
+                        Text(message).font(.caption).foregroundStyle(.secondary)
+                    }
+                }
                 VStack(alignment: .leading, spacing: 12) {
                     SettingsSectionTitle(title: model.text(.menuFolders))
                     Text(model.text(.folderHint)).font(.system(size: 11)).foregroundStyle(.secondary)

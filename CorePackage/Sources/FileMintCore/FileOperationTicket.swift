@@ -7,6 +7,9 @@ public enum FileOperationRequest: Codable, Equatable, Sendable {
     case desktopAlias([FileMoveItem])
     case resource(tool: ResourceTool, selection: [URL])
     case openWith(application: OpenWithApplicationReference, selection: [URL])
+    case favoriteAdd([URL])
+    case favoriteLocate(UUID)
+    case favoriteSearch
     case perform(batchID: UUID, destination: URL)
 }
 

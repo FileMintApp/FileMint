@@ -1,7 +1,7 @@
 import Foundation
 
 public enum ResourceTool: String, Codable, CaseIterable, Identifiable, Sendable {
-    case convert, compress, resize, icons, stitch, ocr
+    case convert, compress, resize, icons, stitch, ocr, removeMetadata
     public var id: String { rawValue }
     public var symbol: String {
         switch self {
@@ -11,6 +11,7 @@ public enum ResourceTool: String, Codable, CaseIterable, Identifiable, Sendable 
         case .icons: "app.dashed"
         case .stitch: "rectangle.split.2x1"
         case .ocr: "text.viewfinder"
+        case .removeMetadata: "checkmark.shield"
         }
     }
     public func title(_ language: AppLanguage) -> String {
@@ -21,6 +22,7 @@ public enum ResourceTool: String, Codable, CaseIterable, Identifiable, Sendable 
         case .icons: ("Generate Icons…", "生成图标…")
         case .stitch: ("Stitch Images…", "拼接图片…")
         case .ocr: ("Extract Text…", "提取图片文字…")
+        case .removeMetadata: ("Remove Private Metadata…", "移除隐私元数据…")
         }
         return language.resolved() == .chinese ? pair.1 : pair.0
     }
@@ -33,6 +35,7 @@ public enum ResourceTool: String, Codable, CaseIterable, Identifiable, Sendable 
         case .icons: ("ICNS, ICO and PNG size sets", "ICNS、ICO 与多尺寸 PNG")
         case .stitch: ("Turn several images into one", "把一组图片，拼成一张")
         case .ocr: ("Read editable text from images", "从图片中读出可编辑文字")
+        case .removeMetadata: ("Create clean copies; keep originals", "生成已清理副本，保留原图")
         }
         return language.resolved() == .chinese ? pair.1 : pair.0
     }
@@ -59,12 +62,17 @@ public enum ResourceToolsPolicy {
     public static let maximumWorkingPixels = 16_000_000
     public static let maximumDimension = 16_384
     public static let inputExtensions: Set<String> = ["jpg", "jpeg", "png", "heic", "heif", "tif", "tiff", "bmp", "gif"]
+    public static let metadataExtensions: Set<String> = ["jpg", "jpeg", "png", "heic", "tif", "tiff"]
+
+    public static func extensions(for tool: ResourceTool) -> Set<String> {
+        tool == .removeMetadata ? metadataExtensions : inputExtensions
+    }
 
     /// Name-only eligibility is intentionally cheap; the worker validates bytes.
     public static func allowsAppSelection(_ selection: [URL], tool: ResourceTool) -> Bool {
         (1...maximumItems).contains(selection.count) && (tool != .stitch || selection.count > 1) &&
             Set(selection.map { $0.standardizedFileURL }).count == selection.count &&
-            selection.allSatisfy { $0.isFileURL && !$0.hasDirectoryPath && inputExtensions.contains($0.pathExtension.lowercased()) }
+            selection.allSatisfy { $0.isFileURL && !$0.hasDirectoryPath && extensions(for: tool).contains($0.pathExtension.lowercased()) }
     }
 
     public static func availableTools(selection: [URL], isItemMenu: Bool,
@@ -75,8 +83,10 @@ public enum ResourceToolsPolicy {
               selection.allSatisfy({ $0.isFileURL && !$0.hasDirectoryPath &&
                   inputExtensions.contains($0.pathExtension.lowercased()) &&
                   FolderScope.contains($0, in: preferences.monitoredFolderURLs) }) else { return [] }
-        return ResourceTool.allCases.filter {
-            preferences.resourceTools.enabledTools.contains($0) && ($0 != .stitch || selection.count > 1)
+        return ResourceTool.allCases.filter { tool in
+            preferences.resourceTools.enabledTools.contains(tool) &&
+                (tool != .stitch || selection.count > 1) &&
+                selection.allSatisfy { url in extensions(for: tool).contains(url.pathExtension.lowercased()) }
         }
     }
 
@@ -92,7 +102,8 @@ public enum ResourceToolsPolicy {
 public enum ResourceError: String, Error, Sendable {
     case invalidSelection, unsupportedImage, multipleFrames, sourceChanged, inputTooLarge
     case dimensionsTooLarge, invalidOptions, unsupportedOutput, encodingFailed, accessDenied
-    case noText, textTooLarge, disabled, failed
+    case noText, textTooLarge, disabled, failed, privateMetadataRemains
+    case metadataTooLarge, metadataFormatUnavailable
 }
 
 public enum ImageOutputFormat: String, CaseIterable, Identifiable, Sendable {

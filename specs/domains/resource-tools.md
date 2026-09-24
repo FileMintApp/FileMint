@@ -5,8 +5,10 @@ Load for: Resource Tools menus, image processing, icon generation, stitching and
 ## Entry and privacy
 
 - Resource Tools / 资源工具 is an independent Finder root and settings page under
-  Extensions. Master defaults off; six child actions default on and retain choices
-  when disabled. New installs and old preferences follow the same defaults.
+  Extensions. Master defaults off; the original six child actions default on and
+  retain choices when disabled. The new private-metadata child is visible in app
+  tools, defaults on for new installs under the off master, and starts off for
+  older saved child lists so it is not silently added to existing Finder menus.
 - The app's Use Tools tab can explicitly choose local images even while Finder
   menu integration is disabled. The system file picker authorizes those files;
   this app-local request is never accepted from a URL/ticket. It does not expand
@@ -27,8 +29,10 @@ Load for: Resource Tools menus, image processing, icon generation, stitching and
 - Processing is entirely local, with no resource network calls, folder crawling,
   clipboard monitoring, content/path logs or persistent image/OCR history. Native
   output-folder selection grants access without broadening Finder menu scope.
-- Original files are never changed. Every task requires explicit Run; closing or
-  cancelling an unstarted panel writes nothing. Default output is a sibling copy;
+- Original files are never changed. Each existing tool requires explicit Run;
+  the Remove Private Metadata Finder command itself is the explicit Run, and app
+  selection confirmation starts its job. Closing or cancelling before that
+  writes nothing. Default output is a sibling copy;
   an explicit folder picker may select a different output. Collisions increment.
   Write in private staging on the destination volume, publish exclusively, and
   remove only owned staging. Never expose a partial file or overwrite a dangling link.
@@ -77,6 +81,19 @@ Load for: Resource Tools menus, image processing, icon generation, stitching and
   TXT, including user edits in the result pane. No text is distinct from failure. Keep output at most 1 MiB per image and
   4 MiB per batch. Copy occurs only on the explicit Copy button.
   The editable result uses the shared plain-text editor with smart substitutions disabled.
+- Remove Private Metadata: create a new `-clean` sibling copy (numbering
+  collisions), never overwrite or modify the original. Initially accept standard
+  single-image JPEG, PNG, TIFF and HEIC within the existing source limits. Reject
+  unsupported, animated/multiple-frame, HDR, gain/depth, replaced or unavailable
+  inputs; never downscale merely to remove metadata. Remove EXIF, GPS, MakerNote,
+  IPTC, XMP, comments and text metadata while preserving visual orientation.
+  Rebuild from decoded pixels as an sRGB image at the original dimensions, up to
+  the 16 MP working limit. Explain that re-encoding may change file size or color;
+  never claim lossless image-data preservation. Verify every
+  staged output's metadata before exclusive publication. A failed verification
+  publishes no copy. Work is local, cancellable and sequential; partial batches
+  retain already verified copies with accurate counts. Filename text and private
+  information visible in pixels are outside this action's claim.
 
 ## Working context
 

@@ -8,6 +8,64 @@ import FileMintCore
 
 @Suite("Native offline image processing", .serialized)
 struct ImageProcessorTests {
+    @Test("private metadata removal creates verified same-format copies and preserves originals")
+    func privateMetadata() throws {
+        try workspace { root in
+            var formats = [("jpg", "public.jpeg"), ("png", "public.png"), ("tiff", "public.tiff")]
+            if ImageProcessor.writableFormats.contains(.heic) { formats.append(("heic", "public.heic")) }
+            for (suffix, type) in formats {
+                let original = root.appendingPathComponent("camera-\(suffix).\(suffix)")
+                let context = try ImageOutput.context(width: 80, height: 40)
+                context.setFillColor(CGColor(red: 0.3, green: 0.6, blue: 0.8, alpha: 1))
+                context.fill(CGRect(x: 0, y: 0, width: 80, height: 40))
+                let image = try #require(context.makeImage())
+                let destination = try #require(CGImageDestinationCreateWithURL(original as CFURL,
+                    type as CFString, 1, nil))
+                let privateValues: [CFString: Any] = [
+                    kCGImagePropertyGPSDictionary: [kCGImagePropertyGPSLatitude: 42.5],
+                    kCGImagePropertyExifDictionary: [kCGImagePropertyExifDateTimeOriginal: "2026:01:02 03:04:05"],
+                    kCGImagePropertyTIFFDictionary: [kCGImagePropertyTIFFMake: "Private Camera"],
+                    kCGImagePropertyIPTCDictionary: [kCGImagePropertyIPTCByline: "Private Author"],
+                    kCGImagePropertyOrientation: 6
+                ]
+                CGImageDestinationAddImage(destination, image, privateValues as CFDictionary)
+                #expect(CGImageDestinationFinalize(destination))
+                if suffix == "jpg" {
+                    // An explicit APP1 XMP packet exercises private bytes even
+                    // on Image I/O versions that decline to emit custom XMP tags.
+                    let packet = Data("http://ns.adobe.com/xap/1.0/\0<x:xmpmeta xmlns:x='adobe:ns:meta/'><rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'><rdf:Description xmlns:xmp='http://ns.adobe.com/xap/1.0/' xmp:CreatorTool='Private Tool'/></rdf:RDF></x:xmpmeta>".utf8)
+                    let length = UInt16(packet.count + 2)
+                    var bytes = try Data(contentsOf: original)
+                    bytes.insert(contentsOf: Data([0xFF, 0xE1, UInt8(length >> 8), UInt8(length & 0xFF)]) + packet, at: 2)
+                    try bytes.write(to: original)
+                    #expect(bytes.range(of: Data("Private Tool".utf8)) != nil)
+                }
+                #expect(throws: ResourceError.privateMetadataRemains) {
+                    try ImageMetadataCleaner.validate(original, type: type,
+                        expected: ImageDimensions(width: 40, height: 80))
+                }
+                let before = try Data(contentsOf: original)
+                let input = try ImageProcessor.capture([original])
+                let result = ImageProcessor.run(tool: .removeMetadata, inputs: input,
+                    options: ImageJobOptions(), destination: nil)
+                #expect(result.failure == nil)
+                let cleaned = try #require(result.outputs.first)
+                #expect(cleaned.lastPathComponent == "camera-\(suffix)-clean.\(suffix)")
+                #expect(try Data(contentsOf: original) == before)
+                try ImageMetadataCleaner.validate(cleaned, type: type,
+                    expected: ImageDimensions(width: 40, height: 80))
+                let source = try #require(CGImageSourceCreateWithURL(cleaned as CFURL, nil))
+                let properties = try #require(CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [String: Any])
+                #expect(properties["{GPS}"] == nil)
+                #expect(properties["{IPTC}"] == nil)
+                #expect((properties["{TIFF}"] as? [String: Any])?["Make"] == nil)
+                #expect((properties["{Exif}"] as? [String: Any])?["DateTimeOriginal"] == nil)
+                if suffix == "jpg" {
+                    #expect(try Data(contentsOf: cleaned).range(of: Data("Private Tool".utf8)) == nil)
+                }
+            }
+        }
+    }
     @Test("clipboard PNG preserves alpha and orientation with a bounded preview")
     func clipboardPNG() throws {
         try workspace { root in

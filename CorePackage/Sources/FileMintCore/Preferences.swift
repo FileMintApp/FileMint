@@ -48,6 +48,7 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
     public var fileTools = FileToolsPreferences()
     public var resourceTools = ResourceToolsPreferences()
     public var openWith = OpenWithPreferences()
+    public var favoriteLocations = FavoriteLocationsPreferences()
     public var newFileMenuPlacement: NewFileMenuPlacement = .submenu
     private var folderScopeVersion = 2
 
@@ -100,6 +101,7 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         case fileTools
         case resourceTools
         case openWith
+        case favoriteLocations
         case newFileMenuPlacement
     }
 
@@ -140,6 +142,7 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         fileTools = (try? container.decode(FileToolsPreferences.self, forKey: .fileTools)) ?? FileToolsPreferences()
         resourceTools = (try? container.decode(ResourceToolsPreferences.self, forKey: .resourceTools)) ?? ResourceToolsPreferences()
         openWith = (try? container.decode(OpenWithPreferences.self, forKey: .openWith)) ?? OpenWithPreferences()
+        favoriteLocations = (try? container.decode(FavoriteLocationsPreferences.self, forKey: .favoriteLocations)) ?? FavoriteLocationsPreferences()
         newFileMenuPlacement = (try? container.decode(NewFileMenuPlacement.self, forKey: .newFileMenuPlacement)) ?? .submenu
     }
 

@@ -7,6 +7,7 @@ import FinderSync
 final class FinderSync: FIFinderSync {
     private let actions = LockedMenuActions()
     private let cachedPreferences = LockedFinderPreferences()
+    private let cachedFavorites = LockedFavoriteCatalog()
     override init() {
         super.init()
         reloadPreferences()
@@ -158,7 +159,59 @@ final class FinderSync: FIFinderSync {
             item.submenu = appMenu
             menu.addItem(item)
         }
+        let favorites = cachedFavorites.snapshot()
+        if FavoriteLocationsPolicy.canAdd(selection, isItemMenu: menuKind == .contextualMenuForItems,
+                                          preferences: preferences) {
+            let item = NSMenuItem(title: FavoriteText.add.text(language),
+                action: #selector(performFavorite(_:)), keyEquivalent: "")
+            item.image = FileToolAppearance.favoriteImage
+            item.tag = actions.register([FileMenuAction(directory: directory,
+                favoriteAction: .add, selection: selection)])[0]
+            menu.addItem(item)
+        }
+        if preferences.favoriteLocations.showListInFinder, !favorites.items.isEmpty {
+            let submenu = NSMenu(title: FavoriteText.title.text(language))
+            let quick = favorites.quickItems()
+            let duplicateNames = Dictionary(grouping: quick, by: \.name)
+            for favorite in quick {
+                let title = (duplicateNames[favorite.name]?.count ?? 0) > 1
+                    ? "\(favorite.name) — \(favorite.url.deletingLastPathComponent().lastPathComponent)"
+                    : favorite.name
+                let item = NSMenuItem(title: title, action: #selector(performFavorite(_:)), keyEquivalent: "")
+                item.image = FileToolAppearance.favoriteImage
+                item.tag = actions.register([FileMenuAction(directory: directory,
+                    favoriteAction: .locate(favorite.id))])[0]
+                submenu.addItem(item)
+            }
+            if !quick.isEmpty { submenu.addItem(.separator()) }
+            let search = NSMenuItem(title: FavoriteText.searchAll.text(language),
+                action: #selector(performFavorite(_:)), keyEquivalent: "")
+            search.tag = actions.register([FileMenuAction(directory: directory,
+                favoriteAction: .search)])[0]
+            submenu.addItem(search)
+            let root = NSMenuItem(title: FavoriteText.title.text(language), action: nil, keyEquivalent: "")
+            root.image = FileToolAppearance.favoriteImage
+            root.submenu = submenu
+            menu.addItem(root)
+        }
         return menu
+    }
+
+    @objc private func performFavorite(_ item: NSMenuItem) {
+        guard let action = actions.take(item.tag), let favoriteAction = action.favoriteAction else { return }
+        let selection = action.selection
+        Task { @MainActor in
+            switch favoriteAction {
+            case .add:
+                guard FavoriteLocationsPolicy.canAdd(selection, isItemMenu: true,
+                    preferences: FileMintPreferencesStore().load()) else { return }
+                FinderActions.shared.perform(.favoriteAdd(selection), errorTitle: .favoriteLocations)
+            case .locate(let id):
+                FinderActions.shared.perform(.favoriteLocate(id), activate: true, errorTitle: .favoriteLocations)
+            case .search:
+                FinderActions.shared.perform(.favoriteSearch, activate: true, errorTitle: .favoriteLocations)
+            }
+        }
     }
 
     @objc private func openWithApplication(_ item: NSMenuItem) {
@@ -218,6 +271,7 @@ final class FinderSync: FIFinderSync {
     @objc private func reloadPreferences() {
         let preferences = FileMintPreferencesStore().load()
         cachedPreferences.replace(preferences)
+        cachedFavorites.replace((try? FavoriteLocationsStore().load()) ?? FavoriteLocationsCatalog())
         FIFinderSyncController.default().directoryURLs = FolderScope.observationRoots(
             for: preferences.monitoredFolderURLs,
             home: DefaultFolders.resolvedUserHomeDirectory(fileManager: .default)
@@ -245,6 +299,19 @@ final class FinderSync: FIFinderSync {
     @objc private func pasteImageFile(_ item: NSMenuItem) {
         guard let action = actions.take(item.tag) else { return }
         Task { @MainActor in FinderActions.shared.pasteImage(in: action.directory) }
+    }
+}
+
+private final class LockedFavoriteCatalog: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value = FavoriteLocationsCatalog()
+    func replace(_ catalog: FavoriteLocationsCatalog) {
+        lock.lock(); defer { lock.unlock() }
+        value = catalog
+    }
+    func snapshot() -> FavoriteLocationsCatalog {
+        lock.lock(); defer { lock.unlock() }
+        return value
     }
 }
 

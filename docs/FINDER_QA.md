@@ -36,7 +36,7 @@ Record actual results in ACCEPTANCE.md.
   their format/content while display name and default filename remain editable.
 
 - Confirm File Creation (Templates & Types / Creation), Extensions (file tools /
-  resources / Open with App), and Preferences (General / Finder & Folders / About) remain distinct
+  resources / Open with App / Favorite Locations), and Preferences (General / Finder & Folders / About) remain distinct
   at 840×600. Sidebar arrow navigation follows this visual ordering.
 
 - Navigate General, Creation, Templates & Types, Finder & Folders and About
@@ -85,7 +85,9 @@ Record actual results in ACCEPTANCE.md.
   merely visiting settings granted or revoked access.
 - Folder labels must describe only a saved folder authorization or a request to
   choose that folder once, separately from the Full Disk Access guide.
-- Confirm no file-icon setting or inactive favorites setting is exposed.
+- Confirm no file-icon setting is exposed. Favorite Locations has its own page,
+  search, group/type filters, bulk actions, pin reorder, and separate Finder
+  add/list switches at 840×600 in both languages and appearances.
 - Legacy development JSON/plist settings import through the File menu; protected
   App Group directories are never accessed automatically.
 
@@ -103,17 +105,17 @@ Record actual results in ACCEPTANCE.md.
   on panel close.
 
 Build `bash scripts/build_resource_tools_harness.sh` for an isolated native fixture.
-Its app automatically exercises all six production panels in Chinese/light and
+Its app automatically exercises all seven production panels in Chinese/light and
 English/dark and processes only its synthetic images. Inspect visible windows
 with native screenshots; AppKit view-cache renders omit SwiftUI drawing layers.
 It neither loads owner preferences nor proves installed Finder or sandbox grants.
 
 - Use only a disposable image folder. Old preferences leave Resource Tools off;
-  toggling off/on preserves its six child choices and never changes file-tool settings.
+  toggling off/on preserves child choices and never changes file-tool settings.
 - Select PNG/JPEG/HEIC files in scope: Resource Tools is a sibling root. Mixed
   images/PDF/WebP, out-of-scope selections and background/toolbar contexts have no
   resource entries. Opening a menu does not decode images or run Vision.
-- Open each of the six production parameter panels; verify Chinese/light and
+- Open each of the seven production panels; verify Chinese/light and
   English/dark at minimum size, list order, labels, scrolling and Run/Cancel.
 - Cancel a folder picker and confirm no outputs. Check parent-folder authorization
   separately from source reads; select another output folder without changing menu scope.
@@ -127,6 +129,9 @@ It neither loads owner preferences nor proves installed Finder or sandbox grants
   without writing; TXT bytes match the displayed text. Empty text is not an error.
 - Cancel a batch; finished outputs remain and no partial file is published. Closing
   or quitting during processing cannot interrupt a committed output or release grants early.
+- For Remove Private Metadata, a Finder click starts processing without another
+  Run. Check `-clean` sibling copies, unchanged originals, orientation/dimensions,
+  readback with GPS/EXIF/IPTC/XMP fixtures, and a rejected over-limit input.
 - Verify Finder callbacks on the installed signed build, source/output sandbox grants,
   cloud placeholders and macOS 13 separately from isolated native fixtures.
 
@@ -262,6 +267,17 @@ This fixture does not prove that Finder has loaded the new extension.
 - Quick routes require a matching single-use, unexpired local ticket. The app
   validates enabled templates and monitored paths before creating anything.
 - Check no temporary request tickets remain after successful consumption.
+- In a configured Finder folder, select a file/folder batch and use the direct
+  Add to Favorite Locations item. Check duplicate counts, main-app bookmark
+  persistence, submenu length at 6 pinned + 4 recent, Search All, and that
+  out-of-scope folders get no new menu. Relink a moved item; reject a replaced
+  same-path item. Test the menu-bar quick panel with settings closed. A corrupt
+  catalog must block writes and offer a confirmed backup-and-reset operation;
+  read back the backup bytes before clearing the fixture.
+- For Toggle Finder Hidden Items, confirm first use requests macOS Accessibility
+  consent only after a click, returning from System Settings refreshes status,
+  and each later click changes Finder exactly once. Revoking permission disables
+  the action again; no Finder preference file or Finder restart is involved.
 
 ## Distribution
 

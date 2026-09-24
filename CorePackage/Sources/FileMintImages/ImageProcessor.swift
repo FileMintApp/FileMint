@@ -109,6 +109,9 @@ public enum ImageProcessor {
 
     private static func process(_ input: ImageInput, tool: ResourceTool, options: ImageJobOptions,
                                 directory: URL, canContinue: @Sendable () -> Bool) throws -> URL {
+        if tool == .removeMetadata {
+            return try ImageMetadataCleaner.clean(input, in: directory, canContinue: canContinue)
+        }
         var format = options.format
         if tool == .compress {
             format = try autoreleasepool {

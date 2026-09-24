@@ -29,6 +29,9 @@ private struct FileMintCommands: Commands {
         CommandGroup(replacing: .newItem) {
             Button(model.text(.customNewFile)) { model.newFile() }.keyboardShortcut("n")
             Button(model.text(.pasteImageFile)) { model.pasteImageFile() }
+            Button(FavoriteText.searchAll.text(model.preferences.language)) {
+                FavoriteQuickPanelController.shared.show()
+            }.keyboardShortcut("k")
             Button(model.text(.importSettings)) { model.importSettings() }
         }
         CommandGroup(replacing: .appSettings) {
@@ -51,10 +54,27 @@ private struct FileMintCommands: Commands {
 private struct FileMintMenu: View {
     @EnvironmentObject private var model: PreferencesModel
     @EnvironmentObject private var updater: UpdateModel
+    @ObservedObject private var favorites = FavoriteLocationsModel.shared
 
     var body: some View {
         Button(model.text(.customNewFile)) { model.newFile() }.keyboardShortcut("n")
         Button(model.text(.pasteImageFile)) { model.pasteImageFile() }
+        Menu(FavoriteText.title.text(model.preferences.language)) {
+            ForEach(favorites.quickItems) { item in
+                Button(item.name) {
+                    do { try favorites.locate(item.id) }
+                    catch {
+                        favorites.message = FavoriteText.locateFailed.text(model.preferences.language)
+                        FavoriteQuickPanelController.shared.show()
+                    }
+                }
+            }
+            if !favorites.quickItems.isEmpty { Divider() }
+            Button(FavoriteText.searchAll.text(model.preferences.language)) {
+                FavoriteQuickPanelController.shared.show()
+            }
+        }
+        Button(model.text(.toggleFinderHiddenItems)) { model.toggleFinderHiddenItems() }
         Button(model.text(.openFileMint)) {
             SettingsWindowController.shared.show()
         }.keyboardShortcut(",")

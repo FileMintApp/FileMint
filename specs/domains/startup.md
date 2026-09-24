@@ -42,11 +42,18 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   Here which defaults to main. New deletion/AirDrop switches default off; deletion
   confirmation defaults to required, including absent or invalid saved values.
   Send Alias to Desktop also defaults off and retains its menu placement.
-- Resource Tools is a separate default-off module. Its six child switches default
-  on; saved choices survive off/on. An active resource panel blocks quit/restart
+- Resource Tools is a separate default-off module. The original six child
+  switches default on, and private metadata removal is on for new installs but
+  off for older saved child lists; saved choices survive off/on. An active resource panel blocks quit/restart
   through the serialized file-operation coordinator.
 - The resource switch controls Finder exposure only. Explicit main-app file
   selection remains available without changing this preference or menu scope.
+- Favorite Locations has its own Extensions settings page and menu-bar quick
+  access. Its direct Finder add entry and bounded quick list have independent
+  saved visibility switches, initially on, and never broaden Finder folder scope.
+- Finder hidden-item switching checks system Accessibility trust at use time.
+  The permission belongs to macOS, not a saved FileMint preference; settings
+  refresh its status when FileMint becomes active.
 - Open with App has an initially empty persistent application list. Explicitly
   adding an app enables its entry; its independent placement defaults to submenu.
   Saved list order controls each Finder menu level. See [Open with App](open-with.md)
