@@ -1,3 +1,45 @@
+# FileMint 0.6.5
+
+## 新功能
+
+- **内置空白 Word / Excel 模板**：直接创建 `.docx` 文档或含一个空白工作表的 `.xlsx` 工作簿，无需先导入模板。新安装默认启用；升级后可在“模板与类型”中勾选“Word 文档”和“Excel 工作簿”。已有自定义模板、排序和默认选择会保留。
+- **继续复用自己的文档**：内置模板与导入的 Word / Excel 文档模板共存，均可改名、排序、设为默认或移除。恢复内置模板时保留自定义模板和有效默认项；创建同名文档仍自动编号，不覆盖已有文件。
+
+## 修复与改进
+
+- **记住“使用 App 打开”的文件夹授权**：首次允许访问后，可在重启 FileMint 后继续复用有效授权。文件夹被替换、授权失效或菜单范围变化时重新核对权限；不会扩大 Finder 菜单范围。
+- **快速新建授权恢复**：修复目标目录需要额外授权时，Finder 快速新建请求可能被提前丢弃的问题。
+- **收藏识别更稳定**：改进卷重新挂载后对已改名收藏项目的识别，避免添加重复条目。
+- **图片工具状态恢复**：取消或关闭预览后正确清除准备状态，后续图片处理可以继续。
+
+## 系统要求与升级
+
+0.6.5 正式安装包面向运行 macOS 13 或更新版本的 M 系列 Mac，不含 Intel 代码。运行 0.6.4 的 M 系列用户可通过“关于 → 检查更新 → 更新并重启”升级。新增 Office 模板在升级后默认关闭，可按需启用；创建文件无需安装办公软件。
+
+0.5.7/0.5.8 用户仍需先手动安装 0.5.9 或更新版本一次，修复旧版自身无法修复的更新器签名权限问题。
+
+## New features
+
+- **Built-in blank Word / Excel templates**: Create `.docx` documents or `.xlsx` workbooks with one empty worksheet, without importing a template first. New installations enable both presets; after upgrading, enable **Word Document** and **Excel Workbook** in **Templates & Types**. Existing custom templates, order and defaults are preserved.
+- **Keep using your own documents**: Built-in and imported Word / Excel templates coexist. Rename, reorder, choose defaults or remove them. Restoring built-ins preserves custom templates and valid defaults; document name collisions remain numbered without overwriting existing files.
+
+## Fixes and improvements
+
+- **Remember Open with App folder access**: Reuse a valid first-use folder grant after restarting FileMint. Recheck access when a folder is replaced, a grant becomes invalid or the configured menu scope changes, without broadening Finder scope.
+- **Recover quick creation through authorization**: Fixed Finder quick-creation requests being discarded before the main app could request required folder access.
+- **More reliable favorite identity**: Better recognize renamed favorites after a volume is remounted, avoiding duplicate entries.
+- **Reset image-tool preparation state**: Cancelling or closing a preview correctly clears its preparation state so later image operations can proceed.
+
+## System requirements and upgrading
+
+The 0.6.5 stable installer targets M-series Macs running macOS 13 or later and contains no Intel code. M-series users on 0.6.4 can upgrade through **About → Check for Updates → Update and Restart**. New Office templates are disabled on upgrade until enabled in settings. Creating files requires no Office installation.
+
+Versions 0.5.7/0.5.8 still require one manual installation of 0.5.9 or later to fix updater signing permissions that those versions cannot repair themselves.
+
+## 关联问题 / Related issue
+
+- [#6：记住“使用 App 打开”的文件夹授权](https://github.com/FileMintApp/FileMint/issues/6)
+
 # FileMint 0.6.4
 
 ## 修复与改进
