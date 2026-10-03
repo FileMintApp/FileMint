@@ -31,10 +31,18 @@ enum BuiltInDocumentTemplate: String, CaseIterable, Sendable {
     }
 
     static var resourceDirectory: URL? {
+        resourceDirectory(in: [Bundle.main, Bundle(for: ResourceBundleAnchor.self)])
+    }
+
+    static func resourceDirectory(in hostBundles: [Bundle]) -> URL? {
         // Like SwiftPM's accessor, but a missing bundle must report a recoverable
         // document error rather than fatalError or use a developer's build path.
-        let candidates = [Bundle.main.resourceURL, Bundle(for: ResourceBundleAnchor.self).resourceURL,
-                          Bundle.main.bundleURL]
+        var candidates = hostBundles.map(\.resourceURL) + hostBundles.map { Optional($0.bundleURL) }
+        // The native SwiftPM engine puts resource bundles beside its .xctest,
+        // while Bundle.main can belong to swiftpm-testing-helper or xctest.
+        // Ordinary app/extension hosts must still use their own bundled resources.
+        candidates += hostBundles.filter { $0.bundleURL.pathExtension == "xctest" }
+            .map { $0.bundleURL.deletingLastPathComponent() }
         for candidate in candidates {
             if let url = candidate?.appendingPathComponent("FileMintCore_FileMintCore.bundle"),
                let bundle = Bundle(url: url), let resources = bundle.resourceURL {

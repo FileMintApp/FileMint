@@ -10,11 +10,11 @@ Creating a file should not require opening an editor, choosing Save As and findi
 FileMint puts the action back in Finder: **right-click, choose a type and your file is there.**
 When you need a name, starter content, image processing or selected-item tools, the same native workflow continues.
 
-## What's new in 0.6.5
+## What's new in 0.6.6
 
 New blank Word and Excel templates are ready on fresh installations and can be enabled in Templates & Types after upgrading. Open with App remembers valid folder access across restarts, with fixes for quick creation, favorite identity and image-tool preparation state. The stable installer supports M-series Macs on macOS 13+; Intel users should stay on a compatible earlier release.
 
-[0.6.5 release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.6.5)
+[0.6.6 release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.6.6)
 
 ## Recent features
 
@@ -25,7 +25,7 @@ New blank Word and Excel templates are ready on fresh installations and can be e
 - **Word / Excel templates**: Create blank `.docx` and `.xlsx` files from built-in templates, or import your own documents and create independent copies with their formatting and content intact.
 - **Themes and settings**: General now offers Follow System, Light and Dark, with consistent control alignment and interaction styles.
 
-[Full release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.6.5)
+[Full release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.6.6)
 
 ## Why FileMint
 
@@ -131,7 +131,7 @@ Read the complete [privacy policy](PRIVACY.md).
 
 ## Install
 
-The 0.6.5 stable installer supports **M-series Macs on macOS 13+** only. Intel Macs cannot install or update to this version. Published installers through 0.5.10 keep their original compatibility.
+The 0.6.6 stable installer supports **M-series Macs on macOS 13+** only. Intel Macs cannot install or update to this version. Published installers through 0.5.10 keep their original compatibility.
 
 **Stable installers from 0.5.9 onward are Developer ID signed, Apple notarized and stapled.** First use still follows macOS prompts for Finder enablement and folder authorization.
 

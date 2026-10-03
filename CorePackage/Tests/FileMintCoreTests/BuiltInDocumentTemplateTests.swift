@@ -66,6 +66,37 @@ struct BuiltInDocumentTemplateTests {
         #expect(try String(contentsOf: shadow, encoding: .utf8) == "keep this private file")
     }
 
+    @Test func siblingResourceLookupIsLimitedToSwiftPMTestHosts() throws {
+        let root = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let resourceBundle = root.appendingPathComponent("FileMintCore_FileMintCore.bundle")
+        let resources = resourceBundle.appendingPathComponent("OfficeTemplates")
+        try FileManager.default.createDirectory(at: resources, withIntermediateDirectories: true)
+        let reference = BuiltInDocumentTemplate.word.reference
+        let bytes = try DocumentTemplateStore().data(for: reference)
+        try bytes.write(to: resources.appendingPathComponent("blank-word-v1.docx"))
+
+        for suffix in ["xctest", "app", "appex"] {
+            let host = root.appendingPathComponent("ResourceHost.\(suffix)")
+            let contents = host.appendingPathComponent("Contents")
+            try FileManager.default.createDirectory(at: contents.appendingPathComponent("Resources"), withIntermediateDirectories: true)
+            let info = try PropertyListSerialization.data(fromPropertyList: [
+                "CFBundleIdentifier": "io.github.daigua.filemint.resource-test.\(suffix)",
+                "CFBundlePackageType": suffix == "app" ? "APPL" : "BNDL"
+            ], format: .xml, options: 0)
+            try info.write(to: contents.appendingPathComponent("Info.plist"))
+            let bundle = try #require(Bundle(url: host))
+            let resolved = BuiltInDocumentTemplate.resourceDirectory(in: [bundle])
+            if suffix == "xctest" {
+                #expect(resolved?.standardizedFileURL == resources.standardizedFileURL)
+                let store = DocumentTemplateStore(directory: root.appendingPathComponent("imports"), bundledDirectory: resolved)
+                #expect(try store.data(for: reference) == bytes)
+            } else {
+                #expect(resolved == nil)
+            }
+        }
+    }
+
     @Test func unavailableOrUnrecognizedBundledAssetsFailWithoutOutputOrManagedFallback() throws {
         let root = try temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: root) }

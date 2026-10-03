@@ -1,3 +1,25 @@
+# FileMint 0.6.6
+
+## 改进
+
+- **内置模板资源加载兼容性**：补齐 SwiftPM 测试构建中的资源包定位，修复部分工具链下两项 Office 模板测试无法读取资源的问题。正式应用和 Finder 扩展仍只读取随包资源。
+- **空白 Word / Excel 模板**：包含 0.6.5 新增的 `.docx` 文档和单工作表 `.xlsx` 工作簿。新安装默认启用；从较早版本升级后可在“模板与类型”中按需启用。已有模板、排序及默认选择保留。
+- 本版同时包含 0.6.5 的文件夹授权记忆、快速新建授权恢复、收藏识别和图片工具状态修复。
+
+## 系统要求与升级
+
+正式安装包支持 macOS 13 或更新版本的 M 系列 Mac，不含 Intel 代码。可通过“关于 → 检查更新 → 更新并重启”升级。0.5.7/0.5.8 用户仍需手动安装 0.5.9 或更新版本一次。
+
+## Improvements
+
+- **Built-in template resource compatibility**: Locate package resources correctly in SwiftPM test builds, fixing two Office-template tests on affected toolchains. The production app and Finder extension continue to load only their own bundled resources.
+- **Blank Word / Excel templates**: Includes the `.docx` document and single-sheet `.xlsx` workbook added in 0.6.5. Both are enabled on new installations; enable them in **Templates & Types** after upgrading from earlier versions. Existing templates, order and defaults are preserved.
+- Also includes the 0.6.5 fixes for remembered folder access, quick-creation authorization recovery, favorite identity and image-tool preparation state.
+
+## System requirements and upgrading
+
+The stable installer supports M-series Macs running macOS 13 or later and contains no Intel code. Upgrade through **About → Check for Updates → Update and Restart**. Versions 0.5.7/0.5.8 still require one manual installation of 0.5.9 or later.
+
 # FileMint 0.6.5
 
 ## 新功能

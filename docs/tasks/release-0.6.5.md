@@ -1,7 +1,7 @@
-# Task: FileMint 0.6.5 release
+# Task: FileMint 0.6.5 release and 0.6.6 compatibility follow-up
 
 Status: in-progress
-Next action: Run the standard local and remote release stages from the clean tagged release source.
+Next action: Build the clean tagged 0.6.6 source, wait for its source CI after the validated candidate push, then run publish-local.
 
 ## Objective and scope
 
@@ -34,6 +34,22 @@ Next action: Run the standard local and remote release stages from the clean tag
   of the final signed DMG. Verify Office resources inside the final mounted DMG.
 - Resume an interrupted notarization only with its saved submission and source
   record. Keep final release files immutable once created.
+- The existing FileMint Keychain profile initially returned an unavailable-item
+  error. After the user requested an access retry, the same profile succeeded;
+  no credential replacement or private-key export was needed.
+- v0.6.5 was signed, notarized, stapled and published successfully. Its remote
+  artifact verification and website deployment passed, but source CI failed two
+  Office resource tests on the native SwiftPM engine. The failure was reproduced
+  locally: the resource bundle is a sibling of `.xctest`, while the process main
+  bundle belongs to `swiftpm-testing-helper`.
+- The compatibility fix adds a relative sibling candidate only for `.xctest`
+  hosts. A regression test verifies both the native layout and that `.app`/
+  `.appex` hosts never use external sibling bundles. Preserve v0.6.5's bytes and
+  tag; deliver the correction as 0.6.6/build 25.
+- After local 0.6.6 artifact validation, push its source/tag and require source
+  CI success before `make publish-local` creates the Release. The normal publish
+  stage still revalidates the manifest, reads back all three assets and waits for
+  the published-release check.
 
 ## Evidence
 
@@ -45,9 +61,13 @@ Logs and prior feed: `build/release-0.6.5/`.
 | Version/build vs live stable | passed | v0.6.4/build 23 downloaded from GitHub; next version 0.6.5/build 24. |
 | Feature verification | passed before release preparation | Office task includes 191 Core tests, 14 image tests, native panel and WPS checks; other feature evidence remains tied to its tested source. |
 | Source generation and website | passed | `make project`, metadata/successor/context checks, `git diff --check` and bilingual site build; log at `build/release-0.6.5/site-build.log`. |
-| `make release-local` | not-run | Pending clean tagged release source. |
-| Final signed DMG Office resources | not-run | Pending candidate. |
-| `make publish-local` | not-run | Pending validated candidate; includes three-asset byte comparison and GitHub verification. |
+| 0.6.5 `make release-local` | passed | `c55fa7e`; notarization `89507ebe-0a25-44dc-843f-ca0b94a98438` Accepted; signing, staple, mounted app and appcast verified. |
+| 0.6.5 final signed DMG Office resources | passed | Both host bundles contain exact source bytes; `build/release-0.6.5/final-office-resources.json`. |
+| 0.6.5 `make publish-local` | passed | Three assets matched byte for byte; [published-release verification](https://github.com/FileMintApp/FileMint/actions/runs/37100776418) passed. |
+| 0.6.5 source CI | failed | [CI](https://github.com/FileMintApp/FileMint/actions/runs/37100768405): two `builtInUnavailable` failures among 205 tests. Same failure reproduced locally with `--build-system native`; not an absent DMG resource. |
+| 0.6.6 focused native SwiftPM regression | passed | Six Office tests pass, including the host-boundary regression; `build/release-0.6.6/native-fix.log`. |
+| 0.6.6 complete checks | passed | Native SwiftPM: 206 tests in 24 suites; default `make verify`: 192 Core, 14 image tests, Harness/CLI and offline release checks. Site build also passed. Logs under `build/release-0.6.6/`. |
+| 0.6.6 formal release | not-run | Pending corrected clean tagged source and candidate. |
 | Installed Finder, Microsoft Office, minimum macOS | not-run | Not represented by isolated UI, WPS or build evidence. |
 
 ## Handoff

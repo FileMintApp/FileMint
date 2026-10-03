@@ -6,6 +6,11 @@ Load for Core behavior and JSON Harness changes. Use the
 ## Rules
 
 - Test observable behavior without Finder or UI. Keep deterministic rules in Core.
+- Bundled-resource changes must also exercise SwiftPM's native test layout,
+  where package resources sit beside the `.xctest` host. On toolchains defaulting
+  to Swift Build, use `swift test --package-path CorePackage --build-system native`
+  with the project's Xcode `DEVELOPER_DIR`; app/extension lookup must not fall
+  back to resources outside their own bundles or absolute build paths.
 - The Harness accepts only the format below. There are no legacy adapters, aliases,
   silent defaults for assertions, skipped cases or unsupported fields.
 - CLI and tests share `HarnessSuite.load`; Runner accepts only an immutable,
