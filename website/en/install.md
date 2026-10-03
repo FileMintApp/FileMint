@@ -25,6 +25,8 @@ After installation, follow the [user guide](./guide) to create your first file, 
 
 Enable and reorder formats in **Templates & Types**. Add text templates with their own default filenames and starter content, keep several templates for the same suffix and choose a default.
 
+On a new installation, select the built-in **Word Document** or **Excel Workbook** template to create a blank file. After upgrading, enable these entries in Templates & Types.
+
 Choose **Import Document Template** to select a `.docx` or `.xlsx`. FileMint stores a separate local template copy. Select it from Finder or the creation panel to create a new document with formatting and content intact. Existing names are numbered, never overwritten. A custom text suffix does not convert text into Word, Excel or another binary format.
 
 ## Save a clipboard image

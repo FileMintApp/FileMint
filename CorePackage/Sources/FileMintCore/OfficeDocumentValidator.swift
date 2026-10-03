@@ -10,13 +10,14 @@ public enum OfficeDocumentKind: String, Codable, Sendable {
 }
 
 public enum DocumentTemplateError: Error, LocalizedError {
-    case unsupported, tooLarge, invalidDocument, unavailable
+    case unsupported, tooLarge, invalidDocument, unavailable, builtInUnavailable
     public var textKey: FileMintTextKey {
         switch self {
         case .unsupported: .documentUnsupported
         case .tooLarge: .documentTooLarge
         case .invalidDocument: .documentInvalid
         case .unavailable: .documentUnavailable
+        case .builtInUnavailable: .builtInDocumentUnavailable
         }
     }
     public var errorDescription: String? {
@@ -25,6 +26,7 @@ public enum DocumentTemplateError: Error, LocalizedError {
         case .tooLarge: "This document exceeds the supported size limits."
         case .invalidDocument: "This is not a supported, intact Office document."
         case .unavailable: "The template copy is missing or damaged. Remove it and import the document again."
+        case .builtInUnavailable: "The built-in template is unavailable. Restore built-in templates, or reinstall FileMint if the problem continues."
         }
     }
 }

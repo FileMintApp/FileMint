@@ -63,7 +63,7 @@ struct FileCreationHarnessTests {
         #expect(FileFormatCatalog.matching(".SW").first?.fileExtension == "swift")
         #expect(FileFormatCatalog.matching("脚本").first?.fileExtension == "sh")
         #expect(FileFormatCatalog.matching("").map(\.fileExtension) == [
-            "txt", "md", "swift", "json", "html", "css", "sh"
+            "txt", "md", "swift", "json", "html", "css", "sh", "docx", "xlsx"
         ])
     }
 

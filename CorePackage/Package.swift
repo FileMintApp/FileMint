@@ -13,7 +13,7 @@ let package = Package(
         .executable(name: "filemint-harness", targets: ["FileMintHarness"])
     ],
     targets: [
-        .target(name: "FileMintCore"),
+        .target(name: "FileMintCore", resources: [.copy("Resources/OfficeTemplates")]),
         .target(name: "FileMintImages", dependencies: ["FileMintCore"]),
         .testTarget(name: "FileMintImagesTests", dependencies: ["FileMintImages", "FileMintCore"]),
         .executableTarget(

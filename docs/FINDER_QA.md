@@ -27,6 +27,10 @@ Record actual results in ACCEPTANCE.md.
   managed asset; remove the source and repeat. Missing/damaged assets must not
   create a file. Text already entered in a draft must survive attempted document
   selection. No Office app is launched by creating a copy.
+- Built-in Word and Excel: with fresh isolated settings and no imported assets,
+  create each blank document from both routes, including a repeated name. Verify
+  exact bundled bytes, no private template copy, and no output on unavailable
+  resources. Open, edit and save with Word/Excel; check for repair prompts.
 
 ## Types and preferences
 
@@ -34,6 +38,9 @@ Record actual results in ACCEPTANCE.md.
   Select each by name, change the format default, disable/remove that default,
   restart and check fallback and migration. Imported document templates retain
   their format/content while display name and default filename remain editable.
+- Office presets are enabled on new installations and appended disabled on
+  upgrade. Preserve custom defaults and order; rename, disable, remove, relaunch
+  and restore a built-in. Restoration retains imported documents and defaults.
 
 - Confirm File Creation (Templates & Types / Creation), Extensions (file tools /
   resources / Open with App / Favorite Locations), and Preferences (General / Finder & Folders / About) remain distinct

@@ -67,7 +67,7 @@ hero:
     <article class="feature-card">
       <span class="feature-index">02</span>
       <h3>常用类型</h3>
-      <p>14 种内置文本与代码格式，可按需启用、排序，也能添加自己的模板。</p>
+      <p>14 种文本与代码格式，加上空白 Word、Excel 模板，可按需启用、排序，也能添加自己的模板。</p>
     </article>
     <article class="feature-card">
       <span class="feature-index">03</span>
@@ -115,7 +115,7 @@ hero:
       <h3>从空白文件，到你的文档模板</h3>
       <ul class="benefit-list">
         <li><strong>文本模板</strong>：保存默认文件名与初始内容，支持文件名、日期和年份变量</li>
-        <li><strong>Word / Excel</strong>：导入 .docx 或 .xlsx，创建保留原格式与内容的独立副本</li>
+        <li><strong>Word / Excel</strong>：内置空白 .docx、.xlsx，也可导入文档，创建保留原格式与内容的独立副本</li>
         <li><strong>本地保存</strong>：导入后不再依赖原文档的位置，也不会修改原文档</li>
       </ul>
     </div>

@@ -112,6 +112,9 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   extension reads saved names and colors without a catalog or new dependency.
 - Office template validation uses system zlib, Foundation XML and CryptoKit;
   no Office, ZIP or third-party package dependency is added.
+- Blank DOCX/XLSX templates ship as versioned FileMintCore package resources.
+  App, extension and standalone harness builds retain the resource bundle;
+  creation never depends on a source-checkout or build-directory resource path.
 
 - Implementation entry points: `project.yml`, `Config/`, `CorePackage/Package.swift`, build/release scripts and `.github/workflows/ci.yml` / `release.yml`.
 - Verification: [Distribution procedure](../../docs/DISTRIBUTION.md) and the release row of the [verification matrix](../HARNESS.md#choose-checks-by-change).

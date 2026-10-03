@@ -98,7 +98,8 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 
 ## Creating an Office document
 
-- Quick creation and the shared panel use the selected template's managed asset.
+- Quick creation and the shared panel use the selected template's bundled or
+  managed asset.
   The panel identifies the document template, fixes its suffix, and replaces the
   text editor with a concise original-format/content notice. It does not render
   binary data as text or apply text variables to Office package bytes.

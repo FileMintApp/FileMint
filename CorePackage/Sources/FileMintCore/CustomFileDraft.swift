@@ -49,6 +49,16 @@ public enum FileFormatCatalog {
             fileExtension: "sh",
             templateID: "shell",
             aliases: ["shell", "shell script", "bash", "脚本"]
+        ),
+        FileFormatOption(
+            fileExtension: "docx",
+            templateID: "word-document",
+            aliases: ["word", "word document", "office", "Word 文档", "文档", "办公"]
+        ),
+        FileFormatOption(
+            fileExtension: "xlsx",
+            templateID: "excel-workbook",
+            aliases: ["excel", "excel workbook", "spreadsheet", "office", "Excel 工作簿", "工作簿", "表格", "办公"]
         )
     ]
 

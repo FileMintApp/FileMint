@@ -3,6 +3,34 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Built-in blank Office templates — 2026-10-03
+
+Checked on macOS 27.2, arm64, `85535ff` plus the uncommitted
+[built-in Office templates task](tasks/2026-10-03-built-in-office-templates.md).
+
+- `make verify` passed: 191 Core tests, 14 image tests, 5/5 public Harness cases,
+  10 CLI regressions and offline release/appcast/entitlement checks. New coverage
+  includes initialization, migration, custom defaults, removal/restoration,
+  exact-byte creation and unavailable/tampered bundled resources.
+- Unsigned Release main app and Finder extension builds passed. Both contain the
+  exact checked-in DOCX/XLSX resources and remain arm64-only. Bilingual site build
+  passed. Logs and resource audits are in `build/office-template-qa.noindex/`.
+- The isolated native design fixture showed Word and Excel enabled on fresh
+  settings. Word display/default filenames were edited and read back; its suffix
+  remained fixed. The production creation panel created both formats with
+  Cmd-Return, matching bundled bytes and creating no private template copies.
+- WPS opened both generated files without a document repair prompt. Edits were
+  saved locally and independently read back with python-docx/openpyxl. Excel
+  retained one worksheet. Resources themselves remained unchanged.
+- Evidence: [checks](../build/office-template-qa.noindex/verify.log),
+  [Release build](../build/office-template-qa.noindex/release-build.log),
+  [resource audit](../build/office-template-qa.noindex/resources.json),
+  [native creation and WPS readback](../build/office-template-qa.noindex/native-evidence.json).
+- Microsoft Word/Excel, installed signed Finder and minimum-macOS acceptance
+  were not run. The installed FileMint was not replaced; this task's generated
+  app registrations were removed, leaving the installed extension registered.
+  No commit or publication was performed.
+
 ## Issue #6 — Open with App folder authorization — 2026-10-03
 
 Checked on macOS 27.2, arm64, `ea46b7c` plus the uncommitted

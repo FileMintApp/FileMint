@@ -6,8 +6,10 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 
 ## File types
 
-- Presets: txt, md, swift, json, html, css, sh, csv, yaml, xml, js, ts, py, sql.
-  The original seven are visible by default; additional presets can be enabled.
+- Presets: txt, md, swift, json, html, css, sh, csv, yaml, xml, js, ts, py, sql,
+  plus blank Word (.docx) and Excel (.xlsx) documents. The original seven text
+  presets and the two Office presets are enabled on new installs; the other
+  text presets can be enabled. Existing installations append new presets disabled.
 - Settings → File Types can add/edit/remove saved custom types, including a
   display name, suffix, default filename and optional initial template content.
   Multiple templates may share a suffix; stable IDs identify templates. Changes persist and refresh Finder without
@@ -52,6 +54,20 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 
 ## Office document templates
 
+- FileMint bundles an empty Word document and an Excel workbook with one empty
+  worksheet. They have stable template and versioned asset identities, contain
+  no personal metadata, and work offline without an Office installation or import.
+  They use the same selection, naming, collision and editing rules as imported
+  documents. They can be renamed, enabled, reordered, chosen as a suffix default
+  or removed; explicit built-in restoration restores them and preserves custom
+  templates and valid defaults. Upgrade never replaces a saved customization or
+  revives a removed built-in.
+- Bundled document references are distinct from managed imports and resolve only
+  to known read-only package resources. Verify their format, byte count and
+  digest before creation. Removing a bundled template changes preferences only,
+  never deletes an asset or creates a private imported copy. Missing or damaged
+  bundled resources produce no output and advise restoring built-ins or
+  reinstalling FileMint; imported-asset errors retain their re-import guidance.
 - Templates & Types offers New Text Template and Import Document Template. The
   native file picker accepts one regular .docx or .xlsx; folders, symlinks,
   cloud placeholders and macro-enabled formats are excluded. Read only the
@@ -63,7 +79,7 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - First-version limits: 64 MiB encoded, 4,096 ZIP entries, 64 MiB per expanded
   entry and 128 MiB total expanded bytes. Reject encrypted, split and ZIP64
   packages, malformed XML, missing primary parts and inconsistent formats.
-- Store an independent private copy in FileMint's application-owned template
+- Store an independent private copy of imported documents in FileMint's application-owned template
   directory. Preferences hold a UUID, format, byte count and SHA-256 digest;
   no bookmark or original source path is needed after import. Old templates
   without an asset reference remain UTF-8 text templates.

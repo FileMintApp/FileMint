@@ -22,7 +22,7 @@ Fixed black System Monochrome icons in dark Finder menus: icons are white in the
 - **Open with App**: Add your go-to apps to Finder and open selected items or the current folder with them.
 - **Paste Image as File**: Preview and name a copied screenshot or image, then save it as PNG.
 - **Multiple templates per format**: Keep separate content and filenames for one format, with a configurable default template.
-- **Word / Excel templates**: Import `.docx` or `.xlsx` and create independent copies with the original formatting and content.
+- **Word / Excel templates**: Create blank `.docx` and `.xlsx` files from built-in templates, or import your own documents and create independent copies with their formatting and content intact.
 - **Themes and settings**: General now offers Follow System, Light and Dark, with consistent control alignment and interaction styles.
 
 [Full release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.6.4)

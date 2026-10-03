@@ -34,7 +34,7 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case newFileFromClipboard, clipboardTextUnsupported, clipboardTextTooLarge
     case imagePreview, imageFileName
     case defaultFileName, defaultTemplate, makeDefaultTemplate, selectedTemplate, noTemplate
-    case importDocumentTemplate, documentTemplate, documentTemplateHint, documentUnsupported
+    case importDocumentTemplate, documentTemplate, documentTemplateHint, documentUnsupported, builtInDocumentUnavailable
     case documentTooLarge, documentInvalid, documentUnavailable, documentImportFailed, documentDraftEdited
     case followSystem
     case appearance, theme, lightAppearance, darkAppearance
@@ -300,6 +300,7 @@ public enum FileMintStrings {
         .documentTooLarge: ("Use a document up to 64 MB, with at most 4,096 package items and 128 MB expanded content.", "请选择不超过 64 MB、内部项目不超过 4096 个、展开后不超过 128 MB 的文档。"),
         .documentInvalid: ("The document is damaged or its format is unsupported. Save a fresh DOCX or XLSX in your office app, then import it again.", "文档已损坏或格式不受支持。请用办公软件重新保存为 DOCX 或 XLSX，再导入。"),
         .documentUnavailable: ("The saved template is missing or damaged. Remove this template and import the original document again.", "保存的模板已丢失或损坏。请移除此模板，并重新导入原文档。"),
+        .builtInDocumentUnavailable: ("The built-in template is unavailable. Restore built-in templates, or reinstall FileMint if the problem continues.", "内置模板不可用。请恢复内置模板；若问题仍然存在，请重新安装 FileMint。"),
         .documentImportFailed: ("The document template could not be saved. Check file access and available disk space, then retry.", "文档模板无法保存。请检查文件访问权限和剩余磁盘空间后重试。"),
         .documentDraftEdited: ("Save or cancel the text you entered before switching to a document template.", "请先保存或取消已输入的文本，再切换到文档模板。"),
         .settingsLabel: ("Settings", "设置"),
@@ -552,6 +553,10 @@ public enum FileMintStrings {
                 return "CSS"
             case "shell":
                 return "Shell 脚本"
+            case "word-document":
+                return "Word 文档"
+            case "excel-workbook":
+                return "Excel 工作簿"
             default:
                 return template.displayName
             }
@@ -574,6 +579,8 @@ public enum FileMintStrings {
                 return "数据"
             case "Web":
                 return "网页"
+            case "Office":
+                return "办公"
             default:
                 return template.group
             }

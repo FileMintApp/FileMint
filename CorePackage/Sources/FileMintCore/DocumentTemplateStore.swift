@@ -7,12 +7,26 @@ public struct DocumentTemplateReference: Codable, Equatable, Sendable {
     public let kind: OfficeDocumentKind
     public let byteCount: Int
     public let sha256: String
+    public let builtInResource: String?
+
+    public init(id: UUID, kind: OfficeDocumentKind, byteCount: Int, sha256: String,
+                builtInResource: String? = nil) {
+        self.id = id
+        self.kind = kind
+        self.byteCount = byteCount
+        self.sha256 = sha256
+        self.builtInResource = builtInResource
+    }
 }
 
 public struct DocumentTemplateStore: Sendable {
     public let directory: URL
-    public init(directory: URL = FileMintStorage.directory.appendingPathComponent("document-templates", isDirectory: true)) {
+    private let bundledDirectory: URL?
+
+    public init(directory: URL = FileMintStorage.directory.appendingPathComponent("document-templates", isDirectory: true),
+                bundledDirectory: URL? = nil) {
         self.directory = directory
+        self.bundledDirectory = bundledDirectory
     }
 
     public func importDocument(at source: URL) throws -> DocumentTemplateReference {
@@ -43,14 +57,28 @@ public struct DocumentTemplateStore: Sendable {
             guard (1...OfficeDocumentValidator.maximumBytes).contains(reference.byteCount), reference.sha256.count == 64 else {
                 throw DocumentTemplateError.unavailable
             }
-            let data = try Self.readRegularFile(url(for: reference))
+            let source: URL
+            if let resource = reference.builtInResource {
+                guard let builtIn = BuiltInDocumentTemplate(rawValue: resource), reference == builtIn.reference,
+                      let resources = bundledDirectory ?? BuiltInDocumentTemplate.resourceDirectory else {
+                    throw DocumentTemplateError.builtInUnavailable
+                }
+                source = resources.appendingPathComponent(builtIn.rawValue + "." + reference.kind.rawValue)
+            } else {
+                source = url(for: reference)
+            }
+            let data = try Self.readRegularFile(source)
             guard data.count == reference.byteCount, Self.digest(data) == reference.sha256 else { throw DocumentTemplateError.unavailable }
             try OfficeDocumentValidator.validate(data, kind: reference.kind)
             return data
-        } catch { throw DocumentTemplateError.unavailable }
+        } catch {
+            throw reference.builtInResource == nil ? DocumentTemplateError.unavailable : .builtInUnavailable
+        }
     }
 
     public func remove(_ reference: DocumentTemplateReference) throws {
+        // A removed built-in is a preference change, never an owned file deletion.
+        guard reference.builtInResource == nil else { return }
         // Do not remove a replacement, symlink or unknown file at the asset path.
         _ = try data(for: reference)
         try FileManager.default.removeItem(at: url(for: reference))

@@ -67,7 +67,7 @@ hero:
     <article class="feature-card">
       <span class="feature-index">02</span>
       <h3>Useful types</h3>
-      <p>Enable and reorder 14 built-in text and code formats, or add your own templates.</p>
+      <p>Enable and reorder 14 text and code formats plus blank Word and Excel templates, or add your own.</p>
     </article>
     <article class="feature-card">
       <span class="feature-index">03</span>
@@ -115,7 +115,7 @@ hero:
       <h3>From blank files to your own documents</h3>
       <ul class="benefit-list">
         <li><strong>Text templates</strong>: save a filename and starter content, with filename, date and year variables</li>
-        <li><strong>Word / Excel</strong>: import .docx or .xlsx and create independent copies with formatting and content intact</li>
+        <li><strong>Word / Excel</strong>: create blank .docx and .xlsx files, or import documents and make independent copies with formatting and content intact</li>
         <li><strong>Stored locally</strong>: imported templates no longer depend on the original document's location or change its contents</li>
       </ul>
     </div>

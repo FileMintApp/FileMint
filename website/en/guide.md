@@ -48,6 +48,8 @@ Open **Templates & Types**, enable and reorder the formats you use. Click **New 
 
 <p class="guide-caption">Enabled formats appear in Finder's quick creation menu.</p>
 
+New installations enable **Word Document** and **Excel Workbook** by default. Select either to create a blank `.docx` or an `.xlsx` with one empty worksheet. Upgrades append these templates disabled; enable them in Templates & Types when needed. Creation requires neither an import nor an Office installation.
+
 To reuse an existing Word or Excel document, click **Import Document Template…** and select a `.docx` or `.xlsx`. FileMint keeps an independent local copy. Choosing that template creates a new document with the original formatting and content; it does not change the source. An existing output name is numbered automatically.
 
 ## Save a clipboard image as PNG

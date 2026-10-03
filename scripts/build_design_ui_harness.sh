@@ -9,6 +9,7 @@ DESIGN_FIXTURE="$(mktemp -d "$PWD/build/design-ui-harness.noindex/run.XXXXXX")"
 DESIGN_APP="$DESIGN_FIXTURE/FileMintDesignQA.app"
 DESIGN_FRAMEWORKS="$PWD/build/SourcePackages/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64"
 mkdir -p "$DESIGN_APP/Contents/MacOS" "$DESIGN_APP/Contents/Resources"
+cp -R "$DESIGN_BUILD/FileMintCore_FileMintCore.bundle" "$DESIGN_APP/Contents/Resources/"
 cp Resources/SFSymbolNames.txt Resources/SFSymbolRestrictedNames.txt \
   Resources/SFSymbolCatalog-LICENSE.txt "$DESIGN_APP/Contents/Resources/"
 plutil -create xml1 "$DESIGN_APP/Contents/Info.plist"

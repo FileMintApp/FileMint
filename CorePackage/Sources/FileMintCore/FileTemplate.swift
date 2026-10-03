@@ -130,7 +130,7 @@ public enum TemplateCatalog {
     ].enumerated().map { index, item in
         FileTemplate(id: item.0, displayName: item.1, suggestedFileName: "Untitled.\(item.0)",
                      group: item.2, content: item.3, isEnabled: false, rank: 80 + index * 10)
-    }
+    } + BuiltInDocumentTemplate.allCases.map(\.template)
 
     public static func template(withID id: String, in templates: [FileTemplate] = builtInTemplates) -> FileTemplate? {
         templates.first { $0.id == id }
