@@ -59,6 +59,23 @@ Terminal, iTerm2 and Ghostty use their published macOS folder Services with a pr
   app bookmark, validates bundle identity, obtains exact-parent read access only
   when needed, and calls native NSWorkspace opening for the entire selection.
   Hold access and the busy/restart guard until the completion callback.
+- When Open with App needs folder access, explain the first-use sandbox request
+  and label the picker action Allow Folder / 允许访问. Authorize only the captured
+  directory or exact selection parent. Save a read-only security-scoped bookmark
+  in a private, bounded, atomically replaced Open with App access store; reuse it
+  after relaunch for that folder and its descendants while the saved grant and
+  requested target remain in configured, resolved scope. Never add observation
+  roots or write permissions as a side effect. Compare the bookmark's saved file
+  identity, volume and creation date with fresh directory metadata; a replacement
+  at the saved path requires explicit authorization. Revalidate bookmark identity and
+  refresh stale bookmarks; unusable grants require explicit authorization again.
+  Cancellation, choosing a different folder or failed post-authorization checks
+  must neither dispatch the request nor save new grants. Release restored access
+  at request completion, including failures. Storage errors must be visible.
+- Settings explain that initial folder authorization may be required and saved
+  access is reused. Provide a shortcut to the existing folder settings for users
+  who want to authorize a configured folder in advance; Full Disk Access does
+  not replace sandbox folder authorization.
 - Report missing apps, changed configuration, missing files and native open
   failures clearly. Do not change default file associations, clipboard, selected
   file contents, settings-window ownership or existing creation behavior. No shell

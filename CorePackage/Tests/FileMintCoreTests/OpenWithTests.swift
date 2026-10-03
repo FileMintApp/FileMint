@@ -188,7 +188,8 @@ struct OpenWithTests {
         #expect(app.menuTitle(language: .english) == "Open with Code %@ 资料")
         for key in [FileMintTextKey.openWithApps, .openWithAppsHint, .addApplication, .openWithEmptyTitle,
                     .openWithEmptyHint, .openWithSubmenu, .openWithMenuHint, .openWithUnavailableApp,
-                    .openWithChanged, .openWithMissingSelection, .openWithFailed, .openWithReorderHint] {
+                    .openWithChanged, .openWithMissingSelection, .openWithFailed, .openWithReorderHint,
+                    .openWithAuthorizeFolder, .openWithFolderAccessHint, .openWithFolderSettings, .openWithFolderAccessFailed] {
             #expect(FileMintStrings.text(key, language: .english) != key.rawValue)
             #expect(FileMintStrings.text(key, language: .english) != FileMintStrings.text(key, language: .chinese))
         }

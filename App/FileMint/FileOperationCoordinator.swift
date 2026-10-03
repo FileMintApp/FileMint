@@ -18,6 +18,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
     private let tickets: FileOperationTicketStore
     private let preferencesFile: URL?
     private let aliasAccessStore: DesktopAliasAccessStore
+    private let openWithAccessStore: OpenWithFolderAccessStore
     private let desktopDirectory: URL
     private let resourceController: ResourceToolsController
     private var sharingService: NSSharingService?
@@ -27,12 +28,14 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
     init(store: PendingFileMoveStore = PendingFileMoveStore(),
          tickets: FileOperationTicketStore = FileOperationTicketStore(), preferencesFile: URL? = nil,
          aliasAccessStore: DesktopAliasAccessStore = DesktopAliasAccessStore(),
+         openWithAccessStore: OpenWithFolderAccessStore = OpenWithFolderAccessStore(),
          desktopDirectory: URL = DesktopAliasService.desktopDirectory,
          resourceController: ResourceToolsController = .shared) {
         self.store = store
         self.tickets = tickets
         self.preferencesFile = preferencesFile
         self.aliasAccessStore = aliasAccessStore
+        self.openWithAccessStore = openWithAccessStore
         self.desktopDirectory = desktopDirectory
         self.resourceController = resourceController
         super.init()
@@ -148,9 +151,11 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             let applicationURL = try OpenWithApplicationAccess.resolve(application)
             if applicationURL.startAccessingSecurityScopedResource() { access.append(applicationURL) }
             try OpenWithApplicationAccess.validate(application, at: applicationURL)
-            var bookmarks: [String: Data] = [:]
+            let folderAccess = try OpenWithFolderAccess(store: openWithAccessStore)
+            defer { folderAccess.release() }
             for parent in uniqueParents(selection) {
-                guard try authorize(parent, bookmarks: &bookmarks, readOnly: true) else { return }
+                guard try folderAccess.authorize(parent, folders: currentPreferences.monitoredFolderURLs,
+                    language: currentPreferences.language) else { return }
             }
             try requireResolvedSelection(selection)
             guard OpenWithPolicy.application(for: reference, selection: selection,
@@ -159,6 +164,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             guard selection.allSatisfy({ FileManager.default.isReadableFile(atPath: $0.path) }) else {
                 throw OpenWithError.missingSelection
             }
+            try folderAccess.save()
             try await OpenWithApplicationAccess.open(selection, with: applicationURL)
 
         case .openDirectory(let reference, let directory, let mode):
@@ -170,8 +176,10 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             let applicationURL = try OpenWithApplicationAccess.resolve(application)
             if applicationURL.startAccessingSecurityScopedResource() { access.append(applicationURL) }
             try OpenWithApplicationAccess.validate(application, at: applicationURL)
-            var bookmarks: [String: Data] = [:]
-            guard try authorize(directory, bookmarks: &bookmarks, readOnly: true) else { return }
+            let folderAccess = try OpenWithFolderAccess(store: openWithAccessStore)
+            defer { folderAccess.release() }
+            guard try folderAccess.authorize(directory, folders: currentPreferences.monitoredFolderURLs,
+                language: currentPreferences.language) else { return }
             let values = try? directory.resourceValues(forKeys: [.isDirectoryKey, .isPackageKey, .isSymbolicLinkKey, .isAliasFileKey])
             guard values?.isDirectory == true, values?.isPackage != true,
                   values?.isSymbolicLink != true, values?.isAliasFile != true else {
@@ -183,6 +191,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
                 throw OpenWithError.changedConfiguration
             }
             try OpenWithApplicationAccess.validate(application, at: applicationURL)
+            try folderAccess.save()
             try await TerminalDirectoryLauncher.open(directory, with: application,
                 applicationURL: applicationURL, mode: mode)
 

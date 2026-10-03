@@ -222,7 +222,7 @@ public struct OpenWithMenuLayout: Equatable, Sendable {
 
 public enum OpenWithError: Error {
     case invalidApplication, unavailableApplication, changedConfiguration, missingSelection, missingDirectory
-    case unsupportedTerminal, serviceUnavailable, openFailed
+    case unsupportedTerminal, serviceUnavailable, openFailed, folderAccessFailed, wrongAuthorizationFolder
 
     public var messageKey: FileMintTextKey {
         switch self {
@@ -234,6 +234,8 @@ public enum OpenWithError: Error {
         case .unsupportedTerminal: .openWithUnsupportedTerminal
         case .serviceUnavailable: .openWithServiceUnavailable
         case .openFailed: .openWithFailed
+        case .folderAccessFailed: .openWithFolderAccessFailed
+        case .wrongAuthorizationFolder: .moveChooseExactFolder
         }
     }
 }

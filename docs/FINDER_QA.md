@@ -280,6 +280,21 @@ This fixture does not prove that Finder has loaded the new extension.
 - Remove/move the target app or source file, cancel any exact-parent authorization,
   and use an app that cannot open folders. Verify clear errors, no default-app or
   clipboard changes, and no remaining busy guard after completion/cancellation.
+- Start with an unapproved in-scope folder. The picker explains saved access and
+  uses Allow Folder / 允许访问; cancellation and choosing a different folder must
+  not open the app or save a grant. Approve, quit and relaunch FileMint, then open
+  the same directory and its descendants without another picker. Repeat for a
+  file selection's parent. Removing a configured root must prevent its saved
+  grant from restoring access, including after narrowing scope to a descendant.
+  Moved/unresolvable bookmarks require authorization again. Check the folder
+  settings shortcut and guidance in Chinese and English.
+- The sandbox fixture supports `FILEMINT_OPEN_WITH_ACCESS_FIXTURE` pointing to a
+  disposable external `filemint-folder-access-<unique>/target/child/source.txt`
+  tree (`source.txt` contains `keep me\n`). Run the same fixture app in separate
+  processes with `FILEMINT_OPEN_WITH_ACCESS_PHASE=grant` (choose `target` once),
+  then `restore` (no picker, verifies read-only access and release). Move `target`
+  aside and recreate its path, then run `moved` to reject a redirected bookmark.
+  Its store is inside the fixture app's container, never FileMint preferences.
 - Use `bash scripts/build_open_with_harness.sh` for the isolated sandbox transport
   and NSWorkspace check; it does not replace installed Finder or third-party QA.
 

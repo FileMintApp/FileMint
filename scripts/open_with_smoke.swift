@@ -24,7 +24,9 @@ final class OpenWithSmoke: NSObject, NSApplicationDelegate {
         #if !OPEN_WITH_RECEIVER
         Task {
             do {
-                if let mode = ProcessInfo.processInfo.environment["FILEMINT_TERMINAL_MODE"],
+                if let path = ProcessInfo.processInfo.environment["FILEMINT_OPEN_WITH_ACCESS_FIXTURE"] {
+                    try runFolderAccess(fixture: URL(fileURLWithPath: path, isDirectory: true))
+                } else if let mode = ProcessInfo.processInfo.environment["FILEMINT_TERMINAL_MODE"],
                    let requested = TerminalOpenMode(rawValue: mode) {
                     try await runTerminalService(mode: requested)
                 } else if ProcessInfo.processInfo.environment["FILEMINT_OPEN_WITH_APP"] == "code" {
@@ -52,6 +54,87 @@ final class OpenWithSmoke: NSObject, NSApplicationDelegate {
     }
 
     #if !OPEN_WITH_RECEIVER
+    /// Run `grant` and `restore` in separate launches of this same sandboxed app.
+    /// Only the first phase presents a picker for a synthetic external fixture.
+    private func runFolderAccess(fixture: URL) throws {
+        guard fixture.lastPathComponent.hasPrefix("filemint-folder-access-") else {
+            throw SmokeFailure("Use a disposable folder-access fixture")
+        }
+        let directory = fixture.appendingPathComponent("target", isDirectory: true)
+        let child = directory.appendingPathComponent("child", isDirectory: true)
+        let storage = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent(fixture.lastPathComponent, isDirectory: true)
+        let store = OpenWithFolderAccessStore(file: storage.appendingPathComponent("access.json"))
+        let clipboardChangeCount = NSPasteboard.general.changeCount
+        let phase = ProcessInfo.processInfo.environment["FILEMINT_OPEN_WITH_ACCESS_PHASE"] ?? "restore"
+        guard !FileManager.default.isReadableFile(atPath: directory.path) else {
+            throw SmokeFailure("Fixture must start outside this process's sandbox access")
+        }
+        if phase == "grant" {
+            guard try store.load().isEmpty else { throw SmokeFailure("Grant phase requires a fresh store") }
+            let cancelled = try OpenWithFolderAccess(store: store, chooseDirectory: { _, _ in nil })
+            defer { cancelled.release() }
+            guard try !cancelled.authorize(directory, folders: [directory], language: .english),
+                  try store.load().isEmpty else { throw SmokeFailure("Cancellation saved a grant") }
+            let wrong = try OpenWithFolderAccess(store: store, chooseDirectory: { _, _ in storage })
+            defer { wrong.release() }
+            do {
+                _ = try wrong.authorize(directory, folders: [directory], language: .english)
+                throw SmokeFailure("Wrong folder was accepted")
+            } catch OpenWithError.wrongAuthorizationFolder {}
+            guard try store.load().isEmpty else { throw SmokeFailure("Wrong-folder grant was saved") }
+            let access = try OpenWithFolderAccess(store: store)
+            defer { access.release() }
+            guard try access.authorize(directory, folders: [directory], language: .chinese) else {
+                throw SmokeFailure("Fixture authorization cancelled")
+            }
+            guard try store.load().isEmpty else { throw SmokeFailure("Grant saved before request validation") }
+            try access.save()
+            guard try store.load()[directory.standardizedFileURL.path] != nil else { throw SmokeFailure("Grant not persisted") }
+            print("PASS sandbox folder access: cancellation, wrong folder, explicit grant and persistence")
+        } else if phase == "restore" {
+            var prompts = 0
+            let restricted = try OpenWithFolderAccess(store: store, chooseDirectory: { _, _ in prompts += 1; return nil })
+            defer { restricted.release() }
+            guard try !restricted.authorize(child, folders: [child], language: .english), prompts == 1 else {
+                throw SmokeFailure("Removed ancestor scope was restored")
+            }
+            prompts = 0
+            let access = try OpenWithFolderAccess(store: store, chooseDirectory: { _, _ in prompts += 1; return nil })
+            defer { access.release() }
+            guard try access.authorize(directory, folders: [directory], language: .english),
+                  try access.authorize(child, folders: [directory], language: .english), prompts == 0,
+                  try String(contentsOf: child.appendingPathComponent("source.txt"), encoding: .utf8) == "keep me\n" else {
+                throw SmokeFailure("Saved read access did not survive relaunch or cover descendants")
+            }
+            let forbiddenWrite = child.appendingPathComponent("unexpected-write.txt")
+            var wrote = false
+            do { try Data([1]).write(to: forbiddenWrite, options: .withoutOverwriting); wrote = true } catch {}
+            if wrote {
+                try? FileManager.default.removeItem(at: forbiddenWrite)
+                throw SmokeFailure("Restored grant unexpectedly allowed writes")
+            }
+            try access.save()
+            access.release()
+            guard !FileManager.default.isReadableFile(atPath: directory.path) else {
+                throw SmokeFailure("Completed request kept its sandbox access")
+            }
+            print("PASS sandbox folder access: separate-process reuse, descendants, read-only, scope and release")
+        } else if phase == "moved" {
+            var prompts = 0
+            let original = try store.load()
+            let access = try OpenWithFolderAccess(store: store, chooseDirectory: { _, _ in prompts += 1; return nil })
+            defer { access.release() }
+            let allowed = try access.authorize(directory, folders: [directory], language: .english)
+            let unchanged = try store.load() == original
+            guard !allowed, prompts == 1, unchanged else {
+                throw SmokeFailure("Moved grant: allowed=\(allowed), prompts=\(prompts), storageUnchanged=\(unchanged)")
+            }
+            print("PASS sandbox folder access: moved bookmark rejected, cancelled repair preserves storage")
+        } else { throw SmokeFailure("Unknown folder-access phase") }
+        guard NSPasteboard.general.changeCount == clipboardChangeCount else { throw SmokeFailure("Clipboard changed") }
+    }
+
     private func runTerminalService(mode: TerminalOpenMode) async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("filemint-terminal-qa-\(UUID().uuidString)")
         let folder = root.appendingPathComponent("空格 '\" # % ? : $ ; 🪴\nnext", isDirectory: true)
@@ -83,6 +166,7 @@ final class OpenWithSmoke: NSObject, NSApplicationDelegate {
         let coordinator = FileOperationCoordinator(store: PendingFileMoveStore(file: folder.appendingPathComponent("move.json")),
             tickets: tickets, preferencesFile: file,
             aliasAccessStore: DesktopAliasAccessStore(file: folder.appendingPathComponent("aliases.json")),
+            openWithAccessStore: OpenWithFolderAccessStore(file: folder.appendingPathComponent("open-with-access.json")),
             desktopDirectory: folder, resourceController: ResourceToolsController(preferencesFile: file))
         self.coordinator = coordinator
         coordinator.enqueue(ticket)
@@ -176,6 +260,7 @@ final class OpenWithSmoke: NSObject, NSApplicationDelegate {
         let coordinator = FileOperationCoordinator(store: PendingFileMoveStore(file: root.appendingPathComponent("move.json")),
             tickets: tickets, preferencesFile: file,
             aliasAccessStore: DesktopAliasAccessStore(file: root.appendingPathComponent("aliases.json")),
+            openWithAccessStore: OpenWithFolderAccessStore(file: root.appendingPathComponent("open-with-access.json")),
             desktopDirectory: root, resourceController: ResourceToolsController(preferencesFile: file))
         self.coordinator = coordinator
         coordinator.enqueue(ticket)

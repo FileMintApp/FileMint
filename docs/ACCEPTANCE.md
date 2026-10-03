@@ -3,6 +3,38 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Issue #6 — Open with App folder authorization — 2026-10-03
+
+Checked on macOS 27.2, arm64, `ea46b7c` plus the uncommitted
+[issue #6 task](tasks/2026-10-03-issue-6-open-with-folder-access.md).
+
+- `make verify` passed: 186 Core tests, 14 image tests, 5/5 public Harness cases,
+  10 CLI regressions and offline release/appcast/entitlement checks.
+- The final unsigned Release App and Finder extension build passed.
+- The isolated, ad-hoc-signed sandbox app used an actual exact-folder picker for
+  a synthetic external fixture. A separate launch restored its saved read-only
+  grant without a picker, read the directory and a descendant, rejected writes
+  and a removed ancestor scope, then released access after the request.
+- Moving the granted directory and recreating its old path initially exposed a
+  path-only identity check failure. The final fresh-resource identity check
+  rejected the replacement, and cancelling reauthorization preserved the store.
+  Wrong-folder and cancellation checks also passed without persisting new grants.
+- The production coordinator sent a real mixed selection and a directory to the
+  sandbox fixture's native receiver; source bytes, general clipboard, single-use
+  tickets and the busy guard remained correct.
+- Native UI inspection confirmed Chinese light guidance and folder-settings
+  navigation, plus final English dark layout at 960×680 without clipped text.
+- Evidence: [standard checks](../build/issue-6.noindex/verify.log),
+  [build](../build/issue-6.noindex/build.log),
+  [first grant](../build/issue-6.noindex/grant.log),
+  [restart/read-only/release](../build/issue-6.noindex/restore.log),
+  [replacement rejection](../build/issue-6.noindex/moved.log),
+  [native transport](../build/issue-6.noindex/transport.log),
+  [UI notes](../build/issue-6.noindex/native-ui.txt).
+- These fixtures did not replace the installed FileMint. Actual installed signed
+  Finder → Terminal working-directory and tab/window behavior, minimum macOS,
+  third-party terminals and publication remain unverified for this change.
+
 ## Code review regression fixes — 2026-09-30
 
 Checked on macOS 27.2, arm64, `fc8b7fe` plus the uncommitted review fixes.

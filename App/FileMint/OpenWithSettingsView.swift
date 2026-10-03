@@ -17,7 +17,8 @@ struct OpenWithPane: View {
                 model.preferences.openWith = $0
                 if !model.save() { model.preferences.openWith = previous }
             }), language: model.preferences.language, isChoosing: model.isChoosingOpenWithApp,
-               addApplication: model.addOpenWithApplications)
+               addApplication: model.addOpenWithApplications,
+               showFolderSettings: { model.selectedPane = .folders })
         }
     }
 }
@@ -29,6 +30,7 @@ struct OpenWithSettingsView: View {
     let language: AppLanguage
     var isChoosing = false
     let addApplication: () -> Void
+    var showFolderSettings: (() -> Void)? = nil
     @State private var draggedApplicationID: UUID?
     @State private var dropTargetID: UUID?
 
@@ -106,6 +108,16 @@ struct OpenWithSettingsView: View {
                 Label(text(.openWithMenuHint), systemImage: "info.circle")
                     .font(.system(size: 11)).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true).padding(.horizontal, 2)
+                VStack(alignment: .leading, spacing: 8) {
+                    Label(text(.openWithFolderAccessHint), systemImage: "lock")
+                        .font(.system(size: 11)).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if let showFolderSettings {
+                        Button(text(.openWithFolderSettings), action: showFolderSettings)
+                            .buttonStyle(.link).font(.system(size: 11))
+                            .accessibilityIdentifier("openWith.folderAccess")
+                    }
+                }.padding(.horizontal, 2)
             }.padding(1)
         }
     }

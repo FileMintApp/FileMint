@@ -43,7 +43,7 @@ swiftc -swift-version 6 -parse-as-library -target "arm64-apple-macos13.0" \
   SharedUI/FileToolAppearance.swift \
   App/FileMint/FavoriteLocationsModel.swift App/FileMint/FavoriteQuickPanelController.swift \
   App/FileMint/FavoriteFeedbackController.swift \
-  App/FileMint/ClipboardTextReader.swift App/FileMint/OpenWithApplicationAccess.swift \
+  App/FileMint/ClipboardTextReader.swift App/FileMint/OpenWithApplicationAccess.swift App/FileMint/OpenWithFolderAccess.swift \
   App/FileMint/TerminalDirectoryLauncher.swift App/FileMint/FileOperationCoordinator.swift \
   scripts/open_with_smoke.swift "${OPEN_WITH_LINK[@]}" \
   -o "$OPEN_WITH_APP/Contents/MacOS/OpenWithSmoke"

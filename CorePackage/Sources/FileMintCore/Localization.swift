@@ -75,6 +75,7 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case openWithInvalidApp, openWithUnavailableApp, openWithChanged, openWithMissingSelection, openWithFailed
     case openWithMissingDirectory, openWithUnsupportedTerminal, openWithServiceUnavailable
     case openWithUnavailable, openWithConfiguredApps, openWithReorderHint
+    case openWithAuthorizeFolder, openWithFolderAccessHint, openWithFolderSettings, openWithFolderAccessFailed
     case enableFileTools
     case fileToolsOffHint
     case fileToolsActions
@@ -336,6 +337,10 @@ public enum FileMintStrings {
         .openWithFailed: ("The app could not open the selection. Check that it supports these files or folders and try again.", "无法使用此 App 打开所选项目。请确认它支持这些文件或文件夹后重试。"),
         .openWithUnavailable: ("Unavailable · add again to repair", "App 不可用 · 请重新添加"),
         .openWithReorderHint: ("Drag the handle to set app order in Finder. You can also use the arrow buttons.", "拖动把手调整 App 在 Finder 菜单中的顺序，也可使用上下按钮。"),
+        .openWithAuthorizeFolder: ("Allow FileMint to access this folder so it can open it or its selected items with your app. This folder access will be remembered for future use.", "允许 FileMint 访问当前文件夹，以使用所选 App 打开目录或其中的项目。授权会被记住，后续会复用有效授权。"),
+        .openWithFolderAccessHint: ("The first open may ask you to allow folder access. FileMint remembers it for later use, including after relaunch. You can also authorize folders in Finder & Folders settings. Full Disk Access does not replace this authorization.", "首次打开时可能需要允许访问文件夹，FileMint 会记住授权，重启后也可复用。也可前往「Finder 与文件夹」提前授权；完全磁盘访问不能替代文件夹授权。"),
+        .openWithFolderSettings: ("Folder Access Settings…", "设置文件夹访问权限…"),
+        .openWithFolderAccessFailed: ("Folder access could not be restored or saved. Check folder permissions and available disk space, then try again.", "无法恢复或保存文件夹授权。请检查文件夹权限和剩余磁盘空间后重试。"),
         .newFileMenuPosition: ("New File menu location", "新建文件菜单位置"),
         .newFileMenuPositionHint: ("Keep creation actions under New File, or show them directly in Finder’s menu.", "可将各项新建文件操作收在「新建文件」中，或直接显示在 Finder 右键菜单。"),
         .enableFileTools: ("Enable File & Folder Tools", "启用文件（夹）工具"),
