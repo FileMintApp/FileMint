@@ -1,8 +1,8 @@
 # Task: Template copying, preview, post-creation actions and template exchange
 
-Status: in-progress (source implementation and automated checks complete; native acceptance outstanding)
+Status: in-progress (51e49db source QA and selected-app icon follow-up verified; remaining native acceptance below)
 Planning status: complete; implementation authorized on 2026-10-05.
-Next action: Complete the native checks listed in the implementation evidence below: live keyboard/VoiceOver, actual supported-editor rendering, Office preview provider behavior and installed Finder. Use the primary checkout; worktrees require an explicit user request.
+Next action: Complete the remaining native checks in the commit QA below: full keyboard/VoiceOver and appearance matrix, working Office providers, trusted VS Code, installed Finder and quit/update lifecycle. TextEdit content and the principal live copy/creation/import/export flows are now observed. Use the primary checkout; worktrees require an explicit user request.
 
 ## Objective and scope
 
@@ -616,21 +616,55 @@ The earlier native limitations remain: the installed VS Code signature is reject
 Office providers return unavailable, and installed Finder/live keyboard/VoiceOver
 acceptance has not been completed. These checks do not claim full product QA.
 
+## Commit QA and selected-application icons — 2026-10-05
+
+The requested revision is `51e49db28dd0e342b5c84f40bf86b4ecb5af46af`;
+HEAD matched and the primary checkout was clean when verification started.
+Environment: macOS 27.2 (26B5091g), arm64, Swift 6.4. The installed 0.6.6/build 25
+app was not replaced or used as a fixture. Its real preferences SHA-256 remained
+unchanged. Only disposable sandbox fixtures and owned test files were used.
+
+During QA the user requested native application icons after selecting a creation
+application, including temporary choices. That narrow follow-up is uncommitted
+on top of the requested revision. Its rule is in [Presentation](../../specs/domains/presentation.md).
+Template editing and the panel show the selected icon/name, keep accessible text,
+use a generic icon for an unavailable local reference, and cancel icon work when
+hidden or closed. Imported hints never cause application discovery.
+
+| Check | Status | Current evidence |
+| --- | --- | --- |
+| Original revision `make verify` | passed | [Log](../../build/qa-51e49db-2026-10-05/verify.log): 214 Core tests, 14 image tests, 5/5 JSON cases, 10 CLI regressions and offline release checks. Initial restricted-cache failure was resolved with the approved standard-cache run. |
+| Original unsigned app/extension build | passed | [Build](../../build/qa-51e49db-2026-10-05/build.log); generated from project.yml. |
+| Original sandboxed native fixture | passed | [Run](../../build/qa-51e49db-2026-10-05/native-ui.log): model/save/review regressions, copy/asset lifetime, gate generation, receiver dispatch, duplicate/replaced-file rejection and preview cleanup. |
+| Live copy and text preview | passed | Office copy canceled without adding an entry. Markdown copy saved after its source with a fresh ID, enabled state and unchanged default. Editor preview displayed the exact fixed 2026-01-01 UTC example. [Readback](../../build/qa-51e49db-2026-10-05/ui-readback.json). |
+| Live creation and TextEdit content | passed | Filename-to-suffix synchronization, Tab from content to Paste, plain paste/undo and Command-Return observed. The actual saved bytes matched Unicode, emoji and literal tokens. System TextEdit opened the exact created URL and visibly displayed the expected text. [Created text](../../build/qa-51e49db-2026-10-05/ui-textedit.txt). No editing policy was injected for this handoff. |
+| Native package export/import | passed | Native Save panel wrote the [package](../../build/qa-51e49db-2026-10-05/ui-export.filemint-templates); independent ZIP inspection confirmed exact payload/digest, portable app hint, and no local path/bookmark/registry ID. Native import review defaulted the duplicate to Skip with Import disabled; Save as copy then added an independent 18th row. Existing 17 rows, defaults, gates and app registry were unchanged. |
+| Icon follow-up automatic/build checks | passed | [Verify](../../build/qa-51e49db-2026-10-05/icons-verify.log), [build](../../build/qa-51e49db-2026-10-05/icons-build.log), [native regression](../../build/qa-51e49db-2026-10-05/icons-native-ui.log). Native icon bitmap/name, invalid identity, disable/hide and re-enable restoration checked. |
+| Icon follow-up live UI | passed | Actual temporary TextEdit selection displayed icon/name; Cancel left the registry and template actions unchanged. Template editor displayed the icon immediately and after save/reopen. A fresh panel following that saved template showed the icon/name and Create and Open. Chinese/light layout inspected on screen. |
+| Office native content rendering | blocked | Both DOCX and XLSX providers returned unavailable on this machine. Explicit fallback, missing/invalid asset rejection and snapshot cleanup passed; content rendering is not a pass. |
+| Installed VS Code editing profile | blocked | Current strict signing validation rejects the installed bundle. The route remains denied; no repair or installation attempted. |
+| Installed signed Finder, macOS 13, full keyboard/VoiceOver/Reduce Motion and bilingual appearance matrix, actual quit/update lifecycle | not-run | Isolated source QA does not prove these remaining environments/interactions. Live automation was usable but had transient AX/timeouts; native cache images were not substituted for live evidence. |
+
+No new confirmed defect was found in the exercised original-revision paths.
+This is a bounded QA result, not full A01–A35 native acceptance or release approval.
+Source digests and fixture readbacks are retained in
+`build/qa-51e49db-2026-10-05/`. No commit, installation or publication was performed.
+
 ## Handoff
 
-- Source work is in the primary checkout and remains uncommitted. P1/P5 rules and
+- Base source is committed as `51e49db`; the icon follow-up and QA records remain
+  uncommitted in the primary checkout. P1/P5 rules and
   the implementation parts of P2/P3/P4/P6 are present; P0/P7 native acceptance has
   explicit unfinished items. Do not mark the product task complete or publish
   while its required native checks remain outstanding.
 - Start from the outstanding acceptance rows above. Read this task and only its
   relevant domains/source. Preserve the user's primary-checkout rule; no new or
   reused worktree without an explicit request.
-- Native evidence still needed: live panel/editor/review/save interaction and
-  accessibility, a working Office preview provider, trusted actual editors,
-  installed signed Finder, macOS 13 and quit/update lifecycle. VS Code's current
-  signature failure and the unavailable desktop runtime are concrete blockers.
-- Current logs and native artifacts live in the ignored
-  `build/template-workflow-qa-2026-10-05/` directory. They describe this source and
+- Remaining native evidence is listed in the commit QA above. TextEdit and core
+  live editor/panel/import/export paths have current evidence; full accessibility,
+  Office providers, trusted VS Code, installed Finder, macOS 13 and lifecycle do not.
+- Current QA logs and readbacks live in the ignored
+  `build/qa-51e49db-2026-10-05/` directory. They describe this source and
   environment, not an installed release. Old planning/prototype/release evidence
   must not be promoted to current acceptance.
 - T3 filename rules, cloud synchronization, arbitrary binary templates, commands,

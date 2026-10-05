@@ -3,6 +3,24 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Commit 51e49db QA — 2026-10-05
+
+- Revalidated exact commit `51e49db28dd0e342b5c84f40bf86b4ecb5af46af` on
+  macOS 27.2 arm64 / Swift 6.4: 214 Core tests, 14 image tests, 5/5 JSON cases,
+  10 CLI regressions, offline release checks and unsigned app/extension build passed.
+- Live isolated UI verified copy cancel/save, fixed-UTC text preview, exact UTF-8
+  creation and actual TextEdit content, plus native template-package export and
+  duplicate-review Save as copy import with unchanged existing rows/defaults/gates.
+- The user-requested icon follow-up displays the selected application icon/name
+  in template editing and creation, including temporary choices. Its build,
+  regression fixture and live saved/temporary selection checks passed.
+- Office providers still return unavailable and installed VS Code fails strict
+  signing validation. Installed signed Finder, macOS 13, complete accessibility/
+  appearance coverage and quit/updater lifecycle remain unverified. Real FileMint
+  preferences were unchanged; no installed-app replacement or publication.
+- Commands, logs, readbacks and precise limits are in the
+  [commit QA record](tasks/2026-10-05-template-workflow.md#commit-qa-and-selected-application-icons--2026-10-05).
+
 ## Template workflow — 2026-10-05 (isolated source verification)
 
 Primary checkout `main`, base `64820a9` plus the uncommitted

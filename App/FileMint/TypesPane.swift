@@ -301,7 +301,9 @@ private struct TypeEditor: View {
                 if draft.action.kind == .openWithApplication {
                     HStack {
                         VStack(alignment: .leading) {
-                            Text(draft.action.application?.displayName ?? model.workflowText(.selectedApp))
+                            CreationApplicationLabel(
+                                name: draft.action.application?.displayName ?? model.workflowText(.selectedApp),
+                                application: selectedApplication)
                             if draft.action.localApplicationID == nil { Text(model.workflowText(.unresolvedApp)).font(.caption).foregroundStyle(.secondary) }
                         }
                         Spacer()
@@ -357,6 +359,12 @@ private struct TypeEditor: View {
         FileTemplate(id: draft.templateID ?? "preview", displayName: draft.name,
             suggestedFileName: draft.suggestedFileName, group: "Custom", content: "",
             rank: 0, fileExtension: draft.suffix)
+    }
+
+    private var selectedApplication: CreationApplication? {
+        ([draft.application].compactMap { $0 } + model.preferences.creationApplications).first {
+            $0.id == draft.action.localApplicationID && $0.hint == draft.action.application
+        }
     }
 
     private var previewTemplate: FileTemplate {

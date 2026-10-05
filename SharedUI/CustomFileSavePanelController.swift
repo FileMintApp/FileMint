@@ -41,6 +41,7 @@ final class CustomFileSavePanelController: NSObject {
     var snapshotFollowUp: ((FileTemplate?, CreationActionSelection, CreationApplication?) -> CreationFollowUp?)?
     var completeCreation: ((FileCreationResult, CreationFollowUp?, AppLanguage) async -> Void)?
     var chooseApplication: (() async throws -> CreationApplication?)?
+    var loadApplicationIcon: ((CreationApplication) async -> NSImage?)?
     var makeDocumentPreview: ((FileTemplate, DocumentTemplateStore, AppLanguage) -> (NSView, () -> Void))?
     private var openingEnabled = false
     private var previewEnabled = false
@@ -55,6 +56,9 @@ final class CustomFileSavePanelController: NSObject {
     private var closePreview: (() -> Void)?
     private var previewTemplateID: String?
     private var temporaryApplication: CreationApplication?
+    private var creationApplications: [CreationApplication] = []
+    private var presentedApplication: CreationApplication?
+    private var applicationIconTask: Task<Void, Never>?
     private var pendingFollowUp: CreationFollowUp?
     private var usesRequestFallback = false
 
@@ -62,6 +66,7 @@ final class CustomFileSavePanelController: NSObject {
         openingEnabled = preferences.creationOpeningEnabled
         previewEnabled = preferences.templatePreviewEnabled
         revealAfterCreation = preferences.revealAfterCreation
+        creationApplications = preferences.creationApplications
         guard panel != nil else { return }
         panel?.setContentSize(NSSize(width: 560, height: openingEnabled ? 620 : 570))
         if imageData == nil { updateContentField() }
@@ -87,8 +92,36 @@ final class CustomFileSavePanelController: NSObject {
         let summary = actionText(action.kind.textKey) + (action.application.map { " · " + $0.displayName } ?? "")
         actionPopUp?.item(at: 0)?.title = actionText(.followTemplate) + " · " + summary
         chooseAppButton?.isHidden = action.kind != .openWithApplication
+        updateApplicationPresentation(action)
         createButton?.title = actionText(action.opensApplication ? .createAndOpen : .none)
         if !action.opensApplication { createButton?.title = FileMintStrings.text(.create, language: language) }
+    }
+
+    private func updateApplicationPresentation(_ action: TemplateCreationAction) {
+        let name = action.application?.displayName
+        chooseAppButton?.title = name ?? actionText(.chooseApp)
+        chooseAppButton?.setAccessibilityLabel(actionText(.chooseApp) + (name.map { " · " + $0 } ?? ""))
+        chooseAppButton?.toolTip = name
+        guard openingEnabled, action.kind == .openWithApplication, name != nil else {
+            applicationIconTask?.cancel(); applicationIconTask = nil
+            presentedApplication = nil; chooseAppButton?.image = nil
+            return
+        }
+        let application = ([temporaryApplication].compactMap { $0 } + creationApplications).first {
+            $0.id == action.localApplicationID && $0.hint == action.application
+        }
+        guard application != presentedApplication || chooseAppButton?.image == nil else { return }
+        applicationIconTask?.cancel(); applicationIconTask = nil
+        presentedApplication = application
+        let fallback = NSImage(systemSymbolName: "app.dashed", accessibilityDescription: nil)
+        fallback?.size = NSSize(width: 20, height: 20)
+        chooseAppButton?.image = fallback
+        guard let application, let loadApplicationIcon else { return }
+        applicationIconTask = Task { [weak self] in
+            let icon = await loadApplicationIcon(application)
+            guard !Task.isCancelled, let self, self.presentedApplication == application else { return }
+            self.chooseAppButton?.image = icon ?? fallback
+        }
     }
     @objc private func changeCreationAction(_ sender: NSPopUpButton) {
         pendingFollowUp = nil
@@ -155,6 +188,7 @@ final class CustomFileSavePanelController: NSObject {
         pendingFollowUp = initialFollowUp
         usesRequestFallback = initialText != nil || imageData != nil
         temporaryApplication = nil
+        creationApplications = preferences.creationApplications
         templates = preferences.templates
         if let templateSnapshot, let index = templates.firstIndex(where: { $0.id == templateSnapshot.id }) { templates[index] = templateSnapshot }
         self.imageData = imageData
@@ -280,9 +314,16 @@ final class CustomFileSavePanelController: NSObject {
         for kind in TemplateCreationAction.Kind.allCases { actionPicker.addItem(withTitle: actionText(kind.textKey)) }
         actionPicker.target = self; actionPicker.action = #selector(changeCreationAction(_:))
         actionPicker.setAccessibilityLabel(actionText(.openingEnabled))
+        actionPicker.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        actionPicker.cell?.lineBreakMode = .byTruncatingTail
         actionPopUp = actionPicker
         let chooseApp = CreationButton(title: actionText(.chooseApp), target: self, action: #selector(chooseCreationApp(_:)))
         chooseApp.bezelStyle = .rounded; chooseApp.controlSize = .small
+        chooseApp.imagePosition = .imageLeading
+        chooseApp.imageScaling = .scaleProportionallyDown
+        chooseApp.setAccessibilityIdentifier("creation.chooseApplication")
+        chooseApp.cell?.lineBreakMode = .byTruncatingMiddle
+        chooseApp.widthAnchor.constraint(lessThanOrEqualToConstant: 200).isActive = true
         chooseAppButton = chooseApp
         let actions = NSStackView(views: [actionPicker, chooseApp])
         actions.orientation = .horizontal; actions.spacing = 8; actions.detachesHiddenViews = true
@@ -1025,6 +1066,8 @@ extension CustomFileSavePanelController: NSWindowDelegate {
         }
 
         clearDocumentPreview()
+        applicationIconTask?.cancel(); applicationIconTask = nil
+        presentedApplication = nil; creationApplications = []
         actionRow = nil; actionPopUp = nil; chooseAppButton = nil; editContentButton = nil
         contentContainer = nil; textScrollView = nil; temporaryApplication = nil; pendingFollowUp = nil
         directoryPicker?.cancel(nil)

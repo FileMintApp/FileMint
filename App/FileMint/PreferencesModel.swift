@@ -74,6 +74,9 @@ final class PreferencesModel: ObservableObject {
         CustomFileSavePanelController.shared.updateFeatures(preferences)
     }
     private func configureCreationPanel() {
+        CustomFileSavePanelController.shared.loadApplicationIcon = { application in
+            await CreationApplicationPresentation.icon(for: application)
+        }
         CustomFileSavePanelController.shared.makeDocumentPreview = { template, assets, language in
             let surface = TemplatePreviewSurface()
             surface.show(template, assets: assets, language: language, capturedAt: CreationContentResolver.exampleDate)

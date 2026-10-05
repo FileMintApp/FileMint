@@ -22,6 +22,11 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   result side-by-side; conversion never displays a fabricated compressed size.
   The creation panel uses a filename-first form, destination and content with
   persistent labels, familiar keyboard shortcuts and adaptive native fields.
+- A selected post-creation application shows its native icon beside its name in
+  the template editor and creation panel, including an unsaved temporary choice.
+  Resolve only an explicitly selected local reference; an unavailable application
+  or portable hint keeps its name and uses a generic application icon. Icons are
+  decorative, add no focus stop, and perform no lookup while opening is disabled.
 - No looping animation, eager model loading, remote assets or extra UI library.
   Use a single sidebar material at most, with native reduce-transparency behavior;
   the remaining surfaces are inexpensive adaptive colors.

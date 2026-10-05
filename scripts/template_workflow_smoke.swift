@@ -121,7 +121,50 @@ final class TemplateWorkflowSmoke: NSObject, NSApplicationDelegate {
         missing.show(damaged,assets:assets,language:.chinese,capturedAt:.now)
         try await wait { missing.state=="invalid" }
         missing.close()
+        try await testApplicationIcons(model: model, root: root, assets: assets)
         model.setCreationFeature(opening:false,preview:false)
+    }
+    private func testApplicationIcons(model: PreferencesModel, root: URL, assets: DocumentTemplateStore) async throws {
+        let captured = try await Task.detached {
+            try OpenWithApplicationAccess.capture(URL(fileURLWithPath: "/System/Applications/TextEdit.app"))
+        }.value
+        let application = CreationApplication(id: captured.id,
+            hint: .init(bundleIdentifier: captured.bundleIdentifier, displayName: captured.name),
+            url: captured.url, bookmark: captured.bookmark)
+        guard let expected = await CreationApplicationPresentation.icon(for: application) else {
+            throw CheckFailure(message: "Selected TextEdit icon unavailable")
+        }
+        var invalid = application
+        invalid.hint.bundleIdentifier = "invalid.editor"
+        try check(await CreationApplicationPresentation.icon(for: invalid) == nil,
+                  "An invalid local identity supplied an application icon")
+        let original = model.preferences
+        var preferences = original
+        preferences.creationOpeningEnabled = true
+        preferences.creationApplications = [application]
+        preferences.templates[0].afterCreation = .init(.openWithApplication,
+            application: application.hint, localApplicationID: application.id)
+        model.preferences = preferences
+        try check(model.save(), "Could not prepare selected-app icon fixture")
+        let controller = CustomFileSavePanelController.shared
+        controller.present(in: root, preferences: preferences, templateID: preferences.templates[0].id,
+                           documentTemplates: assets)
+        let panel = NSApp.windows.first { $0.identifier?.rawValue == "io.github.daigua.filemint.custom-file" }
+        defer { panel?.close(); model.preferences = original; _ = model.save() }
+        func button(in view: NSView?) -> NSButton? {
+            guard let view else { return nil }
+            if let button = view as? NSButton, button.accessibilityIdentifier() == "creation.chooseApplication" { return button }
+            return view.subviews.lazy.compactMap { button(in: $0) }.first
+        }
+        guard let selected = button(in: panel?.contentView) else { throw CheckFailure(message: "Missing selected-app button") }
+        try await wait { selected.image?.tiffRepresentation == expected.tiffRepresentation }
+        try check(selected.title == application.hint.displayName && !selected.isHiddenOrHasHiddenAncestor,
+                  "Saved application did not show its name and native icon")
+        model.setCreationFeature(opening: false)
+        try check(selected.isHiddenOrHasHiddenAncestor && selected.image == nil, "Disabled opening retained application presentation")
+        model.setCreationFeature(opening: true)
+        try await wait { selected.image?.tiffRepresentation == expected.tiffRepresentation }
+        print("PASS application presentation: native icon/name, invalid-identity fallback, gate hide and restoration"); fflush(nil)
     }
     private func testReviewRegressions(model: PreferencesModel, store: FileMintPreferencesStore, assets: DocumentTemplateStore) async throws {
         let original = model.preferences, before = try Data(contentsOf: store.location!)
