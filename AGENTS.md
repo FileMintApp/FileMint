@@ -8,15 +8,16 @@ Use SPEC-first, demand-loaded context.
    Shared files require the rules for the behavior being edited, not every domain.
 3. Read [HARNESS](specs/HARNESS.md) when choosing or running verification; load
    detailed checklists only for the affected surfaces.
-4. Load [AI Playbook](docs/AI_PLAYBOOK.md) only for cross-domain features, handoff,
-   resuming a task or changing this workflow. Small fixes need no task document.
-5. Do not preload domain, history, roadmap, research, archive or tool files.
-   Follow links only when the task needs them.
+4. Read [AI Playbook](docs/AI_PLAYBOOK.md) for cross-domain work, handoff, resume
+   or workflow edits.
+5. Do not preload domain/history/roadmap/research/archive/tool files; follow links
+   only when needed.
 
 For “构建发布”, follow [Distribution](docs/DISTRIBUTION.md) through remote checks.
 
 Keep these invariants across all tasks:
 
+- Work in the primary checkout; use worktrees only when the user requests one.
 - Update the owning domain SPEC before intentional product behavior changes;
   bug fixes restore the existing contract. Add regression coverage for behavior.
 - Choose checks by task intent and actual changes using HARNESS. Analysis/planning

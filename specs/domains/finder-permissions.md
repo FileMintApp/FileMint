@@ -113,6 +113,16 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   that cleanup. Validate the downloaded release itself in Finder when checking
   a user-reported installation regression.
 
+## Template workflow access boundaries
+
+- Copy/preview/exchange do not widen observation roots or Finder folder scope.
+  Preview touches only a selected validated asset and owned private snapshots.
+  Package pick/save grants span their worker operations and are released once.
+- The shared creation panel reports successful receipts to an injected app-owned
+  executor; Finder keeps its existing single-use transport and captured directory.
+  Hold destination grants through native handoff, and keep settings closed during
+  cold/warm Finder creation. No installed app or real preferences are QA fixtures.
+
 ## Working context
 
 - Implementation entry points: `FinderSyncExtension/`, `SharedUI/FolderAccess.swift`, `FolderScope.swift`, `FileMenuAction.swift`, `QuickCreationTicket.swift`; folder persistence in `Preferences.swift` and `PreferencesModel.swift`.

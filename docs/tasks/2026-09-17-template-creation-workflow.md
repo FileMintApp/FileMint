@@ -1,7 +1,7 @@
 # Task: 多模板、复制与预览、文件名规则、创建后打开
 
 Status: planned
-Next action: T1 的实施与验证统一移至[同格式多模板任务](2026-09-22-multiple-templates.md)。本文保留 T2/T3/T4 的未来规划，避免重复维护 T1 状态。
+Next action: T1 的实施与验证见[同格式多模板任务](2026-09-22-multiple-templates.md)。T2/T4 与新增模板导入导出统一转至[2026-10-05 交互与实施规划](2026-10-05-template-workflow.md)；本文仅继续承接 T3 文件名规则，下面 T2/T4 内容作为历史方案保留。
 
 ## Objective and scope
 
@@ -70,7 +70,7 @@ Dependencies: none
 
 ## T2 — 模板复制与预览
 
-Status: planned
+Status: superseded by [2026-10-05 template workflow](2026-10-05-template-workflow.md)
 Dependencies: T1
 
 - [ ] 复制内置或自定义模板，在编辑草稿中生成新 ID，沿用后缀、默认文件名与正文，名称加本地化副本标记；保存时插入源模板之后并启用，默认模板不随复制改变。取消不添加模板。
@@ -99,7 +99,7 @@ Dependencies: T1, T2
 
 ## T4 — 创建后打开
 
-Status: planned
+Status: superseded by [2026-10-05 template workflow](2026-10-05-template-workflow.md)
 Dependencies: 无功能依赖；按本任务顺序在 T3 后进行
 
 - [ ] 定义单一创建后动作：无动作、在 Finder 显示、默认应用打开、指定编辑器打开。旧 `revealAfterCreation=true/false` 分别迁移为显示/无动作；不主动给旧用户开启打开功能。
@@ -134,7 +134,7 @@ Environment: 本地 macOS 工作区；本次仅规划文档，无产品代码变
 
 ## Handoff
 
-- Remaining work: T1–T4 全部产品实现与验收；各阶段完成时在本文件记录证据和下一步。
+- Remaining work: 本文继续承接 T3 文件名规则。T1 见其独立任务；T2/T4 及模板交换见 2026-10-05 任务，不再按本文旧顺序实施。
 - Files currently changed: 本任务、`docs/ROADMAP.md` 的任务链接。
 - Known limitations / native checks still needed: 原生模板切换、Finder 标签与连续创建、编辑器打开及沙盒访问全部尚未验证。
-- Next action and minimum context: 阅读本任务 T1，核对工作区，加载模板/创建/启动契约；涉及 Finder 时再加载其契约。无需加载其他任务历史。
+- Next action and minimum context: 本次模板复制、预览、创建后打开和导入导出从 [2026-10-05 任务](2026-10-05-template-workflow.md)继续；仅处理文件名规则时阅读本文 T3。

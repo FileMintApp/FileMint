@@ -37,6 +37,10 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
     public var monitoredFolderBookmarks: [String: Data]
     public var collisionStrategy: NameCollisionStrategy
     public var revealAfterCreation: Bool
+    public var creationOpeningEnabled = false
+    public var templatePreviewEnabled = false
+    public var creationApplications: [CreationApplication] = []
+    public var lastTemplateImportTransactionID: UUID? = nil
     public var favoritesFirst: Bool
     public var language: AppLanguage
     public var appearance: AppAppearance
@@ -68,7 +72,11 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         automaticallyChecksForUpdates: Bool = true,
         lastUpdateCheckAttempt: Date? = nil
     ) {
-        self.templates = templates
+        self.templates = templates.map { original in
+            var template = original
+            template.afterCreation = template.afterCreation ?? .basic(reveal: revealAfterCreation)
+            return template
+        }
         self.monitoredFolderURLs = monitoredFolderURLs
         self.monitoredFolderBookmarks = [:]
         self.collisionStrategy = collisionStrategy
@@ -91,6 +99,7 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         case monitoredFolderBookmarks
         case collisionStrategy
         case revealAfterCreation
+        case creationOpeningEnabled, templatePreviewEnabled, creationApplications, lastTemplateImportTransactionID
         case favoritesFirst
         case language
         case appearance
@@ -135,6 +144,26 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         if collisionStrategy == .replace { collisionStrategy = .increment }
         revealAfterCreation = (try? container.decode(Bool.self, forKey: .revealAfterCreation))
             ?? defaults.revealAfterCreation
+        let basicAction = TemplateCreationAction.basic(reveal: revealAfterCreation)
+        templates = templates.map { original in
+            var template = original
+            template.afterCreation = template.afterCreation ?? basicAction
+            return template
+        }
+        creationOpeningEnabled = (try? container.decode(Bool.self, forKey: .creationOpeningEnabled)) ?? false
+        templatePreviewEnabled = (try? container.decode(Bool.self, forKey: .templatePreviewEnabled)) ?? false
+        // A malformed registry entry cannot discard its valid neighbors.
+        if var entries = try? container.nestedUnkeyedContainer(forKey: .creationApplications) {
+            var ids = Set<UUID>()
+            while !entries.isAtEnd {
+                let entryDecoder = try entries.superDecoder()
+                if let entry = try? CreationApplication(from: entryDecoder), ids.insert(entry.id).inserted,
+                   entry.url.isFileURL, !entry.bookmark.isEmpty, !entry.hint.bundleIdentifier.isEmpty {
+                    creationApplications.append(entry)
+                }
+            }
+        }
+        lastTemplateImportTransactionID = try? container.decode(UUID.self, forKey: .lastTemplateImportTransactionID)
         favoritesFirst = (try? container.decode(Bool.self, forKey: .favoritesFirst)) ?? defaults.favoritesFirst
         language = (try? container.decode(AppLanguage.self, forKey: .language)) ?? defaults.language
         appearance = (try? container.decode(AppAppearance.self, forKey: .appearance)) ?? .system
@@ -196,14 +225,15 @@ public enum DefaultFolders {
     }
 }
 
-public enum FileMintPreferencesStoreError: Error, LocalizedError {
-    case tooLarge, invalidFile, recoveryRequired
+public enum FileMintPreferencesStoreError: Error, Equatable, LocalizedError {
+    case tooLarge, invalidFile, recoveryRequired, stalePreferences
 
     public var errorDescription: String? {
         switch self {
         case .tooLarge: "The settings file is too large. Keep it below 32 MiB."
         case .invalidFile: "The settings file is damaged or unavailable."
         case .recoveryRequired: "Saved settings could not be read. Import a valid settings file to recover them; the original is preserved."
+        case .stalePreferences: "Settings changed while saving. Reload the current settings and try again."
         }
     }
 }
@@ -215,11 +245,16 @@ public struct FileMintPreferencesLoadResult {
 
 public final class FileMintPreferencesStore {
     public static let maximumBytes = 32 * 1024 * 1024
+    // The main app is the sole preferences writer. Share this lock across its
+    // store instances, including background imports and folder authorization.
+    private static let writeLock = NSRecursiveLock()
     private let fileURL: URL?
 
     public init(fileURL: URL? = nil) {
         self.fileURL = fileURL ?? FileMintStorage.directory.appendingPathComponent("preferences.json")
     }
+
+    public var location: URL? { fileURL }
 
     public static func decode(_ data: Data) throws -> FileMintPreferences {
         guard data.count <= maximumBytes else { throw FileMintPreferencesStoreError.tooLarge }
@@ -258,7 +293,35 @@ public final class FileMintPreferencesStore {
         return try decode(data)
     }
 
-    public func save(_ preferences: FileMintPreferences, recoveringInvalidFile: Bool = false) throws {
+    func withExclusiveAccess<T>(_ operation: () throws -> T) rethrows -> T {
+        Self.writeLock.lock()
+        defer { Self.writeLock.unlock() }
+        return try operation()
+    }
+
+    public func update(_ mutation: (inout FileMintPreferences) throws -> Void) throws {
+        try withExclusiveAccess {
+            let loaded = loadWithStatus()
+            guard !loaded.requiresRecovery else { throw FileMintPreferencesStoreError.recoveryRequired }
+            var candidate = loaded.preferences
+            try mutation(&candidate)
+            try write(candidate, recoveringInvalidFile: false)
+        }
+    }
+
+    public func save(_ preferences: FileMintPreferences, recoveringInvalidFile: Bool = false,
+                     ifUnchangedFrom expected: FileMintPreferences? = nil) throws {
+        try withExclusiveAccess {
+            if let expected {
+                let current = loadWithStatus()
+                guard !current.requiresRecovery else { throw FileMintPreferencesStoreError.recoveryRequired }
+                guard current.preferences == expected else { throw FileMintPreferencesStoreError.stalePreferences }
+            }
+            try write(preferences, recoveringInvalidFile: recoveringInvalidFile)
+        }
+    }
+
+    private func write(_ preferences: FileMintPreferences, recoveringInvalidFile: Bool) throws {
         guard let fileURL else {
             throw NSError(domain: "FileMintPreferences", code: 1, userInfo: [NSLocalizedDescriptionKey:
                 "FileMint could not access its shared settings folder. Reinstall the app and try again."])
@@ -277,8 +340,18 @@ public final class FileMintPreferencesStore {
         let backup = invalidExisting ? directory.appendingPathComponent("preferences-recovery-\(UUID().uuidString).json") : nil
         if let backup { try StagedFileEntry.renameExclusive(fileURL, to: backup) }
         do {
-            try data.write(to: fileURL, options: .atomic)
-            try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: fileURL.path)
+            // Set private permissions before publication. A post-rename chmod
+            // failure must not report a failed save after replacing preferences.
+            let staging = directory.appendingPathComponent(".preferences-write-" + UUID().uuidString, isDirectory: true)
+            try FileManager.default.createDirectory(at: staging, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
+            defer { try? FileManager.default.removeItem(at: staging) }
+            let output = staging.appendingPathComponent("preferences.json")
+            try data.write(to: output, options: .withoutOverwriting)
+            try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: output.path)
+            let status = output.withUnsafeFileSystemRepresentation { source in
+                fileURL.withUnsafeFileSystemRepresentation { destination in rename(source!, destination!) }
+            }
+            guard status == 0 else { throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno)) }
         } catch {
             if let backup { try? StagedFileEntry.renameExclusive(backup, to: fileURL) }
             throw error

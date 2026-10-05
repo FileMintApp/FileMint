@@ -54,5 +54,27 @@
 	<string>z1oSqYAfKIkNBXs+vhIppYE38y87EUiz5mA+v7b+GWs=</string>
 	<key>SUVerifyUpdateBeforeExtraction</key>
 	<true/>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.zip-archive</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>FileMint Template Package</string>
+			<key>UTTypeIdentifier</key>
+			<string>io.github.daigua.filemint.templates</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>filemint-templates</string>
+				</array>
+				<key>public.mime-type</key>
+				<string>application/x-filemint-templates</string>
+			</dict>
+		</dict>
+	</array>
 </dict>
 </plist>

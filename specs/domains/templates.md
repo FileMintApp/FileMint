@@ -96,6 +96,52 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   copies remain unchanged; unavailable assets create no output and give an
   actionable re-import message. Ordinary file associations are unchanged.
 
+## Copy, preview and template exchange
+
+- Copy opens an unsaved complete draft with a new custom identity and localized
+  Copy suffix. Save enables and inserts it after the source (or appends if the
+  source disappeared); Cancel changes nothing. Preserve icons, group, suffix,
+  content, action and immutable Office reference. Preserve explicit defaults; if
+  copying an earlier disabled source would change an implicit default, pin the
+  previous effective default. Copies survive restoration;
+  delete managed assets only after their last saved reference is removed.
+- Template Preview is an independent local default-off gate. When off, remove
+  preview controls and perform no preview work. When on, text previews display
+  exact resolved UTF-8 with a labelled fixed UTC example; Office previews use
+  native Quick Look with one validated, private read-only snapshot per surface.
+  Selection changes, disable and close cancel work and remove owned snapshots.
+  Distinguish unavailable providers from invalid assets; neither edits originals.
+- Each template owns none, revealInFinder, openWithDefaultApp or
+  openWithApplication. Selected apps use a separate validated local registry or
+  an inert portable hint. Hidden controls must round-trip these fields. Built-in
+  restoration resets only built-ins to the current basic reveal preference.
+- `.filemint-templates` version 1 is a stored-entry ZIP with strict manifest.json
+  (format=filemint.templates, schemaVersion=1, templates, payloads,
+  defaultTemplateIDs) and digest-named payloads. Array order is relative order;
+  include exact UTF-8/Office bytes, metadata, enabled state and portable action
+  hints. Exclude local registry/asset IDs, paths, bookmarks, gates and preferences.
+- Limits: 100 templates/payloads, 64 Office payloads, 4 MiB manifest, 8 MiB total
+  text, 128 MiB archive/outer payload, 256 MiB combined Office expansion; retain
+  each Office validator limit and 32 MiB settings cap. Reject unknown/duplicate
+  keys, invalid references/digests, invalid UTF-8/Office, unreferenced entries,
+  encrypted/split/ZIP64/deflated outer entries, links, unsafe names, overlapping
+  ranges and header/CRC mismatches before any managed mutation. Never extract.
+- Required import review offers Add, Skip or Save as copy, never replacement.
+  Identical portable fields/content skip; changed ID/name conflicts copy. Suffix
+  alone is no conflict. Reserved/used identities remap; copies receive unique
+  localized names. Preserve local order/defaults/tombstones and append accepted
+  entries. Optional default adoption fills only suffixes without valid explicit
+  defaults and reviews effective changes; all-skipped imports change nothing.
+- Validate a bounded immutable input snapshot, bind review to saved settings,
+  and require renewed review if they changed. Journal fresh asset IDs before
+  exclusive publication, atomically save one merged configuration plus transaction
+  marker, then notify once. Roll back only transaction-owned assets. Recovery
+  reads exact journal entries, retains referenced assets and preserves corrupt or
+  replaced evidence; never scans. Block template mutations during commit/recovery.
+- Export selected/enabled/all/custom scopes through a native save panel, validating
+  complete bytes on a worker before atomic publication. Cancel/failure preserves
+  existing destination bytes. Packages never enable features or discover/open apps.
+
 ## Working context
 
 - Implementation entry points: `CorePackage/Sources/FileMintCore/FileTemplate.swift`, `DocumentTemplateStore.swift`, `OfficeDocumentValidator.swift`, `TemplateRenderer.swift`, `CustomFileDraft.swift`; type editing in `App/FileMint/TypesPane.swift` and `PreferencesModel.swift`.

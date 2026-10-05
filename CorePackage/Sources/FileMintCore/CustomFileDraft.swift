@@ -164,6 +164,8 @@ public struct CustomFileDraft: Equatable, Sendable {
     public private(set) var content: String
     public private(set) var hasEditedContent: Bool
     public private(set) var selectedTemplateID: String?
+    public let capturedAt: Date
+    public var actionSelection: CreationActionSelection = .followTemplate
     private var defaultTemplateIDs: [String: String]
 
     public var normalizedFileExtension: String? {
@@ -175,9 +177,11 @@ public struct CustomFileDraft: Equatable, Sendable {
         content: String? = nil,
         hasEditedContent: Bool = false,
         templates: [FileTemplate] = TemplateCatalog.builtInTemplates,
-        defaultTemplateIDs: [String: String] = [:]
+        defaultTemplateIDs: [String: String] = [:],
+        capturedAt: Date = Date()
     ) {
         self.extensionInput = extensionInput
+        self.capturedAt = capturedAt
         self.hasEditedContent = hasEditedContent
         self.defaultTemplateIDs = defaultTemplateIDs
         let selected = TemplateCatalog.defaultTemplate(forExtension: extensionInput, in: templates, defaults: defaultTemplateIDs)

@@ -3,6 +3,45 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Template workflow — 2026-10-05 (isolated source verification)
+
+Primary checkout `main`, base `64820a9` plus the uncommitted
+[template workflow task](tasks/2026-10-05-template-workflow.md), macOS 27.2 arm64,
+Swift 6.4; minimum deployment target 13.0.
+
+- `make verify` passed 210 Core tests, 14 image tests, 5/5 JSON cases, 10 CLI
+  regressions and offline release/appcast/entitlement checks. Unsigned main app
+  and Finder extension build passed.
+- A disposable sandboxed fixture using production model/preview/executor code
+  passed gate persistence/failure rollback, copy/reference cleanup, hidden-action
+  retention, actual receiver handoff, stale gate/duplicate/replaced-file rejection
+  and bounded preview cancellation/cleanup.
+- DOCX/XLSX native providers returned unavailable. Metadata fallback and unchanged
+  original bytes were observed; native content rendering/offline provider behavior
+  remains unverified. TextEdit signing passed. Installed VS Code's sealed
+  `workbench.html` is modified, so strict validation rejected its editing profile.
+- Bilingual native view-cache renders were collected; incomplete AppKit cached
+  rendering and unavailable desktop automation do not establish live keyboard,
+  VoiceOver, editor-content or installed Finder acceptance. macOS 13 and quit/
+  updater interaction remain not run. No installation or publication occurred.
+- Full commands, source digest, logs and remaining acceptance IDs are recorded
+  in the task. These results are source/fixture evidence, not a public release.
+
+### Review-fix follow-up — 2026-10-05
+
+- Fixed concurrent preferences/import overwrites, file-grant-only export failure,
+  submission of stale failed-review plans, and saveable but unexportable app actions.
+- `make verify` passed 214 Core tests, 14 image tests, 5/5 public cases, 10 CLI
+  regressions and the existing release checks; unsigned app/extension build passed.
+- The production-model fixture reproduced a real settings-limit replan failure:
+  the old plan cannot commit, and correcting the choice permits a valid import.
+  Busy-save rollback and invalid-app rejection preserve persisted settings.
+- A file-only sandbox fixture passed both new export and atomic overwrite with
+  sibling writes denied. Interactive Save-panel and installed Finder acceptance
+  remain unverified; earlier editor/provider limitations are unchanged.
+- Source identity, logs and exact boundaries are in the task's
+  [review-fix evidence](tasks/2026-10-05-template-workflow.md#code-review-fixes--2026-10-05).
+
 ## Built-in blank Office templates — 2026-10-03
 
 Checked on macOS 27.2, arm64, `85535ff` plus the uncommitted

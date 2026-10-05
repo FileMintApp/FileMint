@@ -133,6 +133,37 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   is disabled until it completes. Draft inputs are locked during the write so
   completion cannot discard edits made after submission. An actionable error keeps the draft intact.
 
+## Frozen content and post-creation actions
+
+- Capture one UTC timestamp per draft/request and share the pure content resolver
+  between preview and writer. Unedited template-mode content follows normalized
+  filename and selected source; an actual edit becomes exact verbatim bytes.
+  Filename, template and visibility changes never resample time or discard edits.
+  Collisions still arbitrate exclusively and render the actual candidate name.
+- Create and Open is default off. Off uses the legacy reveal/no-action preference.
+  On resolves an explicit temporary override, exact selected template action, or
+  untemplated fallback. New panels Follow Template; that follows template changes,
+  while explicit overrides stick until reset. Cancel/finish never saves overrides.
+- Hide action controls when off; label Create and Open only for an effective open
+  action. Preview off keeps the editable text field and Office notice; on exposes
+  read-only result/Edit Content without changing output or image confirmation.
+- Both creation routes inject one app-owned completion executor. Snapshot action,
+  application and gate generation at submission, use only the successful receipt,
+  and dispatch at most once while holding access/pending-work guards. A successful
+  disable advances the generation; off-origin or off/on-stale requests cannot open.
+- Before dispatch/retry, check created-file identity/type and app bookmark/bundle
+  identity. Default handlers must pass a positive editing policy. Initial text
+  profiles are TextEdit (com.apple.TextEdit) and VS Code (com.microsoft.VSCode),
+  subject to recorded native acceptance. Validate Apple signing for TextEdit and
+  Microsoft team UBF8T346G9 for VS Code; a declared bundle ID alone is not authority.
+  Only actual UTF-8 text receipts use these profiles, never binary/Office bytes.
+  Unverified routes retain the saved file
+  and ask for an editor; never use shell/terminal/default fallbacks for active content.
+- Opening failure closes the saved draft and offers Reveal, retry or another app.
+  Retry uses a receipt and cannot invoke the writer. Missing/replaced files cannot
+  be recreated or silently substituted. Quit/restart guards include dispatch work
+  after the panel closes. Native callback success proves handoff only.
+
 ## Working context
 
 - Implementation entry points: `FilenamePolicy.swift`, `TemplateRenderer.swift`, `CustomFileDraft.swift`, `FileCreationService.swift`, `BinaryFileWriter.swift`, `CreationRoute.swift`, `QuickCreationTicket.swift`, `ClipboardImageEncoder.swift`; `SharedUI/CustomFileSavePanelController.swift`, `App/FileMint/PlainTextEditor.swift` and creation handling in `PreferencesModel.swift`.

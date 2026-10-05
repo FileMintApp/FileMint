@@ -34,6 +34,8 @@ enum OpenWithApplicationAccess {
         }
     }
 
+    static func validatedIdentifier(at url: URL) throws -> String { try bundleIdentifier(at: url) }
+
     private static func bundleIdentifier(at url: URL) throws -> String {
         guard OpenWithPolicy.isLocalFileURL(url), url.pathExtension.lowercased() == "app",
               (try? url.resourceValues(forKeys: [.isApplicationKey]))?.isApplication == true,

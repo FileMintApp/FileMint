@@ -183,10 +183,31 @@ struct CreationSettingsPane: View {
                     }
                 }
                 SettingsSection(title: model.text(.afterCreation)) {
-                    PreferenceRow(title: model.text(.revealCreatedFile), detail: model.text(.afterCreationHint)) {
-                        Toggle(model.text(.revealCreatedFile), isOn: $model.preferences.revealAfterCreation)
+                    PreferenceRow(title: model.workflowText(.openingEnabled), detail: model.workflowText(.openingHint)) {
+                        Toggle(model.workflowText(.openingEnabled), isOn: Binding(
+                            get: { model.preferences.creationOpeningEnabled },
+                            set: { model.setCreationFeature(opening: $0) }))
                             .labelsHidden().toggleStyle(SmallSettingsSwitchStyle())
-                            .onChange(of: model.preferences.revealAfterCreation) { _ in model.save() }
+                            .accessibilityIdentifier("settings.creationOpeningEnabled")
+                    }
+                    Divider()
+                    PreferenceRow(title: model.workflowText(.previewEnabled), detail: model.workflowText(.previewHint)) {
+                        Toggle(model.workflowText(.previewEnabled), isOn: Binding(
+                            get: { model.preferences.templatePreviewEnabled },
+                            set: { model.setCreationFeature(preview: $0) }))
+                            .labelsHidden().toggleStyle(SmallSettingsSwitchStyle())
+                            .accessibilityIdentifier("settings.templatePreviewEnabled")
+                    }
+                    Divider()
+                    PreferenceRow(title: model.text(.revealCreatedFile), detail: model.preferences.creationOpeningEnabled ? model.workflowText(.basicRevealHint) : model.text(.afterCreationHint)) {
+                        Toggle(model.text(.revealCreatedFile), isOn: Binding(
+                            get: { model.preferences.revealAfterCreation }, set: { value in
+                                let previous = model.preferences
+                                model.preferences.revealAfterCreation = value
+                                if !model.save() { model.preferences = previous }
+                            }))
+                            .labelsHidden().toggleStyle(SmallSettingsSwitchStyle())
+
                     }
                 }
                 Button(model.text(.manageTemplates)) { model.selectedPane = .fileTypes }

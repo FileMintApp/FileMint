@@ -17,6 +17,7 @@ public struct FileCreationRequest: Sendable {
     public var collisionStrategy: NameCollisionStrategy
     public var contentMode: FileContentMode
     public var fileData: Data?
+    public var capturedAt: Date?
 
     public init(
         destinationDirectory: URL,
@@ -24,7 +25,8 @@ public struct FileCreationRequest: Sendable {
         requestedFileName: String? = nil,
         collisionStrategy: NameCollisionStrategy = .increment,
         contentMode: FileContentMode = .template,
-        fileData: Data? = nil
+        fileData: Data? = nil,
+        capturedAt: Date? = nil
     ) {
         self.destinationDirectory = destinationDirectory
         self.template = template
@@ -32,12 +34,20 @@ public struct FileCreationRequest: Sendable {
         self.collisionStrategy = collisionStrategy
         self.contentMode = contentMode
         self.fileData = fileData
+        self.capturedAt = capturedAt
     }
 }
+
+public enum CreatedContentKind: String, Codable, Sendable { case text, officeDocument, binary }
 
 public struct FileCreationResult: Equatable, Sendable {
     public var createdURL: URL
     public var usedCollisionFallback: Bool
+    public var identity: CreatedFileIdentity?
+    public var contentKind: CreatedContentKind
+    public init(createdURL: URL, usedCollisionFallback: Bool, identity: CreatedFileIdentity? = nil, contentKind: CreatedContentKind = .text) {
+        self.createdURL = createdURL; self.usedCollisionFallback = usedCollisionFallback; self.identity = identity; self.contentKind = contentKind
+    }
 }
 
 public enum FileMintError: Error, LocalizedError {
@@ -92,7 +102,7 @@ public final class FileCreationService {
             guard request.template.fileExtension == reference.kind.rawValue else { throw DocumentTemplateError.unavailable }
             let data = try documentTemplates.data(for: reference)
             let name = FilenamePolicy.fileName(requestedName, applyingFileExtension: reference.kind.rawValue)!
-            return try BinaryFileWriter.create(data, in: request.destinationDirectory, name: name, collision: request.collisionStrategy)
+            return try BinaryFileWriter.create(data, in: request.destinationDirectory, name: name, collision: request.collisionStrategy, contentKind: .officeDocument)
         }
         if let data = request.fileData {
             return try BinaryFileWriter.create(data, in: request.destinationDirectory,
@@ -105,19 +115,18 @@ public final class FileCreationService {
         var index = 1
         while true {
             let targetURL = FilenamePolicy.candidateURL(for: naiveURL, index: index)
-            let content = request.contentMode == .verbatim ? request.template.content : TemplateRenderer.render(
-                request.template,
-                context: TemplateContext(fileName: targetURL.lastPathComponent, createdAt: now)
-            )
+            let content = CreationContentResolver.text(template: request.template, fileName: targetURL.lastPathComponent,
+                mode: request.contentMode, capturedAt: request.capturedAt ?? now)
             let data = Data(content.utf8)
 
+            var identity: CreatedFileIdentity?
             if request.collisionStrategy == .replace {
                 // Atomic rename replaces a symlink itself, never follows its target.
                 if let type = try? fileManager.attributesOfItem(atPath: targetURL.path)[.type] as? FileAttributeType,
                    type == .typeDirectory {
                     throw FileMintError.destinationIsNotDirectory(targetURL)
                 }
-                try data.write(to: targetURL, options: .atomic)
+                identity = try BinaryFileWriter.replaceText(data, at: targetURL)
             } else {
                 // O_EXCL is the collision decision. A separate existence check cannot
                 // prevent another process from creating the same name before this one.
@@ -152,9 +161,11 @@ public final class FileCreationService {
                         offset += count
                     }
                 }
+                var written = stat()
+                if fstat(descriptor, &written) == 0 { identity = CreatedFileIdentity(written) }
                 completed = true
             }
-            return FileCreationResult(createdURL: targetURL, usedCollisionFallback: index > 1)
+            return FileCreationResult(createdURL: targetURL, usedCollisionFallback: index > 1, identity: identity)
         }
     }
 }

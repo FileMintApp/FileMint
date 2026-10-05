@@ -93,6 +93,12 @@ check actual exit codes, output formats, outside-cwd execution and concurrent is
 A deliberately failing CLI must be observed as such for its regression test to pass.
 Never silently skip a missing executable, build failure, timeout or signal exit.
 
+`TemplateWorkflowTests` covers gates/migration, captured UTC bytes, full-field
+copy/default preservation, action provenance and created-file identity.
+`TemplatePackageTests` covers an independently encoded V1 container, malformed
+inputs, semantic revisions, merge/default rules and interrupted import recovery.
+The public JSON Harness stays unchanged.
+
 Product test entry points remain `FileCreationHarnessTests`, `FocusedCreationTests`
 and `StartupPreferencesTests`. See [update verification](updates.md) for update suites.
 Harness self-tests prove the checker behaves correctly, not additional product coverage.

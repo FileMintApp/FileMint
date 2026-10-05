@@ -81,6 +81,17 @@ Terminal, iTerm2 and Ghostty use their published macOS folder Services with a pr
   file contents, settings-window ownership or existing creation behavior. No shell
   commands, AppleScript, directory crawling, or path/content logging.
 
+## Creation application registry
+
+- Template post-creation applications are selected explicitly and stored in a
+  separate registry; selection never exposes a Finder menu entry or changes file
+  associations. Reuse bounded capture/bookmark/bundle validation helpers.
+- Imported bundle/name hints are inert unless they match an already selected,
+  freshly validated local reference. No application crawling or implicit grant.
+- Creation uses the positive editing policy and receipt executor described in
+  [Creation](creation.md#frozen-content-and-post-creation-actions). Finder selection
+  opening retains its own existing policy, tickets and menu behavior.
+
 ## Working context
 
 - Core: `OpenWithApplication.swift`, `Preferences.swift`, `FileMenuAction.swift`,

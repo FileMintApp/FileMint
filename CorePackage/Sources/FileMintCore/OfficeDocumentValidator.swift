@@ -36,12 +36,18 @@ public enum DocumentTemplateError: Error, LocalizedError {
 public enum OfficeDocumentValidator {
     public static let maximumBytes = 64 * 1024 * 1024
 
+    public static func expandedByteCount(_ data: Data) throws -> Int {
+        guard data.count <= maximumBytes else { throw DocumentTemplateError.tooLarge }
+        return try OfficeZIP(data: data).entries().reduce(0) { $0 + $1.expanded }
+    }
+
     public static func validate(_ data: Data, kind: OfficeDocumentKind) throws {
         guard data.count <= maximumBytes else { throw DocumentTemplateError.tooLarge }
         let zip = OfficeZIP(data: data)
         let entries = try zip.entries()
         var xml: [String: OfficeXML] = [:]
         for entry in entries {
+            try Task.checkCancellation()
             let content = try zip.content(entry)
             if entry.name.lowercased().hasSuffix("vbaproject.bin") { throw DocumentTemplateError.unsupported }
             if entry.name.hasSuffix(".xml") || entry.name.hasSuffix(".rels") {

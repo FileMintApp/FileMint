@@ -64,7 +64,9 @@ struct MultipleTemplateTests {
         original.launchAtLogin = false
         original.monitoredFolderBookmarks = ["fixture": Data([1,2,3])]
         let decoded = try FileMintPreferencesStore.decode(JSONEncoder().encode(original))
-        #expect(decoded.templates.contains(template))
+        var migratedTemplate = template
+        migratedTemplate.afterCreation = .basic(reveal: true)
+        #expect(decoded.templates.contains(migratedTemplate))
         #expect(decoded.language == .chinese && !decoded.launchAtLogin && decoded.monitoredFolderBookmarks == original.monitoredFolderBookmarks)
         let renamed = try TemplateCatalog.customTemplate(name: "Config", fileExtension: "json", content: "keep", id: template.id,
             in: [template], suggestedFileName: "资料.tar.gz")

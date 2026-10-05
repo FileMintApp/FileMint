@@ -39,9 +39,7 @@ final class FolderAccess {
 
     static func persist(_ directory: URL) throws {
         let store = FileMintPreferencesStore()
-        var preferences = store.load()
-        try remember(directory, in: &preferences)
-        try store.save(preferences)
+        try store.update { try remember(directory, in: &$0) }
         DistributedNotificationCenter.default().post(
             name: Notification.Name(FileMintAppGroup.preferencesDidChangeNotification), object: nil
         )

@@ -9,6 +9,8 @@ struct TypesPane: View {
     @EnvironmentObject private var model: PreferencesModel
     @State private var selection: String?
     @State private var editor: TypeEditorDraft?
+    @State private var preview: FileTemplate?
+    @State private var exporting = false
     @State private var restoring = false
     @State private var removing = false
     @State private var draggedTemplateID: String?
@@ -16,14 +18,25 @@ struct TypesPane: View {
     @State private var hoveredTemplateID: String?
     private var dragAnimation: Animation? { reduceMotion ? nil : .easeInOut(duration: 0.18) }
 
+    init(selectionID: String? = nil) { _selection = State(initialValue: selectionID) }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
-                Button(model.text(.addType)) { editor = TypeEditorDraft() }
-                Button(model.text(.importDocumentTemplate)) { model.importDocumentTemplate() }
-                    .disabled(model.isImportingDocument)
-                if model.isImportingDocument { ProgressView().controlSize(.small) }
+                Button(model.text(.addType)) { editor = TypeEditorDraft(reveal: model.preferences.revealAfterCreation) }
+                Menu(model.workflowText(.importMenu)) {
+                    Button(model.workflowText(.importPackage)) { model.importTemplatePackage() }
+                    Button(model.text(.importDocumentTemplate)) { model.importDocumentTemplate() }
+                }.disabled(!model.templateMutationAllowed)
+                Button(model.workflowText(.exportPackage)) { exporting = true }.disabled(!model.templateMutationAllowed)
+                if model.isMutatingTemplates { ProgressView().controlSize(.small) }
                 Spacer()
+            }
+            if let recovery = model.templateRecoveryError {
+                HStack {
+                    Text(recovery).font(.callout).foregroundStyle(.secondary)
+                    Button(model.text(.retry)) { Task { await model.recoverTemplateTransactions() } }
+                }
             }
             ScrollView {
                 LazyVStack(spacing: 1) {
@@ -41,6 +54,16 @@ struct TypesPane: View {
                 Button(model.text(.editType)) {
                     if let type = model.preferences.templates.first(where: { $0.id == selection }) { editor = TypeEditorDraft(type) }
                 }.disabled(selection == nil)
+                Button(model.workflowText(.copy)) {
+                    if let type = model.preferences.templates.first(where: { $0.id == selection }) {
+                        editor = TypeEditorDraft(type, asCopy: true, copySuffix: model.workflowText(.copySuffix))
+                    }
+                }.disabled(selection == nil)
+                if model.preferences.templatePreviewEnabled {
+                    Button(model.workflowText(.preview)) {
+                        preview = model.preferences.templates.first { $0.id == selection }
+                    }.disabled(selection == nil)
+                }
                 Button(model.text(.remove)) { removing = true }
                     .disabled(selection == nil)
                 Button(model.text(.makeDefaultTemplate)) {
@@ -54,6 +77,11 @@ struct TypesPane: View {
                 Button(model.text(.moveDown)) { if let selection { model.moveTemplate(id: selection, by: 1) } }
                     .disabled(!model.canMoveTemplate(id: selection ?? "", by: 1))
             }
+            if model.preferences.templatePreviewEnabled, let selected = model.preferences.templates.first(where: { $0.id == selection }) {
+                TemplatePreviewView(template: selected, assets: model.documentTemplates, language: model.preferences.language)
+                    .frame(height: 180)
+                Text(model.workflowText(.exampleContext)).font(.caption).foregroundStyle(.secondary)
+            }
             HStack {
                 Text("\(model.enabledTemplates.count) / \(model.preferences.templates.count) \(model.text(.enabledTypes))")
                     .font(.caption).foregroundStyle(.secondary)
@@ -61,7 +89,27 @@ struct TypesPane: View {
                 Button(model.text(.resetBuiltIns)) { restoring = true }.font(.callout)
             }
         }
+            .disabled(model.isMutatingTemplates)
+            .overlay(alignment: .topTrailing) {
+                if model.isValidatingPackage {
+                    Button(model.text(.cancel)) { model.cancelTemplatePackageValidation() }
+                        .disabled(false).accessibilityIdentifier("templates.cancelValidation")
+                }
+            }
+            .sheet(item: $model.packageReview) { review in TemplateImportReviewView(review: review).environmentObject(model) }
+            .sheet(isPresented: $exporting) { TemplateExportSelectionView(selectedID: selection).environmentObject(model) }
             .sheet(item: $editor) { TypeEditor(draft: $0).environmentObject(model) }
+            .sheet(item: $preview) { template in
+                VStack(spacing: 12) {
+                    Text(model.templateDisplayName(for: template)).font(.title2)
+                    if model.preferences.templatePreviewEnabled {
+                        TemplatePreviewView(template: template, assets: model.documentTemplates, language: model.preferences.language)
+                    }
+                    Text(model.workflowText(.exampleContext)).font(.caption).foregroundStyle(.secondary)
+                    Button(model.text(.cancel)) { preview = nil }.keyboardShortcut(.cancelAction)
+                }.padding(24).frame(width: 640, height: 520)
+            }
+            .onChange(of: model.preferences.templatePreviewEnabled) { enabled in if !enabled { preview = nil } }
             .alert(model.text(.restoreConfirm), isPresented: $restoring) {
                 Button(model.text(.cancel), role: .cancel) {}
                 Button(model.text(.restore)) { model.resetTemplates() }
@@ -101,7 +149,13 @@ struct TypesPane: View {
                         .frame(width: 34, height: 38)
                         .background(FileMintStyle.soft, in: RoundedRectangle(cornerRadius: 5))
                         .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(FileMintStyle.line, lineWidth: 0.7))
-                    Text(model.templateDisplayName(for: template)).font(.system(size: 13))
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(model.templateDisplayName(for: template)).font(.system(size: 13))
+                        if model.preferences.creationOpeningEnabled, let action = template.afterCreation {
+                            Text(model.workflowText(action.kind.textKey) + (action.application.map { " · " + $0.displayName } ?? ""))
+                                .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        }
+                    }
                     Spacer(minLength: 8)
                     if model.isDefaultTemplate(template) {
                         Text(model.text(.defaultTemplate)).font(.caption).foregroundStyle(.secondary)
@@ -180,16 +234,26 @@ struct TypesPane: View {
 }
 private struct TypeEditorDraft: Identifiable {
     let id = UUID()
-    var templateID: String?
+    enum Mode { case new, edit(String), copy(String) }
+    var mode: Mode = .new
+    var original: FileTemplate?
+    var templateID: String? { if case .edit(let id) = mode { return id }; return nil }
+    var copySourceID: String? { if case .copy(let id) = mode { return id }; return nil }
+    var copiedTemplate: FileTemplate? { copySourceID == nil ? nil : original }
+    var action = TemplateCreationAction.basic(reveal: true)
+    var application: CreationApplication?
     var name = ""
     var suffix = ""
     var content = ""
     var suggestedFileName = ""
     var isDocument = false
     var customMenuIcon: MenuIconCustomization?
-    init() {}
-    init(_ type: FileTemplate) {
-        templateID = type.id
+    init(reveal: Bool = true) { action = .basic(reveal: reveal) }
+    init(_ source: FileTemplate, asCopy: Bool = false, copySuffix: String = "Copy") {
+        let type = asCopy ? TemplateCatalog.copyDraft(source, copySuffix: copySuffix) : source
+        mode = asCopy ? .copy(source.id) : .edit(source.id)
+        original = type
+        action = type.afterCreation ?? .basic(reveal: true)
         name = type.displayName
         suffix = type.fileExtension
         suggestedFileName = type.suggestedFileName
@@ -204,11 +268,12 @@ private struct TypeEditor: View {
     @Environment(\.dismiss) private var dismiss
     @State var draft: TypeEditorDraft
     @State private var error: String?
+    @State private var isSaving = false
     @FocusState private var nameFocused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(model.text(draft.templateID == nil ? .addType : .editType)).font(.system(size: 21, weight: .semibold))
+            Text(draft.copySourceID == nil ? model.text(draft.templateID == nil ? .addType : .editType) : model.workflowText(.copy)).font(.system(size: 21, weight: .semibold))
             VStack(alignment: .leading, spacing: 7) {
                 Text(model.text(.displayName)).font(.system(size: 11)).foregroundStyle(.secondary)
                 TextField(model.text(.displayName), text: $draft.name).focused($nameFocused)
@@ -228,24 +293,64 @@ private struct TypeEditor: View {
                 MenuIconControl(template: iconPreviewTemplate, customization: $draft.customMenuIcon,
                     language: model.preferences.language)
             }
+            if model.preferences.creationOpeningEnabled {
+                Picker(model.workflowText(.openingEnabled), selection: Binding(
+                    get: { draft.action.kind }, set: { draft.action = .init($0, application: draft.action.application, localApplicationID: draft.action.localApplicationID) })) {
+                    ForEach(TemplateCreationAction.Kind.allCases, id: \.self) { kind in Text(model.workflowText(kind.textKey)).tag(kind) }
+                }
+                if draft.action.kind == .openWithApplication {
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text(draft.action.application?.displayName ?? model.workflowText(.selectedApp))
+                            if draft.action.localApplicationID == nil { Text(model.workflowText(.unresolvedApp)).font(.caption).foregroundStyle(.secondary) }
+                        }
+                        Spacer()
+                        Button(model.workflowText(.chooseApp)) {
+                            Task {
+                                do {
+                                    if let app = try await model.chooseCreationApplication() {
+                                        draft.application = app
+                                        draft.action = .init(.openWithApplication, application: app.hint, localApplicationID: app.id)
+                                    }
+                                } catch { self.error = error.localizedDescription }
+                            }
+                        }
+                    }
+                }
+            }
             if draft.isDocument {
                 Text(model.text(.documentTemplateHint)).font(.callout).foregroundStyle(.secondary)
             } else {
                 Text(model.text(.initialContent)).font(.callout)
                     .padding(.top, 2)
-                PlainTextEditor(text: $draft.content, label: model.text(.initialContent))
-                    .frame(height: 145).clipShape(RoundedRectangle(cornerRadius: 7))
-                    .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(FileMintStyle.line, lineWidth: 0.7))
+                HStack(alignment: .top, spacing: 12) {
+                    PlainTextEditor(text: $draft.content, label: model.text(.initialContent))
+                        .frame(height: 145).clipShape(RoundedRectangle(cornerRadius: 7))
+                        .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(FileMintStyle.line, lineWidth: 0.7))
+                    if model.preferences.templatePreviewEnabled {
+                        TemplatePreviewView(template: previewTemplate, assets: model.documentTemplates, language: model.preferences.language)
+                            .frame(height: 145)
+                    }
+                }
                 Text(model.text(.customTypeHint)).font(.caption).foregroundStyle(.secondary)
+            }
+            if model.preferences.templatePreviewEnabled {
+                if draft.isDocument {
+                    TemplatePreviewView(template: previewTemplate, assets: model.documentTemplates, language: model.preferences.language)
+                        .frame(height: 180)
+                }
+                Text(model.workflowText(.exampleContext)).font(.caption).foregroundStyle(.secondary)
             }
             if let error { Text(error).foregroundStyle(.red).font(.callout) }
             HStack {
                 Spacer()
                 Button(model.text(.cancel)) { dismiss() }.keyboardShortcut(.cancelAction).buttonStyle(MintButtonStyle())
-                Button(model.text(.save)) { save() }.keyboardShortcut(.defaultAction).buttonStyle(MintButtonStyle(primary: true))
+                Button(model.text(.save)) { Task { await save() } }.keyboardShortcut(.defaultAction).buttonStyle(MintButtonStyle(primary: true))
+                    .disabled(!draft.action.isValid)
             }
-        }.padding(26).frame(width: 470).background(FileMintStyle.background).tint(FileMintStyle.accent)
-            .textFieldStyle(.roundedBorder).onAppear { nameFocused = true }
+        }.disabled(isSaving).padding(26).frame(width: model.preferences.templatePreviewEnabled && !draft.isDocument ? 680 : 470).background(FileMintStyle.background).tint(FileMintStyle.accent)
+             .textFieldStyle(.roundedBorder).onAppear { nameFocused = true; model.hasTemplateModalWork = true }
+            .onDisappear { model.hasTemplateModalWork = false }
     }
 
     private var iconPreviewTemplate: FileTemplate {
@@ -254,13 +359,24 @@ private struct TypeEditor: View {
             rank: 0, fileExtension: draft.suffix)
     }
 
-    private func save() {
+    private var previewTemplate: FileTemplate {
+        var template = draft.original ?? iconPreviewTemplate
+        template.content = draft.content
+        template.suggestedFileName = FilenamePolicy.fileName(draft.suggestedFileName, applyingFileExtension: draft.suffix) ?? "Untitled.txt"
+        return template
+    }
+    private func save() async {
+        isSaving = true
+        defer { isSaving = false }
         do {
-            try model.saveType(name: draft.name, suffix: draft.suffix, content: draft.content, id: draft.templateID,
-                suggestedFileName: draft.suggestedFileName, customMenuIcon: draft.customMenuIcon)
+            try await model.saveType(name: draft.name, suffix: draft.suffix, content: draft.content, id: draft.templateID,
+                suggestedFileName: draft.suggestedFileName, customMenuIcon: draft.customMenuIcon,
+                copy: draft.copiedTemplate, sourceID: draft.copySourceID, action: draft.action, application: draft.application)
             if let error = model.lastError { self.error = error } else { dismiss() }
         } catch TemplateValidationError.duplicateExtension { error = model.text(.duplicateType) }
         catch TemplateValidationError.emptyName { error = model.text(.emptyTypeName) }
-        catch { self.error = model.text(.invalidFileExtension) }
+        catch TemplateValidationError.invalidExtension { self.error = model.text(.invalidFileExtension) }
+        catch is TemplateCreationActionError { self.error = model.workflowText(.applicationRequired) }
+        catch { self.error = model.lastError ?? (error as? DocumentTemplateError).map { model.text($0.textKey) } ?? error.localizedDescription }
     }
 }

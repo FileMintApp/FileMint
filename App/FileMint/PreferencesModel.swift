@@ -33,18 +33,80 @@ final class PreferencesModel: ObservableObject {
     private let folderAccess = FolderAccess()
     private var preferenceObserver: NSObjectProtocol?
     private var isImportingSettings = false
+    private(set) var openingGate = CreationOpeningGate(enabled: false)
+    private(set) var committedPreferences: FileMintPreferences = .default
+    lazy var postCreationExecutor = PostCreationActionExecutor(gate: { [weak self] in self?.openingGate ?? .init(enabled: false) })
+    var hasTemplateModalWork = false
+    @Published var packageReview: TemplatePackageReview?
+    @Published var isValidatingPackage = false
+    private var packageValidationTask: Task<Void, Never>?
+    @Published var isMutatingTemplates = false
+    var templateRecoveryError: String?
+    var templateMutationAllowed: Bool { !isMutatingTemplates && templateRecoveryError == nil }
+
+    func workflowText(_ key: TemplateWorkflowText) -> String { key.text(preferences.language) }
+    func creationSnapshot(template: FileTemplate?, selection: CreationActionSelection, temporaryApplication: CreationApplication? = nil) -> CreationFollowUp {
+        var snapshot = committedPreferences
+        if let temporaryApplication { snapshot.creationApplications.append(temporaryApplication) }
+        return .init(selection: selection, template: template, preferences: snapshot, gate: openingGate)
+    }
+    func setCreationFeature(opening: Bool? = nil, preview: Bool? = nil) {
+        let previous = preferences
+        if let opening { preferences.creationOpeningEnabled = opening }
+        if let preview { preferences.templatePreviewEnabled = preview }
+        if !save() { preferences = previous }
+    }
+    func chooseCreationApplication() async throws -> CreationApplication? {
+        let picker = NSOpenPanel()
+        picker.allowedContentTypes = [.applicationBundle]
+        picker.canChooseDirectories = false; picker.allowsMultipleSelection = false
+        picker.directoryURL = URL(fileURLWithPath: "/Applications", isDirectory: true)
+        picker.title = workflowText(.chooseApp)
+        guard picker.runModal() == .OK, let url = picker.url else { return nil }
+        pendingCreationWork += 1
+        defer { pendingCreationWork -= 1 }
+        let app = try await Task.detached { try OpenWithApplicationAccess.capture(url) }.value
+        return .init(id: app.id, hint: .init(bundleIdentifier: app.bundleIdentifier, displayName: app.name), url: app.url, bookmark: app.bookmark)
+    }
+    private func commitFeatureState() {
+        committedPreferences = preferences
+        openingGate.commit(enabled: preferences.creationOpeningEnabled)
+        CustomFileSavePanelController.shared.updateFeatures(preferences)
+    }
+    private func configureCreationPanel() {
+        CustomFileSavePanelController.shared.makeDocumentPreview = { template, assets, language in
+            let surface = TemplatePreviewSurface()
+            surface.show(template, assets: assets, language: language, capturedAt: CreationContentResolver.exampleDate)
+            return (surface, { surface.close() })
+        }
+        CustomFileSavePanelController.shared.snapshotFollowUp = { [weak self] template, selection, application in
+            self?.creationSnapshot(template: template, selection: selection, temporaryApplication: application)
+        }
+        CustomFileSavePanelController.shared.completeCreation = { [weak self] result, followUp, language in
+            guard let self, let followUp else { return }
+            await self.postCreationExecutor.complete(result, followUp: followUp, language: language)
+        }
+        CustomFileSavePanelController.shared.chooseApplication = { [weak self] in
+            try await self?.chooseCreationApplication()
+        }
+    }
 
     init(store: FileMintPreferencesStore = FileMintPreferencesStore(), documentTemplates: DocumentTemplateStore = DocumentTemplateStore()) {
         self.store = store
         self.documentTemplates = documentTemplates
         let loaded = store.loadWithStatus()
         preferences = loaded.preferences
+        committedPreferences = loaded.preferences
+        openingGate = .init(enabled: loaded.preferences.creationOpeningEnabled)
+        configureCreationPanel()
         if loaded.requiresRecovery {
             lastError = FileMintStrings.text(.preferencesRecoveryRequired, language: loaded.preferences.language)
         }
         applyAppearance()
         folderAccess.restore(preferences)
         refreshStatus()
+        templateRecoveryError = workflowText(.recoveryNeeded)
+        Task { await recoverTemplateTransactions() }
         preferenceObserver = DistributedNotificationCenter.default().addObserver(
             forName: Notification.Name(FileMintAppGroup.preferencesDidChangeNotification), object: nil, queue: .main
         ) { [weak self] _ in
@@ -53,6 +115,7 @@ final class PreferencesModel: ObservableObject {
                 let loaded = self.store.load()
                 guard loaded != self.preferences else { return }
                 self.preferences = loaded
+                self.commitFeatureState()
                 self.folderAccess.restore(loaded)
             }
         }
@@ -187,16 +250,37 @@ final class PreferencesModel: ObservableObject {
     }
 
     @discardableResult
-    func save(recoveringInvalidFile: Bool = false) -> Bool {
+    func save(recoveringInvalidFile: Bool = false, allowingTemplateMutation: Bool = false) -> Bool {
+        if isMutatingTemplates && !allowingTemplateMutation {
+            preferences = committedPreferences
+            lastError = workflowText(.settingsBusy)
+            return false
+        }
+        if !allowingTemplateMutation && (isMutatingTemplates || templateRecoveryError != nil) && preferences.templates != committedPreferences.templates {
+            lastError = workflowText(.recoveryNeeded); return false
+        }
         do {
             preferences.defaultTemplateIDs = TemplateCatalog.validDefaults(preferences.defaultTemplateIDs, in: preferences.templates)
-            try store.save(preferences, recoveringInvalidFile: recoveringInvalidFile)
+            try store.save(preferences, recoveringInvalidFile: recoveringInvalidFile,
+                           ifUnchangedFrom: recoveringInvalidFile ? nil : committedPreferences)
             DistributedNotificationCenter.default().post(
                 name: Notification.Name(FileMintAppGroup.preferencesDidChangeNotification), object: nil
             )
+            commitFeatureState()
             lastError = nil
             return true
         } catch {
+            if error as? FileMintPreferencesStoreError == .stalePreferences {
+                // Let callers finish rolling back their controls before adopting
+                // a newer snapshot written by another preferences entry point.
+                Task {
+                    guard !isMutatingTemplates else { return }
+                    let loaded = store.loadWithStatus()
+                    guard !loaded.requiresRecovery else { return }
+                    preferences = loaded.preferences; commitFeatureState()
+                    folderAccess.restore(preferences)
+                }
+            }
             lastError = error.localizedDescription
             return false
         }
@@ -215,14 +299,30 @@ final class PreferencesModel: ObservableObject {
 
     func resetTemplates() {
         let previous = preferences
-        preferences.templates = TemplateCatalog.restoringBuiltIns(in: preferences.templates)
+        guard templateMutationAllowed else { return }
+        preferences.templates = TemplateCatalog.restoringBuiltIns(in: preferences.templates, revealAfterCreation: preferences.revealAfterCreation)
         preferences.removedBuiltInTemplateIDs = []
-        if !save() { preferences = previous }
+        isMutatingTemplates = true
+        guard save(allowingTemplateMutation: true) else { preferences = previous; isMutatingTemplates = false; return }
+        let removed = previous.templates.compactMap(\.document).filter { document in
+            document.builtInResource == nil && !preferences.templates.contains { $0.document?.id == document.id }
+        }
+        let assets = documentTemplates
+        pendingCreationWork += 1
+        Task {
+            defer { isMutatingTemplates = false; pendingCreationWork -= 1 }
+            for document in Dictionary(removed.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first }).values {
+                do { try await Task.detached(priority: .utility) { try assets.remove(document) }.value }
+                catch { lastError = text(.documentUnavailable) }
+            }
+        }
     }
 
     func moveTemplates(fromOffsets source: IndexSet, toOffset destination: Int) {
+        guard templateMutationAllowed else { return }
+        let previous = preferences
         preferences.templates = TemplateCatalog.reorderedTemplates(preferences.templates, moving: source, to: destination)
-        save()
+        if !save() { preferences = previous }
     }
 
     func moveTemplate(id: String, by offset: Int) {
@@ -237,36 +337,64 @@ final class PreferencesModel: ObservableObject {
     }
 
     func saveType(name: String, suffix: String, content: String, id: String?, suggestedFileName: String? = nil,
-                  customMenuIcon: MenuIconCustomization?) throws {
+                  customMenuIcon: MenuIconCustomization?, copy: FileTemplate? = nil, sourceID: String? = nil,
+                  action: TemplateCreationAction? = nil, application: CreationApplication? = nil) async throws {
+        guard templateMutationAllowed else { throw TemplateTransactionError.recoveryRequired }
+        isMutatingTemplates = true; pendingCreationWork += 1
+        defer { isMutatingTemplates = false; pendingCreationWork -= 1 }
+        let original = id.flatMap { id in preferences.templates.first { $0.id == id } }
+        let document = copy?.document ?? original?.document
+        if let document {
+            guard suffix.lowercased() == document.kind.rawValue else { throw DocumentTemplateError.unsupported }
+            let assets = documentTemplates
+            _ = try await Task.detached { try assets.data(for: document) }.value
+        }
         let previous = preferences
-        let document = preferences.templates.first { $0.id == id }?.document
-        if let document, suffix.lowercased() != document.kind.rawValue { throw DocumentTemplateError.unsupported }
         var type = try TemplateCatalog.customTemplate(name: name, fileExtension: suffix, content: document == nil ? content : "",
-                                                       id: id, in: preferences.templates, suggestedFileName: suggestedFileName)
-        type.document = document
-        type.customMenuIcon = customMenuIcon
-        if let index = preferences.templates.firstIndex(where: { $0.id == type.id }) { preferences.templates[index] = type }
+            id: copy?.id ?? id, in: preferences.templates, suggestedFileName: suggestedFileName)
+        type.document = document; type.customMenuIcon = customMenuIcon
+        type.group = copy?.group ?? original?.group ?? "Custom"
+        type.afterCreation = action ?? copy?.afterCreation ?? original?.afterCreation ?? .basic(reveal: preferences.revealAfterCreation)
+        try type.afterCreation?.validate()
+        if let application, type.afterCreation?.kind == .openWithApplication, type.afterCreation?.localApplicationID == application.id {
+            if let existing = preferences.creationApplications.first(where: { $0.hint.bundleIdentifier == application.hint.bundleIdentifier && $0.url == application.url }) {
+                type.afterCreation = .init(.openWithApplication, application: existing.hint, localApplicationID: existing.id)
+                if let index = preferences.creationApplications.firstIndex(where: { $0.id == existing.id }) {
+                    preferences.creationApplications[index].url = application.url
+                    preferences.creationApplications[index].bookmark = application.bookmark
+                }
+            } else { preferences.creationApplications.append(application) }
+        }
+        if copy != nil { preferences = TemplateCatalog.preferencesInsertingCopy(type, after: sourceID, in: preferences) }
+        else if let index = preferences.templates.firstIndex(where: { $0.id == type.id }) { preferences.templates[index] = type }
         else { preferences.templates.append(type) }
-        if !save() { preferences = previous }
+        guard save(allowingTemplateMutation: true) else { preferences = previous; throw CocoaError(.fileWriteUnknown) }
     }
 
     func removeType(_ id: String) {
-        guard preferences.templates.contains(where: { $0.id == id }) else { return }
+        guard templateMutationAllowed, preferences.templates.contains(where: { $0.id == id }) else { return }
         let previous = preferences
         let document = preferences.templates.first { $0.id == id }?.document
         preferences.templates.removeAll { $0.id == id }
         if TemplateCatalog.builtInTemplates.contains(where: { $0.id == id }) {
             preferences.removedBuiltInTemplateIDs = Array(Set(preferences.removedBuiltInTemplateIDs + [id])).sorted()
         }
-        if !save() { preferences = previous; return }
-        if let document, !preferences.templates.contains(where: { $0.document?.id == document.id }) {
-            let assets = documentTemplates
-            Task.detached(priority: .utility) { try? assets.remove(document) }
+        isMutatingTemplates = true
+        guard save(allowingTemplateMutation: true) else { preferences = previous; isMutatingTemplates = false; return }
+        pendingCreationWork += 1
+        let assets = documentTemplates
+        let removeAsset = document.flatMap { doc in preferences.templates.contains { $0.document?.id == doc.id } ? nil : doc }
+        Task {
+            defer { isMutatingTemplates = false; pendingCreationWork -= 1 }
+            if let removeAsset {
+                do { try await Task.detached(priority: .utility) { try assets.remove(removeAsset) }.value }
+                catch { lastError = text(.documentUnavailable) }
+            }
         }
     }
 
     func setDefaultTemplate(_ template: FileTemplate) {
-        guard template.isEnabled else { return }
+        guard templateMutationAllowed, template.isEnabled else { return }
         let previous = preferences
         preferences.defaultTemplateIDs[template.fileExtension.lowercased()] = template.id
         if !save() { preferences = previous }
@@ -278,7 +406,7 @@ final class PreferencesModel: ObservableObject {
     }
 
     func importDocumentTemplate() {
-        guard !isImportingDocument else { return }
+        guard !isImportingDocument, templateMutationAllowed else { return }
         let picker = NSOpenPanel()
         picker.canChooseDirectories = false
         picker.allowsMultipleSelection = false
@@ -290,14 +418,16 @@ final class PreferencesModel: ObservableObject {
     }
 
     func importDocumentTemplate(from source: URL) async {
-        guard !isImportingDocument else { return }
+        guard !isImportingDocument, templateMutationAllowed else { return }
         isImportingDocument = true
-        pendingCreationCount += 1
+        isMutatingTemplates = true
+        pendingCreationWork += 1
         let access = source.startAccessingSecurityScopedResource()
         defer {
             if access { source.stopAccessingSecurityScopedResource() }
             isImportingDocument = false
-            pendingCreationCount -= 1
+            isMutatingTemplates = false
+            pendingCreationWork -= 1
         }
         let assets = documentTemplates
         do {
@@ -313,8 +443,9 @@ final class PreferencesModel: ObservableObject {
                 suggestedFileName: source.lastPathComponent, group: "Custom", content: "",
                 rank: rank, fileExtension: reference.kind.rawValue)
             template.document = reference
+            template.afterCreation = .basic(reveal: preferences.revealAfterCreation)
             preferences.templates.append(template)
-            if !save() {
+            if !save(allowingTemplateMutation: true) {
                 preferences = previous
                 _ = await Task.detached(priority: .utility) { try? assets.remove(reference) }.value
             }
@@ -349,8 +480,8 @@ final class PreferencesModel: ObservableObject {
     func newFile() {
         if CustomFileSavePanelController.shared.focusExistingPanel() || isPreparingCreation { return }
         isPreparingCreation = true
-        pendingCreationCount += 1
-        defer { isPreparingCreation = false; pendingCreationCount -= 1 }
+        pendingCreationWork += 1
+        defer { isPreparingCreation = false; pendingCreationWork -= 1 }
         let picker = NSOpenPanel()
         picker.canChooseFiles = false
         picker.canChooseDirectories = true
@@ -370,7 +501,7 @@ final class PreferencesModel: ObservableObject {
     }
 
     func importSettings() {
-        guard !isImportingSettings else { return }
+        guard !isImportingSettings, !isMutatingTemplates else { return }
         let panel = NSOpenPanel()
         panel.canChooseDirectories = false
         guard panel.runModal() == .OK, let url = panel.url else { return }
@@ -379,7 +510,9 @@ final class PreferencesModel: ObservableObject {
     }
 
     private func importSettings(from url: URL) async {
-        defer { isImportingSettings = false }
+        guard !isMutatingTemplates else { isImportingSettings = false; return }
+        isMutatingTemplates = true; pendingCreationWork += 1
+        defer { isImportingSettings = false; isMutatingTemplates = false; pendingCreationWork -= 1 }
         let granted = url.startAccessingSecurityScopedResource()
         defer { if granted { url.stopAccessingSecurityScopedResource() } }
         do {
@@ -391,13 +524,15 @@ final class PreferencesModel: ObservableObject {
             preferences = imported
             preferences.hasAttemptedLoginItemSetup = attemptedHere
             let launchAtLogin = preferences.launchAtLogin
-            guard save(recoveringInvalidFile: true) else { preferences = previous; return }
+            guard save(recoveringInvalidFile: true, allowingTemplateMutation: true) else { preferences = previous; return }
             folderAccess.restore(preferences)
             Task { await setLaunchAtLogin(launchAtLogin) }
+            Task { await recoverTemplateTransactions() }
         } catch { lastError = error.localizedDescription }
     }
 
-    private(set) var pendingCreationCount = 0
+    private var pendingCreationWork = 0
+    var pendingCreationCount: Int { pendingCreationWork + postCreationExecutor.activeCount + (hasTemplateModalWork ? 1 : 0) }
     private var isPreparingCreation = false
 
     func newFileFromClipboard() {
@@ -407,8 +542,8 @@ final class PreferencesModel: ObservableObject {
     func presentClipboardText(in directory: URL?, pasteboard: NSPasteboard = .general) {
         guard !CustomFileSavePanelController.shared.focusExistingPanel(), !isPreparingCreation else { return }
         isPreparingCreation = true
-        pendingCreationCount += 1
-        defer { isPreparingCreation = false; pendingCreationCount -= 1 }
+        pendingCreationWork += 1
+        defer { isPreparingCreation = false; pendingCreationWork -= 1 }
         do {
             let content = try ClipboardTextReader.capture(from: pasteboard)
             var destination = directory
@@ -455,8 +590,8 @@ final class PreferencesModel: ObservableObject {
     func presentClipboardImage(in directory: URL, pasteboard: NSPasteboard = .general) async {
         guard !isPreparingCreation, !CustomFileSavePanelController.shared.focusExistingPanel() else { return }
         isPreparingCreation = true
-        pendingCreationCount += 1
-        defer { isPreparingCreation = false; pendingCreationCount -= 1 }
+        pendingCreationWork += 1
+        defer { isPreparingCreation = false; pendingCreationWork -= 1 }
         do {
             guard let items = pasteboard.pasteboardItems, items.count == 1,
                   !items[0].types.contains(.fileURL),
@@ -495,15 +630,17 @@ final class PreferencesModel: ObservableObject {
                                                           templateID: CreationRoute.templateID(from: url), documentTemplates: documentTemplates)
             return
         }
-        pendingCreationCount += 1
+        pendingCreationWork += 1
         Task {
-            defer { pendingCreationCount -= 1 }
+            defer { pendingCreationWork -= 1 }
             do {
-                let snapshot = preferences
+                let snapshot = committedPreferences
+                let originalGate = openingGate
                 let ticket = try await Task.detached(priority: .userInitiated) {
                     try QuickCreationTicketStore().consume(url, preferences: snapshot)
                 }.value
                 guard let ticket, let intent = ticket.resolvedIntent else { return }
+                let originalFollowUp = CreationFollowUp(template: snapshot.templates.first { $0.id == ticket.templateID }, preferences: snapshot, gate: originalGate)
                 if FolderScope.directoryAccess(ticket.directory, in: preferences.monitoredFolderURLs) == .requiresAuthorization {
                     if CustomFileSavePanelController.shared.focusExistingPanel() { return }
                     guard authorizeQuickCreationDirectory(ticket.directory) else { return }
@@ -512,7 +649,7 @@ final class PreferencesModel: ObservableObject {
                         // Permission recovery still requires Create in the draft;
                         // accepting a folder prompt alone never writes a file.
                         CustomFileSavePanelController.shared.present(in: ticket.directory, preferences: preferences,
-                            templateID: ticket.templateID, documentTemplates: documentTemplates)
+                            templateID: ticket.templateID, initialFollowUp: originalFollowUp, documentTemplates: documentTemplates)
                         return
                     }
                 }
@@ -520,7 +657,7 @@ final class PreferencesModel: ObservableObject {
                 switch ticket.resolvedIntent {
                 case .clipboardImage: await presentClipboardImage(in: ticket.directory)
                 case .clipboardText: presentClipboardText(in: ticket.directory)
-                case .template: await quickCreate(ticket)
+                case .template: await quickCreate(ticket, originalFollowUp: originalFollowUp)
                 case nil: break
                 }
             } catch { lastError = error.localizedDescription }
@@ -569,23 +706,27 @@ final class PreferencesModel: ObservableObject {
         }
     }
 
-    private func quickCreate(_ ticket: QuickCreationTicket) async {
+    private func quickCreate(_ ticket: QuickCreationTicket, originalFollowUp: CreationFollowUp? = nil) async {
         guard let template = TemplateCatalog.template(withID: ticket.templateID, in: preferences.templates),
               template.isEnabled,
               FolderScope.containsResolvedDirectory(ticket.directory, in: preferences.monitoredFolderURLs) else { return }
         let request = FileCreationRequest(destinationDirectory: ticket.directory, template: template,
-                                           collisionStrategy: preferences.collisionStrategy == .replace ? .increment : preferences.collisionStrategy)
+                                           collisionStrategy: preferences.collisionStrategy == .replace ? .increment : preferences.collisionStrategy, capturedAt: Date())
+        let followUp = originalFollowUp ?? creationSnapshot(template: template, selection: .followTemplate)
+        let accessed = ticket.directory.startAccessingSecurityScopedResource()
+        defer { if accessed { ticket.directory.stopAccessingSecurityScopedResource() } }
         let assets = documentTemplates
         let result = await Task.detached(priority: .userInitiated) {
             Result { try FileCreationService(documentTemplates: assets).createFile(request) }
         }.value
         switch result {
         case .success(let created):
-            if preferences.revealAfterCreation { NSWorkspace.shared.activateFileViewerSelecting([created.createdURL]) }
+            await postCreationExecutor.complete(created, followUp: followUp, language: preferences.language)
         case .failure(let error):
             if FolderAccess.isPermissionError(error) {
                 // The retry remains an explicit user action in the single creation panel.
                 CustomFileSavePanelController.shared.present(in: ticket.directory, preferences: preferences, templateID: ticket.templateID,
+                    initialFollowUp: followUp, capturedAt: request.capturedAt, templateSnapshot: template,
                     documentTemplates: documentTemplates)
             } else {
                 showCreationFailure((error as? DocumentTemplateError).map { text($0.textKey) } ?? error.localizedDescription)
@@ -602,4 +743,156 @@ final class PreferencesModel: ObservableObject {
     }
 
     func openExtensionSettings() { FinderIntegrationStatus.showSettings() }
+}
+
+extension PreferencesModel {
+    private var templateTransaction: TemplateImportTransaction {
+        let location = store.location ?? FileMintStorage.directory.appendingPathComponent("preferences.json")
+        return .init(journalURL: location.deletingLastPathComponent().appendingPathComponent("template-import-journal.json"),
+            preferencesURL: location, assets: documentTemplates)
+    }
+    func recoverTemplateTransactions() async {
+        guard !isMutatingTemplates else { return }
+        isMutatingTemplates = true; pendingCreationWork += 1
+        defer { isMutatingTemplates = false; pendingCreationWork -= 1 }
+        let transaction = templateTransaction
+        do {
+            try await Task.detached(priority: .utility) { try transaction.recover() }.value
+            let loaded = store.loadWithStatus()
+            if loaded.requiresRecovery { templateRecoveryError = text(.preferencesRecoveryRequired) }
+            else {
+                preferences = loaded.preferences; commitFeatureState()
+                templateRecoveryError = nil
+            }
+        } catch { templateRecoveryError = workflowText(.recoveryNeeded); lastError = templateRecoveryError }
+    }
+    func importTemplatePackage() {
+        guard templateMutationAllowed, packageReview == nil else { return }
+        let picker = NSOpenPanel()
+        picker.allowedContentTypes = [UTType(exportedAs: "io.github.daigua.filemint.templates", conformingTo: .zip)]
+        picker.canChooseDirectories = false; picker.allowsMultipleSelection = false; picker.resolvesAliases = false
+        picker.title = workflowText(.importPackage)
+        guard picker.runModal() == .OK, let source = picker.url else { return }
+        packageValidationTask = Task { await importTemplatePackage(from: source) }
+    }
+    func cancelTemplatePackageValidation() { packageValidationTask?.cancel() }
+    func importTemplatePackage(from source: URL) async {
+        guard templateMutationAllowed, packageReview == nil else { return }
+        isMutatingTemplates = true; isValidatingPackage = true; pendingCreationWork += 1
+        let granted = source.startAccessingSecurityScopedResource()
+        defer {
+            if granted { source.stopAccessingSecurityScopedResource() }
+            pendingCreationWork -= 1; isMutatingTemplates = false; isValidatingPackage = false
+            packageValidationTask = nil
+        }
+        do {
+            let worker = Task.detached(priority: .userInitiated) {
+                try TemplatePackageCodec.decode(TemplatePackageCodec.read(at: source))
+            }
+            let package = try await withTaskCancellationHandler(operation: { try await worker.value }, onCancel: { worker.cancel() })
+            try Task.checkCancellation()
+            let plan = try await makeTemplatePlan(package)
+            try Task.checkCancellation()
+            packageReview = TemplatePackageReview(package: package, plan: plan)
+        } catch is CancellationError { lastError = nil }
+        catch { lastError = templateErrorText(error, fallback: .importFailed) }
+    }
+    private func makeTemplatePlan(_ package: ValidatedTemplatePackage, choices: [String: TemplateImportChoice] = [:],
+                                  adoptDefaults: Bool = false) async throws -> TemplateImportPlan {
+        let snapshot = committedPreferences, suffix = workflowText(.copySuffix)
+        return try await Task.detached(priority: .userInitiated) {
+            var validated = Set<UUID>()
+            if snapshot.creationOpeningEnabled {
+                let hints = package.templates.compactMap { $0.afterCreation.application }
+                for app in snapshot.creationApplications where hints.contains(app.hint) {
+                    if let url = try? OpenWithApplicationAccess.resolve(app.openWithApplication) {
+                        let granted = url.startAccessingSecurityScopedResource()
+                        defer { if granted { url.stopAccessingSecurityScopedResource() } }
+                        if (try? OpenWithApplicationAccess.validate(app.openWithApplication, at: url)) != nil { validated.insert(app.id) }
+                    }
+                }
+            }
+            return try TemplateImportPlanner.plan(package, into: snapshot, choices: choices,
+                adoptDefaults: adoptDefaults, copySuffix: suffix, validatedApplicationIDs: validated)
+        }.value
+    }
+    func rebuildTemplateReview(_ review: TemplatePackageReview) {
+        review.generation = UUID(); let generation = review.generation
+        review.isPlanValid = false
+        review.isPlanning = true
+        Task {
+            do {
+                let plan = try await makeTemplatePlan(review.package, choices: review.choices, adoptDefaults: review.adoptDefaults)
+                guard review.generation == generation else { return }
+                review.plan = plan
+                review.choices = Dictionary(uniqueKeysWithValues: plan.rows.map { ($0.id, $0.choice) })
+                review.isPlanValid = true
+                review.message = nil
+                review.isPlanning = false
+            } catch {
+                guard review.generation == generation else { return }
+                review.message = templateErrorText(error, fallback: .importFailed); review.isPlanning = false
+            }
+        }
+    }
+    func confirmTemplateImport(_ review: TemplatePackageReview) async {
+        guard templateMutationAllowed, review.canConfirm, packageReview?.id == review.id else { return }
+        let loaded = store.loadWithStatus()
+        guard !loaded.requiresRecovery else { templateRecoveryError = text(.preferencesRecoveryRequired); return }
+        do {
+            if try TemplateImportPlanner.revision(loaded.preferences) != review.plan.baseRevision {
+                preferences = loaded.preferences; commitFeatureState()
+                review.message = workflowText(.staleReview); rebuildTemplateReview(review); return
+            }
+            isMutatingTemplates = true; pendingCreationWork += 1
+            defer { isMutatingTemplates = false; pendingCreationWork -= 1 }
+            let transaction = templateTransaction, plan = review.plan
+            let receipt = try await Task.detached(priority: .userInitiated) { try transaction.commit(plan) }.value
+            let current = store.loadWithStatus()
+            preferences = current.requiresRecovery ? receipt.preferences : current.preferences
+            commitFeatureState()
+            DistributedNotificationCenter.default().post(name: Notification.Name(FileMintAppGroup.preferencesDidChangeNotification), object: nil)
+            packageReview = nil
+            templateRecoveryError = receipt.cleanupPending ? workflowText(.cleanupPending) : nil
+            lastError = templateRecoveryError
+        } catch TemplateTransactionError.staleReview {
+            let loaded = store.loadWithStatus()
+            guard !loaded.requiresRecovery else { templateRecoveryError = text(.preferencesRecoveryRequired); return }
+            preferences = loaded.preferences; commitFeatureState()
+            review.message = workflowText(.staleReview); rebuildTemplateReview(review)
+        } catch {
+            review.message = templateErrorText(error, fallback: .importFailed)
+            if error as? TemplateTransactionError == .recoveryRequired { templateRecoveryError = workflowText(.recoveryNeeded) }
+        }
+    }
+    func exportTemplatePackage(ids: Set<String>) async {
+        guard templateMutationAllowed else { return }
+        let selected = committedPreferences.templates.filter { ids.contains($0.id) }
+        guard !selected.isEmpty else { lastError = workflowText(.noSelection); return }
+        isMutatingTemplates = true; pendingCreationWork += 1
+        defer { isMutatingTemplates = false; pendingCreationWork -= 1 }
+        let picker = NSSavePanel()
+        picker.title = workflowText(.exportSelection); picker.nameFieldStringValue = "Templates.filemint-templates"
+        picker.allowedContentTypes = [UTType(exportedAs: "io.github.daigua.filemint.templates", conformingTo: .zip)]; picker.allowsOtherFileTypes = false; picker.canCreateDirectories = true
+        guard picker.runModal() == .OK, let target = picker.url else { return }
+        let granted = target.startAccessingSecurityScopedResource()
+        defer { if granted { target.stopAccessingSecurityScopedResource() } }
+        let assets = documentTemplates, defaults = committedPreferences.defaultTemplateIDs
+        do {
+            try await Task.detached(priority: .userInitiated) {
+                let bytes = try TemplatePackageCodec.encode(templates: selected, defaults: defaults, assets: assets)
+                try Task.checkCancellation()
+                try TemplatePackageCodec.write(bytes, to: target)
+            }.value
+            lastError = nil
+        } catch { lastError = templateErrorText(error, fallback: .exportFailed) }
+    }
+    private func templateErrorText(_ error: Error, fallback: TemplateWorkflowText) -> String {
+        if let error = error as? TemplatePackageError { return workflowText(error.textKey) }
+        if let error = error as? DocumentTemplateError { return text(error.textKey) }
+        if let error = error as? TemplateTransactionError {
+            return workflowText(error == .staleReview ? .staleReview : error == .cleanupPending ? .cleanupPending : .recoveryNeeded)
+        }
+        return workflowText(fallback)
+    }
 }

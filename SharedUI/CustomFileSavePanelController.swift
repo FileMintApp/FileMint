@@ -37,6 +37,90 @@ final class CustomFileSavePanelController: NSObject {
     private var contentHint: NSTextField?
     private var formatHintView: NSView?
     private var documentTemplates = DocumentTemplateStore()
+    // Injected by the main app; SharedUI never imports the app's settings model.
+    var snapshotFollowUp: ((FileTemplate?, CreationActionSelection, CreationApplication?) -> CreationFollowUp?)?
+    var completeCreation: ((FileCreationResult, CreationFollowUp?, AppLanguage) async -> Void)?
+    var chooseApplication: (() async throws -> CreationApplication?)?
+    var makeDocumentPreview: ((FileTemplate, DocumentTemplateStore, AppLanguage) -> (NSView, () -> Void))?
+    private var openingEnabled = false
+    private var previewEnabled = false
+    private var editingContent = false
+    private var actionRow: NSStackView?
+    private var actionPopUp: NSPopUpButton?
+    private var chooseAppButton: NSButton?
+    private var editContentButton: NSButton?
+    private var contentContainer: NSView?
+    private var textScrollView: NSScrollView?
+    private var previewView: NSView?
+    private var closePreview: (() -> Void)?
+    private var previewTemplateID: String?
+    private var temporaryApplication: CreationApplication?
+    private var pendingFollowUp: CreationFollowUp?
+    private var usesRequestFallback = false
+
+    func updateFeatures(_ preferences: FileMintPreferences) {
+        openingEnabled = preferences.creationOpeningEnabled
+        previewEnabled = preferences.templatePreviewEnabled
+        revealAfterCreation = preferences.revealAfterCreation
+        guard panel != nil else { return }
+        panel?.setContentSize(NSSize(width: 560, height: openingEnabled ? 620 : 570))
+        if imageData == nil { updateContentField() }
+        updateActionControls()
+        if let focused = panel?.firstResponder as? NSView, focused.isHiddenOrHasHiddenAncestor {
+            panel?.makeFirstResponder(fileNameField)
+        }
+    }
+    private func actionText(_ key: TemplateWorkflowText) -> String { key.text(language) }
+    private var effectiveAction: TemplateCreationAction {
+        draft.actionSelection.resolve(template: !usesRequestFallback ? selectedTemplate : nil,
+            fallback: .basic(reveal: revealAfterCreation), enabled: openingEnabled)
+    }
+    private func updateActionControls() {
+        actionRow?.isHidden = !openingEnabled
+        let action = effectiveAction
+        let selectionIndex: Int
+        switch draft.actionSelection {
+        case .followTemplate: selectionIndex = 0
+        case .override(let override): selectionIndex = TemplateCreationAction.Kind.allCases.firstIndex(of: override.kind)! + 1
+        }
+        actionPopUp?.selectItem(at: selectionIndex)
+        let summary = actionText(action.kind.textKey) + (action.application.map { " · " + $0.displayName } ?? "")
+        actionPopUp?.item(at: 0)?.title = actionText(.followTemplate) + " · " + summary
+        chooseAppButton?.isHidden = action.kind != .openWithApplication
+        createButton?.title = actionText(action.opensApplication ? .createAndOpen : .none)
+        if !action.opensApplication { createButton?.title = FileMintStrings.text(.create, language: language) }
+    }
+    @objc private func changeCreationAction(_ sender: NSPopUpButton) {
+        pendingFollowUp = nil
+        if sender.indexOfSelectedItem == 0 { draft.actionSelection = .followTemplate }
+        else {
+            let kind = TemplateCreationAction.Kind.allCases[sender.indexOfSelectedItem - 1]
+            draft.actionSelection = .override(.init(kind, application: temporaryApplication?.hint, localApplicationID: temporaryApplication?.id))
+        }
+        updateActionControls()
+    }
+    @objc private func chooseCreationApp(_ sender: Any?) {
+        guard !isCreating, let chooseApplication else { return }
+        let owner = panel
+        Task {
+            do {
+                guard let application = try await chooseApplication(), panel === owner else { return }
+                temporaryApplication = application
+                draft.actionSelection = .override(.init(.openWithApplication, application: application.hint, localApplicationID: application.id))
+                pendingFollowUp = nil
+                updateActionControls()
+            } catch { showError(error) }
+        }
+    }
+    @objc private func editOrPreviewContent(_ sender: Any?) {
+        editingContent.toggle()
+        updateContentField()
+        if editingContent { panel?.makeFirstResponder(contentTextView) }
+    }
+    private func clearDocumentPreview() {
+        closePreview?(); closePreview = nil
+        previewView?.removeFromSuperview(); previewView = nil; previewTemplateID = nil
+    }
 
     private override init() {}
 
@@ -53,6 +137,9 @@ final class CustomFileSavePanelController: NSObject {
         initialText: String? = nil,
         imageData: Data? = nil,
         imagePreview: NSImage? = nil,
+        initialFollowUp: CreationFollowUp? = nil,
+        capturedAt: Date? = nil,
+        templateSnapshot: FileTemplate? = nil,
         documentTemplates: DocumentTemplateStore = DocumentTemplateStore()
     ) {
         if panel != nil {
@@ -61,14 +148,22 @@ final class CustomFileSavePanelController: NSObject {
         }
         guard initialText == nil || (imageData == nil && templateID == nil) else { return }
 
+        clearDocumentPreview()
+        openingEnabled = preferences.creationOpeningEnabled
+        previewEnabled = preferences.templatePreviewEnabled
+        editingContent = false
+        pendingFollowUp = initialFollowUp
+        usesRequestFallback = initialText != nil || imageData != nil
+        temporaryApplication = nil
         templates = preferences.templates
+        if let templateSnapshot, let index = templates.firstIndex(where: { $0.id == templateSnapshot.id }) { templates[index] = templateSnapshot }
         self.imageData = imageData
         self.imagePreview = imagePreview
         self.documentTemplates = documentTemplates
         language = preferences.language
         revealAfterCreation = preferences.revealAfterCreation
         hasEditedFileName = false
-        draft = CustomFileDraft(templates: templates, defaultTemplateIDs: preferences.defaultTemplateIDs)
+        draft = CustomFileDraft(templates: templates, defaultTemplateIDs: preferences.defaultTemplateIDs, capturedAt: capturedAt ?? Date())
         if let initialText { draft.updateContent(initialText) }
         allOptions = FileFormatCatalog.options(from: templates)
         suggestions = allOptions
@@ -88,7 +183,7 @@ final class CustomFileSavePanelController: NSObject {
 
     private func makePanel() -> NSPanel {
         let creationPanel = CreationPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 560, height: 570),
+            contentRect: NSRect(x: 0, y: 0, width: 560, height: openingEnabled ? 620 : 570),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
@@ -180,10 +275,23 @@ final class CustomFileSavePanelController: NSObject {
         templateLabel.textColor = .secondaryLabelColor
         templateLabel.isHidden = imageData != nil
         selectedTemplateLabel = templateLabel
-        let form = NSStackView(views: [firstRow, templateLabel, fieldColumn(.saveLocation, control: destinationButton)])
+        let actionPicker = CreationPopUpButton(frame: .zero, pullsDown: false)
+        actionPicker.addItem(withTitle: actionText(.followTemplate))
+        for kind in TemplateCreationAction.Kind.allCases { actionPicker.addItem(withTitle: actionText(kind.textKey)) }
+        actionPicker.target = self; actionPicker.action = #selector(changeCreationAction(_:))
+        actionPicker.setAccessibilityLabel(actionText(.openingEnabled))
+        actionPopUp = actionPicker
+        let chooseApp = CreationButton(title: actionText(.chooseApp), target: self, action: #selector(chooseCreationApp(_:)))
+        chooseApp.bezelStyle = .rounded; chooseApp.controlSize = .small
+        chooseAppButton = chooseApp
+        let actions = NSStackView(views: [actionPicker, chooseApp])
+        actions.orientation = .horizontal; actions.spacing = 8; actions.detachesHiddenViews = true
+        actions.isHidden = !openingEnabled; actionRow = actions
+        let form = NSStackView(views: [firstRow, templateLabel, fieldColumn(.saveLocation, control: destinationButton), actions])
         form.orientation = .vertical
         form.alignment = .leading
         form.spacing = 17
+        form.detachesHiddenViews = true
         for row in form.arrangedSubviews { row.widthAnchor.constraint(equalTo: form.widthAnchor).isActive = true }
         form.translatesAutoresizingMaskIntoConstraints = false
 
@@ -209,6 +317,16 @@ final class CustomFileSavePanelController: NSObject {
         pasteButton = encodingLabel
         contentHeader.addSubview(contentLabel)
         contentHeader.addSubview(encodingLabel)
+        let editButton = CreationButton(title: actionText(.editContent), target: self, action: #selector(editOrPreviewContent(_:)))
+        editButton.bezelStyle = .rounded; editButton.controlSize = .small
+        editButton.translatesAutoresizingMaskIntoConstraints = false
+        contentHeader.addSubview(editButton)
+        editButton.isHidden = imageData != nil || !previewEnabled
+        editContentButton = editButton
+        NSLayoutConstraint.activate([
+            editButton.trailingAnchor.constraint(equalTo: encodingLabel.leadingAnchor, constant: -8),
+            editButton.centerYAnchor.constraint(equalTo: contentHeader.centerYAnchor)
+        ])
         if imageData != nil {
             contentLabel.stringValue = FileMintStrings.text(.imagePreview, language: language)
             encodingLabel.isHidden = true
@@ -251,7 +369,18 @@ final class CustomFileSavePanelController: NSObject {
         textView.textContainer?.widthTracksTextView = true
         scrollView.documentView = textView
         contentTextView = textView
-        var contentArea: NSView = scrollView
+        textScrollView = scrollView
+        let contentBox = NSView()
+        contentBox.translatesAutoresizingMaskIntoConstraints = false
+        contentBox.addSubview(scrollView)
+        NSLayoutConstraint.activate([
+            scrollView.leadingAnchor.constraint(equalTo: contentBox.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: contentBox.trailingAnchor),
+            scrollView.topAnchor.constraint(equalTo: contentBox.topAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: contentBox.bottomAnchor)
+        ])
+        contentContainer = contentBox
+        var contentArea: NSView = contentBox
         if imageData != nil {
             let preview = NSImageView(frame: NSRect(x: 0, y: 0, width: 500, height: 155))
             preview.image = imagePreview
@@ -336,7 +465,8 @@ final class CustomFileSavePanelController: NSObject {
         ])
 
         creationPanel.defaultButtonCell = createButton.cell as? NSButtonCell
-        creationPanel.focusOrder = [nameField, comboBox, destinationButton, textView, encodingLabel, cancelButton, createButton]
+        creationPanel.focusOrder = [nameField, comboBox, destinationButton, actionPicker, chooseApp, textView, editButton, encodingLabel, cancelButton, createButton]
+        updateActionControls()
         if imageData == nil { updateContentField() }
         return container
     }
@@ -532,8 +662,13 @@ final class CustomFileSavePanelController: NSObject {
                                           requestedFileName: fileName,
                                           collisionStrategy: imageData != nil || template.document != nil ? .increment : (replacingExistingFile ? .replace : .fail),
                                           contentMode: draft.hasEditedContent ? .verbatim : .template,
-                                          fileData: imageData)
+                                          fileData: imageData, capturedAt: draft.capturedAt)
         let assets = documentTemplates
+        let followUp = pendingFollowUp ?? snapshotFollowUp?(!usesRequestFallback ? selectedTemplate : nil, draft.actionSelection, temporaryApplication)
+        pendingFollowUp = followUp
+        let completion = completeCreation
+        let language = self.language
+        let basicReveal = revealAfterCreation
         Task {
             let accessed = directoryURL.startAccessingSecurityScopedResource()
             defer { if accessed { directoryURL.stopAccessingSecurityScopedResource() } }
@@ -548,7 +683,8 @@ final class CustomFileSavePanelController: NSObject {
             switch outcome {
             case .success(let result):
                 closePanel(with: .OK)
-                if revealAfterCreation { NSWorkspace.shared.activateFileViewerSelecting([result.createdURL]) }
+                if let completion { await completion(result, followUp, language) }
+                else if basicReveal { NSWorkspace.shared.activateFileViewerSelecting([result.createdURL]) }
             case .failure(FileMintError.fileAlreadyExists(let url)):
                 confirmReplacement(of: url)
             case .failure(let error):
@@ -581,7 +717,10 @@ final class CustomFileSavePanelController: NSObject {
         fileNameField?.isEnabled = enabled
         formatComboBox?.isEnabled = enabled && imageData == nil
         destinationPopUpButton?.isEnabled = enabled
-        contentTextView?.isEditable = enabled && imageData == nil && selectedTemplate?.document == nil
+        contentTextView?.isEditable = enabled && imageData == nil && selectedTemplate?.document == nil && (!previewEnabled || editingContent)
+        actionPopUp?.isEnabled = enabled
+        chooseAppButton?.isEnabled = enabled
+        editContentButton?.isEnabled = enabled
         pasteButton?.isEnabled = enabled
     }
 
@@ -662,7 +801,34 @@ final class CustomFileSavePanelController: NSObject {
         contentTextView?.font = document ? .systemFont(ofSize: 13) : .monospacedSystemFont(ofSize: 12.5, weight: .regular)
         contentTextView?.textContainerInset = document ? NSSize(width: 12, height: 12) : NSSize(width: 7, height: 6)
         contentTextView?.setAccessibilityLabel(FileMintStrings.text(document ? .documentTemplate : .initialContent, language: language))
-        let value = document ? FileMintStrings.text(.documentTemplateHint, language: language) : draft.content
+        editContentButton?.isHidden = !previewEnabled || document
+        editContentButton?.title = actionText(editingContent ? .resultPreview : .editContent)
+        contentTextView?.isEditable = !isCreating && !document && (!previewEnabled || editingContent)
+        pasteButton?.isHidden = document || (previewEnabled && !editingContent)
+        contentLabel?.stringValue = FileMintStrings.text(document ? .documentTemplate : .initialContent, language: language)
+        if previewEnabled && !editingContent && !document { contentLabel?.stringValue = actionText(.resultPreview) }
+        if document && previewEnabled, let template = selectedTemplate, let contentContainer, let makeDocumentPreview {
+            if previewTemplateID != template.id {
+                clearDocumentPreview()
+                let (view, close) = makeDocumentPreview(template, documentTemplates, language)
+                view.translatesAutoresizingMaskIntoConstraints = false
+                contentContainer.addSubview(view)
+                NSLayoutConstraint.activate([
+                    view.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor),
+                    view.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor),
+                    view.topAnchor.constraint(equalTo: contentContainer.topAnchor),
+                    view.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor)
+                ])
+                previewView = view; closePreview = close; previewTemplateID = template.id
+            }
+            textScrollView?.isHidden = true
+        } else { clearDocumentPreview(); textScrollView?.isHidden = false }
+        var displayTemplate = selectedTemplate ?? FileTemplate(id: "draft", displayName: "", suggestedFileName: "", group: "", content: "", rank: 0)
+        displayTemplate.content = draft.content
+        let value = document ? FileMintStrings.text(.documentTemplateHint, language: language) :
+            CreationContentResolver.text(template: displayTemplate, fileName: resolvedFileName() ?? displayTemplate.suggestedFileName,
+                mode: draft.hasEditedContent ? .verbatim : .template, capturedAt: draft.capturedAt)
+        updateActionControls()
         guard let contentTextView, contentTextView.string != value else {
             return
         }
@@ -777,12 +943,14 @@ extension CustomFileSavePanelController: NSComboBoxDataSource, NSComboBoxDelegat
             return
         }
         draft.selectFormat(option, templates: templates)
+        usesRequestFallback = false
         isUpdatingFormatField = true
         comboBox.stringValue = option.fileExtension
         isUpdatingFormatField = false
         updateSuggestions(for: "")
-        updateContentField()
+        pendingFollowUp = nil
         updateFileNameExtension()
+        updateContentField()
     }
 
     func controlTextDidBeginEditing(_ notification: Notification) {
@@ -792,6 +960,7 @@ extension CustomFileSavePanelController: NSComboBoxDataSource, NSComboBoxDelegat
     func controlTextDidChange(_ notification: Notification) {
         guard imageData == nil else { return }
         if let field = notification.object as? NSTextField, field === fileNameField {
+            pendingFollowUp = nil
             hasEditedFileName = true
             if selectedTemplate?.document != nil { return }
             if let suffix = FilenamePolicy.inferredFileExtension(from: field.stringValue,
@@ -808,6 +977,7 @@ extension CustomFileSavePanelController: NSComboBoxDataSource, NSComboBoxDelegat
                 updateSuggestions(for: "")
                 updateContentField()
             }
+            updateContentField()
             return
         }
         guard !isUpdatingFormatField,
@@ -821,8 +991,9 @@ extension CustomFileSavePanelController: NSComboBoxDataSource, NSComboBoxDelegat
             return
         }
         updateSuggestions(for: comboBox.stringValue)
-        updateContentField()
+        pendingFollowUp = nil
         updateFileNameExtension()
+        updateContentField()
     }
 
     private func showDocumentDraftMessage() {
@@ -837,6 +1008,7 @@ extension CustomFileSavePanelController: NSTextViewDelegate {
               let textView = notification.object as? NSTextView else {
             return
         }
+        pendingFollowUp = nil
         draft.updateContent(textView.string)
     }
 }
@@ -852,6 +1024,9 @@ extension CustomFileSavePanelController: NSWindowDelegate {
             NSApp.stopModal(withCode: .cancel)
         }
 
+        clearDocumentPreview()
+        actionRow = nil; actionPopUp = nil; chooseAppButton = nil; editContentButton = nil
+        contentContainer = nil; textScrollView = nil; temporaryApplication = nil; pendingFollowUp = nil
         directoryPicker?.cancel(nil)
         directoryPicker = nil
         panel = nil

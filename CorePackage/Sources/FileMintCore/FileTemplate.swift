@@ -11,6 +11,7 @@ public struct FileTemplate: Codable, Equatable, Identifiable, Sendable {
     public var isEnabled: Bool
     public var rank: Int
     public var customMenuIcon: MenuIconCustomization? = nil
+    public var afterCreation: TemplateCreationAction? = .basic(reveal: true)
 
     public init(
         id: String,
@@ -33,7 +34,7 @@ public struct FileTemplate: Codable, Equatable, Identifiable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, displayName, suggestedFileName, fileExtension, document, group, content, isEnabled, rank, customMenuIcon
+        case id, displayName, suggestedFileName, fileExtension, document, group, content, isEnabled, rank, customMenuIcon, afterCreation
     }
 
     public init(from decoder: Decoder) throws {
@@ -54,6 +55,7 @@ public struct FileTemplate: Codable, Equatable, Identifiable, Sendable {
         isEnabled = try values.decode(Bool.self, forKey: .isEnabled)
         rank = try values.decode(Int.self, forKey: .rank)
         customMenuIcon = try? values.decode(MenuIconCustomization.self, forKey: .customMenuIcon)
+        afterCreation = try? values.decode(TemplateCreationAction.self, forKey: .afterCreation)
     }
 
     private static func legacyExtension(_ name: String) -> String {
@@ -218,6 +220,8 @@ extension TemplateCatalog {
                             isEnabled: existing?.isEnabled ?? true,
                             rank: try existing?.rank ?? nextRank(in: templates), fileExtension: suffix)
         template.customMenuIcon = existing?.customMenuIcon
+        template.afterCreation = existing?.afterCreation ?? .basic(reveal: true)
+        template.document = existing?.document
         return template
     }
 
@@ -246,6 +250,7 @@ extension TemplateCatalog {
         for var template in builtInTemplates where !ids.contains(template.id) && !removedIDs.contains(template.id) {
             template.rank = (result.map(\.rank).max() ?? 0) + 10
             template.isEnabled = false
+            template.afterCreation = nil
             result.append(template)
         }
         return result
@@ -257,8 +262,11 @@ extension TemplateCatalog {
         return rank
     }
 
-    public static func restoringBuiltIns(in templates: [FileTemplate]) -> [FileTemplate] {
+    public static func restoringBuiltIns(in templates: [FileTemplate], revealAfterCreation: Bool = true) -> [FileTemplate] {
         let builtInIDs = Set(builtInTemplates.map(\.id))
-        return normalizedRanks(for: builtInTemplates + sortedTemplates(from: templates).filter { !builtInIDs.contains($0.id) })
+        let restored = builtInTemplates.map { original in
+            var template = original; template.afterCreation = .basic(reveal: revealAfterCreation); return template
+        }
+        return normalizedRanks(for: restored + sortedTemplates(from: templates).filter { !builtInIDs.contains($0.id) })
     }
 }

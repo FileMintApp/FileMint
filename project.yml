@@ -64,6 +64,13 @@ targets:
       path: Config/AppInfo.plist
       properties:
         CFBundleLocalizations: [en, zh-Hans]
+        UTExportedTypeDeclarations:
+          - UTTypeIdentifier: io.github.daigua.filemint.templates
+            UTTypeDescription: FileMint Template Package
+            UTTypeConformsTo: [public.zip-archive]
+            UTTypeTagSpecification:
+              public.filename-extension: [filemint-templates]
+              public.mime-type: application/x-filemint-templates
         CFBundleURLTypes:
           - CFBundleURLName: io.github.daigua.filemint.create
             CFBundleURLSchemes: [filemint]

@@ -38,3 +38,13 @@ recovery and releasing the busy guard. It does not launch Finder or read real
 favorite/settings files. Native UI checks also filter quick-search results from
 several rows down to one, ensuring the displayed row and Return action use that
 entry's stable ID; clearing history must empty Recent while preserving All.
+
+For the optional template workflow, `bash scripts/build_template_workflow_harness.sh`
+builds a disposable sandboxed fixture with production model, preview, panel and
+executor code. Run the returned bundle's executable with
+`FILEMINT_TEMPLATE_QA_MODE=screenshots` for bounded source/receiver/preview checks
+and native view-cache renders. See the
+[active task](../../docs/tasks/2026-10-05-template-workflow.md#implementation-evidence--2026-10-05)
+for exact results and environment limitations. This does not replace live keyboard,
+VoiceOver, actual editor rendering, working Office providers or installed Finder
+acceptance. The receiver's injected profile applies only to the fixture.

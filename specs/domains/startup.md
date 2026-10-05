@@ -84,6 +84,24 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - An explicitly requested updater relaunch must wait until creation work and
   modal editing are finished. Preserve saved startup preferences and bookmarks.
 
+## Optional creation features and template recovery
+
+- Creation Behavior retains basic reveal settings and adds independent Create and
+  Open / 创建后打开 and Template Preview / 模板预览 switches. Both default off
+  for new, missing or malformed values. Valid values persist; failed saves restore
+  committed state and do not advance opening-disable generation.
+- Decode legacy reveal before seeding missing/malformed per-template actions
+  (true → Reveal, false → none); valid neighboring records/actions survive.
+  Preserve hidden app choices, defaults, disabled/removed built-ins and grants.
+  Normal changes never activate previews, app discovery or opening during decode.
+- Save creation applications separately from Finder Open with App entries, with
+  stable IDs and validated read-only bookmarks. Save template/app edits atomically.
+  Packages contain portable hints only and never read/write feature gates.
+- Track serialized import/export/commit work and post-creation dispatch in ordinary
+  quit and existing updater pending-work inputs. Recover only the bounded (1 MiB)
+  versioned template journal and its exact assets/commit marker on startup. Corrupt
+  settings/journals preserve evidence and block further template mutations.
+
 ## Working context
 
 - Implementation entry points: `App/FileMint/FileMintApp.swift`, `AppDelegate.swift`, `SettingsWindowController.swift`, `LoginItemService.swift`, `PreferencesModel.swift`; `Preferences.swift`, `LoginItemPolicy.swift`, `Localization.swift`.
