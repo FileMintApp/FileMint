@@ -3,6 +3,39 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Pre-release review fixes — 2026-10-05
+
+Tested primary checkout `main`, base `eee6e24` plus these uncommitted fixes,
+on macOS 27.2 arm64 / Xcode 27.0. Existing product contracts are unchanged.
+
+- A present malformed template array now enters settings recovery instead of
+  replacing the saved list with defaults. Regression cases cover a damaged
+  record, null and an invalid container, blocked ordinary writes, preserved
+  original bytes, and explicit recovery with an intact backup. Existing missing
+  field migration and tolerant optional action/icon decoding still pass.
+- Copies carry their original compound suffix through saving and editor preview.
+  The production-model fixture changes `Untitled.d.ts` to Markdown, reloads the
+  saved template and creates `Untitled.md` with the expected resolved content;
+  the source template stays unchanged.
+- Automatic checks defer both scheduling and execution while a native sheet or
+  app-modal dialog is active. Native presentation events resume a one-shot timer.
+  The fixture verifies unchanged preferences/import revisions, a sheet opened
+  after scheduling, app-modal order-out, single resumption, disabling deferred
+  work, explicit checks while automatic checks are off, and cancellation of an
+  in-flight check. Only its startup delay and metadata transport are injected.
+- `make verify` passed: 216 Core tests, 14 image tests, 5/5 public JSON cases,
+  10 CLI regressions and offline release/signing checks. The final unsigned
+  `CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO make build` passed, as did
+  `make verify-context` and `git diff --check`.
+- `bash scripts/build_template_workflow_harness.sh` followed by the fixture
+  executable with `FILEMINT_TEMPLATE_QA_MODE=review-fixes` passed. Evidence is
+  in `build/pre-release-fixes.noindex/{verify,build,native-build,native}.log`.
+  The unchanged Quick Look callback API still has an async-alternative warning.
+- These are Core/build and isolated native scheduling results. Installed Finder,
+  macOS 13 runtime, public networking, signed update installation, notarization
+  and publication were not exercised. No installed app or real preferences were
+  modified, and version/build metadata was not advanced.
+
 ## Commit 51e49db QA — 2026-10-05
 
 - Revalidated exact commit `51e49db28dd0e342b5c84f40bf86b4ecb5af46af` on

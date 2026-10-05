@@ -3,6 +3,26 @@ import Testing
 @testable import FileMintCore
 
 struct TemplateWorkflowTests {
+    @Test func copiedTemplateReplacesItsEntireOriginalSuffix() throws {
+        let source = FileTemplate(id: "custom-source", displayName: "Definition", suggestedFileName: "Untitled.d.ts",
+            group: "Custom", content: "keep {{fileName}}", rank: 10, fileExtension: "d.ts")
+        let copy = TemplateCatalog.copyDraft(source, copySuffix: "Copy")
+        for (name, suffix, expected) in [
+            (copy.suggestedFileName, "md", "Untitled.md"),
+            ("Renamed.D.TS", "test.js", "Renamed.test.js"),
+            (copy.suggestedFileName, "d.ts", "Untitled.d.ts"),
+            ("Explicit.md", "md", "Explicit.md")
+        ] {
+            let saved = try TemplateCatalog.customTemplate(name: copy.displayName, fileExtension: suffix,
+                content: copy.content, id: copy.id, in: [source], suggestedFileName: name,
+                replacingFileExtension: copy.fileExtension)
+            let inserted = TemplateCatalog.insertingCopy(saved, after: source.id, in: [source])
+            #expect(inserted[0] == source)
+            #expect(inserted[1].id == copy.id && inserted[1].suggestedFileName == expected)
+            #expect(inserted[1].content == source.content && inserted[1].fileExtension == suffix)
+        }
+    }
+
     @Test func selectedApplicationRequiresPortableIdentityButNotALocalGrant() throws {
         #expect(!TemplateCreationAction(.openWithApplication).isValid)
         #expect(throws: TemplateCreationActionError.self) { try TemplateCreationAction(.openWithApplication).validate() }

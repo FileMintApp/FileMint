@@ -205,7 +205,8 @@ public enum TemplateValidationError: Error, LocalizedError {
 extension TemplateCatalog {
     public static func customTemplate(name: String, fileExtension: String, content: String,
                                       id: String? = nil, in templates: [FileTemplate],
-                                      suggestedFileName: String? = nil) throws -> FileTemplate {
+                                      suggestedFileName: String? = nil,
+                                      replacingFileExtension: String? = nil) throws -> FileTemplate {
         let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty else { throw TemplateValidationError.emptyName }
         guard let suffix = FilenamePolicy.normalizedFileExtension(fileExtension)?.lowercased() else {
@@ -214,7 +215,7 @@ extension TemplateCatalog {
         let existing = templates.first { $0.id == id }
         let requestedName = (suggestedFileName ?? existing?.suggestedFileName)?.trimmingCharacters(in: .whitespacesAndNewlines)
         let filename = FilenamePolicy.fileName(requestedName?.isEmpty == false ? requestedName! : "Untitled.\(suffix)",
-            applyingFileExtension: suffix, replacingFileExtension: existing?.fileExtension)!
+            applyingFileExtension: suffix, replacingFileExtension: existing?.fileExtension ?? replacingFileExtension)!
         var template = FileTemplate(id: id ?? "custom-\(UUID().uuidString)", displayName: name,
                             suggestedFileName: filename, group: existing?.group ?? "Custom", content: content,
                             isEnabled: existing?.isEnabled ?? true,

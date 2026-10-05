@@ -370,7 +370,8 @@ private struct TypeEditor: View {
     private var previewTemplate: FileTemplate {
         var template = draft.original ?? iconPreviewTemplate
         template.content = draft.content
-        template.suggestedFileName = FilenamePolicy.fileName(draft.suggestedFileName, applyingFileExtension: draft.suffix) ?? "Untitled.txt"
+        template.suggestedFileName = FilenamePolicy.fileName(draft.suggestedFileName, applyingFileExtension: draft.suffix,
+            replacingFileExtension: draft.original?.fileExtension) ?? "Untitled.txt"
         return template
     }
     private func save() async {

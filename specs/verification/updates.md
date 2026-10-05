@@ -11,6 +11,17 @@ automatic check, manual checks with the switch off, and quiet update discovery
 with settings closed. No-update/failure outcomes must not open a window; an
 available update must appear in settings and the menu without starting a download.
 
+The isolated template fixture also exercises the production `UpdateModel` with
+native sheets, app-modal dialogs and real one-shot timers. Build it with
+`bash scripts/build_template_workflow_harness.sh`, then run its executable with
+`FILEMINT_TEMPLATE_QA_MODE=review-fixes`. The fixture uses temporary preferences,
+an accelerated startup delay and an injected metadata response, with no network
+or installation. It checks unchanged settings/import revisions while a sheet is
+active (including a previously armed timer), single resumption after dismissal
+or app-modal order-out,
+disabling deferred checks, manual checks with discovery off, and in-flight
+cancellation. This proves local scheduling, not a public update installation.
+
 `AppUpdateTests` covers numeric stable-version comparison, no downgrades, release
 and asset validation, trusted download/redirect URLs, exact checksum filenames,
 digest mismatches, sandbox no-user-consent quarantine rejection, and bilingual

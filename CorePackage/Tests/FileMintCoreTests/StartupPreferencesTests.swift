@@ -4,6 +4,46 @@ import Testing
 
 @Suite("Startup preferences and localization")
 struct StartupPreferencesTests {
+    @Test("a damaged template list blocks ordinary writes and preserves all original records",
+          arguments: ["record", "null", "container"])
+    func damagedTemplateList(kind: String) throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let file = root.appendingPathComponent("preferences.json")
+        let store = FileMintPreferencesStore(fileURL: file)
+        var original = FileMintPreferences.default
+        original.templates.append(FileTemplate(id: "custom-preserved", displayName: "Keep me",
+            suggestedFileName: "Keep.txt", group: "Custom", content: "valuable template", rank: 1000))
+        original.templates.removeAll { $0.id == "markdown" }
+        original.removedBuiltInTemplateIDs = ["markdown"]
+        var object = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(original)) as? [String: Any])
+        switch kind {
+        case "record":
+            var templates = try #require(object["templates"] as? [[String: Any]])
+            templates[0]["rank"] = "damaged"
+            object["templates"] = templates
+        case "null": object["templates"] = NSNull()
+        default: object["templates"] = ["unexpected": "container"]
+        }
+        let damaged = try JSONSerialization.data(withJSONObject: object)
+        try damaged.write(to: file)
+        let loaded = store.loadWithStatus()
+        #expect(loaded.requiresRecovery)
+        #expect(loaded.preferences.monitoredFolderURLs.isEmpty)
+        #expect(throws: (any Error).self) { try FileMintPreferencesStore.decode(damaged) }
+        #expect(throws: FileMintPreferencesStoreError.self) { try store.save(loaded.preferences) }
+        #expect(throws: FileMintPreferencesStoreError.self) { try store.update { $0.language = .chinese } }
+        #expect(try Data(contentsOf: file) == damaged)
+
+        try store.save(original, recoveringInvalidFile: true)
+        #expect(store.load() == original)
+        let backups = try FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: nil)
+            .filter { $0.lastPathComponent.hasPrefix("preferences-recovery-") }
+        #expect(backups.count == 1)
+        #expect(try Data(contentsOf: #require(backups.first)) == damaged)
+    }
+
     @Test("damaged saved settings preserve bytes and fail closed until explicit recovery")
     func damagedPreferences() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

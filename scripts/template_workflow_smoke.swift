@@ -31,6 +31,10 @@ final class TemplateWorkflowSmoke: NSObject, NSApplicationDelegate {
         Task {
             do {
                 try await run()
+                if ProcessInfo.processInfo.environment["FILEMINT_TEMPLATE_QA_MODE"] == "review-fixes" {
+                    print("PASS pre-release fixes: copied compound suffix and native automatic-update deferral")
+                    fflush(nil); cleanup(); exit(0)
+                }
                 print("PASS template workflow: production model, gates, copy/assets, dispatch, receipt identity and native preview cleanup")
                 fflush(nil)
                 if ProcessInfo.processInfo.environment["FILEMINT_TEMPLATE_QA_MODE"] == "screenshots" {
@@ -63,6 +67,11 @@ final class TemplateWorkflowSmoke: NSObject, NSApplicationDelegate {
         try store.save(preferences)
         let model=PreferencesModel(store:store,documentTemplates:assets); self.model=model
         try await wait { !model.isMutatingTemplates && model.templateRecoveryError == nil }
+        try await testCopiedCompoundSuffix(model: model, store: store, root: root)
+        if ProcessInfo.processInfo.environment["FILEMINT_TEMPLATE_QA_MODE"] == "review-fixes" {
+            try await testAutomaticUpdateDeferral(model: model, store: store)
+            return
+        }
         try await testReviewRegressions(model: model, store: store, assets: assets)
         try check(!model.preferences.creationOpeningEnabled && !model.preferences.templatePreviewEnabled,"Feature gates were not off")
         for (opening,preview) in [(false,false),(true,false),(false,true),(true,true)] {
@@ -123,6 +132,136 @@ final class TemplateWorkflowSmoke: NSObject, NSApplicationDelegate {
         missing.close()
         try await testApplicationIcons(model: model, root: root, assets: assets)
         model.setCreationFeature(opening:false,preview:false)
+    }
+    private func testCopiedCompoundSuffix(model: PreferencesModel, store: FileMintPreferencesStore, root: URL) async throws {
+        let original = model.preferences
+        let source = FileTemplate(id: "custom-compound", displayName: "Definition", suggestedFileName: "Untitled.d.ts",
+            group: "Custom", content: "keep {{fileName}}", rank: 1000, fileExtension: "d.ts")
+        model.preferences.templates.append(source)
+        try check(model.save(), "Could not prepare compound-suffix template")
+        let copy = TemplateCatalog.copyDraft(source, copySuffix: "Copy")
+        try await model.saveType(name: copy.displayName, suffix: "md", content: copy.content, id: nil,
+            suggestedFileName: copy.suggestedFileName, customMenuIcon: nil, copy: copy, sourceID: source.id)
+        let saved = store.load()
+        guard let copied = saved.templates.first(where: { $0.id == copy.id }) else {
+            throw CheckFailure(message: "Copied template was not persisted")
+        }
+        try check(copied.suggestedFileName == "Untitled.md" && copied.fileExtension == "md",
+                  "Copy retained part of its old compound suffix")
+        try check(saved.templates.first { $0.id == source.id }?.suggestedFileName == "Untitled.d.ts",
+                  "Copy changed the source template")
+        let result = try await Task.detached {
+            try FileCreationService().createFile(.init(destinationDirectory: root, template: copied))
+        }.value
+        try check(result.createdURL.lastPathComponent == "Untitled.md" &&
+                  (try String(contentsOf: result.createdURL, encoding: .utf8)) == "keep Untitled.md",
+                  "Copied template created the wrong name or content")
+        model.preferences = original
+        try check(model.save(), "Could not restore isolated copy preferences")
+        print("PASS copied compound suffix: production saveType, persisted reload and actual output bytes"); fflush(nil)
+    }
+    @MainActor private final class UpdateCheckProbe {
+        var requests = 0
+        var cancellations = 0
+        var holdRequest = false
+        var modalPreservedSettings = false
+        func check() async throws -> AppUpdate? {
+            requests += 1
+            if holdRequest {
+                do { try await Task.sleep(for: .seconds(10)) }
+                catch { cancellations += 1; throw error }
+            }
+            return nil
+        }
+    }
+    private func testAutomaticUpdateDeferral(model: PreferencesModel, store: FileMintPreferencesStore) async throws {
+        model.preferences.automaticallyChecksForUpdates = false
+        model.preferences.lastUpdateCheckAttempt = nil
+        try check(model.save(), "Could not prepare updater fixture preferences")
+        let probe = UpdateCheckProbe()
+        // Only the metadata transport and startup delay are injected. Timers,
+        // native modal detection, preference writes and cancellation are production.
+        let updater = UpdateModel(preferencesModel: model, automaticCheckStartupDelay: 0.15) { _ in
+            try await probe.check()
+        }
+        let parent = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 380, height: 180),
+            styleMask: [.titled, .closable], backing: .buffered, defer: false)
+        let sheet = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 300, height: 100),
+            styleMask: [.titled], backing: .buffered, defer: false)
+        parent.title = "FileMint · isolated updater check"
+        parent.isReleasedWhenClosed = false; sheet.isReleasedWhenClosed = false
+        defer {
+            model.setAutomaticallyChecksForUpdates(false)
+            if parent.attachedSheet != nil { parent.endSheet(sheet) }
+            sheet.orderOut(nil); parent.close()
+        }
+        parent.makeKeyAndOrderFront(nil)
+        parent.beginSheet(sheet, completionHandler: { _ in })
+        updater.startAutomaticChecks()
+        model.setAutomaticallyChecksForUpdates(true)
+        let before = try Data(contentsOf: store.location!)
+        let reviewRevision = try TemplateImportPlanner.revision(store.load())
+        try await Task.sleep(for: .milliseconds(400))
+        try check(probe.requests == 0 && (try Data(contentsOf: store.location!)) == before,
+                  "An automatic check started or wrote preferences under an existing sheet")
+        try check(try TemplateImportPlanner.revision(store.load()) == reviewRevision,
+                  "An automatic check invalidated the import review")
+        parent.endSheet(sheet); sheet.orderOut(nil)
+        try await wait { probe.requests == 1 && updater.state == .upToDate }
+        try check(store.load().lastUpdateCheckAttempt != nil, "Resumed check did not persist its attempt")
+        try await Task.sleep(for: .milliseconds(350))
+        try check(probe.requests == 1, "Modal dismissal scheduled duplicate checks")
+
+        // Also block a timer that was already armed before the sheet appeared.
+        model.setAutomaticallyChecksForUpdates(false)
+        model.preferences.lastUpdateCheckAttempt = nil
+        try check(model.save(), "Could not reset the isolated cooldown")
+        model.setAutomaticallyChecksForUpdates(true)
+        try await Task.sleep(for: .milliseconds(40))
+        parent.beginSheet(sheet, completionHandler: { _ in })
+        let armedBefore = try Data(contentsOf: store.location!)
+        try await Task.sleep(for: .milliseconds(350))
+        try check(probe.requests == 1 && (try Data(contentsOf: store.location!)) == armedBefore,
+                  "An armed timer ignored a newly opened sheet")
+        model.setAutomaticallyChecksForUpdates(false)
+        parent.endSheet(sheet); sheet.orderOut(nil)
+        try await Task.sleep(for: .milliseconds(350))
+        try check(probe.requests == 1 && store.load().lastUpdateCheckAttempt == nil,
+                  "Disabling automatic checks revived deferred work")
+
+        // App-modal dialogs can order out without NSWindow.willCloseNotification.
+        model.setAutomaticallyChecksForUpdates(true)
+        try await Task.sleep(for: .milliseconds(40))
+        let modal = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 300, height: 100),
+            styleMask: [.titled], backing: .buffered, defer: false)
+        modal.isReleasedWhenClosed = false
+        let preferencesURL = store.location!, modalBefore = try Data(contentsOf: preferencesURL)
+        let dismissal = Timer(timeInterval: 0.35, repeats: false) { _ in
+            MainActor.assumeIsolated {
+                probe.modalPreservedSettings = probe.requests == 1 && (try? Data(contentsOf: preferencesURL)) == modalBefore
+                NSApp.stopModal(); modal.orderOut(nil)
+            }
+        }
+        RunLoop.main.add(dismissal, forMode: .common)
+        NSApp.runModal(for: modal)
+        dismissal.invalidate()
+        try check(probe.modalPreservedSettings, "An automatic check wrote under an app-modal dialog")
+        try await wait { probe.requests == 2 && updater.state == .upToDate }
+        modal.close()
+        model.setAutomaticallyChecksForUpdates(false)
+
+        // Explicit checks remain available with automatic discovery switched off.
+        updater.checkForUpdates()
+        try await wait { probe.requests == 3 && updater.state == .upToDate }
+        model.preferences.lastUpdateCheckAttempt = nil
+        try check(model.save(), "Could not reset the isolated cancellation fixture")
+        probe.holdRequest = true
+        model.setAutomaticallyChecksForUpdates(true)
+        try await wait { probe.requests == 4 && updater.isBusy }
+        model.setAutomaticallyChecksForUpdates(false)
+        try await wait { probe.cancellations == 1 && !updater.isBusy }
+        try check(store.load().lastUpdateCheckAttempt != nil, "Cancellation erased the weekly cooldown")
+        print("PASS automatic-update scheduler: existing/new sheets, app-modal order-out, unchanged review, one-shot resume, disable, manual and cancellation"); fflush(nil)
     }
     private func testApplicationIcons(model: PreferencesModel, root: URL, assets: DocumentTemplateStore) async throws {
         let captured = try await Task.detached {

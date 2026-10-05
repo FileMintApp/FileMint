@@ -354,7 +354,8 @@ final class PreferencesModel: ObservableObject {
         }
         let previous = preferences
         var type = try TemplateCatalog.customTemplate(name: name, fileExtension: suffix, content: document == nil ? content : "",
-            id: copy?.id ?? id, in: preferences.templates, suggestedFileName: suggestedFileName)
+            id: copy?.id ?? id, in: preferences.templates, suggestedFileName: suggestedFileName,
+            replacingFileExtension: copy?.fileExtension)
         type.document = document; type.customMenuIcon = customMenuIcon
         type.group = copy?.group ?? original?.group ?? "Custom"
         type.afterCreation = action ?? copy?.afterCreation ?? original?.afterCreation ?? .basic(reveal: preferences.revealAfterCreation)

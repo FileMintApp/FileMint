@@ -122,7 +122,11 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         let defaults = FileMintPreferences.default
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
-        templates = (try? container.decode([FileTemplate].self, forKey: .templates)) ?? defaults.templates
+        // Missing fields belong to older settings. A present, damaged template
+        // list must reach the store's recovery path, never become writable defaults.
+        templates = container.contains(.templates)
+            ? try container.decode([FileTemplate].self, forKey: .templates)
+            : defaults.templates
         let builtInIDs = Set(TemplateCatalog.builtInTemplates.map(\.id))
         removedBuiltInTemplateIDs = Array(Set((try? container.decode([String].self, forKey: .removedBuiltInTemplateIDs)) ?? [])
             .intersection(builtInIDs)).sorted()

@@ -17,7 +17,9 @@ final class UpdateModel: ObservableObject {
     @Published private(set) var progress: Double = 0
     let currentVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
     let buildNumber = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
-    private let client = UpdateClient()
+    private let preferencesModel: PreferencesModel
+    private let checkRelease: @MainActor (String) async throws -> AppUpdate?
+    private let automaticCheckStartupDelay: TimeInterval
     private lazy var installer = SparkleInstaller(model: self)
     @Published private(set) var isInstalling = false
     @Published private(set) var canCancelInstallation = false
@@ -26,7 +28,19 @@ final class UpdateModel: ObservableObject {
     private var operationID = UUID()
     private var automaticCheckTimer: Timer?
     private var automaticPreferenceObserver: AnyCancellable?
+    private var automaticModalObserver: AnyCancellable?
+    private var automaticCheckDeferredForModal = false
     private var automaticCheckID: UUID?
+
+    init(preferencesModel: PreferencesModel = .shared,
+         automaticCheckStartupDelay: TimeInterval = AutomaticUpdatePolicy.startupDelay,
+         checkRelease: @escaping @MainActor (String) async throws -> AppUpdate? = {
+             try await UpdateClient().check(currentVersion: $0)
+         }) {
+        self.preferencesModel = preferencesModel
+        self.automaticCheckStartupDelay = automaticCheckStartupDelay
+        self.checkRelease = checkRelease
+    }
 
     var isBusy: Bool { isInstalling || state == .checking }
     var canCancel: Bool { isInstalling ? canCancelInstallation : state == .checking }
@@ -49,7 +63,20 @@ final class UpdateModel: ObservableObject {
 
     func startAutomaticChecks() {
         guard automaticPreferenceObserver == nil else { return }
-        automaticPreferenceObserver = PreferencesModel.shared.$preferences
+        // Resume a deferred one-shot check from native presentation events, not
+        // a polling timer. App-modal dialogs can order out instead of closing.
+        let changes = [NSWindow.didEndSheetNotification, NSWindow.willCloseNotification,
+                       NSWindow.didBecomeKeyNotification, NSWindow.didResignKeyNotification,
+                       NSApplication.didBecomeActiveNotification]
+        automaticModalObserver = Publishers.MergeMany(changes.map {
+            NotificationCenter.default.publisher(for: $0)
+        }).sink { [weak self] _ in
+            Task { @MainActor in
+                guard let self, self.automaticCheckDeferredForModal, !self.hasModalPresentation else { return }
+                self.scheduleAutomaticCheck()
+            }
+        }
+        automaticPreferenceObserver = preferencesModel.$preferences
             .removeDuplicates {
                 $0.automaticallyChecksForUpdates == $1.automaticallyChecksForUpdates &&
                     $0.lastUpdateCheckAttempt == $1.lastUpdateCheckAttempt
@@ -71,16 +98,18 @@ final class UpdateModel: ObservableObject {
     private func scheduleAutomaticCheck() {
         automaticCheckTimer?.invalidate()
         automaticCheckTimer = nil
-        let model = PreferencesModel.shared
+        automaticCheckDeferredForModal = false
+        let model = preferencesModel
         guard automaticPreferenceObserver != nil, model.preferences.automaticallyChecksForUpdates,
               !isBusy, update == nil else { return }
+        guard !deferAutomaticCheckForModal() else { return }
         let now = Date()
         if let saved = model.preferences.lastUpdateCheckAttempt, saved > now {
             guard model.recordUpdateCheckAttempt(now) else { return }
         }
         guard let next = AutomaticUpdatePolicy.nextCheckDate(enabled: true,
             lastAttempt: model.preferences.lastUpdateCheckAttempt, now: now) else { return }
-        let delay = max(AutomaticUpdatePolicy.startupDelay, next.timeIntervalSince(now))
+        let delay = max(automaticCheckStartupDelay, next.timeIntervalSince(now))
         let timer = Timer(timeInterval: delay, repeats: false) { [weak self] _ in
             Task { @MainActor in self?.checkAutomaticallyIfDue() }
         }
@@ -90,8 +119,9 @@ final class UpdateModel: ObservableObject {
     }
 
     private func checkAutomaticallyIfDue() {
-        let preferences = PreferencesModel.shared.preferences
+        let preferences = preferencesModel.preferences
         guard preferences.automaticallyChecksForUpdates, !isBusy, update == nil else { return }
+        guard !deferAutomaticCheckForModal() else { return }
         let now = Date()
         guard let next = AutomaticUpdatePolicy.nextCheckDate(enabled: true,
             lastAttempt: preferences.lastUpdateCheckAttempt, now: now), next <= now else {
@@ -101,14 +131,27 @@ final class UpdateModel: ObservableObject {
         checkForUpdates(automatically: true)
     }
 
+    private var hasModalPresentation: Bool {
+        NSApp.modalWindow != nil || NSApp.windows.contains { $0.attachedSheet != nil }
+    }
+
+    private func deferAutomaticCheckForModal() -> Bool {
+        guard hasModalPresentation else { return false }
+        automaticCheckTimer?.invalidate()
+        automaticCheckTimer = nil
+        automaticCheckDeferredForModal = true
+        return true
+    }
+
     func checkForUpdates() { checkForUpdates(automatically: false) }
 
     private func checkForUpdates(automatically: Bool) {
         guard !isBusy else { return }
         automaticCheckTimer?.invalidate()
         automaticCheckTimer = nil
+        automaticCheckDeferredForModal = false
         // Failed and cancelled attempts also consume the weekly automatic check.
-        let recorded = PreferencesModel.shared.recordUpdateCheckAttempt(Date())
+        let recorded = preferencesModel.recordUpdateCheckAttempt(Date())
         guard recorded || !automatically else {
             scheduleAutomaticCheck()
             return
@@ -127,9 +170,9 @@ final class UpdateModel: ObservableObject {
                 }
             }
             do {
-                let result = try await client.check(currentVersion: currentVersion)
+                let result = try await checkRelease(currentVersion)
                 guard operationID == id, !Task.isCancelled else { return }
-                if automatically && !PreferencesModel.shared.preferences.automaticallyChecksForUpdates {
+                if automatically && !preferencesModel.preferences.automaticallyChecksForUpdates {
                     cancel()
                     return
                 }
@@ -145,9 +188,9 @@ final class UpdateModel: ObservableObject {
     var canSafelyRestart: Bool {
         UpdateInstallationPolicy.canRestart(
             hasDraft: CustomFileSavePanelController.shared.hasActiveDraft,
-            pendingCreations: PreferencesModel.shared.pendingCreationCount + (FileOperationCoordinator.shared.isBusy ? 1 : 0)
+            pendingCreations: preferencesModel.pendingCreationCount + (FileOperationCoordinator.shared.isBusy ? 1 : 0)
                 + (FavoriteLocationsModel.sharedIsBusy ? 1 : 0),
-            hasModal: NSApp.modalWindow != nil || NSApp.windows.contains { $0.attachedSheet != nil })
+            hasModal: hasModalPresentation)
     }
 
     func downloadUpdate() {
