@@ -1,7 +1,7 @@
 # Task: Respect configured post-creation applications
 
 Status: complete
-Next action: Delivery authorized; follow [release 0.6.8](release-0.6.8.md).
+Next action: None. Delivered in [release 0.6.8](release-0.6.8.md).
 
 ## Objective and scope
 
@@ -86,7 +86,8 @@ does not perform a new signed/notarized release or installed-Finder acceptance.
 ## Handoff
 
 - No implementation work remains for these opening semantics. Fix commit
-  `acfa69e` records the code and checks. The user then authorized the standard
-  [0.6.8 release](release-0.6.8.md); release results are recorded there.
+  `acfa69e` records the code and checks. The authorized standard
+  [0.6.8 release](release-0.6.8.md) completed signing, notarization, publication
+  and remote byte verification; the immutable release tag is `v0.6.8`.
 - Installed Finder entry points, macOS 13 and every third-party application's
   format compatibility are not claimed by this bounded verification.

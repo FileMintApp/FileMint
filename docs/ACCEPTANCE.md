@@ -3,6 +3,22 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## FileMint 0.6.8 release — 2026-10-08
+
+The arm64/macOS 13+ [0.6.8 release](tasks/release-0.6.8.md), build 27, was built
+from `8b1a08dc20822675b0b0b6dc1384c79f9f6ce81a` on macOS 27.2 arm64 / Xcode 27.0.
+The standard pipeline passed 220 Core tests, 14 image tests, 5 public Harness
+cases, 10 CLI regressions, offline release checks and production Sparkle-driver
+checks. The opening-chain evidence below covers the changed feature separately.
+
+Developer ID signatures, embedded entitlements, arm64-only binaries, accepted
+Apple notarization, DMG stapling and signed appcast validation passed. Published
+DMG, checksum and appcast matched local bytes. Published-release verification,
+release-source CI and website deployment passed; the release task records hashes,
+Apple submission ID and GitHub runs. No installed FileMint was replaced.
+Installed Finder, macOS 13, managed-device and old-to-new installed-update evidence
+remain unverified by this standard release.
+
 ## Configured and default post-creation applications — 2026-10-08
 
 Tested primary checkout `main`, base `e0ba136` plus these uncommitted changes,
