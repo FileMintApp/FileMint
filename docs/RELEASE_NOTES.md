@@ -1,3 +1,41 @@
+# FileMint 0.6.7
+
+## 新功能
+
+- **拷贝模板**：从现有文本或 Word / Excel 模板创建独立副本，保留内容、图标和创建后动作。保存前可修改，取消不改变原模板。
+- **按需预览**：在“创建 → 模板预览”开启后，查看文本的实际输出内容；Office 模板使用系统 Quick Look，提供器不可用时显示说明。预览默认关闭，不修改原文档。
+- **创建后打开**：在“创建 → 创建后打开”开启后，为模板选择创建后动作，也可在新建面板临时选择应用。所选应用显示名称与图标；打开失败保留已保存文件，并可重新选择应用，不会重复创建。
+- **模板导入导出**：通过 `.filemint-templates` 模板包备份、迁移或分享文本及 Word / Excel 模板。导入前核对新增、跳过或另存为副本，不覆盖已有模板；模板包不包含本机路径和文件夹授权，也不会开启预览或创建后打开。
+
+## 修复与改进
+
+- **保留损坏设置的恢复机会**：模板记录损坏时保留原始设置并进入恢复流程，避免用默认模板覆盖现有配置。
+- **复合后缀切换**：拷贝 `.d.ts` 等模板后切换格式，会替换完整后缀，预览和创建使用一致的文件名。
+- **导入更稳健**：提前核对文本展开和设置容量，限制重复引用带来的内存占用；导入审核与提交保持一致，取消或失败不会覆盖已有模板和导出目标。
+- **自动检查避开弹窗**：原生 sheet 或模态窗口显示期间延后自动更新检查，关闭后恢复单次定时检查，避免打断正在进行的编辑和导入审核。
+
+## 系统要求与升级
+
+正式安装包支持 macOS 13 或更新版本的 M 系列 Mac，不含 Intel 代码。可通过“关于 → 检查更新 → 更新并重启”升级。已有模板、排序、默认项和授权保留；模板预览与创建后打开默认关闭，可分别按需开启。应用不可用或未通过验证时，请重新选择应用。0.5.7/0.5.8 用户仍需手动安装 0.5.9 或更新版本一次。
+
+## New features
+
+- **Copy templates**: Create an independent draft from a text or Word / Excel template, retaining its content, icon and post-creation action. Edit before saving; cancelling leaves the original unchanged.
+- **Optional previews**: Enable **Creation → Template Preview** to inspect resolved text output. Office templates use system Quick Look, with guidance when a provider is unavailable. Preview starts off and never edits the original document.
+- **Create and Open**: Enable **Creation → Create and Open** to configure a template's post-creation action or choose an app temporarily in the creation panel. Selected apps show their names and icons. If opening fails, the saved file remains available and another app can be selected without creating it again.
+- **Import and export templates**: Back up, move or share text and Word / Excel templates in `.filemint-templates` packages. Review Add, Skip or Save as Copy before importing, without replacing existing templates. Packages exclude local paths and folder grants and never enable preview or opening.
+
+## Fixes and improvements
+
+- **Recover damaged settings**: Preserve the original settings and enter recovery when template records are corrupt, instead of replacing them with defaults.
+- **Compound suffix changes**: Switching formats after copying a template such as `.d.ts` replaces its complete suffix and keeps preview and creation names consistent.
+- **More robust imports**: Check expanded text and settings capacity before materializing content, bound memory used by repeated references, and keep import review consistent with commit. Cancellation or failure preserves existing templates and export destinations.
+- **Defer automatic checks during dialogs**: Wait while native sheets or modal windows are active, then resume a single scheduled update check without interrupting editing or import review.
+
+## System requirements and upgrading
+
+The stable installer supports M-series Macs running macOS 13 or later and contains no Intel code. Upgrade through **About → Check for Updates → Update and Restart**. Existing templates, order, defaults and grants are retained. Template Preview and Create and Open start off and can be enabled independently. Select another app if the chosen app is unavailable or fails validation. Versions 0.5.7/0.5.8 still require one manual installation of 0.5.9 or later.
+
 # FileMint 0.6.6
 
 ## 改进

@@ -10,14 +10,17 @@ Creating a file should not require opening an editor, choosing Save As and findi
 FileMint puts the action back in Finder: **right-click, choose a type and your file is there.**
 When you need a name, starter content, image processing or selected-item tools, the same native workflow continues.
 
-## What's new in 0.6.6
+## What's new in 0.6.7
 
-New blank Word and Excel templates are ready on fresh installations and can be enabled in Templates & Types after upgrading. Open with App remembers valid folder access across restarts, with fixes for quick creation, favorite identity and image-tool preparation state. The stable installer supports M-series Macs on macOS 13+; Intel users should stay on a compatible earlier release.
+Copy templates, enable optional previews, continue in an app after creation, and import or export template packages. Template Preview and Create and Open start off and can be enabled independently under Creation; Office previews depend on system Quick Look providers. This release also improves damaged-settings recovery, compound suffix changes and import memory limits, and defers automatic update checks during dialogs. The stable installer supports M-series Macs on macOS 13+; Intel users should stay on a compatible earlier release.
 
-[0.6.6 release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.6.6)
+[0.6.7 release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.6.7)
 
 ## Recent features
 
+- **Copy and preview templates**: Start with a copy of an existing template and optionally inspect text output or an Office preview supported by the system.
+- **Import and export templates**: Back up, move or share templates in `.filemint-templates` packages, reviewing conflicts before import.
+- **Create and Open**: Continue in an app chosen for the template or this creation; opening failures preserve the saved file.
 - **New File from Clipboard**: Explicitly read one plain-text item, then review the name, destination and content before creating a file.
 - **Open with App**: Add your go-to apps to Finder and open selected items or the current folder with them.
 - **Paste Image as File**: Preview and name a copied screenshot or image, then save it as PNG.
@@ -25,7 +28,7 @@ New blank Word and Excel templates are ready on fresh installations and can be e
 - **Word / Excel templates**: Create blank `.docx` and `.xlsx` files from built-in templates, or import your own documents and create independent copies with their formatting and content intact.
 - **Themes and settings**: General now offers Follow System, Light and Dark, with consistent control alignment and interaction styles.
 
-[Full release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.6.6)
+[Full release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.6.7)
 
 ## Why FileMint
 
@@ -131,7 +134,7 @@ Read the complete [privacy policy](PRIVACY.md).
 
 ## Install
 
-The 0.6.6 stable installer supports **M-series Macs on macOS 13+** only. Intel Macs cannot install or update to this version. Published installers through 0.5.10 keep their original compatibility.
+The 0.6.7 stable installer supports **M-series Macs on macOS 13+** only. Intel Macs cannot install or update to this version. Published installers through 0.5.10 keep their original compatibility.
 
 **Stable installers from 0.5.9 onward are Developer ID signed, Apple notarized and stapled.** First use still follows macOS prompts for Finder enablement and folder authorization.
 
@@ -154,16 +157,7 @@ These are unfinished directions only; the list changes with real use and feedbac
 
 ### Templates and naming
 
-- [ ] **Duplicate and preview templates** — Start from an existing template and preview the filename and initial content.
 - [ ] **Filename rules** — Build names from dates, project names and other fields, with a preview of the result.
-- [ ] **Import and export templates** — Back up, move and share templates, choosing how to handle conflicts on import.
-
-</div>
-<div class="roadmap-group">
-
-### Creation and next steps
-
-- [ ] **Open after creation** — Continue working in the default app or an editor you choose.
 
 </div>
 <div class="roadmap-group">
