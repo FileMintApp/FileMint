@@ -3,6 +3,37 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Configured and default post-creation applications — 2026-10-08
+
+Tested primary checkout `main`, base `e0ba136` plus these uncommitted changes,
+on macOS 27.2 arm64 / Xcode 27.0.
+
+- [The chain review](tasks/2026-10-08-creation-opening.md) covers saved template
+  actions, quick tickets, the creation panel, dispatch and retry. Explicit apps
+  retain bookmark/bundle validation; system-default opening directly uses the
+  macOS API. Neither route has a FileMint editor, publisher or content-type
+  allowlist. Recovery distinguishes unavailable apps and native opening failures.
+- **Passed:** `make verify` (220 Core tests, 14 image tests, 5 public Harness
+  cases, 10 CLI regressions and offline release checks), plus
+  `CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO make build`.
+  [Verification log](../build/opening-chain-2026-10-08.f4gv9s80.noindex/verify.log),
+  [build log](../build/opening-chain-2026-10-08.f4gv9s80.noindex/build.log).
+- **Passed:** real native explicit/default receipt delivery, 12 isolated
+  quick/panel and selected/default combinations for JS/DOCX/XLSX, 6 collision
+  receipts, temporary override, cancel, pending-work, failure and retry checks.
+  A temporary fixture-specific system association is removed after the check;
+  existing file associations are unchanged.
+  [Native log](../build/opening-chain-2026-10-08.f4gv9s80.noindex/native.log).
+- **Passed:** actual VS Code 1.141.0 displayed panel/quick JS tabs and the test
+  code; WPS 12.1.26050 was launched for DOCX and reused for XLSX, displaying a
+  blank Word page and Sheet1 without a repair prompt. System-default TXT opened
+  in TextEdit 1.21 with the expected marker. Live CUA observations supplement
+  [native callbacks](../build/opening-chain-2026-10-08.f4gv9s80.noindex/installed-apps.log).
+  Test documents were closed without editing user documents.
+- Installed Finder entry points and macOS 13 were **not run**. Real FileMint
+  preferences and installed apps were unchanged; no release was installed or
+  published, and arbitrary third-party format compatibility is not claimed.
+
 ## FileMint 0.6.7 release — 2026-10-08
 
 The arm64/macOS 13+ [0.6.7 release](tasks/release-0.6.7.md), build 26, was built

@@ -4,7 +4,8 @@ public enum TemplateWorkflowText: Hashable, Sendable {
     case copy, copySuffix, preview, previewEnabled, previewHint, openingEnabled, openingHint
     case none, reveal, defaultApp, selectedApp, followTemplate, chooseApp, unresolvedApp
     case createAndOpen, editContent, resultPreview, exampleContext, loading, unavailablePreview
-    case savedOpenFailed, savedUnavailable, unsupportedEditor, retryOpen
+    case savedOpenFailed, savedUnavailable, retryOpen
+    case openingApplicationUnavailable, applicationOpenFailed, defaultApplicationOpenFailed
     case importMenu, importPackage, exportPackage, exportSelection, selected, enabled, all, custom
     case add, skip, saveCopy, confirmImport, adoptDefaults, staleReview, recoveryNeeded, cleanupPending
     case packageInvalid, packageTooLarge, packageVersion, noSelection, importFailed, exportFailed
@@ -34,7 +35,9 @@ public enum TemplateWorkflowText: Hashable, Sendable {
         case .unavailablePreview: pair = ("Preview unavailable", "预览不可用")
         case .savedOpenFailed: pair = ("File saved, but could not open", "文件已保存，但未能打开")
         case .savedUnavailable: pair = ("The saved file is missing or changed.", "已保存的文件不存在或已发生变化。")
-        case .unsupportedEditor: pair = ("Choose TextEdit or Visual Studio Code for text files. This editing route has not been verified for Office documents.", "文本文件请选择文本编辑或 Visual Studio Code；Office 文档的编辑打开路径尚未验证。")
+        case .openingApplicationUnavailable: pair = ("The application is unavailable or has changed. Choose the application again.", "应用不可用或已发生变化，请重新选择应用。")
+        case .applicationOpenFailed: pair = ("The application could not open the saved file. Retry or choose another application.", "应用未能打开已保存的文件，请重试或选择其他应用。")
+        case .defaultApplicationOpenFailed: pair = ("macOS could not open the saved file with its default application. Check the file's default application in Finder, retry, or choose an application.", "macOS 未能使用默认应用打开已保存的文件。请在 Finder 中检查此文件的默认应用，重试或选择应用。")
         case .retryOpen: pair = ("Retry Opening", "重试打开")
         case .importMenu: pair = ("Import…", "导入…")
         case .importPackage: pair = ("Import Template Package…", "导入模板包…")

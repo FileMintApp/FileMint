@@ -35,6 +35,14 @@ final class TemplateWorkflowSmoke: NSObject, NSApplicationDelegate {
                     print("PASS pre-release fixes: copied compound suffix and native automatic-update deferral")
                     fflush(nil); cleanup(); exit(0)
                 }
+                if ProcessInfo.processInfo.environment["FILEMINT_TEMPLATE_QA_MODE"] == "opening" {
+                    print("PASS creation opening: configured/default applications, quick/panel routes, errors and receipt guards")
+                    fflush(nil); cleanup(); exit(0)
+                }
+                if ProcessInfo.processInfo.environment["FILEMINT_TEMPLATE_QA_MODE"] == "opening-apps" {
+                    print("PASS installed app callbacks; inspect the temporary documents in each app for rendering evidence")
+                    fflush(nil); exit(0)
+                }
                 print("PASS template workflow: production model, gates, copy/assets, dispatch, receipt identity and native preview cleanup")
                 fflush(nil)
                 if ProcessInfo.processInfo.environment["FILEMINT_TEMPLATE_QA_MODE"] == "screenshots" {
@@ -60,6 +68,14 @@ final class TemplateWorkflowSmoke: NSObject, NSApplicationDelegate {
         let root=FileManager.default.temporaryDirectory.appendingPathComponent("FileMint-template-qa-"+UUID().uuidString,isDirectory:true)
         try FileManager.default.createDirectory(at:root,withIntermediateDirectories:false)
         fixture=root
+        if ProcessInfo.processInfo.environment["FILEMINT_TEMPLATE_QA_MODE"] == "opening-apps" {
+            try await CreationOpeningChecks.runInstalledApplications(root: root)
+            return
+        }
+        if ProcessInfo.processInfo.environment["FILEMINT_TEMPLATE_QA_MODE"] == "opening" {
+            try await CreationOpeningChecks.run(root: root)
+            return
+        }
         let assets=DocumentTemplateStore(directory:root.appendingPathComponent("assets"),bundledDirectory:Bundle.main.bundleURL.appendingPathComponent("Contents/Resources/OfficeTemplates"))
         let store=FileMintPreferencesStore(fileURL:root.appendingPathComponent("preferences.json"))
         var preferences=FileMintPreferences.default
@@ -105,7 +121,7 @@ final class TemplateWorkflowSmoke: NSObject, NSApplicationDelegate {
         do { _=try assets.data(for:reference); throw CheckFailure(message:"Unreferenced document remained") } catch is DocumentTemplateError {}
         try check(model.preferences.openWith.applications.isEmpty,"Creation app was exposed to Finder")
         print("PASS production model: gate combinations, failed save, copy and reference cleanup"); fflush(nil)
-        try await testExecutor(root:root)
+        try await CreationOpeningChecks.run(root: root)
         print("PASS production executor: native receiver, stale gate, duplicate completion and replacement rejection"); fflush(nil)
         for builtin in TemplateCatalog.builtInTemplates where builtin.document != nil {
             let reference = builtin.document!
@@ -356,61 +372,6 @@ final class TemplateWorkflowSmoke: NSObject, NSApplicationDelegate {
         print("PASS review regressions: busy-save rollback, invalid app rejection, failed-review blocking and corrected import")
         fflush(nil)
     }
-    private func testExecutor(root:URL) async throws {
-        var gate=CreationOpeningGate(enabled:false), dispatches=0, reveals=0
-        let spy=PostCreationActionExecutor(gate:{ gate },nativeOpen:{ _,_ in dispatches += 1 },reveal:{ _ in reveals += 1 })
-        var prefs=FileMintPreferences.default; prefs.creationOpeningEnabled=true
-        var template=TemplateCatalog.builtInTemplates[0]; template.afterCreation = .init(.openWithDefaultApp)
-        let saved=try FileCreationService().createFile(.init(destinationDirectory:root,template:template))
-        let off=CreationFollowUp(template:template,preferences:prefs,gate:gate)
-        gate.commit(enabled:true)
-        await spy.complete(saved,followUp:off,language:.english)
-        try check(dispatches==0 && reveals==1,"Off-origin request acquired launch permission")
-        let pending=CreationFollowUp(template:template,preferences:prefs,gate:gate)
-        gate.commit(enabled:false); gate.commit(enabled:true)
-        await spy.complete(saved,followUp:pending,language:.english)
-        try check(dispatches==0 && reveals==2,"Disable/re-enable revived a request")
-        let receiver=Bundle.main.bundleURL.appendingPathComponent("Contents/Resources/TemplateReceiver.app")
-        let app=try OpenWithApplicationAccess.capture(receiver)
-        let local=CreationApplication(id:app.id,hint:.init(bundleIdentifier:app.bundleIdentifier,displayName:app.name),url:app.url,bookmark:app.bookmark)
-        prefs.creationApplications=[local]
-        template.afterCreation = .init(.openWithApplication,application:local.hint,localApplicationID:local.id)
-        let followUp=CreationFollowUp(template:template,preferences:prefs,gate:gate)
-        let executor=PostCreationActionExecutor(gate:{ gate },defaultHandler:{ _ in receiver },editingPolicy:{ id,_ in id=="io.github.daigua.filemint.template-receiver" },verifyEditor:{ _,_ in })
-        try check(await executor.complete(saved,followUp:followUp,language:.english,presentFailures:false),"Native receiver handoff failed")
-        let receipt=root.appendingPathComponent("receipt.json")
-        try await wait { FileManager.default.fileExists(atPath:receipt.path) }
-        let urls=try JSONDecoder().decode([URL].self,from:Data(contentsOf:receipt))
-        try check(urls==[saved.createdURL],"Native receiver received the wrong file")
-        try FileManager.default.removeItem(at:receipt)
-        await executor.complete(saved,followUp:followUp,language:.english)
-        try await Task.sleep(for:.milliseconds(250))
-        try check(!FileManager.default.fileExists(atPath:receipt.path),"Duplicate completion dispatched twice")
-        let negative=PostCreationActionExecutor(gate:{ gate },nativeOpen:{ _,_ in dispatches += 1 },defaultHandler:{ _ in receiver })
-        do { try await negative.execute(saved,action:.init(.openWithDefaultApp),application:nil,followUp:followUp); throw CheckFailure(message:"Unverified default handler dispatched") }
-        catch PostCreationActionExecutor.Failure.editorRequired {}
-        do { try CreationEditorIdentity.validate(identifier: "com.apple.TextEdit", at: receiver); throw CheckFailure(message: "Forged editor identity accepted") }
-        catch PostCreationActionExecutor.Failure.editorRequired {}
-        let previous=saved.createdURL.appendingPathExtension("original")
-        try FileManager.default.moveItem(at:saved.createdURL,to:previous)
-        try Data("replacement".utf8).write(to:saved.createdURL)
-        do { try await executor.execute(saved,action:.init(.revealInFinder),application:nil,followUp:followUp); throw CheckFailure(message:"Replaced file opened") }
-        catch PostCreationActionExecutor.Failure.savedItemChanged {}
-        try check(dispatches==0,"Negative case dispatched")
-        // Inspect only the two explicit supported installations; no app discovery.
-        for (identifier, path) in [("com.apple.TextEdit", "/System/Applications/TextEdit.app"), ("com.microsoft.VSCode", "/Applications/Visual Studio Code.app")] {
-            let url=URL(fileURLWithPath:path)
-            if FileManager.default.fileExists(atPath:path) {
-                do {
-                    try await Task.detached { try CreationEditorIdentity.validate(identifier:identifier,at:url) }.value
-                    print("PASS editor signing identity: "+identifier); fflush(nil)
-                } catch {
-                    if identifier == "com.apple.TextEdit" { throw error }
-                    print("BLOCKED editor signing identity: "+identifier+" (installed bundle fails strict validation)"); fflush(nil)
-                }
-            }
-        }
-    }
     private func showUI() {
         guard let model,let fixture else { return }
         let window=NSWindow(contentRect:NSRect(x:0,y:0,width:760,height:650),styleMask:[.titled,.closable,.resizable],backing:.buffered,defer:false)
@@ -419,7 +380,7 @@ final class TemplateWorkflowSmoke: NSObject, NSApplicationDelegate {
         window.center(); window.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps:true); self.window=window
     }
     private func cleanup() {
-        if ProcessInfo.processInfo.environment["FILEMINT_TEMPLATE_QA_MODE"] != "screenshots", let fixture { try? FileManager.default.removeItem(at:fixture) }
+        if !["screenshots", "opening-apps"].contains(ProcessInfo.processInfo.environment["FILEMINT_TEMPLATE_QA_MODE"] ?? ""), let fixture { try? FileManager.default.removeItem(at:fixture) }
     }
     private func renderSnapshots() async throws {
         guard let model, let fixture else { return }

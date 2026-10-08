@@ -47,4 +47,14 @@ and native view-cache renders. See the
 [active task](../../docs/tasks/2026-10-05-template-workflow.md#implementation-evidence--2026-10-05)
 for exact results and environment limitations. This does not replace live keyboard,
 VoiceOver, actual editor rendering, working Office providers or installed Finder
-acceptance. The receiver's injected profile applies only to the fixture.
+acceptance. Run `bash scripts/run_creation_opening_checks.sh <bundle-path>` for
+the focused post-creation checks. It temporarily registers only the disposable
+receiver's unique file type and removes that app registration on exit. Explicit
+applications receive text, Office and binary receipts, and a
+fixture-specific macOS association exercises native default opening. Isolated
+settings and tickets cover both opening actions through quick creation and the
+native panel, collisions, temporary overrides, cancellation, errors and retries.
+`FILEMINT_TEMPLATE_QA_MODE=opening-apps`, with exact `FILEMINT_QA_CODE_APP` and
+`FILEMINT_QA_OFFICE_APP` paths, is an opt-in installed-editor check using temporary
+JS/DOCX/XLSX files and a system-default TXT file. Preserve those samples for
+visual inspection; callbacks alone do not prove editor rendering.

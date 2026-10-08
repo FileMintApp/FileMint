@@ -88,9 +88,12 @@ Terminal, iTerm2 and Ghostty use their published macOS folder Services with a pr
   associations. Reuse bounded capture/bookmark/bundle validation helpers.
 - Imported bundle/name hints are inert unless they match an already selected,
   freshly validated local reference. No application crawling or implicit grant.
-- Creation uses the positive editing policy and receipt executor described in
-  [Creation](creation.md#frozen-content-and-post-creation-actions). Finder selection
-  opening retains its own existing policy, tickets and menu behavior.
+- Creation uses the receipt executor described in
+  [Creation](creation.md#frozen-content-and-post-creation-actions). Explicit local
+  application selections use bookmark/bundle validation, and system-default
+  opening goes directly through the native default-application API. Neither
+  route has a FileMint editor/type/publisher allowlist. Finder selection opening
+  retains its own existing tickets and menu behavior.
 
 ## Working context
 

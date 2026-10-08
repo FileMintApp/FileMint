@@ -28,6 +28,7 @@ final class PreferencesModel: ObservableObject {
     @Published var isChoosingOpenWithApp = false
     private let loginItemService = LoginItemService()
     private let store: FileMintPreferencesStore
+    private let quickCreationTickets: QuickCreationTicketStore
     let documentTemplates: DocumentTemplateStore
     @Published var isImportingDocument = false
     private let folderAccess = FolderAccess()
@@ -94,8 +95,10 @@ final class PreferencesModel: ObservableObject {
         }
     }
 
-    init(store: FileMintPreferencesStore = FileMintPreferencesStore(), documentTemplates: DocumentTemplateStore = DocumentTemplateStore()) {
+    init(store: FileMintPreferencesStore = FileMintPreferencesStore(), documentTemplates: DocumentTemplateStore = DocumentTemplateStore(),
+         quickCreationTickets: QuickCreationTicketStore = QuickCreationTicketStore()) {
         self.store = store
+        self.quickCreationTickets = quickCreationTickets
         self.documentTemplates = documentTemplates
         let loaded = store.loadWithStatus()
         preferences = loaded.preferences
@@ -640,8 +643,9 @@ final class PreferencesModel: ObservableObject {
             do {
                 let snapshot = committedPreferences
                 let originalGate = openingGate
+                let tickets = quickCreationTickets
                 let ticket = try await Task.detached(priority: .userInitiated) {
-                    try QuickCreationTicketStore().consume(url, preferences: snapshot)
+                    try tickets.consume(url, preferences: snapshot)
                 }.value
                 guard let ticket, let intent = ticket.resolvedIntent else { return }
                 let originalFollowUp = CreationFollowUp(template: snapshot.templates.first { $0.id == ticket.templateID }, preferences: snapshot, gate: originalGate)

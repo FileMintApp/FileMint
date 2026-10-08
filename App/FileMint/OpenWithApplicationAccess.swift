@@ -72,6 +72,18 @@ enum OpenWithApplicationAccess {
     }
 
     @MainActor
+    static func openWithDefaultApplication(_ url: URL) async throws {
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = true
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            NSWorkspace.shared.open(url, configuration: configuration) { @Sendable _, error in
+                if error != nil { continuation.resume(throwing: OpenWithError.openFailed) }
+                else { continuation.resume() }
+            }
+        }
+    }
+
+    @MainActor
     static func open(_ selection: [URL], with applicationURL: URL) async throws {
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.activates = true

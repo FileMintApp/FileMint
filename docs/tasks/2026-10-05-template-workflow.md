@@ -4,6 +4,13 @@ Status: in-progress (51e49db source QA and selected-app icon follow-up verified;
 Planning status: complete; implementation authorized on 2026-10-05.
 Next action: Complete the remaining native checks in the commit QA below: full keyboard/VoiceOver and appearance matrix, working Office providers, trusted VS Code, installed Finder and quit/update lifecycle. TextEdit content and the principal live copy/creation/import/export flows are now observed. Use the primary checkout; worktrees require an explicit user request.
 
+Opening-policy update (2026-10-08): the editor allowlist and publisher profiles
+described in this historical record are superseded by the
+[configured/default application follow-up](2026-10-08-creation-opening.md).
+Both opening actions now defer to the chosen app/macOS, with current native
+VS Code, WPS and system-default observations in that task. Other pending
+preview, accessibility and installed-Finder checks remain separate.
+
 ## Objective and scope
 
 - Let users copy an existing template, inspect the resulting file, continue in an application after creation, and transfer selected templates between Macs.

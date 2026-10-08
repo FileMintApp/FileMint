@@ -152,14 +152,20 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   and dispatch at most once while holding access/pending-work guards. A successful
   disable advances the generation; off-origin or off/on-stale requests cannot open.
 - Before dispatch/retry, check created-file identity/type and app bookmark/bundle
-  identity. Default handlers must pass a positive editing policy. Initial text
-  profiles are TextEdit (com.apple.TextEdit) and VS Code (com.microsoft.VSCode),
-  subject to recorded native acceptance. Validate Apple signing for TextEdit and
-  Microsoft team UBF8T346G9 for VS Code; a declared bundle ID alone is not authority.
-  Only actual UTF-8 text receipts use these profiles, never binary/Office bytes.
-  Unverified routes retain the saved file
-  and ask for an editor; never use shell/terminal/default fallbacks for active content.
+  identity. An explicitly selected local application opens the saved receipt
+  through NSWorkspace, including text, Office and binary files; the chosen app
+  decides which formats it supports. Portable hints without a validated local
+  application remain unable to launch anything. System-default opening passes
+  the saved file directly to NSWorkspace so macOS uses its current association,
+  including per-file choices; do not substitute a FileMint-selected editor.
+  Both routes activate the receiving app and open the file in one native request,
+  launching it if necessary. No FileMint editor allowlist, publisher-signing
+  profile or text/Office/binary filter may block either configured open action.
+  Preserve macOS's own launch/security decisions, never bypass them, and never
+  silently fall back to another app or execute a shell command.
 - Opening failure closes the saved draft and offers Reveal, retry or another app.
+  Distinguish unavailable selected apps, system-default opening failures and
+  explicit native handoff errors in the recovery message.
   Retry uses a receipt and cannot invoke the writer. Missing/replaced files cannot
   be recreated or silently substituted. Quit/restart guards include dispatch work
   after the panel closes. Native callback success proves handoff only.

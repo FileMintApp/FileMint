@@ -151,11 +151,25 @@ struct TemplateWorkflowTests {
         try Data([1,2,3]).write(to: binary.createdURL)
         #expect(throws: CocoaError.self) { try identity.validate(binary.createdURL) }
     }
-    @Test func editorPolicyRejectsExecutableAndUnknownDefaultHandlers() {
-        #expect(CreationEditingPolicy.permits(bundleIdentifier: "com.apple.TextEdit", isDocument: false))
-        #expect(CreationEditingPolicy.permits(bundleIdentifier: "com.microsoft.VSCode", isDocument: false))
-        #expect(!CreationEditingPolicy.permits(bundleIdentifier: "com.apple.Terminal", isDocument: false))
-        #expect(!CreationEditingPolicy.permits(bundleIdentifier: "unknown", isDocument: false))
-        #expect(!CreationEditingPolicy.permits(bundleIdentifier: "com.apple.TextEdit", isDocument: true))
+    @Test func selectedAndSystemDefaultApplicationsSurviveReloadForTextAndOffice() throws {
+        var preferences = FileMintPreferences.default
+        preferences.creationOpeningEnabled = true
+        let code = CreationApplication(hint: .init(bundleIdentifier: "com.microsoft.VSCode", displayName: "Code"),
+            url: URL(fileURLWithPath: "/Code.app"), bookmark: Data([1]))
+        let office = CreationApplication(hint: .init(bundleIdentifier: "com.kingsoft.wpsoffice.mac", displayName: "WPS"),
+            url: URL(fileURLWithPath: "/Office.app"), bookmark: Data([2]))
+        preferences.creationApplications = [code, office]
+        let gate = CreationOpeningGate(enabled: true)
+        for (suffix, application) in [("js", code), ("docx", office), ("xlsx", office)] {
+            let index = try #require(preferences.templates.firstIndex { $0.fileExtension == suffix })
+            preferences.templates[index].afterCreation = .init(.openWithApplication, application: application.hint, localApplicationID: application.id)
+            let decoded = try FileMintPreferencesStore.decode(JSONEncoder().encode(preferences))
+            let selected = CreationFollowUp(template: decoded.templates[index], preferences: decoded, gate: gate)
+            #expect(selected.action.kind == .openWithApplication && selected.application == application)
+            let system = CreationFollowUp(selection: .override(.init(.openWithDefaultApp)),
+                template: decoded.templates[index], preferences: decoded, gate: gate)
+            #expect(system.action.kind == .openWithDefaultApp && system.application == nil)
+            #expect(decoded.templates[index].afterCreation == selected.action)
+        }
     }
 }

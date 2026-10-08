@@ -15,7 +15,10 @@ import pathlib, plistlib, sys
 app, receiver, root=map(pathlib.Path,sys.argv[1:])
 for path,identifier,executable in [(app,'io.github.daigua.filemint.template-workflow-smoke','TemplateWorkflowSmoke'),(receiver,'io.github.daigua.filemint.template-receiver','TemplateReceiver')]:
  info=dict(CFBundleIdentifier=identifier,CFBundleName=executable,CFBundleExecutable=executable,CFBundlePackageType='APPL',CFBundleVersion='1',LSUIElement=True)
- if path==receiver: info['CFBundleDocumentTypes']=[dict(CFBundleTypeRole='Viewer',LSHandlerRank='None',LSItemContentTypes=['public.item'])]
+ if path==receiver:
+  fixture_type='io.github.daigua.filemint.opening-fixture'
+  info['CFBundleDocumentTypes']=[dict(CFBundleTypeRole='Viewer',LSHandlerRank='None',LSItemContentTypes=['public.item']),dict(CFBundleTypeRole='Editor',LSHandlerRank='Owner',LSItemContentTypes=[fixture_type])]
+  info['UTExportedTypeDeclarations']=[dict(UTTypeIdentifier=fixture_type,UTTypeConformsTo=['public.data'],UTTypeTagSpecification={'public.filename-extension':['filemint-opening-fixture']})]
  (path/'Contents/Info.plist').write_bytes(plistlib.dumps(info))
 (root/'entitlements.plist').write_bytes(plistlib.dumps({'com.apple.security.app-sandbox':True,'com.apple.security.files.user-selected.read-write':True,'com.apple.security.files.bookmarks.app-scope':True}))
 PY
@@ -29,7 +32,7 @@ codesign --force --sign - --timestamp=none "$TEMPLATE_RECEIVER"
 TEMPLATE_SOURCES=()
 while IFS= read -r TEMPLATE_SOURCE; do TEMPLATE_SOURCES+=("$TEMPLATE_SOURCE"); done < <(rg --files App/FileMint SharedUI | rg '\.swift$' | rg -v '/(FileMintApp|AppDelegate)\.swift$')
 TEMPLATE_SPARKLE="$PWD/build/SourcePackages/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64"
-swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.0 "${TEMPLATE_SOURCES[@]}" FinderSyncExtension/FileMintFinderSync/FinderIntegrationStatus.swift scripts/template_workflow_smoke.swift "${TEMPLATE_LINK[@]}" -F "$TEMPLATE_SPARKLE" -framework Sparkle -Xlinker -rpath -Xlinker "$TEMPLATE_SPARKLE" -o "$TEMPLATE_APP/Contents/MacOS/TemplateWorkflowSmoke"
+swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.0 "${TEMPLATE_SOURCES[@]}" FinderSyncExtension/FileMintFinderSync/FinderIntegrationStatus.swift scripts/template_workflow_smoke.swift scripts/creation_opening_checks.swift "${TEMPLATE_LINK[@]}" -F "$TEMPLATE_SPARKLE" -framework Sparkle -Xlinker -rpath -Xlinker "$TEMPLATE_SPARKLE" -o "$TEMPLATE_APP/Contents/MacOS/TemplateWorkflowSmoke"
 codesign --force --sign - --timestamp=none --entitlements "$TEMPLATE_RUN/entitlements.plist" "$TEMPLATE_APP"
 codesign --verify --strict "$TEMPLATE_APP"
 echo "$TEMPLATE_APP"

@@ -111,13 +111,6 @@ public struct CreationFollowUp: Sendable {
     }
 }
 
-public enum CreationEditingPolicy {
-    /// Native text-editing profiles only. No default handler or executable fallback.
-    public static func permits(bundleIdentifier: String, isDocument: Bool) -> Bool {
-        !isDocument && ["com.apple.TextEdit", "com.microsoft.VSCode"].contains(bundleIdentifier)
-    }
-}
-
 extension TemplateCatalog {
     public static func copyDraft(_ source: FileTemplate, copySuffix: String, id: String = "custom-\(UUID().uuidString)") -> FileTemplate {
         var copy = source
