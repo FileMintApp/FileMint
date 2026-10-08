@@ -122,8 +122,11 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   hints. Exclude local registry/asset IDs, paths, bookmarks, gates and preferences.
 - Limits: 100 templates/payloads, 64 Office payloads, 4 MiB manifest, 8 MiB total
   text, 128 MiB archive/outer payload, 256 MiB combined Office expansion; retain
-  each Office validator limit and 32 MiB settings cap. Reject unknown/duplicate
-  keys, invalid references/digests, invalid UTF-8/Office, unreferenced entries,
+  each Office validator limit and 32 MiB settings cap. Before materializing
+  imported text, budget every accepted reference with JSON escaping, existing
+  settings, metadata and the commit marker; skipped entries consume no budget.
+  Reject unknown/duplicate keys, invalid references/digests, invalid UTF-8/Office,
+  unreferenced entries,
   encrypted/split/ZIP64/deflated outer entries, links, unsafe names, overlapping
   ranges and header/CRC mismatches before any managed mutation. Never extract.
 - Required import review offers Add, Skip or Save as copy, never replacement.

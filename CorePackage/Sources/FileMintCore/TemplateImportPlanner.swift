@@ -59,6 +59,8 @@ public enum TemplateImportPlanner {
         let descriptors = Dictionary(uniqueKeysWithValues: package.descriptors.map { ($0.id, $0) })
         var usedIDs = Set(existing.map(\.id)), resulting = existing, map: [String: String] = [:]
         var rows: [TemplateImportRow] = [], assetsByPayload: [String: TemplatePlannedAsset] = [:]
+        var textBudget = TemplateImportTextBudget()
+        var pendingText: [(index: Int, payloadID: String)] = []
         func normalizedName(_ value: String) -> String {
             value.precomposedStringWithCanonicalMapping.folding(options: .caseInsensitive, locale: Locale(identifier: "en_US_POSIX"))
         }
@@ -97,8 +99,13 @@ public enum TemplateImportPlanner {
                 while conflict(name, incoming.fileExtension) { name = base + " \(count)"; count += 1 }
             }
             guard let descriptor = descriptors[incoming.payloadID], let bytes = package.payloads[incoming.payloadID] else { throw TemplatePackageError.invalid }
+            if descriptor.kind == .utf8Text {
+                try textBudget.include(bytes, payloadID: incoming.payloadID)
+                pendingText.append((resulting.count, incoming.payloadID))
+            }
+            // Keep incoming bodies empty until the complete settings budget fits.
             var template = FileTemplate(id: id, displayName: name, suggestedFileName: incoming.suggestedFileName,
-                group: incoming.group, content: descriptor.kind == .utf8Text ? String(decoding: bytes, as: UTF8.self) : "",
+                group: incoming.group, content: "",
                 isEnabled: incoming.isEnabled, rank: 0, fileExtension: incoming.fileExtension)
             template.customMenuIcon = incoming.customMenuIcon; template.afterCreation = incoming.afterCreation.portable
             if let kind = descriptor.kind.officeKind {
@@ -127,7 +134,18 @@ public enum TemplateImportPlanner {
                       let resultID = map[incomingID], candidate.templates.contains(where: { $0.id == resultID && $0.isEnabled && $0.fileExtension.lowercased() == suffix }) else { continue }
                 candidate.defaultTemplateIDs[suffix] = resultID
             }
-            guard try JSONEncoder().encode(candidate).count <= FileMintPreferencesStore.maximumBytes else { throw TemplatePackageError.tooLarge }
+            var metadata = candidate
+            // Commit adds a UUID even when the original preferences have none.
+            metadata.lastTemplateImportTransactionID = metadata.lastTemplateImportTransactionID ?? UUID()
+            try textBudget.validate(metadataBytes: JSONEncoder().encode(metadata).count)
+            var decodedText: [String: String] = [:]
+            for entry in pendingText {
+                try Task.checkCancellation()
+                if decodedText[entry.payloadID] == nil {
+                    decodedText[entry.payloadID] = String(decoding: package.payloads[entry.payloadID]!, as: UTF8.self)
+                }
+                candidate.templates[entry.index].content = decodedText[entry.payloadID]!
+            }
         }
         let suffixes = Set(package.templates.map(\.fileExtension)).sorted()
         let changes: [TemplateDefaultChange] = suffixes.compactMap { suffix in

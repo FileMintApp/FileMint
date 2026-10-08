@@ -3,6 +3,31 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Template import memory bound — 2026-10-08
+
+Tested primary checkout `main`, base `fa90604` plus these uncommitted fixes,
+on macOS 27.2 arm64 / Xcode 27.0.
+
+- Import planning budgets every accepted text reference before materializing
+  incoming bodies. Bounded UTF-8 chunks use the persistence encoder's escaping;
+  the final budget includes existing settings, metadata and the transaction marker.
+  Shared bodies decode once, and skipped rows consume no text budget.
+- Four regression tests passed: escaping and UTF-8 chunk boundaries, repeated
+  payload limits with unchanged stored bytes, skip/copy and successful commit,
+  escaped-text expansion, and cancellation. `make verify` passed 220 Core tests,
+  14 image tests, 5/5 public cases, 10 CLI regressions and offline release checks.
+  The initial standard run was blocked by SwiftPM's `sandbox-exec` permission;
+  the authorized retry passed. [Verification log](../build/pre-release-review-2026-10-08.noindex/verify-fix-retry.log).
+- The same [isolated probe](../build/pre-release-review-2026-10-08.noindex/ImportLimitProbe.swift)
+  used an archive of 547,577 bytes with 80 references to one 512 KiB text payload.
+  Peak process RSS fell from 207,716,352 bytes to 13,352,960 bytes (about 198 MiB
+  to 12.7 MiB); both runs rejected the oversized plan and preserved settings bytes.
+  [Before](../build/pre-release-review-2026-10-08.noindex/import-limit-80.log),
+  [after](../build/pre-release-review-2026-10-08.noindex/import-limit-80-fixed.log).
+- These are Core and isolated resource-limit results. Installed Finder, native UI,
+  macOS 13, signed updates and publication were not exercised; real preferences
+  and installed applications were unchanged.
+
 ## Pre-release review fixes — 2026-10-05
 
 Tested primary checkout `main`, base `eee6e24` plus these uncommitted fixes,

@@ -40,6 +40,24 @@ those cases are not independent coverage counted twice.
 budget of `AGENTS.md` plus the SPEC index. It cannot prove that an agent loaded
 the right rules or that tests cover the meaning of a contract.
 
+## Local verification permissions
+
+Use the execution permissions already known to be necessary for a selected
+standard check on its first invocation. In this macOS Codex environment,
+`make verify` has a confirmed SwiftPM `sandbox-exec` startup restriction: request
+the tool's command-scoped escalation directly, reusing applicable approval.
+Do not repeat a known-failing sandbox attempt or ask the user to reconfirm an
+already authorized verification. The active tool and platform approval policy
+still applies; report an approval denial rather than bypassing it.
+
+Keep this permission choice scoped to the current FileMint checkout and the
+required verification command. Review changes to its Makefile recipe, invoked
+scripts, package build steps and dependencies before execution; a familiar
+command name does not make changed code trusted. Use ordinary sandbox permissions
+where sufficient, including documentation checks. This rule grants no blanket
+shell access, `sudo`, installation or publication, and changes neither the checks
+nor FileMint's runtime sandbox entitlements or system security settings.
+
 ## Completion evidence
 
 - Matching product behavior exists in the owning [domain SPEC](SPEC.md).
