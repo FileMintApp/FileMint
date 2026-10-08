@@ -3,6 +3,28 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## FileMint 0.6.7 release — 2026-10-08
+
+The arm64/macOS 13+ [0.6.7 release](tasks/release-0.6.7.md), build 26, was built
+from `747527192053d9465dd08c6b6e2fc8717b1d517c` on macOS 27.2 arm64 / Xcode 27.0.
+Standard checks passed 220 Core tests, 14 image tests, 5 public Harness cases,
+10 CLI regressions and offline release checks. The production-model native
+fixture passed copied compound-suffix output and automatic-check deferral for
+native sheets/modal windows, one-shot resumption, disabling, manual checks and
+cancellation, using temporary settings and injected metadata.
+
+Developer ID signatures, embedded entitlements, arm64-only code, production
+Sparkle-driver checks, accepted Apple notarization, DMG stapling and signed
+appcast validation passed. Both hosts contain exact source Office resources;
+the main app declares the template-package type. Published DMG, checksum and
+appcast matched local bytes. Published-release verification, release-source CI
+and website deployment passed. The task records submission ID, hashes and runs.
+
+No installed FileMint was replaced. Installed Finder, macOS 13, managed devices,
+complete keyboard/VoiceOver/appearance coverage and public-feed installation
+remain unverified. Earlier unavailable Office providers and rejected installed
+VS Code signatures are not converted into native acceptance by these checks.
+
 ## Template import memory bound — 2026-10-08
 
 Tested primary checkout `main`, base `fa90604` plus these uncommitted fixes,
