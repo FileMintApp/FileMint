@@ -1,3 +1,25 @@
+# FileMint 0.6.8
+
+## 修复与改进
+
+- **指定应用打开**：创建成功后直接唤起并使用模板指定的应用打开新文件，修复已配置的编辑器或 Office 应用被错误拒绝的问题。新建面板中的临时应用选择同样生效。
+- **尊重系统默认应用**：选择“使用默认应用打开”时，直接遵循 macOS 当前的文件关联，不再额外限定编辑器或文件格式，不修改系统默认关联。
+- **准确的失败提示**：区分应用不可用、指定应用打开失败与系统默认打开失败。已保存文件会保留，重试打开不会重复创建文件。
+
+## 系统要求与升级
+
+正式安装包支持 macOS 13 或更新版本的 M 系列 Mac，不含 Intel 代码。可通过“关于 → 检查更新 → 更新并重启”升级。已有模板、创建后动作、应用选择和文件夹授权保留；“创建后打开”的开启状态保持不变。最终能否打开由 macOS 和接收应用决定，应用不可用或不支持文件时会显示错误并保留文件。
+
+## Fixes and improvements
+
+- **Open with the selected app**: After creation, activate the template's chosen app and open the new file directly, fixing incorrect rejection of configured editors and Office applications. Temporary application choices in the creation panel work the same way.
+- **Respect the system default app**: Open with the current macOS file association without imposing an additional editor or file-format restriction. System associations remain unchanged.
+- **Accurate recovery messages**: Distinguish unavailable applications, selected-app opening failures and system-default opening failures. Preserve the saved file and retry opening without creating another file.
+
+## System requirements and upgrading
+
+The stable installer supports M-series Macs running macOS 13 or later and contains no Intel code. Upgrade through **About → Check for Updates → Update and Restart**. Existing templates, post-creation actions, application choices, folder grants and the Create and Open setting are retained. macOS and the receiving application determine whether a file can be opened; failures preserve the file and show a recovery message.
+
 # FileMint 0.6.7
 
 ## 新功能

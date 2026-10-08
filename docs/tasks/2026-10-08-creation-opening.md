@@ -1,7 +1,7 @@
 # Task: Respect configured post-creation applications
 
 Status: complete
-Next action: None for this local fix. Installation and publication remain separate requests.
+Next action: Delivery authorized; follow [release 0.6.8](release-0.6.8.md).
 
 ## Objective and scope
 
@@ -79,13 +79,14 @@ against the current worktree; every check passed again. The
 [source snapshot](../../build/opening-confirmation-2026-10-08.6rnm4swk.noindex/source.json)
 was unchanged across that run, and the removed editor-identity file remained
 absent. [Fresh native log](../../build/opening-confirmation-2026-10-08.6rnm4swk.noindex/native.log).
-No product-code edits were needed during this reconfirmation. Changes remain
-uncommitted; `project.yml` remains version 0.6.7 / build 26. This confirmation
+No product-code edits were needed during this reconfirmation. At that check,
+changes were uncommitted and `project.yml` was version 0.6.7 / build 26. This confirmation
 does not perform a new signed/notarized release or installed-Finder acceptance.
 
 ## Handoff
 
-- No implementation work remains for these opening semantics. Source changes are
-  local and uncommitted; no version change, installation or publication was made.
+- No implementation work remains for these opening semantics. Fix commit
+  `acfa69e` records the code and checks. The user then authorized the standard
+  [0.6.8 release](release-0.6.8.md); release results are recorded there.
 - Installed Finder entry points, macOS 13 and every third-party application's
   format compatibility are not claimed by this bounded verification.

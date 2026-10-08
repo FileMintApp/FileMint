@@ -10,11 +10,11 @@ Creating a file should not require opening an editor, choosing Save As and findi
 FileMint puts the action back in Finder: **right-click, choose a type and your file is there.**
 When you need a name, starter content, image processing or selected-item tools, the same native workflow continues.
 
-## What's new in 0.6.7
+## What's new in 0.6.8
 
-Copy templates, enable optional previews, continue in an app after creation, and import or export template packages. Template Preview and Create and Open start off and can be enabled independently under Creation; Office previews depend on system Quick Look providers. This release also improves damaged-settings recovery, compound suffix changes and import memory limits, and defers automatic update checks during dialogs. The stable installer supports M-series Macs on macOS 13+; Intel users should stay on a compatible earlier release.
+Fixes incorrect rejection of configured applications after creation. Selected applications open the new file directly, while default opening follows the current macOS file association. Opening failures preserve the file and show the appropriate recovery message; retries do not create duplicate files. Existing templates, application choices and feature settings are retained. The stable installer supports M-series Macs on macOS 13+; Intel users should stay on a compatible earlier release.
 
-[0.6.7 release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.6.7)
+[0.6.8 release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.6.8)
 
 ## Recent features
 
@@ -28,7 +28,7 @@ Copy templates, enable optional previews, continue in an app after creation, and
 - **Word / Excel templates**: Create blank `.docx` and `.xlsx` files from built-in templates, or import your own documents and create independent copies with their formatting and content intact.
 - **Themes and settings**: General now offers Follow System, Light and Dark, with consistent control alignment and interaction styles.
 
-[Full release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.6.7)
+[Full release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.6.8)
 
 ## Why FileMint
 

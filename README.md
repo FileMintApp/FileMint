@@ -10,11 +10,11 @@
 FileMint 把这件事放回 Finder：**右键，选一种类型，文件就在这里。**
 需要自己起名字、粘贴内容、处理图片或整理已选项目时，仍然从同一个原生工作流继续。
 
-## 0.6.7 更新
+## 0.6.8 更新
 
-新增模板拷贝、按需预览、创建后打开和模板包导入导出。模板预览与创建后打开默认关闭，可在“创建”中分别开启；Office 预览取决于系统 Quick Look 提供器。改进模板设置恢复、复合后缀切换和导入内存限制，并在弹窗期间延后自动更新检查。正式安装包支持 macOS 13+ 的 M 系列 Mac；Intel 用户继续使用兼容的旧版。
+修复创建后打开错误拒绝已配置应用的问题：指定应用按配置打开新文件，默认应用直接遵循 macOS 文件关联。打开失败会保留文件，并显示对应的恢复提示，重试不会重复创建。已有模板、应用选择和开启状态保持不变。正式安装包支持 macOS 13+ 的 M 系列 Mac；Intel 用户继续使用兼容的旧版。
 
-[0.6.7 发布说明](https://github.com/FileMintApp/FileMint/releases/tag/v0.6.7)
+[0.6.8 发布说明](https://github.com/FileMintApp/FileMint/releases/tag/v0.6.8)
 
 ## 近期功能
 
@@ -28,7 +28,7 @@ FileMint 把这件事放回 Finder：**右键，选一种类型，文件就在�
 - **Word / Excel 模板**：内置空白 `.docx`、`.xlsx`，也可导入自己的文档，创建保留原格式和内容的独立副本。
 - **主题与设置**：通用页新增跟随系统、浅色和深色，统一控件对齐与交互样式。
 
-[完整发布说明](https://github.com/FileMintApp/FileMint/releases/tag/v0.6.7)
+[完整发布说明](https://github.com/FileMintApp/FileMint/releases/tag/v0.6.8)
 
 ## 为什么是 FileMint
 
