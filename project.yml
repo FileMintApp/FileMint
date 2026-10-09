@@ -48,6 +48,8 @@ targets:
         buildPhase: resources
       - path: Resources/SFSymbolCatalog-LICENSE.txt
         buildPhase: resources
+      - path: ThirdParty/ImageCompression/THIRD-PARTY-NOTICES.txt
+        buildPhase: resources
       - path: LICENSE
         buildPhase: resources
       - FinderSyncExtension/FileMintFinderSync/FinderIntegrationStatus.swift

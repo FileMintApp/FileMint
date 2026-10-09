@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "architecture": "arm64",
+  "minimumMacOS": "13.0",
+  "encoders": [
+    "MozJPEG",
+    "libpng",
+    "libtiff"
+  ],
+  "sources": [
+    {
+      "name": "libvips",
+      "version": "8.18.7",
+      "file": "vips-8.18.7.tar.xz",
+      "url": "https://github.com/libvips/libvips/releases/download/v8.18.7/vips-8.18.7.tar.xz",
+      "sha256": "5baaead3b0bb20ffdb9e9ff09aa9fda08620923df77b63b436654cb5e0b3bf94"
+    },
+    {
+      "name": "glib",
+      "version": "2.90.1",
+      "file": "glib-2.90.1.tar.xz",
+      "url": "https://download.gnome.org/sources/glib/2.90/glib-2.90.1.tar.xz",
+      "sha256": "93c941aa17d5eb1d53fe838365f29a8b4e539c222a256d974ec8f30fc413e396"
+    },
+    {
+      "name": "mozjpeg",
+      "version": "4.1.1",
+      "file": "mozjpeg-4.1.1.tar.gz",
+      "url": "https://codeload.github.com/mozilla/mozjpeg/tar.gz/refs/tags/v4.1.1",
+      "sha256": "66b1b8d6b55d263f35f27f55acaaa3234df2a401232de99b6d099e2bb0a9d196"
+    },
+    {
+      "name": "libpng",
+      "version": "1.6.59",
+      "file": "libpng-1.6.59.tar.gz",
+      "url": "https://codeload.github.com/pnggroup/libpng/tar.gz/refs/tags/v1.6.59",
+      "sha256": "2540302a1844ad2b2b501977abecfa850f265f97b78f065a712ab4074a89f5b5"
+    },
+    {
+      "name": "libtiff",
+      "version": "4.7.2",
+      "file": "tiff-4.7.2.tar.xz",
+      "url": "https://download.osgeo.org/libtiff/tiff-4.7.2.tar.xz",
+      "sha256": "4996f0c4f93094719b1ca5c6279b20e588773ba8a247533e486416fb662ddb88"
+    },
+    {
+      "name": "pcre2",
+      "version": "10.49",
+      "file": "pcre2-10.49.tar.gz",
+      "url": "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.49/pcre2-10.49.tar.gz",
+      "sha256": "929f0b20e62879252a15886b06c89f1edef61a363cbd5826fb041080a5e557ae"
+    },
+    {
+      "name": "proxy-libintl",
+      "version": "0.5",
+      "file": "proxy-libintl-0.5.tar.gz",
+      "url": "https://codeload.github.com/frida/proxy-libintl/tar.gz/refs/tags/0.5",
+      "sha256": "f7a1cbd7579baaf575c66f9d99fb6295e9b0684a28b095967cfda17857595303"
+    }
+  ],
+  "recipeFiles": {
+    "scripts/build_image_compression.py": "557ccaabb31c86a967ba0c7b870240874b3413024a066d440b3279766339dd07",
+    "ThirdParty/ImageCompression/bridge/FileMintCompression.c": "7374892f7140135f7319a76675200bd0e0c89667ff92b6de03fd68f27df9c9ea",
+    "ThirdParty/ImageCompression/bridge/FileMintCompression.h": "7e33cbccc1a162a281d04ef567b3d554b3b4e0513bd9687f464bb4d15e7216e5"
+  },
+  "tools": {
+    "cmake": "cmake version 3.31.6",
+    "meson": "1.10.2",
+    "ninja": "1.13.0.git.kitware.jobserver-pipe-1"
+  },
+  "files": {
+    "Info.plist": "6db59a234b788431ae80f5d94cea24d4304337f09263ce2ff386c140c1e15762",
+    "macos-arm64/FileMintCompression.framework/Versions/A/FileMintCompression": "68a3ca859ee9dcc2f91ca5a34fb31d47221fc5e760442802815234b484ee5ca7",
+    "macos-arm64/FileMintCompression.framework/Versions/A/Headers/FileMintCompression.h": "7e33cbccc1a162a281d04ef567b3d554b3b4e0513bd9687f464bb4d15e7216e5",
+    "macos-arm64/FileMintCompression.framework/Versions/A/Modules/module.modulemap": "6631561f89b7770b102b48d9b0cd160f75b4d9643eee24c6c0c33972bc344fa0",
+    "macos-arm64/FileMintCompression.framework/Versions/A/Resources/Info.plist": "8de3f98d95659c5acfb0a6d77c9a67a0da81bb2fd8774140f6e22d21778dd23f",
+    "macos-arm64/FileMintCompression.framework/Versions/A/Resources/THIRD-PARTY-NOTICES.txt": "271610d20f2ceb0f042978661fc9d7cc8136c8dff946a0e0db4a5548925db6dd",
+    "macos-arm64/FileMintCompression.framework/Versions/A/_CodeSignature/CodeResources": "3e7b22cc1d2b6d956e236bf8cc224b20184471ff429b428e9205bb598d509612"
+  }
+}

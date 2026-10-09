@@ -65,9 +65,16 @@ Load for: Resource Tools menus, image processing, icon generation, stitching and
 - Convert: JPEG, PNG, HEIC, TIFF only when Image I/O reports destination support.
   Normalize orientation; standard output is 8-bit sRGB. JPEG uses a visible white
   background choice/notice for transparency. Preserve alpha in compatible formats.
-- Compress: keep JPEG/PNG/HEIC/TIFF source type; quality controls apply only to
-  lossy destinations. PNG/TIFF use standard lossless encoding; no promised size
-  reduction. No repeated target-byte search or extra optimization libraries.
+- Compress: keep JPEG/PNG/HEIC/TIFF source type and displayed dimensions. A
+  dedicated app-only compression engine uses libvips with MozJPEG for JPEG,
+  libpng for lossless PNG and libtiff with lossless Deflate for TIFF; HEIC uses
+  the system encoder. Native input validation, decoding, orientation and sRGB
+  normalization precede compression. Quality controls apply only to JPEG/HEIC;
+  never silently lower quality, resize or quantize PNG/TIFF to meet a byte target.
+  Every successfully encoded result is published, including equal-size or larger
+  results. Show actual original/output byte sizes and signed size change; size
+  comparison is informational and never a publication gate. No target-byte search.
+  Other tools and previews retain their existing system implementation.
 - Resize: longest edge in pixels, preserving aspect ratio without enlargement;
   decode via Image I/O downsampling. User explicitly chooses output format.
 - Icons: ICNS (16/32/64/128/256/512/1024), ICO (16/32/48/64/128/256), or a new

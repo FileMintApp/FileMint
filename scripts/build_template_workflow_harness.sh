@@ -27,6 +27,10 @@ if [[ -f "$TEMPLATE_CORE/libFileMintCore.a" ]]; then
 else
  TEMPLATE_LINK=(-I "$TEMPLATE_CORE/Modules" "$TEMPLATE_CORE"/FileMintCore.build/*.o "$TEMPLATE_CORE"/FileMintImages.build/*.o)
 fi
+source scripts/image_compression_link.sh
+TEMPLATE_LINK+=("${FILEMINT_COMPRESSION_LINK[@]}")
+filemint_embed_compression "$TEMPLATE_APP"
+filemint_embed_compression "$TEMPLATE_RECEIVER"
 swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.0 -D TEMPLATE_RECEIVER scripts/template_workflow_smoke.swift "${TEMPLATE_LINK[@]}" -o "$TEMPLATE_RECEIVER/Contents/MacOS/TemplateReceiver"
 codesign --force --sign - --timestamp=none "$TEMPLATE_RECEIVER"
 TEMPLATE_SOURCES=()

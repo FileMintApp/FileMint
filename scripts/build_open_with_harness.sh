@@ -32,6 +32,10 @@ if [[ -f "$OPEN_WITH_BUILD/libFileMintCore.a" ]]; then
 else
   OPEN_WITH_LINK=(-I "$OPEN_WITH_BUILD/Modules" "$OPEN_WITH_BUILD"/FileMintCore.build/*.o "$OPEN_WITH_BUILD"/FileMintImages.build/*.o)
 fi
+source scripts/image_compression_link.sh
+OPEN_WITH_LINK+=("${FILEMINT_COMPRESSION_LINK[@]}")
+filemint_embed_compression "$OPEN_WITH_APP"
+filemint_embed_compression "$OPEN_WITH_RECEIVER"
 swiftc -swift-version 6 -parse-as-library -target "arm64-apple-macos13.0" -D OPEN_WITH_RECEIVER \
   scripts/open_with_smoke.swift "${OPEN_WITH_LINK[@]}" \
   -o "$OPEN_WITH_RECEIVER/Contents/MacOS/OpenWithReceiver"

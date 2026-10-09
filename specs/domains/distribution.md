@@ -133,9 +133,17 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 
 ## Working context
 
-- The internal FileMintImages library uses only system Image I/O, Core Graphics
-  and Vision. Link it into the main app, not the Finder extension; it is not an
-  external package dependency. No WebP encoder or other image library is bundled.
+- FileMintImages uses system Image I/O, Core Graphics and Vision, plus an app-only
+  compression runtime containing libvips, MozJPEG, libpng, libtiff and their
+  declared dependencies. This dependency improves compression without migrating
+  other image actions. Ship a pinned arm64 runtime targeting macOS 13 with a small
+  C interface, reproducible build recipe, source hashes and third-party notices.
+  Offline builds/tests use the checked-in artifact; normal use never fetches a
+  library or depends on Homebrew. Bundle and verify its nested signature and load
+  paths; no third-party image runtime belongs in the Finder extension or Core.
+  Preserve each dependency's license and provide the corresponding source and
+  rebuild/replacement instructions alongside the binary. FileMint's own license
+  does not replace the third-party licenses. No WebP encoder is bundled.
 - The icon picker bundles an attributed text catalog of SF Symbol names in the
   main app only. macOS supplies the glyph artwork at runtime; the Finder
   extension reads saved names and colors without a catalog or new dependency.

@@ -11,6 +11,7 @@ public struct ImageInput: Sendable {
     private let modifiedSeconds: Int
     private let modifiedNanos: Int
     public var url: URL { item.source }
+    var encodedByteCount: Int64 { length }
 
     public static func capture(_ url: URL) throws -> Self {
         let values = try url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey,

@@ -47,6 +47,13 @@ the installed release. Do not leave packaging or mounted-image registrations
 behind after installation checks.
 
 Local `make package` still defaults to ad-hoc signing for development checks.
+The main app also embeds the local `FileMintCompression.framework`; sign it
+before the host and verify it with the other bundle components. Its exact
+dependency sources and rebuild recipe must be present in the matching source
+tag before distributing the binary. Normal builds/tests do not fetch or rebuild
+this runtime. See [image compression runtime](../ThirdParty/ImageCompression/README.md)
+for provenance, notices, replacement and artifact verification.
+
 For a normal notarized public version after 0.5.3, use the following sequence
 whenever the owner asks to “构建发布”. The phrase authorizes the full release; a
 request only to build, commit or prepare a candidate stops at its named stage.

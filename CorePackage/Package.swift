@@ -14,7 +14,8 @@ let package = Package(
     ],
     targets: [
         .target(name: "FileMintCore", resources: [.copy("Resources/OfficeTemplates")]),
-        .target(name: "FileMintImages", dependencies: ["FileMintCore"]),
+        .binaryTarget(name: "FileMintCompression", path: "Artifacts/FileMintCompression.xcframework"),
+        .target(name: "FileMintImages", dependencies: ["FileMintCore", "FileMintCompression"]),
         .testTarget(name: "FileMintImagesTests", dependencies: ["FileMintImages", "FileMintCore"]),
         .executableTarget(
             name: "FileMintHarness",

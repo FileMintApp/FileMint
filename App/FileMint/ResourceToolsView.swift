@@ -283,6 +283,16 @@ struct ResourceToolsView: View {
                 if let result = model.result {
                     Text("\(text(result.cancelled ? .cancelled : result.failure != nil ? .failed : .completed)) · \(result.completed)/\(model.inputs.count)")
                         .font(.system(size: 11, weight: .medium)).fixedSize(horizontal: false, vertical: true)
+                    if model.tool == .compress,
+                       let compression = result.compressions.first(where: { $0.source == model.selectedInput?.url }) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("\(text(.originalSize)): \(ByteCountFormatter.string(fromByteCount: compression.originalBytes, countStyle: .file))")
+                            Text("\(text(.compressedSize)): \(ByteCountFormatter.string(fromByteCount: compression.outputBytes, countStyle: .file))")
+                            Text("\(text(.sizeChange)): \(compression.changeFraction.formatted(.percent.precision(.fractionLength(1)).sign(strategy: .always(includingZero: true))))")
+                        }.font(.system(size: 11)).monospacedDigit().foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .help("\(compression.originalBytes) B → \(compression.outputBytes) B")
+                    }
                     if result.completed == 0, result.failure != nil, model.tool != .removeMetadata {
                         Button(text(.editOptions)) { model.editOptions() }.buttonStyle(MintButtonStyle())
                     }

@@ -20,6 +20,9 @@ else
   SIGN_ARGS+=(--timestamp)
 fi
 # Sign from the inside out. Code Sign on Copy does not re-sign nested helpers.
+COMPRESSION="$APP_PATH/Contents/Frameworks/FileMintCompression.framework"
+[[ -d "$COMPRESSION" ]] || { echo 'Missing image compression framework' >&2; exit 2; }
+codesign "${SIGN_ARGS[@]}" "$COMPRESSION"
 SPARKLE="$APP_PATH/Contents/Frameworks/Sparkle.framework"
 [[ -d "$SPARKLE" ]] || { echo 'Missing Sparkle framework' >&2; exit 2; }
 # Xcode embeds Sparkle's universal XCFramework slice. Strip Intel code from the

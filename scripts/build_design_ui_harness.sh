@@ -30,6 +30,9 @@ if [[ -f "$DESIGN_BUILD/libFileMintCore.a" ]]; then
 else
   DESIGN_LINK=(-I "$DESIGN_BUILD/Modules" "$DESIGN_BUILD"/FileMintCore.build/*.o "$DESIGN_BUILD"/FileMintImages.build/*.o)
 fi
+source scripts/image_compression_link.sh
+DESIGN_LINK+=("${FILEMINT_COMPRESSION_LINK[@]}")
+filemint_embed_compression "$DESIGN_APP"
 swiftc -swift-version 6 -parse-as-library -target "arm64-apple-macos13.0" \
   "${DESIGN_SOURCES[@]}" SharedUI/*.swift FinderSyncExtension/FileMintFinderSync/FinderIntegrationStatus.swift \
   scripts/design_ui_smoke.swift "${DESIGN_LINK[@]}" -F "$DESIGN_FRAMEWORKS" -framework Sparkle \

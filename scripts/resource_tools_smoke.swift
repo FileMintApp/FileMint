@@ -36,6 +36,10 @@ final class ResourceToolsSmoke: NSObject, NSApplicationDelegate {
     }
 
     private func exercise() async throws {
+        let requested = ProcessInfo.processInfo.environment["FILEMINT_RESOURCE_TOOLS"]
+        let names = requested?.split(separator: ",").map(String.init)
+        let tools = names?.compactMap(ResourceTool.init(rawValue:)) ?? ResourceTool.allCases
+        guard !tools.isEmpty, names == nil || tools.count == names?.count else { throw ResourceError.invalidOptions }
         for tool in ResourceTool.allCases {
             for size in [16.0, 20.0] {
                 guard let image = FileToolAppearance.image(for: tool, size: size),
@@ -93,13 +97,17 @@ final class ResourceToolsSmoke: NSObject, NSApplicationDelegate {
             settings.close()
             settingsWindow = nil
 
-            for tool in ResourceTool.allCases {
+            for tool in tools {
+                print("START native \(tool.rawValue) \(language.rawValue)")
                 let controller = ResourceToolsController(preferencesFile: preferencesFile)
                 activeController = controller
                 let present = Task { try await controller.present(selection: [first, second], tool: tool) }
                 try await waitUntil { !controller.inputs.isEmpty && !controller.isPreparing }
                 let panel = try require(NSApp.windows.first { $0 is NSPanel && $0.isVisible })
-                guard NSApp.isActive, panel.isKeyWindow else { throw ResourceError.failed }
+                guard NSApp.isActive, panel.isKeyWindow else {
+                    print("FAIL panel focus: active=\(NSApp.isActive), key=\(panel.isKeyWindow)")
+                    throw ResourceError.failed
+                }
                 panel.appearance = NSAppearance(named: appearance)
                 panel.setContentSize(NSSize(width: 820, height: 560))
                 try await Task.sleep(for: .milliseconds(180))
@@ -123,7 +131,26 @@ final class ResourceToolsSmoke: NSObject, NSApplicationDelegate {
                 if tool != .removeMetadata { controller.run() }
                 try await waitUntil { !controller.isRunning && controller.result != nil }
                 guard let result = controller.result, result.failure == nil, result.completed == 2 else {
+                    print("FAIL result: completed=\(controller.result?.completed ?? -1), cancelled=\(controller.result?.cancelled ?? false)")
                     throw controller.result?.failure ?? ResourceError.failed
+                }
+                if tool == .compress {
+                    guard result.compressions.count == 2 else { throw ResourceError.failed }
+                    for compression in result.compressions {
+                        guard compression.originalBytes == Int64(try Data(contentsOf: compression.source).count),
+                              compression.outputBytes == Int64(try Data(contentsOf: compression.output).count) else {
+                            throw ResourceError.failed
+                        }
+                    }
+                    controller.select(1)
+                    try await Task.sleep(for: .milliseconds(180))
+                    if ProcessInfo.processInfo.environment["FILEMINT_RESOURCE_INSPECT"] == "1" {
+                        print("READY compression result \(language.rawValue)")
+                        fflush(stdout)
+                        try await present.value
+                        activeController = nil
+                        continue
+                    }
                 }
                 if tool == .ocr {
                     guard controller.hasText, controller.text.contains("FILEMINT") else { throw ResourceError.noText }

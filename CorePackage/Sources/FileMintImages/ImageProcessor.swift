@@ -7,6 +7,7 @@ import FileMintCore
 public struct ImageJobResult: Sendable {
     public var outputs: [URL] = []
     public var texts: [String] = []
+    public var compressions: [ImageCompressionResult] = []
     public var completed = 0
     public var failure: ResourceError?
     public var cancelled = false
@@ -83,6 +84,11 @@ public enum ImageProcessor {
                         try input.validate()
                         totalTextBytes += text.utf8.count
                         result.texts.append(text)
+                    } else if tool == .compress {
+                        let compression = try ImageCompressionEngine.compress(input, quality: options.quality,
+                            in: destination ?? input.url.deletingLastPathComponent(), canContinue: canContinue)
+                        result.outputs.append(compression.output)
+                        result.compressions.append(compression)
                     } else {
                         let directory = destination ?? input.url.deletingLastPathComponent()
                         let output = try process(input, tool: tool, options: options, directory: directory, canContinue: canContinue)
@@ -112,16 +118,7 @@ public enum ImageProcessor {
         if tool == .removeMetadata {
             return try ImageMetadataCleaner.clean(input, in: directory, canContinue: canContinue)
         }
-        var format = options.format
-        if tool == .compress {
-            format = try autoreleasepool {
-                let source = try input.source()
-                guard let format = ImageOutputFormat.conversions.first(where: { $0.identifier == CGImageSourceGetType(source) as String? }) else {
-                    throw ResourceError.unsupportedOutput
-                }
-                return format
-            }
-        }
+        let format = options.format
         guard writableFormats.contains(format) else { throw ResourceError.unsupportedOutput }
         let edge: Int? = tool == .resize ? options.longestEdge : tool == .icons ? 1024 : nil
         let image = try input.decode(longestEdge: edge)

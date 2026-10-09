@@ -22,6 +22,9 @@ if [[ -f "$RESOURCE_BUILD/libFileMintCore.a" ]]; then
 else
   RESOURCE_LINK=(-I "$RESOURCE_BUILD/Modules" "$RESOURCE_BUILD"/FileMintCore.build/*.o "$RESOURCE_BUILD"/FileMintImages.build/*.o)
 fi
+source scripts/image_compression_link.sh
+RESOURCE_LINK+=("${FILEMINT_COMPRESSION_LINK[@]}")
+filemint_embed_compression "$RESOURCE_APP"
 swiftc -swift-version 6 -parse-as-library \
   App/FileMint/DesignSystem.swift App/FileMint/ResourceToolsController.swift App/FileMint/ResourceToolsView.swift \
   App/FileMint/MenuIconControl.swift App/FileMint/SystemSymbolCatalog.swift scripts/native_qa_preferences.swift \

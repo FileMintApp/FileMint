@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "architecture": "arm64",
+  "minimumMacOS": "13.0",
+  "sources": [
+    {
+      "name": "libvips",
+      "version": "8.18.7",
+      "file": "vips-8.18.7.tar.xz",
+      "url": "https://github.com/libvips/libvips/releases/download/v8.18.7/vips-8.18.7.tar.xz",
+      "sha256": "5baaead3b0bb20ffdb9e9ff09aa9fda08620923df77b63b436654cb5e0b3bf94"
+    },
+    {
+      "name": "glib",
+      "version": "2.90.1",
+      "file": "glib-2.90.1.tar.xz",
+      "url": "https://download.gnome.org/sources/glib/2.90/glib-2.90.1.tar.xz",
+      "sha256": "93c941aa17d5eb1d53fe838365f29a8b4e539c222a256d974ec8f30fc413e396"
+    },
+    {
+      "name": "mozjpeg",
+      "version": "4.1.1",
+      "file": "mozjpeg-4.1.1.tar.gz",
+      "url": "https://codeload.github.com/mozilla/mozjpeg/tar.gz/refs/tags/v4.1.1",
+      "sha256": "66b1b8d6b55d263f35f27f55acaaa3234df2a401232de99b6d099e2bb0a9d196"
+    },
+    {
+      "name": "libpng",
+      "version": "1.6.59",
+      "file": "libpng-1.6.59.tar.gz",
+      "url": "https://codeload.github.com/pnggroup/libpng/tar.gz/refs/tags/v1.6.59",
+      "sha256": "2540302a1844ad2b2b501977abecfa850f265f97b78f065a712ab4074a89f5b5"
+    },
+    {
+      "name": "libtiff",
+      "version": "4.7.2",
+      "file": "tiff-4.7.2.tar.xz",
+      "url": "https://download.osgeo.org/libtiff/tiff-4.7.2.tar.xz",
+      "sha256": "4996f0c4f93094719b1ca5c6279b20e588773ba8a247533e486416fb662ddb88"
+    },
+    {
+      "name": "pcre2",
+      "version": "10.49",
+      "file": "pcre2-10.49.tar.gz",
+      "url": "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.49/pcre2-10.49.tar.gz",
+      "sha256": "929f0b20e62879252a15886b06c89f1edef61a363cbd5826fb041080a5e557ae"
+    },
+    {
+      "name": "proxy-libintl",
+      "version": "0.5",
+      "file": "proxy-libintl-0.5.tar.gz",
+      "url": "https://codeload.github.com/frida/proxy-libintl/tar.gz/refs/tags/0.5",
+      "sha256": "f7a1cbd7579baaf575c66f9d99fb6295e9b0684a28b095967cfda17857595303"
+    }
+  ]
+}

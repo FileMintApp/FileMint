@@ -119,6 +119,11 @@ It neither loads owner preferences nor proves installed Finder or sandbox grants
 The fixture also cancels an in-flight preview and reuses the same production
 controller for automatic metadata removal. Launch it with
 `FILEMINT_RESOURCE_REGRESSION_ONLY=1` to run just this bounded lifecycle regression.
+`FILEMINT_RESOURCE_TOOLS=compress` limits subsequent panel checks to compression;
+it verifies actual source/output byte counts for both selected images in both
+languages. Add `FILEMINT_RESOURCE_INSPECT=1` to leave each completed compression
+panel visible until Close for visual inspection. Equal-size and larger outputs
+remain successful; size feedback must not prevent publication.
 
 - Use only a disposable image folder. Old preferences leave Resource Tools off;
   toggling off/on preserves child choices and never changes file-tool settings.

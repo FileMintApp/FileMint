@@ -6,7 +6,11 @@ DEVELOPER_DIR ?= /Applications/Xcode.app/Contents/Developer
 export DEVELOPER_DIR
 export DEVELOPMENT_TEAM
 
-verify: verify-context test harness verify-harness-cli verify-appcast verify-release-metadata verify-release-notarization verify-release-publication verify-signing-entitlements
+verify: verify-context verify-image-compression test harness verify-harness-cli verify-appcast verify-release-metadata verify-release-notarization verify-release-publication verify-signing-entitlements
+
+.PHONY: verify-image-compression
+verify-image-compression:
+	python3 scripts/verify_image_compression.py
 
 verify-context:
 	python3 scripts/verify_context.py

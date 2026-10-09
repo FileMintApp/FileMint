@@ -8,6 +8,7 @@ public enum ResourceText: Sendable {
     case copyText, saveText, saved, copied, previewHint, showOutputs, accuracyHint
     case editOptions
     case metadataHint, metadataDetail
+    case originalSize, compressedSize, sizeChange
 
     public func text(_ language: AppLanguage) -> String {
         let pair: (String, String) = switch self {
@@ -27,9 +28,12 @@ public enum ResourceText: Sendable {
         case .run: ("Run", "开始处理")
         case .cancel: ("Cancel", "取消")
         case .close: ("Close", "关闭")
-        case .cancelling: ("Cancelling after the current system operation…", "正在取消，等待当前系统操作结束…")
+        case .cancelling: ("Cancelling after the current operation…", "正在取消，等待当前操作结束…")
         case .whiteBackground: ("JPEG fills transparent areas with white.", "转为 JPEG 时，透明区域填充白色。")
-        case .compressHint: ("Keeps JPEG, HEIC, PNG or TIFF format. Quality affects JPEG/HEIC only; lossless output may not be smaller.", "保留 JPEG、HEIC、PNG 或 TIFF 格式。质量仅影响 JPEG/HEIC；无损输出不保证体积更小。")
+        case .compressHint: ("Keeps format and dimensions. Quality affects JPEG/HEIC only; PNG/TIFF use lossless compression.", "保留格式与尺寸。质量仅影响 JPEG/HEIC；PNG/TIFF 使用无损压缩。")
+        case .originalSize: ("Original size", "原始体积")
+        case .compressedSize: ("Output size", "输出体积")
+        case .sizeChange: ("Size change", "体积变化")
         case .originalHint: ("Creates new copies; existing names receive a number. Single-frame, standard-color images only.", "生成副本，同名自动编号。仅处理单帧、普通色彩图片。")
         case .limits: ("Up to 100 images, 64 MiB each. Working images/canvas: up to 16 MP. Resize large originals first.", "最多 100 张，每张不超过 64 MiB；处理图片和拼接画布不超过 1600 万像素。大图请先缩小尺寸。")
         case .iconHint: ("Centers the image on transparent squares. ICNS/PNG: 16–1024 px; ICO: 16–256 px.", "图片居中等比适配透明方形。ICNS/PNG：16–1024 像素；ICO：16–256 像素。")
@@ -70,7 +74,7 @@ extension ResourceError {
         case .dimensionsTooLarge: ("The image or canvas exceeds processing limits. Reduce the requested size.", "图片或画布超过处理上限，请减小目标尺寸。")
         case .invalidOptions: ("Enter a valid size between 1 and 16384 pixels and choose a supported format.", "请输入 1–16384 像素的有效尺寸，并选择支持的格式。")
         case .unsupportedOutput: ("This system cannot write that format. Compression supports JPEG, HEIC, PNG and TIFF.", "当前系统无法写入该格式；压缩仅支持 JPEG、HEIC、PNG 和 TIFF。")
-        case .encodingFailed: ("The system could not encode the result. Try another output format.", "系统无法编码结果，请尝试其他输出格式。")
+        case .encodingFailed: ("Could not encode the result. Try another image or output format.", "无法编码结果，请尝试其他图片或输出格式。")
         case .accessDenied: ("The output folder is unavailable or not writable. Choose it again.", "输出文件夹不可用或不可写，请重新选择。")
         case .noText: ("No text recognized.", "未识别到文字。")
         case .textTooLarge: ("Recognized text exceeds the result limit. Select fewer or smaller images.", "识别文字超过结果上限，请减少图片数量或尺寸。")

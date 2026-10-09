@@ -29,12 +29,17 @@ a generic review/check request into the full suite automatically.
 | Native appearance or icon assets | Unsigned app build; `make icon` only when icon sources change | Inspect affected native surfaces. Core tests are also needed when behavior changes. |
 | Build, packaging, signing or release | `make verify`; Release build and applicable artifact checks | [Distribution procedure](../docs/DISTRIBUTION.md), [Finder QA distribution checks](../docs/FINDER_QA.md#distribution). Publication remains a separate action. |
 
-The existing `make verify` runs context checks, Swift tests and the public JSON
+The existing `make verify` runs context and compression-artifact checks, Swift tests and the public JSON
 harness plus real CLI regression, appcast and signing-entitlement preparation tests.
 It stays offline and does not build the app/extension or website.
 PR CI invokes that same command; additional checks in this table are not implied
 by a green Core test run. Swift tests and the JSON CLI share the JSON cases;
 those cases are not independent coverage counted twice.
+
+Compression artifact checks validate the local source/archive hashes, framework
+ABI, arm64/macOS 13 target and system-only load paths. They do not rebuild the
+third-party runtime or access the network. Encoding behavior is covered by the
+image tests; native UI, sandbox and macOS 13 runtime evidence remain separate.
 
 `make verify-context` checks local context-document links, anchors and the size
 budget of `AGENTS.md` plus the SPEC index. It cannot prove that an agent loaded
