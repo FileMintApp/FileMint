@@ -32,9 +32,18 @@ a generic review/check request into the full suite automatically.
 The existing `make verify` runs context and compression-artifact checks, Swift tests and the public JSON
 harness plus real CLI regression, appcast and signing-entitlement preparation tests.
 It stays offline and does not build the app/extension or website.
-PR CI invokes that same command; additional checks in this table are not implied
-by a green Core test run. Swift tests and the JSON CLI share the JSON cases;
-those cases are not independent coverage counted twice.
+PR and main-branch CI invoke that same command independently on arm64 macOS 15
+and macOS 26. Both jobs must pass the stable `Verify core behavior` aggregate
+check. Runner/toolchain versions are recorded in each job; additional checks in
+this table are not implied by a green CI run. In particular, the matrix does not
+exercise macOS 13/14 or installed Finder/UI behavior. Swift tests and the JSON
+CLI share the JSON cases; those cases are not independent coverage counted twice.
+
+The hosted matrix uses explicit stable OS labels. GitHub has retired the
+[macOS 13 images](https://github.com/actions/runner-images/issues/13046), and
+[macOS 14 is in scheduled brownouts before retirement on 2026-11-02](https://github.com/actions/runner-images/issues/13518).
+Older supported systems need separate runtime checks; setting a deployment
+target of macOS 13 does not replace running on macOS 13.
 
 Compression artifact checks validate the local source/archive hashes, framework
 ABI, arm64/macOS 13 target and system-only load paths. They do not rebuild the

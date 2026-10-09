@@ -43,6 +43,14 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   enablement remains a separate system action.
 - CI and website-deployment workflows pin third-party GitHub Actions to reviewed
   commit IDs. Dependency lockfiles remain frozen during website builds.
+- Source CI runs the complete offline `make verify` suite on the standard arm64
+  `macos-15` and `macos-26` runners. Both environments must pass; a failure in
+  one must not cancel the other. Keep the stable `Verify core behavior` check
+  as an aggregate that runs even when a dependency fails, is cancelled or is
+  skipped, and succeeds only when every matrix job succeeds. Log the actual OS,
+  architecture and Xcode/Swift versions with each run. This matrix does not prove
+  macOS 13/14 or installed Finder/UI compatibility; those need separate runtime
+  evidence on the target system.
 - The Developer ID certificate stays in the project's ignored local signing
   directory. The certificate, private key, exported signing identity and Apple
   notarization credentials must remain local and never be committed, uploaded

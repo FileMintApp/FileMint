@@ -7,13 +7,43 @@ on:
 permissions:
   contents: read
 jobs:
-  verify:
-    name: Verify core behavior
-    runs-on: macos-15
+  verify-macos:
+    name: Verify core behavior (${{ matrix.os }}, arm64)
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-26]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 15
+    env:
+      DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0 (Node 24)
         with:
           persist-credentials: false
+      - name: Show runner and toolchain
+        run: |
+          sw_vers
+          uname -m
+          test "$(uname -m)" = arm64
+          xcodebuild -version
+          swift --version
       - name: Verify deterministic behavior
         run: make verify
+
+  verify:
+    # Preserve the existing required-check name as the matrix grows.
+    name: Verify core behavior
+    needs: verify-macos
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require every macOS environment to pass
+        env:
+          VERIFY_RESULT: ${{ needs.verify-macos.result }}
+        run: |
+          if [[ "$VERIFY_RESULT" != success ]]; then
+            echo "macOS verification did not succeed: $VERIFY_RESULT"
+            exit 1
+          fi
