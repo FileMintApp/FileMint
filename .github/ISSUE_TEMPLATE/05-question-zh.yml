@@ -1,0 +1,61 @@
+name: 使用问题（简体中文）
+description: 询问功能用法、设置方法或不确定是否为 Bug 的情况。
+title: "[Question] "
+labels: [question]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        如不确定如何使用某项功能，或不能确定遇到的情况是否为 Bug，可以使用此表单。
+        安装与更新可先参考[安装指引](https://github.com/FileMintApp/FileMint/blob/main/docs/INSTALL.md)。
+        Issue 和附件公开可见，请遮挡个人信息、真实文件路径和私人内容。
+
+  - type: checkboxes
+    id: existing-issues
+    attributes:
+      label: 提交前确认
+      description: 请先[搜索现有 Issues](https://github.com/FileMintApp/FileMint/issues?q=is%3Aissue)，看看是否已有相同问题的说明。
+      options:
+        - label: 我已搜索现有 Issues，未找到能够解答此问题的内容。
+          required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: 你的问题
+      description: 你对哪个功能或设置有疑问？具体在哪一步遇到困难？
+      placeholder: 我想了解……，目前卡在……
+    validations:
+      required: true
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: 想完成的任务
+      description: 描述你的最终目标和使用场景，方便我们给出适合的操作方法。
+      placeholder: 我希望在……情况下，通过 FileMint 完成……
+    validations:
+      required: true
+
+  - type: textarea
+    id: attempts
+    attributes:
+      label: 已尝试的方法
+      description: 可填写尝试过的操作、查阅过的说明、实际结果或错误提示。
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 使用环境与相关设置
+      description: 若问题与具体环境有关，可填写 FileMint 版本、macOS 版本、Mac 芯片类型、相关设置或第三方应用版本。
+      placeholder: |
+        FileMint 版本（在“关于”中查看）：
+        macOS 版本（在“关于本机”中查看）：
+        Mac 芯片类型：
+        相关功能或设置：
+
+  - type: textarea
+    id: attachments
+    attributes:
+      label: 截图或补充信息
+      description: 可添加截图、录屏或参考链接。请先移除个人信息和私人内容；没有附件也可以提交。

@@ -1,0 +1,143 @@
+name: Bug report (English)
+description: Report crashes, unexpected behavior, UI errors or installation and update problems.
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe one problem per issue and include the actions that help us reproduce it.
+        Issues and attachments are public. Remove personal information, real file paths and private content from screenshots, recordings and logs.
+
+  - type: checkboxes
+    id: existing-issues
+    attributes:
+      label: Before submitting
+      description: Please [search existing issues](https://github.com/FileMintApp/FileMint/issues?q=is%3Aissue). If the same problem is already reported, add your details there.
+      options:
+        - label: I searched existing issues and did not find the same problem.
+          required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Problem description
+      description: Which feature is affected, and how does the problem affect your work?
+      placeholder: For example, creating a text file from the Finder context menu produces no file in the current folder and shows no error.
+    validations:
+      required: true
+
+  - type: input
+    id: filemint-version
+    attributes:
+      label: FileMint version
+      description: Check About in FileMint and include the build number if shown. If the app cannot launch, enter the downloaded version. Enter "Unknown" if unavailable.
+      placeholder: Version (build number)
+    validations:
+      required: true
+
+  - type: input
+    id: macos-version
+    attributes:
+      label: macOS version
+      description: Check Apple menu → About This Mac. Enter "Unknown" if unavailable.
+      placeholder: For example, macOS 15.6
+    validations:
+      required: true
+
+  - type: dropdown
+    id: architecture
+    attributes:
+      label: Mac chip
+      options:
+        - Apple silicon (M series)
+        - Intel
+        - Not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: installation-source
+    attributes:
+      label: Installation or update method
+      options:
+        - DMG downloaded from GitHub Releases
+        - In-app FileMint update
+        - Built from source
+        - Other or not sure (describe in Additional context)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected feature
+      options:
+        - File creation
+        - Templates and types
+        - Finder menus and folder access
+        - File and folder tools
+        - Resource tools and image processing
+        - Open with App
+        - Favorite locations
+        - Settings and startup
+        - Installation and updates
+        - Other or not sure
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Where did you start, and what did you do in order? For an intermittent problem, describe the actions immediately before it happened.
+      placeholder: |
+        1. Open…
+        2. Select…
+        3. Click…
+        4. Observe…
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+      description: What should happen after these steps?
+      placeholder: For example, a new text file appears in the current folder and is selected in Finder.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+      description: What happened instead? Include the full text of any error message.
+      placeholder: Describe what happened, any error message, and whether the file was created or is still present.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: Frequency
+      options:
+        - Every time
+        - Sometimes
+        - Happened once
+        - Not sure
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Include relevant settings, file or template types, whether it started after an update, and any troubleshooting you tried.
+      placeholder: |
+        For Finder: entry point, whether the extension is enabled, and whether the destination folder is authorized.
+        Folder location type: local, iCloud, external disk or network share. Real paths are not needed.
+        For Open with App or terminals: application name and version.
+        For templates or images: file format and a minimal example that can be shared publicly.
+
+  - type: textarea
+    id: attachments
+    attributes:
+      label: Screenshots, recordings or logs
+      description: Attach files or paste relevant error logs after removing personal information and private content. Attachments are optional.

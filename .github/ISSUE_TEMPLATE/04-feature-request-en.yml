@@ -1,0 +1,64 @@
+name: Feature request (English)
+description: Suggest a new feature, an improvement or a better everyday workflow.
+title: "[Feature] "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe one request per issue, starting with your use case and the problem you want to solve.
+        A technical implementation plan is not needed. Issues and attachments are public, so remove private content.
+
+  - type: checkboxes
+    id: existing-issues
+    attributes:
+      label: Before submitting
+      description: Please [search existing issues](https://github.com/FileMintApp/FileMint/issues?q=is%3Aissue). If a similar request exists, add your use case there.
+      options:
+        - label: I searched existing issues and did not find the same request.
+          required: true
+
+  - type: textarea
+    id: scenario
+    attributes:
+      label: Use case and current problem
+      description: What task are you trying to complete, and what makes the current workflow difficult?
+      placeholder: |
+        I often need to…
+        Currently, I have to…
+        The difficult or time-consuming part is…
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed feature or improvement
+      description: Describe how you would like to interact with FileMint and how it should respond.
+      placeholder: From…, I would like to… so that I can…
+    validations:
+      required: true
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: What result would solve your problem? List the key outcomes if there is more than one.
+      placeholder: |
+        1. I can…
+        2. When…, FileMint should…
+        3. This would reduce…
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Current workaround or alternatives
+      description: Optionally describe your current approach, tools you have tried or other acceptable solutions.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Frequency and supporting material
+      description: Optionally include how often you need this, who would benefit, related FileMint features, reference links, sketches or public examples. Remove private content from screenshots.

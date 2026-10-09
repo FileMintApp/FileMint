@@ -1,0 +1,64 @@
+name: 功能需求（简体中文）
+description: 提出新功能、现有功能改进或日常使用体验建议。
+title: "[Feature] "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请在一个 Issue 中描述一个需求，优先说明使用场景和希望解决的问题。
+        不需要提供技术实现方案。Issue 和附件公开可见，请移除私人内容。
+
+  - type: checkboxes
+    id: existing-issues
+    attributes:
+      label: 提交前确认
+      description: 请先[搜索现有 Issues](https://github.com/FileMintApp/FileMint/issues?q=is%3Aissue)，已有类似需求时可在原 Issue 中补充场景。
+      options:
+        - label: 我已搜索现有 Issues，未找到相同的需求。
+          required: true
+
+  - type: textarea
+    id: scenario
+    attributes:
+      label: 使用场景与当前问题
+      description: 你在什么情况下想完成什么任务？现在的流程哪里不方便？
+      placeholder: |
+        我经常需要……
+        目前需要先……再……
+        困难或耗时的地方是……
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 希望增加或改进的功能
+      description: 描述你希望怎样操作，以及应用应如何响应。
+      placeholder: 我希望在……入口，通过……操作，可以……
+    validations:
+      required: true
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: 期望效果
+      description: 什么结果能解决你的问题？如有多个关键点，可以逐条说明。
+      placeholder: |
+        1. 能够……
+        2. 当……时，应当……
+        3. 这样可以减少……
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 当前替代方式
+      description: 可说明现在的处理方法、尝试过的工具或其他可接受的方案。
+
+  - type: textarea
+    id: context
+    attributes:
+      label: 使用频率与补充材料
+      description: 可补充使用频率、受益人群、相关 FileMint 功能、参考链接、草图或可公开的示例。截图请遮挡私人内容。

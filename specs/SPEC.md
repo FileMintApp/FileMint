@@ -25,7 +25,7 @@ not instructions to recursively read everything.
 | Image actions and private metadata removal; `ResourceTools*`, `FileMintImages` | [Resource tools](domains/resource-tools.md) |
 | Launch, windows, login items, menu bar, language, persistent defaults; `FileMintApp`, `AppDelegate`, `SettingsWindowController`, `LoginItemService`, `LoginItemPolicy` | [Startup and preferences](domains/startup.md) |
 | About, checks, download, quarantine, update scheduling; `AboutPane`, `UpdateModel`, `UpdateClient`, `AppUpdate`, `AutomaticUpdatePolicy`, `InstallerQuarantinePolicy`, update smoke scripts | [Updates](domains/updates.md) |
-| Website, README, privacy/license copy, native appearance, icons; `website/`, `Resources/`, `generate_app_icon.swift`, site packages and `*pages.yml` | [Presentation](domains/presentation.md) |
+| Website, README, issue forms, privacy/license, appearance/icons; `website/`, `.github/ISSUE_TEMPLATE/`, `Resources/`, icon scripts, site packages and `*pages.yml` | [Presentation](domains/presentation.md) |
 | Build, entitlements, packaging, signing, publication; `project.yml`, `Config/`, `CorePackage/Package.swift`, build/release scripts, `ci.yml`, `release.yml` | [Distribution](domains/distribution.md) |
 | Agent context, test infrastructure or workflow; `AGENTS.md`, `specs/`, `Makefile`, `Harness*`, `FileMintHarness`, `verify_context.py`, `test_harness_cli.py` | [AI Playbook](../docs/AI_PLAYBOOK.md), then [HARNESS](HARNESS.md) for checks |
 

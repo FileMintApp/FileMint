@@ -1,0 +1,61 @@
+name: Question (English)
+description: Ask about features, settings or behavior you are unsure is a bug.
+title: "[Question] "
+labels: [question]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form if you need help with a feature or are unsure whether something is a bug.
+        You can also check the [usage and installation overview](https://github.com/FileMintApp/FileMint/blob/main/README.en.md).
+        Issues and attachments are public. Remove personal information, real file paths and private content.
+
+  - type: checkboxes
+    id: existing-issues
+    attributes:
+      label: Before submitting
+      description: Please [search existing issues](https://github.com/FileMintApp/FileMint/issues?q=is%3Aissue) to see whether your question has already been answered.
+      options:
+        - label: I searched existing issues and did not find an answer to this question.
+          required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+      description: Which feature or setting do you need help with? At which step are you stuck?
+      placeholder: I would like to understand…, and I am stuck at…
+    validations:
+      required: true
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: Task you want to complete
+      description: Describe your goal and use case so we can suggest suitable steps.
+      placeholder: I want to use FileMint to… when…
+    validations:
+      required: true
+
+  - type: textarea
+    id: attempts
+    attributes:
+      label: What you have tried
+      description: Optionally include actions you tried, instructions you consulted, results or error messages.
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment and relevant settings
+      description: If relevant, include your FileMint version, macOS version, Mac chip, settings or third-party application versions.
+      placeholder: |
+        FileMint version (in About):
+        macOS version (in About This Mac):
+        Mac chip:
+        Related features or settings:
+
+  - type: textarea
+    id: attachments
+    attributes:
+      label: Screenshots or additional information
+      description: Optionally attach screenshots, recordings or reference links after removing personal information and private content.

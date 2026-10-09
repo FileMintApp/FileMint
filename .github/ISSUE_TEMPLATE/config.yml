@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 安装与更新帮助（简体中文）
+    url: https://github.com/FileMintApp/FileMint/blob/main/docs/INSTALL.md
+    about: 查看安装、Finder 扩展启用、文件夹授权与更新说明。
+  - name: Usage and installation help (English)
+    url: https://github.com/FileMintApp/FileMint/blob/main/README.en.md
+    about: Read the feature overview, installation steps and privacy information.

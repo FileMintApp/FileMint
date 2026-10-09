@@ -1,6 +1,6 @@
 # Appearance, website and product copy
 
-Load for: Native appearance, icons, README/website copy, roadmap presentation and license/privacy claims.
+Load for: Native appearance, icons, README/website copy, GitHub issue forms, roadmap presentation and license/privacy claims.
 
 Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; other documents link here.
 
@@ -176,8 +176,26 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - Keep the privacy policy.
   Do not promise valid Office/PDF/image output from a custom suffix.
 
+## GitHub feedback
+
+- The New issue chooser offers separate Simplified Chinese and English forms
+  for Bug reports, feature requests and usage questions. Each form uses one
+  language throughout and applies the existing `bug`, `enhancement` or `question`
+  label respectively. Ordinary contributors use these forms instead of a blank
+  issue; the chooser also links to Chinese and English help.
+- Bug reports require a description, FileMint version, macOS version, Mac
+  architecture, installation source, reproduction steps, expected result and
+  actual result. Feature requests require a concrete scenario, proposed behavior
+  and the outcome that would solve the need. Usage questions require a question
+  and the user's intended task. Each form asks users to check existing Issues.
+- Supporting screenshots, recordings, logs, configuration context and alternative
+  solutions are optional. Explain where to find version information, allow an
+  unknown value when it cannot be obtained, and remind users to remove private
+  information from public attachments. Do not require users to upgrade, grant
+  additional permissions or upload private files to submit feedback.
+
 ## Working context
 
-- Implementation entry points: `Resources/`, `scripts/generate_app_icon.swift`, `website/`, `README.md`, `README.en.md`, `PRIVACY.md`, `LICENSE`; visible controls in `App/FileMint/` and `SharedUI/`.
-- Verification: [Verification matrix](../HARNESS.md#choose-checks-by-change), using the website or appearance row.
+- Implementation entry points: `Resources/`, `scripts/generate_app_icon.swift`, `website/`, `.github/ISSUE_TEMPLATE/`, `README.md`, `README.en.md`, `PRIVACY.md`, `LICENSE`; visible controls in `App/FileMint/` and `SharedUI/`.
+- Verification: [Verification matrix](../HARNESS.md#choose-checks-by-change), using the documentation, website or appearance row.
 - Expand context only when needed: For feature claims, load only the domain being described. Load [updates](updates.md) for About credits; [distribution](distribution.md) for installation/release claims. Read [future roadmap](../../docs/ROADMAP.md) only for planned work, never as evidence of shipped behavior.

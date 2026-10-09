@@ -1,0 +1,143 @@
+name: Bug 反馈（简体中文）
+description: 报告崩溃、功能异常、界面错误或安装更新问题。
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请尽量在一个 Issue 中描述一个问题，并用具体操作帮助我们复现。
+        Issue 和附件公开可见，截图、录屏与日志中请遮挡个人信息、真实文件路径和私人内容。
+
+  - type: checkboxes
+    id: existing-issues
+    attributes:
+      label: 提交前确认
+      description: 请先[搜索现有 Issues](https://github.com/FileMintApp/FileMint/issues?q=is%3Aissue)，已有相同问题时可在原 Issue 中补充信息。
+      options:
+        - label: 我已搜索现有 Issues，未找到相同的问题。
+          required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: 问题描述
+      description: 哪个功能出了问题？它对你的使用有什么影响？
+      placeholder: 例如：在 Finder 中右键新建文本文件后，文件没有出现在当前文件夹，也没有错误提示。
+    validations:
+      required: true
+
+  - type: input
+    id: filemint-version
+    attributes:
+      label: FileMint 版本
+      description: 在 FileMint 的“关于”页面查看版本；如显示构建号也请填写。无法启动时填写下载版本，无法确认可填“未知”。
+      placeholder: 版本号（构建号）
+    validations:
+      required: true
+
+  - type: input
+    id: macos-version
+    attributes:
+      label: macOS 版本
+      description: 在苹果菜单 → 关于本机中查看。无法确认可填“未知”。
+      placeholder: 例如：macOS 15.6
+    validations:
+      required: true
+
+  - type: dropdown
+    id: architecture
+    attributes:
+      label: Mac 芯片类型
+      options:
+        - Apple 芯片（M 系列）
+        - Intel
+        - 不确定
+    validations:
+      required: true
+
+  - type: dropdown
+    id: installation-source
+    attributes:
+      label: 安装或更新方式
+      options:
+        - GitHub Releases 的 DMG 安装包
+        - FileMint 应用内更新
+        - 从源码构建
+        - 其他或不确定（请在补充信息中说明）
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: 涉及的功能
+      options:
+        - 文件创建
+        - 模板与类型
+        - Finder 菜单与文件夹授权
+        - 文件（夹）工具
+        - 资源工具与图片处理
+        - 使用指定应用打开
+        - 收藏位置
+        - 设置与启动
+        - 安装与更新
+        - 其他或不确定
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 复现步骤
+      description: 从哪个入口开始，依次做了什么？偶发问题可写出出错前的操作。
+      placeholder: |
+        1. 打开……
+        2. 选择……
+        3. 点击……
+        4. 出现……
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望结果
+      description: 完成上述操作后，你期望看到什么？
+      placeholder: 例如：当前文件夹出现新建的文本文件，并在 Finder 中选中它。
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际结果
+      description: 实际发生了什么？如有错误提示，请提供完整文字。
+      placeholder: 描述实际表现、错误提示，以及文件是否已创建或仍然保留。
+    validations:
+      required: true
+
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: 出现频率
+      options:
+        - 每次都能复现
+        - 偶尔出现
+        - 只出现过一次
+        - 不确定
+
+  - type: textarea
+    id: context
+    attributes:
+      label: 补充信息
+      description: 可填写相关设置、文件类型、模板类型、是否在升级后出现，以及尝试过的处理方式。
+      placeholder: |
+        如涉及 Finder：操作入口、扩展是否启用、目标文件夹是否已授权。
+        文件夹位置类型：本地、iCloud、外接磁盘或网络共享等，无需提供真实路径。
+        如涉及指定应用或终端：应用名称与版本。
+        如涉及模板或图片：文件格式，以及可公开的最小示例。
+
+  - type: textarea
+    id: attachments
+    attributes:
+      label: 截图、录屏或日志
+      description: 可拖入附件或粘贴相关错误日志。请先移除个人信息和私人内容；没有附件也可以提交。
