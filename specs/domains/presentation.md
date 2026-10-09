@@ -145,6 +145,10 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 
 ## Product presentation
 
+- Release-related website changes are built before public Release availability
+  and deployed afterward from that exact successful build artifact. A push can
+  build the website but must not automatically deploy unpublished release copy.
+  Website failures have a separate status from application publication.
 - Website homepages present the current creation, text/Office templates,
   clipboard-image creation, Open with App, file tools, image tools and appearance
   choices in both languages. Use real app captures with matching-language captions;

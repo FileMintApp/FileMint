@@ -37,7 +37,16 @@ fixture does not remove `make release-local`, `make publish-local` or checks
 selected by [HARNESS](../HARNESS.md) for updater, signing, packaging, installer
 permissions or appcast changes. When actual installation behavior needs proof,
 use signed old/new FileMint runtime evidence; UpgradeQA's minimal host cannot
-stand in for it. Exact remote asset readback is required for every publication.
+stand in for it. Publication uses the locally verified signed candidate and
+uploads a draft Release. Following the owner's 2026-10-08 policy, it omits local
+remote-asset downloads and content comparisons. Source CI, remote candidate
+verification and applicable website builds must pass before stable/Latest
+publication; website deployment follows afterward. The candidate job invokes the
+full artifact verifier with the expected build, including nested Sparkle signatures,
+installer configuration, resolved Mach permissions, public-key/EdDSA validation,
+final URLs and sizes. Public metadata must still satisfy the existing client's
+Latest discovery contract. A website failure must not relabel a public app as
+unpublished. These checks do not by themselves prove an installed upgrade.
 
 Manual signing resolves entitlement variables before codesign. Both signing and
 bundle verification read the actual embedded DER/XML entitlements through Security

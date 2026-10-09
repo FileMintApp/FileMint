@@ -83,6 +83,12 @@ executed cases; it must not crash or masquerade as a successful empty run.
 ## Commands and coverage
 
 - `make verify`: context checks, Swift tests, public JSON cases and real CLI regression.
+- `make verify-release-publication`: runs the actual publication shell script
+  source guards with disposable Git candidates, and the production publication
+  transaction/workers with offline GitHub adapters. Covers draft discovery,
+  source/candidate/run identity, failed/pending checks, missing or expired website
+  artifacts, immutable candidate promotion, uncertain publication recovery,
+  Latest/Sparkle metadata, post-publication deployment and no local remote downloads.
 - `make verify-harness-cli`: builds the actual executable and checks it in subprocesses.
 - `swift test --package-path CorePackage`: Swift tests only.
 - `swift run --package-path CorePackage filemint-harness specs/harness/cases/file_creation_cases.json --format json`: a machine-readable report for the public suite.

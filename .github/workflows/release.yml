@@ -1,42 +1,44 @@
-name: Verify published release
+name: Verify draft release candidate
+run-name: FileMint candidate ${{ inputs.request_id }}
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      request_id:
+        required: true
+        type: string
+      release_id:
+        required: true
+        type: string
+      tag:
+        required: true
+        type: string
+      commit:
+        required: true
+        type: string
+      build:
+        required: true
+        type: string
+      assets:
+        required: true
+        type: string
+# Draft Release access requires a repository identity with push access.
+# No Apple or Sparkle private key is provided to this verification job.
 permissions:
-  contents: read
+  contents: write
 jobs:
   verify:
-    name: Verify uploaded DMG
+    name: Verify draft DMG and Sparkle installer
     runs-on: macos-15
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       GH_TOKEN: ${{ github.token }}
-      RELEASE_TAG: ${{ github.event.release.tag_name }}
+      FILEMINT_PUBLICATION_INPUTS: ${{ toJSON(inputs) }}
       APPLE_TEAM_ID: 8S66M2ZLD5
       APPLE_CODESIGN_IDENTITY: 'Developer ID Application: Guangzhou Guangbei Vertex Technology co.,Ltd (8S66M2ZLD5)'
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0 (Node 24)
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ inputs.commit }}
           persist-credentials: false
-      - name: Download published assets
-        run: |
-          set -euo pipefail
-          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 2
-          version="${RELEASE_TAG#v}"
-          expected="$(printf '%s\n' "FileMint-$version.dmg" "FileMint-$version.dmg.sha256" appcast.xml | sort)"
-          actual="$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' | sort)"
-          [[ "$actual" == "$expected" ]] || { echo 'Release assets do not match the required DMG, checksum and appcast.xml set' >&2; exit 1; }
-          mkdir -p dist
-          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
-            --pattern "FileMint-$version.dmg" --pattern "FileMint-$version.dmg.sha256" \
-            --dir dist
-          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --pattern appcast.xml --dir dist
-          echo "VERSION=$version" >> "$GITHUB_ENV"
-      - name: Verify checksum, signatures and release-specific ticket state
-        run: |
-          if [[ "$VERSION" == 0.5.3 ]]; then
-            FILEMINT_ALLOW_PENDING_053=1 bash scripts/verify_release_artifact.sh "dist/FileMint-$VERSION.dmg" "$VERSION"
-          else
-            bash scripts/verify_release_artifact.sh "dist/FileMint-$VERSION.dmg" "$VERSION"
-          fi
+      - name: Verify the exact uploaded draft candidate
+        run: python3 scripts/release_publication.py candidate

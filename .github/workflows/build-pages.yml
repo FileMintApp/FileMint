@@ -1,0 +1,55 @@
+name: Build FileMint website
+run-name: FileMint site ${{ inputs.request_id || github.sha }}
+on:
+  push:
+    branches: [main]
+    paths:
+      - README.md
+      - README.en.md
+      - website/**
+      - package.json
+      - pnpm-lock.yaml
+      - .github/workflows/build-pages.yml
+      - .github/workflows/deploy-pages.yml
+  workflow_dispatch:
+    inputs:
+      request_id:
+        required: true
+        type: string
+      tag:
+        required: true
+        type: string
+      commit:
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ inputs.commit || github.sha }}
+          persist-credentials: false
+      - name: Check the build source
+        env:
+          EXPECTED_COMMIT: ${{ inputs.commit || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_COMMIT"
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: Build website
+        env:
+          SITE_BASE: /FileMint/
+        run: pnpm run site:build
+      - name: Retain the website candidate
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: website/.vitepress/dist
+          retention-days: 7

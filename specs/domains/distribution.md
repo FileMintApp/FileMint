@@ -52,20 +52,42 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   one-time 0.5.3 exception additionally checked and recorded the actual Apple
   `In Progress` state at publication; the later `Accepted` result establishes
   an online ticket but does not retroactively staple the uploaded DMG. Later
-  releases require local ticket validation before upload. A published-release
-  GitHub job may re-check the uploaded bytes without building them or claiming
+  releases require local ticket validation before upload. GitHub re-checks the
+  uploaded draft candidate before publication without building it or claiming
   build provenance.
 - A normal stable release has one version/build source in `project.yml` and two
   explicit stages: `release-local` checks the committed release notes and source
-  tag, then builds and verifies the notarized artifact; `publish-local` publishes
-  its exact bytes and waits for the published-asset verification job. The owner
+  tag, then builds and verifies the notarized artifact; `publish-local` uploads
+  the verified DMG, checksum and appcast to a draft Release. Source CI, remote
+  candidate verification and applicable website builds must succeed before the
+  same draft is made public and Latest. Only then announce online-update
+  availability, deploy the verified website artifact and complete release records.
+  The owner
   confirmed public update acceptance across three recent small releases; routine
   releases therefore do not require a temporary app launch/UI review, website
   screenshot capture or repeated old-to-new installation acceptance. Omitting
   the standalone UpgradeQA fixture changes none of the release gates: every
   stable version still requires the clean tagged source, `release-local` checks,
-  accepted notarization, stapling, signed appcast, `publish-local` remote asset
-  readback and published-release verification. Changes to updater, signing,
+  accepted notarization, stapling, signed appcast, `publish-local` stable-release
+  and asset-set checks, and candidate verification before public availability.
+  Local remote-asset downloads and byte/hash comparisons remain omitted.
+  Dispatch candidate checks for the exact release ID, tag, commit, build and
+  asset IDs, and save their request/run identities in a local publication journal.
+  Recheck the candidate identity before promotion; changed assets invalidate the
+  check. Never reuse an unrelated or historical run for another candidate.
+  Required failed, cancelled, missing or timed-out checks leave the Release a draft.
+  GitHub checks the remote checksum, signatures, ticket, Sparkle helpers and
+  resolved installer entitlements, with the expected source build number.
+  An interrupted publication request must be reconciled with GitHub before
+  reporting whether the version is public. Confirm Latest discovery and the final
+  public asset URLs after promotion; never give clients a draft/temporary URL.
+  Website builds run before publication when tracked website inputs changed;
+  deployment reuses that successful build only after the Release is public.
+  Missing required website jobs are failures, not evidence that no build is needed.
+  A website deployment failure reports "published; website deployment failed"
+  and resumes only unfinished work, preserving the published assets.
+  Publication jobs use the existing GitHub identity and keep all Apple/Sparkle
+  private keys local. Changes to updater, signing,
   packaging, installer permissions or appcast still receive applicable checks
   from [HARNESS](../HARNESS.md); actual installed-update behavior needs signed
   old/new runtime evidence when that behavior is under test. UpgradeQA is an
@@ -94,8 +116,15 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - Stable release verification requires the Sparkle installer configuration and
   signed framework/helper contents in the mounted app. A missing configuration
   cannot turn appcast verification into an optional check. The remote release must
-  contain exactly the DMG, portable checksum and `appcast.xml`; all three must
-  match the local verified files byte for byte.
+  contain exactly the DMG, portable checksum and `appcast.xml`. Upload the locally
+  verified files as a draft, verify them on GitHub and only then make that Release
+  public, without a local remote-content comparison.
+  GitHub's independent checksum/signature/ticket verification and the client's
+  signed update validation remain in place. Preserve the Sparkle public key,
+  final DMG signature, immutable tag-based appcast/download URLs, version/build
+  binding and installer Mach permissions across publication orchestration changes.
+  A post-publication failure must not relabel a public version as unpublished;
+  keep the published assets immutable.
 - Keep the Sparkle EdDSA private key in the local Keychain under a FileMint-specific
   account. Only the public key belongs in source and in the app. Never export keys
   to CI, logs or release assets. Existing Apple signing credentials are unchanged.

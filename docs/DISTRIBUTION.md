@@ -33,12 +33,12 @@ full Xcode from a clean,
 tagged commit. That Mac signs the Finder extension, app and DMG with Developer
 ID Application, submits the DMG to Apple, staples its ticket, verifies the
 mounted app and final checksum, then uploads the validated DMG, checksum and appcast
-to GitHub Releases. The normal release command refuses missing credentials,
+to a draft GitHub Release. The normal release command refuses missing credentials,
 rejected notarization or a mismatched artifact. Existing release assets are
 never replaced; use a fresh version for corrections. GitHub CI runs core tests
 without rebuilding the release DMG.
-After publication, a GitHub job downloads and checks the uploaded DMG without
-using Apple credentials or claiming it built the binary.
+Before publication, a GitHub job downloads and checks the uploaded draft DMG
+without using Apple credentials or claiming it built the binary.
 
 Local packaging also uses a temporary build directory and unregisters/removes
 its own app and extension on exit. Xcode automatically registers macOS products;
@@ -50,10 +50,12 @@ Local `make package` still defaults to ad-hoc signing for development checks.
 For a normal notarized public version after 0.5.3, use the following sequence
 whenever the owner asks to “构建发布”. The phrase authorizes the full release; a
 request only to build, commit or prepare a candidate stops at its named stage.
-The two stages separate local artifact preparation from public upload and
-remote readback. The owner confirmed that the public update path was validated
-across three recent small releases, so routine releases do not repeat temporary
-app installation, launch/UI review, website screenshot capture or old-to-new
+The stages separate local artifact preparation, draft upload, verification,
+public availability and website deployment. On 2026-10-08 the owner chose to omit
+local remote-asset downloads and content comparisons, verify a draft before making
+it public, and deploy the verified website build afterward. The owner confirmed that the public update path
+was validated across three recent small releases, so routine releases do not repeat
+temporary app installation, launch/UI review, website screenshot capture or old-to-new
 installation acceptance. The standalone UpgradeQA fixture is omitted from the
 standard workflow; this does not skip any step of `make release-local` or
 `make publish-local`. When updater, signing, packaging, installer permissions or
@@ -121,7 +123,7 @@ evidence, follow the affected checks in
 the UpgradeQA fixture is only an optional diagnostic there. Report installed Finder,
 minimum-supported-macOS and managed-device evidence separately when unavailable.
 
-### 3. Publish and read back
+### 3. Stage and verify a draft
 
 After local artifact checks pass, run:
 
@@ -130,26 +132,79 @@ make publish-local
 ```
 
 This rechecks the exact local DMG, checksum, appcast, source commit and certificate
-against the local manifest, pushes `main` and the tag, creates a stable GitHub
-Release if absent, and compares **all three downloaded assets byte for byte**.
-It rejects missing/extra assets, drafts and prereleases, then waits for the
-published-release GitHub verification workflow to pass. It never uploads the
-local source manifest or Apple credentials. If the remote step fails, keep the
-local manifest and rerun `make publish-local`; existing assets are only checked,
-never replaced. A mismatched remote asset requires a new version and investigation.
+against the local manifest, pushes `main` and the tag, and uploads the three assets
+to a **draft** Release. Draft staging is reported as not yet available for online
+updates. It never uploads the local source manifest or Apple credentials, downloads
+remote assets locally or compares remote bytes/hashes with local files.
+
+The command saves `build/FileMint-VERSION.publication.json` beside the verified
+candidate. This local journal binds the source manifest, Release ID, asset IDs,
+required website work and exact Actions request/run IDs. Preserve it for recovery;
+do not commit, upload or manufacture it for an unrelated existing Release. A lock
+prevents simultaneous local publication of the same candidate. Interrupted draft
+uploads can add missing assets, but never replace an existing asset.
+
+Source CI must succeed for the exact release commit on `main`. The command explicitly
+dispatches the candidate workflow against the release tag; that job reads the
+draft assets with authenticated GitHub access and performs the existing complete
+DMG, Developer ID, notarization, Sparkle helper and embedded-entitlement checks.
+It additionally requires the expected source version/build and download sizes.
+No Apple or Sparkle signing keys enter Actions. The local GitHub identity needs
+release-write and Actions-dispatch/read access; missing permissions stop the draft.
+
+When website inputs differ from the previous stable tag, a website build for this
+release commit must also succeed and produce a retained Pages artifact. No matching
+run does not mean the build is optional. Unchanged website inputs are explicitly
+marked not applicable. Ordinary website pushes now build only; they do not deploy
+new release copy before the application is public.
+
+### 4. Promote the verified candidate and confirm online updates
+
+After the required Actions succeed, `make publish-local` rechecks their saved
+identities and the draft asset set, then changes that same Release to stable and
+Latest. It does not rebuild, re-sign or re-upload the candidate. The appcast retains
+the final public tag-based asset URLs throughout draft staging; clients never
+receive draft URLs. Sparkle keys, signing, installer configuration and scoped Mach
+permissions remain part of the mandatory artifact checks.
+
+Only after GitHub confirms the public release, Latest identity and final download
+metadata should the command report that online updates are available. If the
+promotion response is lost, query the saved Release ID to reconcile the result.
+If GitHub cannot be queried, report that publication status is unknown and retain
+the journal; do not assume that publication failed or upload another package.
+
+### 5. Deploy the website and complete the release
+
+If website work is applicable, explicitly dispatch deployment after publication.
+The deployment job checks the public Release and exact successful website build,
+downloads its retained Pages archive on the runner, and deploys it without rebuilding.
+The archive is retained for seven days. A successfully rerun website build for the
+same source can supply a fresh artifact for unfinished deployment; published app
+assets stay untouched. All required Actions must finish successfully before the
+command reports that the **release workflow is complete** and evidence is finalized.
+
+Actions waits poll every 15 seconds and are bounded to 45 minutes per wait by
+default (`FILEMINT_ACTIONS_POLL_SECONDS` and `FILEMINT_ACTIONS_TIMEOUT_SECONDS`).
+Missing, failed, cancelled or timed-out required checks stop before publication.
+A failed website deployment after promotion reports **already published; website
+follow-up failed**. For a failed run, rerun that saved run in GitHub, then resume
+`make publish-local` from the original clean tagged source. The journal resumes
+unfinished stages instead of adopting unrelated green runs or overwriting assets.
 
 Routine publication does not repeat an old-to-new installed update. For changes
 to updater, signing, packaging, installer permissions or appcast behavior, apply
 the relevant HARNESS and update-verification checks; investigate reported
 failures with tests targeted to the failure. UpgradeQA is not required for any
-of these cases. `make publish-local` remains mandatory: it downloads and compares
-the published DMG, checksum and appcast byte for byte, then waits for GitHub's
-published-release verification. Record local artifact results and remote
-readback; record native update results when targeted acceptance is performed.
+of these cases. `make publish-local` remains mandatory for draft upload, pre-publication
+Actions, promotion, public update-discovery checks and applicable website deployment. Record local
+artifact results, the time online updates became available and the Actions results;
+record native update results when targeted acceptance is performed.
 
-Release evidence should include the local notarization result, downloaded asset
-checksum and published-release verification job. Include native runtime results
-when that targeted acceptance is run.
+Release evidence should include the local notarization result, local DMG checksum,
+published asset names, candidate verification and website run IDs. Do not claim that
+local/remote byte equality was checked. Earlier release records retain their
+historical readback results. Include native runtime results when that targeted
+acceptance is run.
 
 ## Standard notarytool workflow
 
@@ -217,8 +272,11 @@ then the framework, Finder extension and app. `release-local` signs the final
 notarized/stapled DMG with the FileMint-specific EdDSA key, generates an immutable
 appcast and verifies it using the public key before accepting the release.
 The feed hash is bound into the local release manifest. `publish-local` uploads
-it as `appcast.xml` alongside the DMG/checksum and compares all three downloaded
-assets with the local originals. No new server or GitHub credential in the app
+it as `appcast.xml` alongside the DMG/checksum in a draft. After candidate checks
+pass, the same assets become public without changing the feed's final URLs or
+signature. The stable release and Latest discovery are confirmed before reporting
+online-update availability.
+No new server or GitHub credential in the app
 is needed. Continue using increasing numeric builds and `vMAJOR.MINOR.PATCH` tags.
 
 The update private key remains in the local Keychain account

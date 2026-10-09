@@ -1,12 +1,12 @@
 -include .local/signing.mk
 
-.PHONY: verify verify-favorite-model verify-appcast verify-release-metadata verify-release-notarization verify-signing-entitlements verify-sparkle-driver verify-context verify-harness-cli verify-updates update-sandbox-harness test harness project build dmg package release-local publish-local doctor icon clean
+.PHONY: verify verify-favorite-model verify-appcast verify-release-metadata verify-release-notarization verify-release-publication verify-signing-entitlements verify-sparkle-driver verify-context verify-harness-cli verify-updates update-sandbox-harness test harness project build dmg package release-local publish-local doctor icon clean
 
 DEVELOPER_DIR ?= /Applications/Xcode.app/Contents/Developer
 export DEVELOPER_DIR
 export DEVELOPMENT_TEAM
 
-verify: verify-context test harness verify-harness-cli verify-appcast verify-release-metadata verify-release-notarization verify-signing-entitlements
+verify: verify-context test harness verify-harness-cli verify-appcast verify-release-metadata verify-release-notarization verify-release-publication verify-signing-entitlements
 
 verify-context:
 	python3 scripts/verify_context.py
@@ -30,6 +30,9 @@ verify-release-metadata:
 verify-release-notarization:
 	python3 scripts/test_notarize_dmg.py
 	python3 scripts/test_release_resume.py
+
+verify-release-publication:
+	python3 scripts/test_publish_release.py
 
 verify-signing-entitlements:
 	python3 scripts/test_signing_entitlements.py
