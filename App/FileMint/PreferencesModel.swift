@@ -266,6 +266,7 @@ final class PreferencesModel: ObservableObject {
             lastError = workflowText(.recoveryNeeded); return false
         }
         do {
+            preferences.normalizeCreationMenuPlacements()
             preferences.defaultTemplateIDs = TemplateCatalog.validDefaults(preferences.defaultTemplateIDs, in: preferences.templates)
             try store.save(preferences, recoveringInvalidFile: recoveringInvalidFile,
                            ifUnchangedFrom: recoveringInvalidFile ? nil : committedPreferences)
@@ -292,6 +293,23 @@ final class PreferencesModel: ObservableObject {
         }
     }
 
+    func preferenceBinding<Value>(_ keyPath: WritableKeyPath<FileMintPreferences, Value>) -> Binding<Value> {
+        Binding(get: { self.preferences[keyPath: keyPath] }, set: { value in
+            let previous = self.preferences
+            self.preferences[keyPath: keyPath] = value
+            if !self.save() { self.preferences = previous }
+        })
+    }
+
+    func templatePlacementBinding(for id: String) -> Binding<CreationMenuPlacement> {
+        Binding(get: { self.preferences.templateMenuPlacement(for: id) }, set: { value in
+            guard self.templateMutationAllowed, self.preferences.templates.contains(where: { $0.id == id }) else { return }
+            let previous = self.preferences
+            self.preferences.templateMenuPlacements[id] = value
+            if !self.save() { self.preferences = previous }
+        })
+    }
+
     func menuIconBinding(for slot: MenuIconSlot) -> Binding<MenuIconCustomization?> {
         Binding(
             get: { self.preferences.menuIcons[slot.rawValue] },
@@ -308,6 +326,7 @@ final class PreferencesModel: ObservableObject {
         guard templateMutationAllowed else { return }
         preferences.templates = TemplateCatalog.restoringBuiltIns(in: preferences.templates, revealAfterCreation: preferences.revealAfterCreation)
         preferences.removedBuiltInTemplateIDs = []
+        for template in TemplateCatalog.builtInTemplates { preferences.templateMenuPlacements[template.id] = .submenu }
         isMutatingTemplates = true
         guard save(allowingTemplateMutation: true) else { preferences = previous; isMutatingTemplates = false; return }
         let removed = previous.templates.compactMap(\.document).filter { document in
@@ -344,7 +363,8 @@ final class PreferencesModel: ObservableObject {
 
     func saveType(name: String, suffix: String, content: String, id: String?, suggestedFileName: String? = nil,
                   customMenuIcon: MenuIconCustomization?, copy: FileTemplate? = nil, sourceID: String? = nil,
-                  action: TemplateCreationAction? = nil, application: CreationApplication? = nil) async throws {
+                  action: TemplateCreationAction? = nil, application: CreationApplication? = nil,
+                  menuPlacement: CreationMenuPlacement? = nil) async throws {
         guard templateMutationAllowed else { throw TemplateTransactionError.recoveryRequired }
         isMutatingTemplates = true; pendingCreationWork += 1
         defer { isMutatingTemplates = false; pendingCreationWork -= 1 }
@@ -375,6 +395,7 @@ final class PreferencesModel: ObservableObject {
         if copy != nil { preferences = TemplateCatalog.preferencesInsertingCopy(type, after: sourceID, in: preferences) }
         else if let index = preferences.templates.firstIndex(where: { $0.id == type.id }) { preferences.templates[index] = type }
         else { preferences.templates.append(type) }
+        preferences.templateMenuPlacements[type.id] = menuPlacement ?? preferences.templateMenuPlacement(for: type.id)
         guard save(allowingTemplateMutation: true) else { preferences = previous; throw CocoaError(.fileWriteUnknown) }
     }
 

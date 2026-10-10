@@ -54,6 +54,8 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
     public var openWith = OpenWithPreferences()
     public var favoriteLocations = FavoriteLocationsPreferences()
     public var newFileMenuPlacement: NewFileMenuPlacement = .submenu
+    public var creationMenuPlacements: [String: CreationMenuPlacement] = [:]
+    public var templateMenuPlacements: [String: CreationMenuPlacement] = [:]
     public var menuIcons: [String: MenuIconCustomization] = [:]
     public var finderMenuIconStyle: FinderMenuIconStyle = .colored
     private var folderScopeVersion = 2
@@ -113,7 +115,7 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         case resourceTools
         case openWith
         case favoriteLocations
-        case newFileMenuPlacement
+        case newFileMenuPlacement, creationMenuPlacements, templateMenuPlacements
         case menuIcons
         case finderMenuIconStyle
     }
@@ -127,6 +129,7 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         templates = container.contains(.templates)
             ? try container.decode([FileTemplate].self, forKey: .templates)
             : defaults.templates
+        let savedTemplateIDs = Set(templates.map(\.id))
         let builtInIDs = Set(TemplateCatalog.builtInTemplates.map(\.id))
         removedBuiltInTemplateIDs = Array(Set((try? container.decode([String].self, forKey: .removedBuiltInTemplateIDs)) ?? [])
             .intersection(builtInIDs)).sorted()
@@ -181,6 +184,25 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         openWith = (try? container.decode(OpenWithPreferences.self, forKey: .openWith)) ?? OpenWithPreferences()
         favoriteLocations = (try? container.decode(FavoriteLocationsPreferences.self, forKey: .favoriteLocations)) ?? FavoriteLocationsPreferences()
         newFileMenuPlacement = (try? container.decode(NewFileMenuPlacement.self, forKey: .newFileMenuPlacement)) ?? .submenu
+        let legacyPlacement: CreationMenuPlacement = newFileMenuPlacement == .main ? .main : .submenu
+        let actionPositions = (try? container.decode([String: RecoverableCreationMenuPlacement].self,
+            forKey: .creationMenuPlacements)) ?? [:]
+        for action in CreationMenuAction.allCases {
+            if let value = actionPositions[action.rawValue]?.value { creationMenuPlacements[action.rawValue] = value }
+            else if legacyPlacement != .submenu { creationMenuPlacements[action.rawValue] = legacyPlacement }
+        }
+        let templatePositions = (try? container.decode([String: RecoverableCreationMenuPlacement].self,
+            forKey: .templateMenuPlacements)) ?? [:]
+        for template in templates {
+            if let value = templatePositions[template.id]?.value { templateMenuPlacements[template.id] = value }
+            else if savedTemplateIDs.contains(template.id), legacyPlacement != .submenu {
+                templateMenuPlacements[template.id] = legacyPlacement
+            } else if !savedTemplateIDs.contains(template.id) {
+                // Persist the migration default: after any store write this ID
+                // becomes a saved template and must not inherit legacy main.
+                templateMenuPlacements[template.id] = .submenu
+            }
+        }
         menuIcons = ((try? container.decode([String: MenuIconCustomization].self, forKey: .menuIcons)) ?? [:])
             .filter { MenuIconSlot(rawValue: $0.key) != nil }
         finderMenuIconStyle = (try? container.decode(FinderMenuIconStyle.self, forKey: .finderMenuIconStyle)) ?? .colored

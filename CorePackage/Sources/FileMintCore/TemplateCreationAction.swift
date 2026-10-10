@@ -122,6 +122,7 @@ extension TemplateCatalog {
         let suffix = copy.fileExtension.lowercased()
         let previous = defaultTemplate(forExtension: suffix, in: original.templates, defaults: original.defaultTemplateIDs)
         candidate.templates = insertingCopy(copy, after: sourceID, in: original.templates)
+        candidate.templateMenuPlacements[copy.id] = sourceID.map { original.templateMenuPlacement(for: $0) } ?? .submenu
         if candidate.defaultTemplateIDs[suffix] == nil, let previous,
            defaultTemplate(forExtension: suffix, in: candidate.templates)?.id != previous.id {
             candidate.defaultTemplateIDs[suffix] = previous.id

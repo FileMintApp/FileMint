@@ -15,8 +15,12 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   shared row/section/button spacing, a quiet breadcrumb and a fixed New File action.
   Status reflects real extension/login/update state; no sample metrics or claimed
   permissions from the design prototype may reach the product.
-- Resource Tools separates Use Tools from Finder Menu Settings. The first shows
-  seven usable actions; the second manages the default-off Finder integration.
+- Creation, File & Folder Tools, Resource Tools, Open with App and Favorite
+  Locations put a Finder Menu group first, using shared settings rows and trailing
+  controls while preserving each module's switch semantics. Resource Tools shows
+  its default-off Finder integration and seven app actions on one scrollable page;
+  child settings may collapse, while the master and enabled count stay visible.
+  App actions remain usable when Finder integration is off.
   Native processing windows use a bounded image preview, parameter inspector,
   thumbnail selection and fixed bottom actions. OCR puts source and editable
   result side-by-side; conversion never displays a fabricated compressed size.
@@ -63,8 +67,9 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   outline, so the active page remains clear without becoming a solid highlight.
   Hover and keyboard focus remain distinct from the selected page; arrow keys
   move between page buttons and the current page is exposed to accessibility.
-- File & Folder Tools retains its module and Menu actions headings, using native
-  small switches and softly bordered grouped rows for the tools.
+- File & Folder Tools groups its module switch, root icon and Menu actions under
+  the first Finder Menu heading, using native small switches and softly bordered
+  grouped rows for the tools.
   Align menu-position pickers on the trailing side; keep descriptions and secondary
   options next to their tool. Use compact spacing, adaptive surfaces and mint
   accents. Menu-position picker values use the adaptive system control text color,
@@ -199,3 +204,19 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - Implementation entry points: `Resources/`, `scripts/generate_app_icon.swift`, `website/`, `.github/ISSUE_TEMPLATE/`, `README.md`, `README.en.md`, `PRIVACY.md`, `LICENSE`; visible controls in `App/FileMint/` and `SharedUI/`.
 - Verification: [Verification matrix](../HARNESS.md#choose-checks-by-change), using the documentation, website or appearance row.
 - Expand context only when needed: For feature claims, load only the domain being described. Load [updates](updates.md) for About credits; [distribution](distribution.md) for installation/release claims. Read [future roadmap](../../docs/ROADMAP.md) only for planned work, never as evidence of shipped behavior.
+
+## Settings information and shortcuts
+
+- A distinct sidebar Quick Actions area has a split New File button: its main
+  action opens the existing draft and its menu offers the two clipboard actions.
+  Both parts have accessible labels and keyboard focus; the sidebar adds no
+  duplicate Command-N binding. Existing app/menu-bar shortcuts and navigation
+  selection remain unchanged.
+  Keep the Finder extension status link below it and preserve minimum-size access.
+- Remove the shared version/local-processing footer, retaining visible global
+  errors. Version/build and full privacy links belong in About; local image
+  processing copy belongs in Resource Tools and actual processing windows.
+- About has a leading-aligned content column capped at 640 points, a horizontal
+  icon/name/version identity group, compact credits and adjacent update actions
+  that wrap when necessary. Preserve all credits/links and existing update states,
+  progress, cancellation and restart protections.

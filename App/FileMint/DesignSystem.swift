@@ -112,6 +112,39 @@ struct PreferenceRow<Control: View>: View {
     }
 }
 
+struct FinderMenuSection<Content: View>: View {
+    let language: AppLanguage
+    @ViewBuilder var content: Content
+    var body: some View {
+        SettingsSection(title: language.resolved() == .chinese ? "Finder 菜单" : "Finder Menu") { content }
+    }
+}
+
+struct CreationPlacementPicker: View {
+    @Binding var selection: CreationMenuPlacement
+    let language: AppLanguage
+    let label: String
+    var body: some View {
+        Picker(label, selection: $selection) {
+            Text(language.resolved() == .chinese ? "隐藏" : "Hidden").tag(CreationMenuPlacement.hidden)
+            Text(FileMintStrings.text(.toolMainMenu, language: language)).tag(CreationMenuPlacement.main)
+            Text(language.resolved() == .chinese ? "二级菜单" : "Submenu").tag(CreationMenuPlacement.submenu)
+        }.settingsMenu(width: language.resolved() == .chinese ? 106 : 124).accessibilityLabel(label)
+    }
+}
+
+extension CreationMenuAction {
+    func detail(_ language: AppLanguage) -> String {
+        let pair: (String, String)
+        switch self {
+        case .newFile: pair = ("Choose a name, format and content before creating.", "填写文件名、格式和内容后创建")
+        case .clipboardText: pair = ("Read clipboard text once and confirm before creating.", "读取一次剪贴板文字，确认后创建")
+        case .clipboardImage: pair = ("Save one clipboard image as a PNG file.", "将剪贴板中的单张图片保存为 PNG")
+        }
+        return language.resolved() == .chinese ? pair.1 : pair.0
+    }
+}
+
 enum InterfaceText {
     case fileCreation, preferences, localOnly, useTools, menuSettings, finderTip, preview, original
     case parameters, keepOriginal, previewMissing, allImages, outputSize, start, more, chooseImages

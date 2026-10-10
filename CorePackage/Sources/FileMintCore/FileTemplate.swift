@@ -226,6 +226,16 @@ extension TemplateCatalog {
         return template
     }
 
+    /// One ordered pass supplies markers for the entire settings list.
+    public static func effectiveDefaultTemplateIDs(in templates: [FileTemplate], defaults: [String: String]) -> [String: String] {
+        var result: [String: String] = [:]
+        for template in enabledTemplates(from: templates) {
+            let suffix = template.fileExtension.lowercased()
+            if result[suffix] == nil || defaults[suffix] == template.id { result[suffix] = template.id }
+        }
+        return result
+    }
+
     public static func defaultTemplate(forExtension suffix: String, in templates: [FileTemplate],
                                        defaults: [String: String] = [:]) -> FileTemplate? {
         let matches = enabledTemplates(from: templates).filter { $0.fileExtension.caseInsensitiveCompare(suffix) == .orderedSame }

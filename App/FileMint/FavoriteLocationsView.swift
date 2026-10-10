@@ -49,10 +49,22 @@ struct FavoriteLocationsPane: View {
         let lastRowID = visibleRows.last?.id
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                PreferenceRow(title: text(.title)) {
-                    MenuIconControl(slot: .favoriteLocations,
-                        customization: settings.menuIconBinding(for: .favoriteLocations), language: language)
-                }.mintSurface()
+                FinderMenuSection(language: language) {
+                        PreferenceRow(title: text(.showAddInFinder), detail: text(.emptyHint)) {
+                            Toggle(text(.showAddInFinder), isOn: settings.preferenceBinding(\.favoriteLocations.showAddInFinder))
+                                .labelsHidden().toggleStyle(SmallSettingsSwitchStyle())
+                        }
+                        Divider()
+                        PreferenceRow(title: text(.showListInFinder), detail: text(.finderHint)) {
+                            Toggle(text(.showListInFinder), isOn: settings.preferenceBinding(\.favoriteLocations.showListInFinder))
+                                .labelsHidden().toggleStyle(SmallSettingsSwitchStyle())
+                        }
+                    Divider()
+                    PreferenceRow(title: text(.title)) {
+                        MenuIconControl(slot: .favoriteLocations,
+                            customization: settings.menuIconBinding(for: .favoriteLocations), language: language)
+                    }
+                }
                 HStack {
                     SettingsSectionTitle(title: text(.savedItems))
                     Text("\(favorites.catalog.items.count)").font(.caption).foregroundStyle(.secondary)
@@ -139,19 +151,6 @@ struct FavoriteLocationsPane: View {
                     }
                     Text(text(.finderHint)).font(.caption).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
-                    VStack(spacing: 12) {
-                        PreferenceRow(title: text(.showAddInFinder), detail: text(.emptyHint)) {
-                            Toggle(text(.showAddInFinder), isOn: $settings.preferences.favoriteLocations.showAddInFinder)
-                                .labelsHidden().toggleStyle(SmallSettingsSwitchStyle())
-                                .onChange(of: settings.preferences.favoriteLocations.showAddInFinder) { _ in settings.save() }
-                        }
-                        Divider()
-                        PreferenceRow(title: text(.showListInFinder), detail: text(.finderHint)) {
-                            Toggle(text(.showListInFinder), isOn: $settings.preferences.favoriteLocations.showListInFinder)
-                                .labelsHidden().toggleStyle(SmallSettingsSwitchStyle())
-                                .onChange(of: settings.preferences.favoriteLocations.showListInFinder) { _ in settings.save() }
-                        }
-                    }.mintSurface()
                     Button(text(.searchAll)) { FavoriteQuickPanelController.shared.show(favorites: favorites, settings: settings) }
                         .buttonStyle(MintButtonStyle())
                 }

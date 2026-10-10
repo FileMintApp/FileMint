@@ -35,11 +35,6 @@ struct ContentView: View {
                     Text(error).foregroundStyle(.red).font(.callout).textSelection(.enabled)
                         .padding([.horizontal, .bottom], 28)
                 }
-                HStack(spacing: 6) {
-                    Label(InterfaceText.localOnly.text(model.preferences.language), systemImage: "checkmark.shield")
-                    Spacer()
-                    Text("FileMint \(updater.currentVersion)").foregroundStyle(.tertiary)
-                }.font(.system(size: 10)).foregroundStyle(.secondary).padding(.horizontal, 30).padding(.vertical, 18)
             }.background(FileMintStyle.background)
         }
         .tint(FileMintStyle.accent)
@@ -106,17 +101,32 @@ struct ContentView: View {
                             .font(.caption).fixedSize(horizontal: false, vertical: true)
                     }.buttonStyle(.plain).foregroundStyle(FileMintStyle.accent)
                 }
-                Button { model.newFile() } label: {
-                    HStack {
-                        Text(model.text(.customNewFile))
-                        Spacer()
-                        Text("⌘N").foregroundStyle(.secondary)
-                    }.padding(.vertical, 3)
-                }.keyboardShortcut("n").buttonStyle(MintButtonStyle())
-                Button(model.text(.newFileFromClipboard)) { model.newFileFromClipboard() }
-                    .font(.callout).buttonStyle(.plain)
-                Button(model.text(.pasteImageFile)) { model.pasteImageFile() }
-                    .font(.callout).buttonStyle(.plain)
+                Divider()
+                Text(model.preferences.language.resolved() == .chinese ? "快捷操作" : "Quick Actions")
+                    .font(.caption).foregroundStyle(.secondary)
+                HStack(spacing: 0) {
+                    Button { model.newFile() } label: {
+                        HStack(spacing: 4) {
+                            Text(model.text(.customNewFile)).lineLimit(1)
+                            Spacer(minLength: 2)
+                            Text("⌘N").foregroundStyle(.secondary)
+                        }.font(.system(size: 11)).padding(.horizontal, 10).frame(height: 34)
+                            .contentShape(Rectangle())
+                    }.buttonStyle(.plain).accessibilityIdentifier("settings.newFile")
+                    Divider().frame(height: 18)
+                    Menu {
+                        Button(model.text(.newFileFromClipboard)) { model.newFileFromClipboard() }
+                        Button(model.text(.pasteImageFile)) { model.pasteImageFile() }
+                    } label: {
+                        Label(model.preferences.language.resolved() == .chinese ? "更多新建操作" : "More Creation Actions",
+                            systemImage: "chevron.down").labelStyle(.iconOnly).font(.system(size: 10, weight: .semibold))
+                            .frame(width: 28, height: 34).contentShape(Rectangle())
+                    }.menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+                        .accessibilityLabel(model.preferences.language.resolved() == .chinese ? "更多新建操作" : "More Creation Actions")
+                        .accessibilityIdentifier("settings.moreCreation")
+                }
+                .background(FileMintStyle.surface, in: RoundedRectangle(cornerRadius: 8))
+                .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(FileMintStyle.line, lineWidth: 0.7))
                 Button { model.selectedPane = .folders } label: {
                     HStack(spacing: 6) {
                         Circle().fill(model.extensionEnabled ? FileMintStyle.accent : Color.secondary).frame(width: 5, height: 5)

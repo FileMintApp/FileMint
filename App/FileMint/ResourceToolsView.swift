@@ -16,80 +16,71 @@ private func resourceToolIcon(_ tool: ResourceTool, size: CGFloat,
 struct ResourceToolsPane: View {
     var launchTool: (ResourceTool) -> Void = { FileOperationCoordinator.shared.chooseImages(for: $0) }
     @EnvironmentObject private var model: PreferencesModel
-    @State private var menuSettings = false
+    @State private var expanded = false
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            HStack(spacing: 24) {
-                tab(.useTools, selected: !menuSettings) { menuSettings = false }
-                tab(.menuSettings, selected: menuSettings) { menuSettings = true }
-                Spacer()
-            }.overlay(alignment: .bottom) { FileMintStyle.line.frame(height: 0.5) }
-            ScrollView {
-                if menuSettings { settings }
-                else {
-                    VStack(alignment: .leading, spacing: 22) {
-                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 13) {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                FinderMenuSection(language: model.preferences.language) {
+                    PreferenceRow(title: InterfaceText.menuEnabled.text(model.preferences.language),
+                        detail: ResourceText.hint.text(model.preferences.language)) {
+                        Toggle(InterfaceText.menuEnabled.text(model.preferences.language),
+                            isOn: model.preferenceBinding(\.resourceTools.isEnabled))
+                            .labelsHidden().toggleStyle(SmallSettingsSwitchStyle())
+                            .accessibilityIdentifier("resourceTools.enabled")
+                    }
+                    Divider()
+                    PreferenceRow(title: model.text(.resourceTools)) {
+                        MenuIconControl(slot: .resourceTools, customization: model.menuIconBinding(for: .resourceTools),
+                            language: model.preferences.language)
+                    }
+                    Divider()
+                    DisclosureGroup(isExpanded: $expanded) {
+                        VStack(spacing: 14) {
                             ForEach(ResourceTool.allCases) { tool in
-                                ResourceToolCard(tool: tool, language: model.preferences.language,
-                                    customization: model.preferences.menuIcons[tool.menuIconSlot.rawValue]) {
-                                    launchTool(tool)
+                                if tool != ResourceTool.allCases.first { Divider() }
+                                PreferenceRow(title: tool.title(model.preferences.language).replacingOccurrences(of: "…", with: ""),
+                                    detail: tool.summary(model.preferences.language)) {
+                                    HStack(spacing: 12) {
+                                        MenuIconControl(slot: tool.menuIconSlot,
+                                            customization: model.menuIconBinding(for: tool.menuIconSlot),
+                                            language: model.preferences.language)
+                                        Toggle(tool.title(model.preferences.language), isOn: Binding(
+                                            get: { model.preferences.resourceTools.enabledTools.contains(tool) },
+                                            set: { value in
+                                                var tools = model.preferences.resourceTools.enabledTools
+                                                if value { tools.insert(tool) } else { tools.remove(tool) }
+                                                model.preferenceBinding(\.resourceTools.enabledTools).wrappedValue = tools
+                                            })).labelsHidden().toggleStyle(SmallSettingsSwitchStyle())
+                                            .accessibilityIdentifier("resourceTools.\(tool.rawValue)")
+                                    }
                                 }
                             }
-                        }
-                        Label(InterfaceText.finderTip.text(model.preferences.language), systemImage: "cursorarrow")
-                            .font(.system(size: 11)).foregroundStyle(.secondary).padding(.vertical, 4)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }.padding(1)
-                }
-            }
-        }
-    }
-
-    private func tab(_ key: InterfaceText, selected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(key.text(model.preferences.language)).font(.system(size: 12, weight: selected ? .medium : .regular))
-                .foregroundStyle(selected ? Color.primary : Color.secondary)
-                .padding(.bottom, 12)
-                .overlay(alignment: .bottom) { (selected ? FileMintStyle.accent : Color.clear).frame(height: 2) }
-        }.buttonStyle(.plain).accessibilityAddTraits(selected ? .isSelected : [])
-    }
-
-    private var settings: some View {
-        VStack(alignment: .leading, spacing: 26) {
-            PreferenceRow(title: InterfaceText.menuEnabled.text(model.preferences.language),
-                detail: ResourceText.hint.text(model.preferences.language)) {
-                Toggle(InterfaceText.menuEnabled.text(model.preferences.language), isOn: $model.preferences.resourceTools.isEnabled)
-                    .labelsHidden().toggleStyle(SmallSettingsSwitchStyle())
-                    .onChange(of: model.preferences.resourceTools.isEnabled) { _ in model.save() }
-            }.mintSurface()
-            PreferenceRow(title: model.text(.resourceTools)) {
-                MenuIconControl(slot: .resourceTools, customization: model.menuIconBinding(for: .resourceTools),
-                    language: model.preferences.language)
-            }.mintSurface()
-            VStack(spacing: 15) {
-                ForEach(ResourceTool.allCases) { tool in
-                    if tool != ResourceTool.allCases.first { Divider() }
-                    PreferenceRow(title: tool.title(model.preferences.language).replacingOccurrences(of: "…", with: ""),
-                        detail: tool.summary(model.preferences.language)) {
-                        HStack(spacing: 12) {
-                            MenuIconControl(slot: tool.menuIconSlot,
-                                customization: model.menuIconBinding(for: tool.menuIconSlot),
-                                language: model.preferences.language)
-                            Toggle(tool.title(model.preferences.language), isOn: Binding(
-                                get: { model.preferences.resourceTools.enabledTools.contains(tool) },
-                                set: { value in
-                                    if value { model.preferences.resourceTools.enabledTools.insert(tool) }
-                                    else { model.preferences.resourceTools.enabledTools.remove(tool) }
-                                    model.save()
-                                })).labelsHidden().toggleStyle(SmallSettingsSwitchStyle())
-                                .accessibilityIdentifier("resourceTools.\(tool.rawValue)")
-                        }
+                        }.padding(.top, 12).disabled(!model.preferences.resourceTools.isEnabled)
+                            .saturation(model.preferences.resourceTools.isEnabled ? 1 : 0)
+                            .opacity(model.preferences.resourceTools.isEnabled ? 1 : 0.5)
+                    } label: {
+                        Text(model.preferences.language.resolved() == .chinese
+                            ? "Finder 中已启用 \(enabledCount) / \(ResourceTool.allCases.count) 项"
+                            : "Enabled in Finder: \(enabledCount) / \(ResourceTool.allCases.count)")
+                            .font(.callout)
                     }
                 }
-            }.mintSurface().disabled(!model.preferences.resourceTools.isEnabled)
-                .saturation(model.preferences.resourceTools.isEnabled ? 1 : 0)
-                .opacity(model.preferences.resourceTools.isEnabled ? 1 : 0.5)
-        }.padding(1)
+                SettingsSectionTitle(title: InterfaceText.useTools.text(model.preferences.language))
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 13) {
+                    ForEach(ResourceTool.allCases) { tool in
+                        ResourceToolCard(tool: tool, language: model.preferences.language,
+                            customization: model.preferences.menuIcons[tool.menuIconSlot.rawValue]) { launchTool(tool) }
+                    }
+                }
+                Label(model.preferences.language.resolved() == .chinese
+                    ? "图片在这台 Mac 上处理，原文件保留。" : "Images are processed on this Mac. Originals are preserved.",
+                    systemImage: "checkmark.shield")
+                    .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }.padding(1)
+        }
+    }
+    private var enabledCount: Int {
+        model.preferences.resourceTools.isEnabled ? model.preferences.resourceTools.enabledTools.count : 0
     }
 }
 

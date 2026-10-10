@@ -124,11 +124,9 @@ struct FileToolsPane: View {
     @EnvironmentObject private var model: PreferencesModel
 
     var body: some View {
-        FileToolsSettingsView(preferences: $model.preferences.fileTools,
+        FileToolsSettingsView(preferences: model.preferenceBinding(\.fileTools),
                               language: model.preferences.language,
-                              menuIcons: $model.preferences.menuIcons)
-            .onChange(of: model.preferences.fileTools) { _ in model.save() }
-            .onChange(of: model.preferences.menuIcons) { _ in model.save() }
+                              menuIcons: model.preferenceBinding(\.menuIcons))
     }
 }
 
@@ -138,48 +136,38 @@ struct CreationSettingsPane: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 26) {
-                SettingsSection(title: model.text(.quickCreation)) {
-                    PreferenceRow(title: model.text(.newFile),
-                        detail: model.preferences.language.resolved() == .chinese ? "仅在二级菜单模式显示" : "Shown in submenu mode") {
+                FinderMenuSection(language: model.preferences.language) {
+                    ForEach(CreationMenuAction.allCases, id: \.self) { action in
+                        if action != CreationMenuAction.allCases.first { Divider() }
+                        PreferenceRow(title: model.text(action.title), detail: action.detail(model.preferences.language)) {
+                            HStack(spacing: 12) {
+                                CreationPlacementPicker(selection: Binding(
+                                    get: { model.preferences.creationMenuPlacement(for: action) },
+                                    set: { value in
+                                        var positions = model.preferences.creationMenuPlacements
+                                        positions[action.rawValue] = value
+                                        model.preferenceBinding(\.creationMenuPlacements).wrappedValue = positions
+                                    }), language: model.preferences.language,
+                                    label: model.text(action.title) + " — " + model.text(.toolMenuPosition))
+                                    .accessibilityIdentifier("creation.\(action.rawValue).placement")
+                                MenuIconControl(slot: action.iconSlot, customization: model.menuIconBinding(for: action.iconSlot),
+                                    language: model.preferences.language)
+                            }
+                        }
+                    }
+                    Divider()
+                    PreferenceRow(title: model.text(.newFile), detail: model.preferences.language.resolved() == .chinese
+                        ? "仅在存在二级菜单内容时显示" : "Shown only when the submenu has entries") {
                         MenuIconControl(slot: .newFile, customization: model.menuIconBinding(for: .newFile),
                             language: model.preferences.language)
                     }
-                    Divider()
-                    PreferenceRow(title: model.text(.customNewFile)) {
-                        MenuIconControl(slot: .customNewFile, customization: model.menuIconBinding(for: .customNewFile),
-                            language: model.preferences.language)
-                    }
-                    Divider()
-                    PreferenceRow(title: model.text(.newFileFromClipboard)) {
-                        MenuIconControl(slot: .clipboardText, customization: model.menuIconBinding(for: .clipboardText),
-                            language: model.preferences.language)
-                    }
-                    Divider()
-                    PreferenceRow(title: model.text(.pasteImageFile)) {
-                        MenuIconControl(slot: .clipboardImage, customization: model.menuIconBinding(for: .clipboardImage),
-                            language: model.preferences.language)
-                    }
-                    Divider()
-                    PreferenceRow(title: model.text(.newFileMenuPosition), detail: model.text(.newFileMenuPositionHint)) {
-                        Picker(model.text(.newFileMenuPosition), selection: Binding(
-                            get: { model.preferences.newFileMenuPlacement },
-                            set: { value in
-                                let previous = model.preferences.newFileMenuPlacement
-                                model.preferences.newFileMenuPlacement = value
-                                if !model.save() { model.preferences.newFileMenuPlacement = previous }
-                            }
-                        )) {
-                            Text(model.text(.openWithSubmenu)).tag(NewFileMenuPlacement.submenu)
-                            Text(model.text(.toolMainMenu)).tag(NewFileMenuPlacement.main)
-                        }.settingsMenu().accessibilityIdentifier("settings.newFileMenuPlacement")
-                    }
-                    Divider()
+                }
+                SettingsSection(title: model.text(.quickCreation)) {
                     PreferenceRow(title: model.text(.whenFileExists), detail: model.text(.quickCollisionHint)) {
-                        Picker(model.text(.whenFileExists), selection: $model.preferences.collisionStrategy) {
+                        Picker(model.text(.whenFileExists), selection: model.preferenceBinding(\.collisionStrategy)) {
                             Text(model.text(.autoIncrement)).tag(NameCollisionStrategy.increment)
                             Text(model.text(.fail)).tag(NameCollisionStrategy.fail)
                         }.settingsMenu().accessibilityIdentifier("settings.collisionStrategy")
-                            .onChange(of: model.preferences.collisionStrategy) { _ in model.save() }
                     }
                 }
                 SettingsSection(title: model.text(.afterCreation)) {

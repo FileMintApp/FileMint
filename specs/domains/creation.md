@@ -6,16 +6,18 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 
 ## The two creation paths
 
-- Finder → New File → a file type creates immediately in the captured target
-  directory. Menu labels include the extension. The New File menu location is
-  configurable and defaults to a second-level submenu. In that mode, its
-  top-level entry shows the FileMint logo by default plus localized “New File” / “新建文件”;
-  submenu rows show their default or chosen icons. Choosing the main menu instead places New File…,
-  Paste Image as File and each enabled file type directly in the Finder menu,
-  exactly once and in the same order. New File… keeps its own icon choice at
-  either menu level; its default is the small FileMint logo. The separate root
-  icon is used only in submenu mode. Changing location does not alter creation
-  routes, destination snapshots or template order.
+- Finder creation entries each have an independent Hidden / Main menu / Submenu
+  placement: New File…, New File from Clipboard, Paste Image as File and every
+  enabled template by stable ID. New entries default to Submenu. Hidden affects
+  Finder exposure only; app/menu-bar actions and enabled template choices remain.
+  Each level lists the three visible fixed actions in their established order,
+  followed by templates in saved order. Insert a separator only between nonempty
+  action/template sections. The New File submenu root follows main-level creation
+  entries and exists only when it contains entries. No entry appears twice; hide
+  the creation group when empty without suppressing other modules.
+  Actions/templates retain their own icons across placement changes. The root
+  icon applies only to the nonempty submenu. Placement changes never alter routes,
+  destination snapshots, template content, order or enabled state.
 - Finder → New File → New File… opens one compact persistent native panel.
   Name, editable extension selector, destination, optional plain-text content,
   Cancel and Create are the whole flow. The main app owns this single panel;

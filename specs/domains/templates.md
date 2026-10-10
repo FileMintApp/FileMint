@@ -34,6 +34,28 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   recomputes only an uncustomized default. Restoring built-ins restores their
   default icons while retaining custom types and their chosen icons.
 
+## Finder placement and editing
+
+- Each template row has an independent Finder placement (Hidden / Main menu /
+  Submenu). Icon editing stays in the template editor, with no icon-edit button
+  in list rows. Disabled templates retain placement and disable only
+  the row's placement control; hiding an enabled template never disables it.
+- Single-click selects; double-click on the name/details/blank selection area
+  opens the same ID-based editor as the keyboard-accessible Edit action. Embedded
+  toggles, pickers, edit buttons and drag handles do not trigger row editing.
+  Keep hover state local to each row and the list lazy; compute default-template
+  markers once per list snapshot. Ordinary scrolling must not animate the whole
+  list or repeatedly sort templates for each visible row.
+- Text and Office editors always show placement as part of the unsaved draft,
+  including for disabled templates. Save commits it with the other fields; Cancel
+  or Escape leaves settings unchanged; failed saves keep the draft. New drafts
+  default to submenu, copies capture the source placement, edits retain identity
+  and enablement. Do not add a cross-page shortcut to configure creation actions.
+- Placement is local preference metadata, excluded from template-package V1.
+  Skipped imports retain local positions; accepted/new copied imports use submenu.
+  Copy within the app inherits placement; built-in restoration resets only built-in
+  positions, and deletion cleans the corresponding local mapping.
+
 ## Multiple templates and defaults
 
 - Each template stores an explicit suffix independently of its default filename.

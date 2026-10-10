@@ -127,6 +127,10 @@ public enum TemplateImportPlanner {
         var candidate = original
         if rows.contains(where: { $0.choice != .skip }) {
             candidate.templates = TemplateCatalog.normalizedRanks(for: resulting)
+            for row in rows where row.choice != .skip {
+                if let id = row.resultID { candidate.templateMenuPlacements[id] = .submenu }
+            }
+            candidate.normalizeCreationMenuPlacements()
             candidate.defaultTemplateIDs = TemplateCatalog.validDefaults(original.defaultTemplateIDs, in: candidate.templates)
             for (suffix, incomingID) in package.defaultTemplateIDs {
                 let hadSuffix = existing.contains { $0.fileExtension.lowercased() == suffix }

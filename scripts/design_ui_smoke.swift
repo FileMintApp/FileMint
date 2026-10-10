@@ -51,6 +51,12 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
                     id: id, in: preferences.templates, suggestedFileName: filename))
             }
         }
+        if CommandLine.arguments.contains("--long-templates") {
+            for number in 1...160 {
+                preferences.templates.append(FileTemplate(id: "scroll-\(number)", displayName: "Scroll template \(number)",
+                    suggestedFileName: "Example-\(number).txt", group: "QA", content: "Fixture \(number)", rank: 1000 + number))
+            }
+        }
         let file = root.appendingPathComponent("fixture-preferences.json")
         let favoriteFile = root.appendingPathComponent("fixture-favorites.json")
         let favoriteStore = FavoriteLocationsStore(file: favoriteFile)
@@ -87,7 +93,7 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
             aliasAccessStore: DesktopAliasAccessStore(file: root.appendingPathComponent("aliases.json")),
             desktopDirectory: root, resourceController: resourceController)
         if let icon = NSImage(contentsOf: root.appendingPathComponent("AppIcon.png")) { NSApp.applicationIconImage = icon }
-        let updater = UpdateModel()
+        let updater = UpdateModel(preferencesModel: model, checkRelease: { _ in nil })
         window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1040, height: 720),
             styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView], backing: .buffered, defer: false)
         window.title = "FileMint Design QA"
@@ -123,6 +129,15 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
         NSApp.mainMenu = bar
         NSApp.activate(ignoringOtherApps: true)
         print("READY isolated FileMint UI: \(root.path)")
+        if CommandLine.arguments.contains("--check-settings") {
+            Task { @MainActor in
+                do {
+                    try await checkSettings(store: store, root: root)
+                    print("PASS settings review: production edits, copy/reset/delete, rollback and 18 native view captures")
+                    fflush(nil)
+                } catch { print("FAIL settings review: \(error)"); fflush(nil); exit(1) }
+            }
+        }
         if CommandLine.arguments.contains("--check-appearance") { try checkAppearance(store: store, root: root) }
         if CommandLine.arguments.contains("--check-window-size") {
             Task { @MainActor in
@@ -197,6 +212,82 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
         guard abs(size.width - 960) < 1, abs(size.height - 680) < 1 else {
             throw ResourceError.failed
         }
+    }
+
+    private func checkSettings(store: FileMintPreferencesStore, root: URL) async throws {
+        func require(_ value: Bool, _ message: String) throws {
+            if !value { throw NSError(domain: "SettingsReview", code: 1, userInfo: [NSLocalizedDescriptionKey: message]) }
+        }
+        for _ in 0..<100 where model.isMutatingTemplates || model.templateRecoveryError != nil {
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        try require(model.templateMutationAllowed, "Template recovery did not finish")
+        let original = model.preferences
+        let templates = [model.preferences.templates.first { $0.document == nil }!,
+                         model.preferences.templates.first { $0.document != nil }!]
+        for template in templates {
+            let index = model.preferences.templates.firstIndex { $0.id == template.id }!
+            model.preferences.templates[index].isEnabled = false
+            try require(model.save(), "Disable fixture template")
+            try await model.saveType(name: template.displayName, suffix: template.fileExtension, content: template.content,
+                id: template.id, suggestedFileName: template.suggestedFileName, customMenuIcon: template.customMenuIcon,
+                menuPlacement: .main)
+            try require(store.load().templateMenuPlacement(for: template.id) == .main &&
+                store.load().templates.first { $0.id == template.id }?.isEnabled == false,
+                "Editor changed enablement or lost placement")
+            model.templatePlacementBinding(for: template.id).wrappedValue = .hidden
+            try require(store.load().templateMenuPlacement(for: template.id) == .hidden, "Row/editor persistence differs")
+        }
+        let copy = TemplateCatalog.copyDraft(templates[0], copySuffix: "QA copy")
+        try await model.saveType(name: copy.displayName, suffix: copy.fileExtension, content: copy.content,
+            id: nil, customMenuIcon: copy.customMenuIcon, copy: copy, sourceID: templates[0].id)
+        try require(store.load().templateMenuPlacement(for: copy.id) == .hidden, "Copy lost placement")
+        model.resetTemplates()
+        for _ in 0..<100 where model.isMutatingTemplates { try await Task.sleep(for: .milliseconds(50)) }
+        try require(templates.allSatisfy { store.load().templateMenuPlacement(for: $0.id) == .submenu } &&
+            store.load().templateMenuPlacement(for: copy.id) == .hidden, "Restoration changed custom placement")
+        model.removeType(copy.id)
+        for _ in 0..<100 where model.isMutatingTemplates { try await Task.sleep(for: .milliseconds(50)) }
+        try require(store.load().templateMenuPlacements[copy.id] == nil, "Delete left orphan placement")
+        let beforeBusy = model.preferences
+        model.isMutatingTemplates = true
+        model.templatePlacementBinding(for: templates[0].id).wrappedValue = .main
+        model.preferenceBinding(\.resourceTools.isEnabled).wrappedValue.toggle()
+        model.isMutatingTemplates = false
+        try require(model.preferences == beforeBusy, "Busy edit was committed")
+        let blocked = root.appendingPathComponent("blocked-settings-" + UUID().uuidString)
+        try Data().write(to: blocked)
+        let failed = PreferencesModel(store: FileMintPreferencesStore(fileURL: blocked.appendingPathComponent("settings.json")),
+                                      documentTemplates: model.documentTemplates)
+        let failedBefore = failed.preferences
+        failed.preferenceBinding(\.fileTools.isEnabled).wrappedValue.toggle()
+        failed.preferenceBinding(\.resourceTools.isEnabled).wrappedValue.toggle()
+        failed.preferenceBinding(\.favoriteLocations.showListInFinder).wrappedValue.toggle()
+        failed.templatePlacementBinding(for: templates[0].id).wrappedValue = .hidden
+        try require(failed.preferences == failedBefore && failed.lastError != nil, "Failed controls did not roll back")
+        model.preferences = original
+        try require(model.save(), "Restore isolated preferences")
+        let output = root.appendingPathComponent("settings-review", isDirectory: true)
+        try FileManager.default.createDirectory(at: output, withIntermediateDirectories: false)
+        for (language, appearance, width, height) in [(AppLanguage.chinese, AppAppearance.light, 1040.0, 720.0),
+                                                     (.english, .dark, 960.0, 680.0)] {
+            model.preferences.language = language
+            try require(model.save(), "Save fixture language")
+            model.setAppearance(appearance)
+            window.setContentSize(NSSize(width: width, height: height))
+            for pane in PreferencesModel.Pane.allCases {
+                model.selectedPane = pane
+                try await Task.sleep(for: .milliseconds(250))
+                guard let view = window.contentView,
+                      let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { throw ResourceError.failed }
+                view.layoutSubtreeIfNeeded(); window.display(); view.cacheDisplay(in: view.bounds, to: bitmap)
+                guard let png = bitmap.representation(using: .png, properties: [:]) else { throw ResourceError.failed }
+                try png.write(to: output.appendingPathComponent("\(language.rawValue)-\(pane.rawValue).png"))
+                try require(abs(view.bounds.width - width) < 1 && abs(view.bounds.height - height) < 1, "Window grew beyond requested size")
+            }
+        }
+        model.selectedPane = .fileTypes
+        print("SETTINGS_REVIEW_CAPTURES \(output.path)")
     }
 
     private func checkAppearance(store: FileMintPreferencesStore, root: URL) throws {

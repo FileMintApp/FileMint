@@ -61,9 +61,16 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - A supported terminal's directory opening mode is saved with its existing App
   entry. Older entries preserve Follow App behavior; adding a recognized terminal
   defaults to New Tab. Other apps have no terminal mode control.
-- New File's Finder menu location persists independently of template order and
-  defaults to submenu when older or malformed settings are loaded. See
-  [creation](creation.md) for its menu behavior.
+- Fixed creation actions and template IDs save independent hidden/main/submenu
+  positions. Decode each saved entry independently; missing/invalid entries inherit
+  the legacy New File group position, or submenu if that is invalid. Existing
+  templates inherit the legacy position on upgrade; newly appended presets remain
+  disabled and use submenu. Preserve valid neighboring positions and unrelated
+  preferences. New templates/imports default to submenu; copies inherit the source
+  position. Delete orphan positions and reset only built-in positions on explicit
+  restoration. Save placement and template edits in one atomic preference update.
+  Keep the legacy field for decoding older settings; it has no group-level UI.
+  See [creation](creation.md) for menu composition.
 - Per-suffix default template IDs are saved independently of ordering. Missing
   old fields fall back deterministically without losing user templates or other
   preferences; invalid references are removed when settings are saved.

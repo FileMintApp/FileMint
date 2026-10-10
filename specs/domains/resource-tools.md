@@ -9,7 +9,7 @@ Load for: Resource Tools menus, image processing, icon generation, stitching and
   retain choices when disabled. The new private-metadata child is visible in app
   tools, defaults on for new installs under the off master, and starts off for
   older saved child lists so it is not silently added to existing Finder menus.
-- The app's Use Tools tab can explicitly choose local images even while Finder
+- The app's Use Tools section can explicitly choose local images even while Finder
   menu integration is disabled. The system file picker authorizes those files;
   this app-local request is never accepted from a URL/ticket. It does not expand
   monitored folders or enable Finder switches. Serialize it with all file requests,

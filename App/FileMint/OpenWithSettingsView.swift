@@ -8,10 +8,13 @@ struct OpenWithPane: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            PreferenceRow(title: model.text(.openWithApps)) {
-                MenuIconControl(slot: .openWith, customization: model.menuIconBinding(for: .openWith),
-                    language: model.preferences.language)
-            }.mintSurface()
+            FinderMenuSection(language: model.preferences.language) {
+                PreferenceRow(title: model.text(.openWithApps), detail: model.preferences.language.resolved() == .chinese
+                    ? "按下方 App 列表显示；在各行配置菜单位置。" : "Entries follow the app list below. Set placement in each row.") {
+                    MenuIconControl(slot: .openWith, customization: model.menuIconBinding(for: .openWith),
+                        language: model.preferences.language)
+                }
+            }
             OpenWithSettingsView(preferences: Binding(get: { model.preferences.openWith }, set: {
                 let previous = model.preferences.openWith
                 model.preferences.openWith = $0

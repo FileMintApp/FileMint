@@ -51,35 +51,40 @@ final class FinderSync: FIFinderSync {
             monitoredFolders: preferences.monitoredFolderURLs
         ) else { return nil }
         let menu = NSMenu(title: "FileMint")
-        let root = NSMenuItem(title: text(.newFile), action: nil, keyEquivalent: "")
-        root.image = menuIcon(.newFile)
-        let submenu = NSMenu(title: text(.newFile))
-        let creationMenu = preferences.newFileMenuPlacement == .submenu ? submenu : menu
-        let custom = NSMenuItem(title: text(.customNewFile), action: #selector(showCustomFile(_:)), keyEquivalent: "")
-        let templates = TemplateCatalog.enabledTemplates(from: preferences.templates)
-        let tags = actions.register([FileMenuAction(directory: directory, templateID: nil)] + templates.map {
-            FileMenuAction(directory: directory, templateID: $0.id)
-        })
-        custom.tag = tags[0]
-        custom.image = menuIcon(.customNewFile)
-        creationMenu.addItem(custom)
-        let pasteText = NSMenuItem(title: text(.newFileFromClipboard), action: #selector(pasteTextFile(_:)), keyEquivalent: "")
-        pasteText.image = menuIcon(.clipboardText)
-        pasteText.tag = actions.register([FileMenuAction(directory: directory, templateID: nil)])[0]
-        creationMenu.addItem(pasteText)
-        let pasteImage = NSMenuItem(title: text(.pasteImageFile), action: #selector(pasteImageFile(_:)), keyEquivalent: "")
-        pasteImage.image = menuIcon(.clipboardImage)
-        pasteImage.tag = actions.register([FileMenuAction(directory: directory, templateID: nil)])[0]
-        creationMenu.addItem(pasteImage)
-        if !templates.isEmpty { creationMenu.addItem(.separator()) }
-        for (index, template) in templates.enumerated() {
-            let title = "\(FileMintStrings.templateDisplayName(for: template, language: language)) (.\(template.fileExtension))"
-            let item = NSMenuItem(title: title, action: #selector(createFile(_:)), keyEquivalent: "")
-            item.image = menuImage(FileToolAppearance.image(for: template, style: preferences.finderMenuIconStyle))
-            item.tag = tags[index + 1]
-            creationMenu.addItem(item)
+        let creationMenu = actions.registerCreationMenu(CreationMenuLayout(preferences: preferences), directory: directory)
+        func appendCreation(_ entries: [RegisteredCreationMenu.Entry], to destination: NSMenu) {
+            for entry in entries {
+                let item: NSMenuItem
+                switch entry.content {
+                case .separator:
+                    destination.addItem(.separator())
+                    continue
+                case .action(let action):
+                    let selector: Selector
+                    switch action {
+                    case .newFile: selector = #selector(showCustomFile(_:))
+                    case .clipboardText: selector = #selector(pasteTextFile(_:))
+                    case .clipboardImage: selector = #selector(pasteImageFile(_:))
+                    }
+                    item = NSMenuItem(title: text(action.title), action: selector, keyEquivalent: "")
+                    item.image = menuIcon(action.iconSlot)
+                case .template(let id):
+                    guard let template = preferences.templates.first(where: { $0.id == id }) else { continue }
+                    let title = "\(FileMintStrings.templateDisplayName(for: template, language: language)) (.\(template.fileExtension))"
+                    item = NSMenuItem(title: title, action: #selector(createFile(_:)), keyEquivalent: "")
+                    item.image = menuImage(FileToolAppearance.image(for: template, style: preferences.finderMenuIconStyle))
+                }
+                guard let tag = entry.tag else { continue }
+                item.tag = tag
+                destination.addItem(item)
+            }
         }
-        if preferences.newFileMenuPlacement == .submenu {
+        appendCreation(creationMenu.main, to: menu)
+        if !creationMenu.submenu.isEmpty {
+            let root = NSMenuItem(title: text(.newFile), action: nil, keyEquivalent: "")
+            root.image = menuIcon(.newFile)
+            let submenu = NSMenu(title: text(.newFile))
+            appendCreation(creationMenu.submenu, to: submenu)
             root.submenu = submenu
             menu.addItem(root)
         }
@@ -215,7 +220,7 @@ final class FinderSync: FIFinderSync {
             root.submenu = submenu
             menu.addItem(root)
         }
-        return menu
+        return menu.items.isEmpty ? nil : menu
     }
 
     private static func currentMenuForeground() -> MonochromeMenuForeground {
@@ -494,6 +499,10 @@ private final class LockedMenuActions: @unchecked Sendable {
     func register(_ actions: [FileMenuAction]) -> [Int] {
         lock.lock(); defer { lock.unlock() }
         return registry.register(actions)
+    }
+    func registerCreationMenu(_ layout: CreationMenuLayout, directory: URL) -> RegisteredCreationMenu {
+        lock.lock(); defer { lock.unlock() }
+        return registry.registerCreationMenu(layout, directory: directory)
     }
     func take(_ tag: Int) -> FileMenuAction? {
         lock.lock(); defer { lock.unlock() }

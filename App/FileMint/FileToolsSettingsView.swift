@@ -23,7 +23,7 @@ struct FileToolsSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 26) {
-                SettingsSection(title: text(.fileTools)) {
+                FinderMenuSection(language: language) {
                     PreferenceRow(title: text(.enableFileTools), detail: text(.fileToolsOffHint)) {
                         Toggle(text(.enableFileTools), isOn: $preferences.isEnabled)
                             .labelsHidden().accessibilityIdentifier("fileTools.enabled")

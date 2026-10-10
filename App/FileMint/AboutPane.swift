@@ -9,15 +9,17 @@ struct AboutPane: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                VStack(spacing: 12) {
+                HStack(alignment: .center, spacing: 16) {
                     Image(nsImage: NSApplication.shared.applicationIconImage)
-                        .resizable().frame(width: 76, height: 76).accessibilityHidden(true)
+                        .resizable().frame(width: 72, height: 72).accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 4) {
                         Text("FileMint").font(.system(size: 27, weight: .semibold))
                         Text("\(model.text(.version)) \(updater.currentVersion) (\(updater.buildNumber))")
                             .font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
+                        Text(model.text(.productTagline)).font(.callout).foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
-                }.frame(maxWidth: .infinity).padding(.vertical, 12)
+                }.frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 12)
                 Grid(alignment: .leading, horizontalSpacing: 24, verticalSpacing: 8) {
                     GridRow {
                         Text(model.text(.copyright)).foregroundStyle(.secondary)
@@ -64,29 +66,34 @@ struct AboutPane: View {
                         ProgressView().controlSize(.small)
                             .accessibilityLabel(model.text(updater.statusKey))
                     }
-                    HStack(spacing: 10) {
-                        if updater.canCancel {
-                            Button(model.text(.cancel)) { updater.cancel() }
-                        } else if !updater.isBusy {
-                            Button(model.text(.checkForUpdates)) { updater.checkForUpdates() }
-                            if updater.canDownload {
-                                Button(model.text(.downloadUpdate)) { updater.downloadUpdate() }
-                                    .buttonStyle(MintButtonStyle(primary: true))
-                            }
-                        }
-                        if updater.state == .waitingToRestart {
-                            Button(model.text(.updateRestartNow)) { updater.retryInstallationRestart() }
-                        }
-                        Spacer()
-                        Link(model.text(.releaseNotes), destination: updater.update?.releaseURL ?? FileMintAbout.releasesURL)
-                            .buttonStyle(.link)
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 10) { updateActions }
+                        VStack(alignment: .leading, spacing: 10) { updateActions }
                     }
                     if updater.update != nil {
                         Text(model.text(.updateInstallHint)).font(.caption).foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
-            }.padding(1)
+            }.padding(1).frame(maxWidth: 640, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
+    @ViewBuilder private var updateActions: some View {
+        Button(model.text(.checkForUpdates)) { updater.checkForUpdates() }.disabled(updater.isBusy)
+        if updater.canCancel {
+            Button(model.text(.cancel)) { updater.cancel() }
+        } else if !updater.isBusy {
+            if updater.canDownload {
+                Button(model.text(.downloadUpdate)) { updater.downloadUpdate() }
+                    .buttonStyle(MintButtonStyle(primary: true))
+            }
+        }
+        if updater.state == .waitingToRestart {
+            Button(model.text(.updateRestartNow)) { updater.retryInstallationRestart() }
+        }
+        Link(model.text(.releaseNotes), destination: updater.update?.releaseURL ?? FileMintAbout.releasesURL)
+            .buttonStyle(.link)
+    }
+
 }
