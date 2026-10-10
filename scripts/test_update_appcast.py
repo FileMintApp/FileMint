@@ -33,6 +33,35 @@ class AppcastTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             appcast.validate_feed(self.feed, self.archive, "0.6.0", "13")
 
+    def test_zip_has_its_own_feed_and_cannot_replace_the_legacy_dmg_enclosure(self):
+        self.write()
+        legacy = self.feed.read_bytes()
+        archive = Path(self.directory.name) / "FileMint-0.6.0.zip"
+        archive.write_bytes(b"ZIP payload")
+        feed = Path(self.directory.name) / "appcast-zip.xml"
+        appcast.make_feed(archive, "0.6.0", "13", self.signature).write(feed)
+        self.assertEqual(appcast.validate_feed(feed, archive, "0.6.0", "13"), self.signature)
+        for wrong_feed, wrong_archive in ((feed, self.archive), (self.feed, archive)):
+            with self.assertRaisesRegex(ValueError, "does not match"):
+                appcast.validate_feed(wrong_feed, wrong_archive, "0.6.0", "13")
+        self.assertEqual(self.feed.read_bytes(), legacy)
+        item = appcast.ET.parse(feed).find("./channel/item")
+        self.assertEqual(item.find(appcast.tag("version")).text, "13")
+        self.assertEqual(item.find("enclosure").get("url"), f"{appcast.RELEASES}/download/v0.6.0/{archive.name}")
+
+    def test_zip_signature_verification_uses_the_configured_key_and_final_archive(self):
+        self.archive = Path(self.directory.name) / "FileMint-0.6.0.zip"
+        self.archive.write_bytes(b"final ZIP")
+        self.feed = Path(self.directory.name) / "appcast-zip.xml"
+        self.write()
+        args = ["update_appcast.py", "verify", str(self.archive), "0.6.0", "13", str(self.feed)]
+        with patch.object(sys, "argv", args), patch.object(appcast.subprocess, "check_output") as private_key, \
+                patch.object(appcast.subprocess, "run") as verify:
+            appcast.main()
+            private_key.assert_not_called()
+            self.assertEqual(verify.call_args.args[0][2:], [str(self.archive), appcast.public_key(), self.signature])
+            self.assertTrue(verify.call_args.kwargs["check"])
+
     def test_resumed_generation_reuses_only_verified_feed_without_private_key(self):
         self.write()
         original = self.feed.read_bytes()

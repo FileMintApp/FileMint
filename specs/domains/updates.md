@@ -35,9 +35,18 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   Compare the three numeric version components, never lexicographically. Equal
   or older versions do not offer a download; malformed versions and responses
   show an error rather than claiming the app is current.
-- A newer release must contain the matching `FileMint-VERSION.dmg` and
-  `FileMint-VERSION.dmg.sha256` assets. Only HTTPS release URLs from this exact
-  repository are accepted; redirects are limited to GitHub's release hosts.
+- New clients prefer the matching `FileMint-VERSION.zip` and
+  `FileMint-VERSION.zip.sha256` assets with `appcast-zip.xml`. Validate the exact
+  uploaded names, URLs and bounded sizes of all three; a partial, duplicate or
+  malformed ZIP set is an error, not permission to silently fall back to DMG.
+  Releases with none of those ZIP assets retain the existing DMG/checksum path.
+  Only HTTPS release URLs from this exact repository are accepted; redirects
+  are limited to GitHub's release hosts.
+- Every new stable release retains `FileMint-VERSION.dmg`, its checksum and
+  `appcast.xml` pointing to that DMG for installed older clients. The separate
+  `appcast-zip.xml` points to the ZIP of the same signed application. Keep this
+  compatibility set on each Latest release so users who skip intervening versions
+  can still upgrade directly. Already published releases remain immutable.
 - Show the available version and release notes link before downloading. The user
   chooses Update and Restart once; the app then downloads, verifies, installs and
   relaunches without a save panel, Finder drag-and-drop or a second restart prompt.
@@ -50,8 +59,9 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - Keep the existing GitHub metadata discovery and weekly scheduler. Sparkle's own
   automatic checks, automatic downloads and system profiling are disabled. Start
   Sparkle only for an explicit install request, using the selected release's
-  immutable appcast.xml asset, not a moving latest feed. Bind the offered item to
-  the selected version, exact DMG URL and size; reject mismatches, informational
+  immutable `appcast-zip.xml` or legacy `appcast.xml` asset, chosen by the selected
+  archive format, not a moving latest feed. Bind the offered item to
+  the selected version, exact archive URL and size; reject mismatches, informational
   items, deltas and downgrades. Require an EdDSA archive signature before extraction.
   An Apple-silicon-only release appcast declares Sparkle's arm64 hardware
   requirement, so older Intel clients cannot install a release they cannot run.

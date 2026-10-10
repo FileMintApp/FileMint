@@ -27,7 +27,7 @@ permissions:
   contents: write
 jobs:
   verify:
-    name: Verify draft DMG and Sparkle installer
+    name: Verify draft DMG, ZIP and Sparkle installer
     runs-on: macos-15
     timeout-minutes: 20
     env:

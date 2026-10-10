@@ -83,10 +83,13 @@ if [[ "${NOTARIZE:-0}" == "1" ]]; then ./scripts/notarize_dmg.sh "$DMG_PATH"; fi
 # Basename-only checksums work in any user's download directory.
 (cd "$(dirname "$DMG_PATH")" && shasum -a 256 "$(basename "$DMG_PATH")") > "$CHECKSUM_PATH"
 hdiutil verify "$DMG_PATH"
+bash scripts/package_release_zip.sh "$DMG_PATH"
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   {
     echo "dmg_path=$DMG_PATH"
     echo "checksum_path=$CHECKSUM_PATH"
+    echo "zip_path=${DMG_PATH%.dmg}.zip"
+    echo "zip_checksum_path=${DMG_PATH%.dmg}.zip.sha256"
     echo "version=$VERSION"
   } >> "$GITHUB_OUTPUT"
 fi

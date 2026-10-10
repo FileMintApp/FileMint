@@ -33,6 +33,11 @@ class ReleaseSourceResumeTests(unittest.TestCase):
         for name, body in {
             "notarize_dmg.sh": 'echo notarize >> "$FILEMINT_RELEASE_TEST_LOG"\n',
             "verify_release_artifact.sh": 'echo artifact >> "$FILEMINT_RELEASE_TEST_LOG"\n',
+            "verify_release_pair.sh": 'echo pair >> "$FILEMINT_RELEASE_TEST_LOG"\n',
+            "package_release_zip.sh": '''echo zip >> "$FILEMINT_RELEASE_TEST_LOG"
+printf 'ZIP from the same DMG' > "${1%.dmg}.zip"
+(cd "$(dirname "$1")" && shasum -a 256 "$(basename "${1%.dmg}.zip")") > "${1%.dmg}.zip.sha256"
+''',
             "sparkle_tools.sh": 'echo sparkle >> "$FILEMINT_RELEASE_TEST_LOG"\n',
             "package_release.sh": '''echo package >> "$FILEMINT_RELEASE_TEST_LOG"
 printf 'built from %s\\n' "$(git rev-parse HEAD)" > "$FILEMINT_OUTPUT_DIR/FileMint-0.6.5.dmg"
@@ -109,6 +114,12 @@ XML
         self.assertEqual((self.repo / "build/FileMint-0.6.5.dmg").read_bytes(), original)
         manifest = json.loads((self.repo / "build/FileMint-0.6.5.release.json").read_text())
         self.assertEqual(manifest["commit"], self.commit)
+        self.assertEqual(len(manifest["zipSHA256"]), 64)
+        self.assertEqual(len(manifest["zipAppcastSHA256"]), 64)
+        self.assertTrue((self.repo / "build/FileMint-0.6.5.zip.sha256").exists())
+        self.assertTrue((self.repo / "build/FileMint-0.6.5.appcast-zip.xml").exists())
+        self.assertIn("zip", self.log.read_text().splitlines())
+        self.assertIn("pair", self.log.read_text().splitlines())
         self.assertNotIn("package", self.log.read_text().splitlines())
         self.assertNotIn("verify", self.log.read_text().splitlines())
         self.assertFalse(stage.exists())

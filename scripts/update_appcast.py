@@ -42,7 +42,7 @@ def validate_inputs(archive, version, build):
         raise ValueError("Invalid stable version")
     if not re.fullmatch(r"[1-9][0-9]*", build):
         raise ValueError("Invalid build number")
-    if archive.name != f"FileMint-{version}.dmg" or not 0 < archive.stat().st_size <= 1073741824:
+    if archive.name not in (f"FileMint-{version}.dmg", f"FileMint-{version}.zip") or not 0 < archive.stat().st_size <= 1073741824:
         raise ValueError("Archive name or size mismatch")
 
 

@@ -22,7 +22,8 @@ spec = importlib.util.spec_from_file_location("publication", ROOT / "scripts/rel
 publication = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(publication)
 VERSION, TAG, COMMIT = "9.9.9", "v9.9.9", "a" * 40
-NAMES = [f"FileMint-{VERSION}.dmg", f"FileMint-{VERSION}.dmg.sha256", "appcast.xml"]
+NAMES = [f"FileMint-{VERSION}.dmg", f"FileMint-{VERSION}.dmg.sha256", "appcast.xml",
+         f"FileMint-{VERSION}.zip", f"FileMint-{VERSION}.zip.sha256", "appcast-zip.xml"]
 
 
 def release(draft=True):
@@ -140,12 +141,17 @@ class PublicationTests(unittest.TestCase):
         self.work = Path(temporary.name)
         self.manifest = self.work / f"FileMint-{VERSION}.release.json"
         self.candidate = {"version": VERSION, "tag": TAG, "commit": COMMIT, "build": "99",
-                          "dmgSHA256": "1" * 64, "appcastSHA256": "2" * 64}
+                          "dmgSHA256": "1" * 64, "appcastSHA256": "2" * 64,
+                          "zipSHA256": "3" * 64, "zipAppcastSHA256": "4" * 64}
         self.manifest.write_text(json.dumps(self.candidate))
         (self.work / f"FileMint-{VERSION}.dmg").write_bytes(b"verified local candidate")
         (self.work / f"FileMint-{VERSION}.dmg.sha256").write_text("local portable checksum")
         self.feed = self.work / f"FileMint-{VERSION}.appcast.xml"
         self.feed.write_text(f'<enclosure url="{publication.PUBLIC}/releases/download/{TAG}/{NAMES[0]}" edSignature="final-signature"/>')
+        (self.work / f"FileMint-{VERSION}.zip").write_bytes(b"verified ZIP candidate")
+        (self.work / f"FileMint-{VERSION}.zip.sha256").write_text("local portable ZIP checksum")
+        self.zip_feed = self.work / f"FileMint-{VERSION}.appcast-zip.xml"
+        self.zip_feed.write_text(f'<enclosure url="{publication.PUBLIC}/releases/download/{TAG}/{NAMES[3]}" edSignature="zip-signature"/>')
         self.gh = FakeGitHub()
         self.time = 0
         self.sleep_callback = None
@@ -198,6 +204,7 @@ class PublicationTests(unittest.TestCase):
         self.assertEqual(self.stages(), ["draft", "release.yml", "build-pages.yml", "publish", "deploy-pages.yml"])
         self.assertEqual(runner.state["phase"], "complete")
         self.assertEqual(self.gh.uploaded["appcast.xml"], original)
+        self.assertEqual(self.gh.uploaded["appcast-zip.xml"], self.zip_feed.read_bytes())
         self.assertEqual(self.feed.read_bytes(), original)
         self.assertLess(output.index("not available for online updates"), output.index("Published and confirmed"))
         self.assertTrue(all(args[:3] != ["gh", "release", "download"] for args in self.commands))
@@ -387,11 +394,26 @@ class PublicationTests(unittest.TestCase):
         with patch.dict(os.environ, {"GITHUB_ACTIONS": "true", "FILEMINT_PUBLICATION_INPUTS": json.dumps(inputs)}), \
                 patch.object(publication, "GitHub", return_value=self.gh), patch.object(publication.subprocess, "run", side_effect=run):
             publication.verify_candidate()
-        checks = [args for args in calls if args[:2] == ["bash", "scripts/verify_release_artifact.sh"]]
+        checks = [args for args in calls if args[:2] == ["bash", "scripts/verify_release_pair.sh"]]
         self.assertEqual(len(checks), 1)
         self.assertEqual(checks[0][3:5], [VERSION, "99"])
         self.assertTrue(checks[0][5].endswith("/appcast.xml"))
-        self.assertEqual(len([args for args in calls if args[0] == "gh"]), 3)
+        self.assertTrue(checks[0][6].endswith("/appcast-zip.xml"))
+        self.assertEqual(len([args for args in calls if args[0] == "gh"]), 6)
+
+    def test_missing_either_compatibility_path_blocks_a_complete_candidate(self):
+        for name in NAMES:
+            candidate = release()
+            candidate["assets"] = [asset for asset in candidate["assets"] if asset["name"] != name]
+            with self.subTest(name=name), self.assertRaises(publication.PublicationError):
+                publication.asset_snapshot(candidate, TAG)
+
+    def test_manifest_without_zip_feed_hash_cannot_start_publication(self):
+        del self.candidate["zipAppcastSHA256"]
+        self.manifest.write_text(json.dumps(self.candidate))
+        with self.assertRaisesRegex(publication.PublicationError, "ZIP appcast hashes"):
+            self.instance()
+        self.assertEqual(self.gh.events, [])
 
     def test_candidate_worker_rejects_discovery_size_mismatch(self):
         self.gh.release = release()
@@ -471,6 +493,7 @@ class LocalSourceGuardTests(unittest.TestCase):
             shutil.copyfile(ROOT / "scripts" / name, self.repo / "scripts" / name)
         (self.repo / "scripts/update_appcast.py").write_text("import os, sys\nsys.exit(int(os.environ.get('FAIL_APPCAST', '0')))\n")
         (self.repo / "scripts/verify_release_artifact.sh").write_text('exit "${FAIL_ARTIFACT:-0}"\n')
+        (self.repo / "scripts/verify_release_pair.sh").write_text('exit "${FAIL_ARTIFACT:-0}"\n')
         (self.repo / "scripts/release_publication.py").write_text("print('REMOTE_PUBLICATION_ENTERED')\n")
         (self.repo / "project.yml").write_text(f"settings:\n  base:\n    MARKETING_VERSION: {VERSION}\n    CURRENT_PROJECT_VERSION: 99\n")
         (self.repo / "docs").mkdir()
@@ -489,6 +512,11 @@ class LocalSourceGuardTests(unittest.TestCase):
         Path(str(self.dmg) + ".sha256").write_text("portable checksum")
         feed = self.repo / "build" / f"FileMint-{VERSION}.appcast.xml"
         feed.write_text("verified signed feed")
+        self.zip = self.repo / "build" / f"FileMint-{VERSION}.zip"
+        self.zip.write_bytes(b"locally verified ZIP")
+        Path(str(self.zip) + ".sha256").write_text("ZIP checksum")
+        zip_feed = self.repo / "build" / f"FileMint-{VERSION}.appcast-zip.xml"
+        zip_feed.write_text("verified signed ZIP feed")
         certificate = self.repo / "Config/Signing/DeveloperIDApplication-8S66M2ZLD5.cer"
         certificate.parent.mkdir(parents=True)
         certificate.write_bytes(b"synthetic certificate")
@@ -496,6 +524,8 @@ class LocalSourceGuardTests(unittest.TestCase):
         self.original = {"version": VERSION, "build": "99", "tag": TAG, "commit": self.commit,
                          "dmgSHA256": hashlib.sha256(self.dmg.read_bytes()).hexdigest(),
                          "appcastSHA256": hashlib.sha256(feed.read_bytes()).hexdigest(),
+                         "zipSHA256": hashlib.sha256(self.zip.read_bytes()).hexdigest(),
+                         "zipAppcastSHA256": hashlib.sha256(zip_feed.read_bytes()).hexdigest(),
                          "certificateSHA256": hashlib.sha256(certificate.read_bytes()).hexdigest()}
         self.manifest.write_text(json.dumps(self.original))
 
@@ -525,6 +555,12 @@ class LocalSourceGuardTests(unittest.TestCase):
             result = self.publish(**{failure: "1"})
             self.assertNotEqual(result.returncode, 0)
             self.assertNotIn("REMOTE_PUBLICATION_ENTERED", result.stdout)
+
+    def test_changed_zip_bytes_block_remote_work(self):
+        self.zip.write_bytes(b"replaced ZIP")
+        result = self.publish()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertNotIn("REMOTE_PUBLICATION_ENTERED", result.stdout)
 
     def test_dirty_source_blocks_remote_work(self):
         (self.repo / "uncommitted.txt").write_text("pending")

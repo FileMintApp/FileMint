@@ -76,7 +76,9 @@ cleanup_stage() {
   fi
   if [[ "$stage_directory" == "$PWD/build/local-release-work.noindex/run."* ]]; then
     rm -f "$stage_directory/FileMint-$version.dmg" "$stage_directory/FileMint-$version.dmg.sha256" \
-      "$stage_directory/FileMint-$version.dmg.notary.json" "$stage_directory/appcast.xml" "$stage_directory/source.json"
+      "$stage_directory/FileMint-$version.dmg.notary.json" "$stage_directory/appcast.xml" "$stage_directory/source.json" \
+      "$stage_directory/FileMint-$version.zip" "$stage_directory/FileMint-$version.zip.sha256" \
+      "$stage_directory/FileMint-$version.zip.source.json" "$stage_directory/appcast-zip.xml"
     rmdir "$stage_directory" 2>/dev/null || true
   fi
   exit "$status"
@@ -87,7 +89,10 @@ final_dmg="$PWD/build/FileMint-$version.dmg"
 final_checksum="$final_dmg.sha256"
 final_manifest="$PWD/build/FileMint-$version.release.json"
 final_feed="$PWD/build/FileMint-$version.appcast.xml"
-[[ ! -e "$final_dmg" && ! -e "$final_checksum" && ! -e "$final_manifest" && ! -e "$final_feed" ]] || {
+final_zip="$PWD/build/FileMint-$version.zip"
+final_zip_feed="$PWD/build/FileMint-$version.appcast-zip.xml"
+[[ ! -e "$final_dmg" && ! -e "$final_checksum" && ! -e "$final_manifest" && ! -e "$final_feed" &&
+   ! -e "$final_zip" && ! -e "$final_zip.sha256" && ! -e "$final_zip_feed" ]] || {
   echo 'Release output already exists; use a new version or handle it explicitly' >&2
   exit 2
 }
@@ -95,25 +100,34 @@ final_feed="$PWD/build/FileMint-$version.appcast.xml"
 if [[ -n "${FILEMINT_RESUME_STAGE:-}" ]]; then
   bash scripts/notarize_dmg.sh "$stage_directory/FileMint-$version.dmg"
   (cd "$stage_directory" && shasum -a 256 "FileMint-$version.dmg") > "$stage_directory/FileMint-$version.dmg.sha256"
+  bash scripts/package_release_zip.sh "$stage_directory/FileMint-$version.dmg"
 else
   make verify
   bash scripts/sparkle_tools.sh > /dev/null
   FILEMINT_OUTPUT_DIR="$stage_directory" bash scripts/package_release.sh
 fi
 python3 scripts/update_appcast.py generate "$stage_directory/FileMint-$version.dmg" "$version" "$build_number" "$stage_directory/appcast.xml"
-bash scripts/verify_release_artifact.sh "$stage_directory/FileMint-$version.dmg" "$version" "$build_number"
+python3 scripts/update_appcast.py generate "$stage_directory/FileMint-$version.zip" "$version" "$build_number" "$stage_directory/appcast-zip.xml"
+bash scripts/verify_release_pair.sh "$stage_directory/FileMint-$version.dmg" "$version" "$build_number"
 
 mv "$stage_directory/appcast.xml" "$final_feed"
 mv "$stage_directory/FileMint-$version.dmg" "$final_dmg"
 mv "$stage_directory/FileMint-$version.dmg.sha256" "$final_checksum"
+mv "$stage_directory/appcast-zip.xml" "$final_zip_feed"
+mv "$stage_directory/FileMint-$version.zip" "$final_zip"
+mv "$stage_directory/FileMint-$version.zip.sha256" "$final_zip.sha256"
 dmg_sha256="$(shasum -a 256 "$final_dmg" | awk '{print $1}')"
 feed_sha256="$(shasum -a 256 "$final_feed" | awk '{print $1}')"
+zip_sha256="$(shasum -a 256 "$final_zip" | awk '{print $1}')"
+zip_feed_sha256="$(shasum -a 256 "$final_zip_feed" | awk '{print $1}')"
 certificate_sha256="$(shasum -a 256 Config/Signing/DeveloperIDApplication-8S66M2ZLD5.cer | awk '{print $1}')"
 notary_submission_id="$(jq -r '.id' "$stage_directory/FileMint-$version.dmg.notary.json")"
 jq -n --arg version "$version" --arg build "$build_number" --arg tag "$tag" \
   --arg commit "$head_commit" --arg sha256 "$dmg_sha256" --arg certificate "$certificate_sha256" --arg feed "$feed_sha256" \
+  --arg zip "$zip_sha256" --arg zipFeed "$zip_feed_sha256" \
   --arg notary "$notary_submission_id" \
-  '{version: $version, build: $build, tag: $tag, commit: $commit, dmgSHA256: $sha256, certificateSHA256: $certificate, appcastSHA256: $feed, notarySubmissionID: $notary}' \
+  '{version: $version, build: $build, tag: $tag, commit: $commit, dmgSHA256: $sha256, zipSHA256: $zip, certificateSHA256: $certificate, appcastSHA256: $feed, zipAppcastSHA256: $zipFeed, notarySubmissionID: $notary}' \
   > "$final_manifest"
 echo "Local signed and notarized release is ready: $final_dmg"
+echo "Compatible ZIP update archive is ready: $final_zip"
 echo 'Local artifact checks passed. To publish and verify the remote assets, run: make publish-local'

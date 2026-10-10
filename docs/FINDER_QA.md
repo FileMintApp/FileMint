@@ -358,12 +358,14 @@ This fixture does not prove that Finder has loaded the new extension.
 ## Distribution
 
 - `make verify`, Release build, nested signatures, arm64-only executables, matching
-  app/extension versions, DMG verification and portable checksum all pass.
-- Launch the copied DMG app, not only the DerivedData app.
+  app/extension versions, DMG/ZIP verification and both portable checksums all pass.
+  Both appcasts bind their own archive and the two verified app code hashes match.
+- Launch the copied distribution app, not only the DerivedData app. Check ZIP
+  extraction preserves framework symlinks, executable permissions and the app ticket.
 - Repeat Gatekeeper approval and extension activation on a clean Mac when one
   is available. A development Mac cannot prove clean-install trust behavior.
 - Final GitHub asset checksum, Developer ID signatures and stapled Apple ticket
-  match the exact uploaded DMG. GitHub build attestations apply only to versions
+  match the exact uploaded DMG/ZIP and their own appcasts. GitHub build attestations apply only to versions
   through 0.5.1.
 - About shows Special Thanks / 特别感谢, the exact nickname 阿逼, the
   `https://github.com/bibinocode` link and the localized signing acknowledgement.

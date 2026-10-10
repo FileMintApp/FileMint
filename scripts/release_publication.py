@@ -100,18 +100,24 @@ def find_release(gh, tag):
     raise PublicationError("Release listing exceeded the discovery limit")
 
 
+def release_asset_names(version):
+    return [f"FileMint-{version}.dmg", f"FileMint-{version}.dmg.sha256", "appcast.xml",
+            f"FileMint-{version}.zip", f"FileMint-{version}.zip.sha256", "appcast-zip.xml"]
+
+
 def asset_snapshot(release, tag, complete=True):
     if release.get("tag_name") != tag or release.get("prerelease") is not False:
         raise PublicationError("Release tag or prerelease state does not match")
     version = tag[1:]
-    expected = {f"FileMint-{version}.dmg", f"FileMint-{version}.dmg.sha256", "appcast.xml"}
+    expected = set(release_asset_names(version))
     assets = release.get("assets", [])
     names = [asset.get("name") for asset in assets]
     if len(names) != len(set(names)) or not set(names) <= expected or (complete and set(names) != expected):
-        raise PublicationError("Release must contain exactly the DMG, checksum and appcast.xml")
+        raise PublicationError("Release must contain exactly the DMG, ZIP, two checksums and two appcasts")
     snapshot = []
     for asset in assets:
-        if asset.get("state") != "uploaded" or type(asset.get("size")) is not int or asset["size"] <= 0:
+        maximum_size = 65_536 if asset["name"].endswith(".xml") else (4096 if asset["name"].endswith(".sha256") else 1_073_741_824)
+        if asset.get("state") != "uploaded" or type(asset.get("size")) is not int or not 0 < asset["size"] <= maximum_size:
             raise PublicationError("Release asset upload is incomplete")
         snapshot.append({"name": asset["name"], "id": positive_id(asset["id"]), "size": asset["size"]})
     return sorted(snapshot, key=lambda asset: asset["name"])
@@ -184,6 +190,9 @@ class Publication:
         validate_identity(self.tag, self.commit, self.build)
         if self.tag != f"v{self.version}":
             raise PublicationError("Manifest version/tag mismatch")
+        if any(not re.fullmatch(r"[0-9a-f]{64}", self.manifest.get(field, ""))
+               for field in ("zipSHA256", "zipAppcastSHA256")):
+            raise PublicationError("Manifest is missing the verified ZIP and ZIP appcast hashes")
         self.path = self.manifest_path.with_name(f"FileMint-{self.version}.publication.json")
         self.gh, self.clock, self.sleep = gh or GitHub(), clock, sleep
         self.public = False
@@ -338,10 +347,14 @@ class Publication:
                 upload = Path(temporary)
                 feed = upload / "appcast.xml"
                 feed.write_bytes(self.manifest_path.with_name(f"FileMint-{self.version}.appcast.xml").read_bytes())
+                zip_feed = upload / "appcast-zip.xml"
+                zip_feed.write_bytes(self.manifest_path.with_name(f"FileMint-{self.version}.appcast-zip.xml").read_bytes())
                 notes = upload / "release-notes.md"
                 notes.write_text(command(["python3", "scripts/release_metadata.py", "notes", "--version", self.version]) + "\n")
                 paths = [self.manifest_path.with_name(f"FileMint-{self.version}.dmg"),
-                         self.manifest_path.with_name(f"FileMint-{self.version}.dmg.sha256"), feed]
+                         self.manifest_path.with_name(f"FileMint-{self.version}.dmg.sha256"), feed,
+                         self.manifest_path.with_name(f"FileMint-{self.version}.zip"),
+                         self.manifest_path.with_name(f"FileMint-{self.version}.zip.sha256"), zip_feed]
                 if release is None:
                     if self.state.get("release_id"):
                         raise PublicationError("Previously staged Release disappeared; do not recreate it")
@@ -473,10 +486,10 @@ def verify_candidate():
                                 "-H", "Accept: application/octet-stream"], stdout=output, check=True, timeout=600)
             if (work / asset["name"]).stat().st_size != asset["size"]:
                 raise PublicationError("Downloaded asset size differs from update discovery metadata")
-        subprocess.run(["bash", "scripts/verify_release_artifact.sh", str(work / f"FileMint-{tag[1:]}.dmg"),
-                        tag[1:], inputs["build"], str(work / "appcast.xml")], cwd=ROOT, check=True)
+        subprocess.run(["bash", "scripts/verify_release_pair.sh", str(work / f"FileMint-{tag[1:]}.dmg"),
+                        tag[1:], inputs["build"], str(work / "appcast.xml"), str(work / "appcast-zip.xml")], cwd=ROOT, check=True)
     check_release(gh, release_id, tag, commit, snapshot, True)
-    print("Draft candidate passed checksum, signing, notarization and Sparkle installation checks.")
+    print("Draft DMG/ZIP candidate passed checksums, signing, notarization, payload identity and both Sparkle feeds.")
 
 
 def prepare_site_deployment():

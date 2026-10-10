@@ -32,12 +32,14 @@ Subsequent public stable releases are built on the owner's M-series Mac with
 full Xcode from a clean,
 tagged commit. That Mac signs the Finder extension, app and DMG with Developer
 ID Application, submits the DMG to Apple, staples its ticket, verifies the
-mounted app and final checksum, then uploads the validated DMG, checksum and appcast
+mounted app and final checksum. It copies that same signed app from the accepted
+DMG, staples the app ticket and archives it with `ditto` as a ZIP. It then uploads
+both validated archives, their checksums and their separate appcasts
 to a draft GitHub Release. The normal release command refuses missing credentials,
 rejected notarization or a mismatched artifact. Existing release assets are
 never replaced; use a fresh version for corrections. GitHub CI runs core tests
-without rebuilding the release DMG.
-Before publication, a GitHub job downloads and checks the uploaded draft DMG
+without rebuilding the release artifacts.
+Before publication, a GitHub job downloads and checks both uploaded draft archives
 without using Apple credentials or claiming it built the binary.
 
 Local packaging also uses a temporary build directory and unregisters/removes
@@ -101,9 +103,11 @@ make release-local
 
 This runs `make verify`, builds arm64-only executables, compiles/tests the production
 Sparkle driver, signs app/extension/helper contents, submits the DMG once for
-Apple notarization, staples the accepted ticket, and verifies the mounted app,
-embedded entitlements, checksum and signed `appcast.xml`. It saves the final DMG,
-`.sha256`, appcast and source manifest under `build/`. A missing Sparkle installer
+Apple notarization, staples the accepted ticket, and derives the ZIP from its app
+after stapling the app ticket. It verifies both apps, embedded entitlements,
+checksums and signed feeds, including an identical app code hash across the two
+archives. It saves the final DMG/ZIP, their `.sha256` files, both appcasts and
+source manifest under `build/`. A missing Sparkle installer
 configuration or feed now fails the release, even when other signatures pass.
 Keep the final files intact. If notarization is pending or its wait times out,
 the script retains the staging DMG, its submission ID and `source.json` recording
@@ -117,14 +121,18 @@ This also verifies the submitted or recorded stapled DMG hash; a
 pending submission waits on the same ID, while a completed ticket is revalidated
 without another upload. Stapling uses a private copy and records its verified
 hash before replacing the submitted file, so interruptions preserve a recoverable
-stage. A matching existing appcast is verified and reused. If Apple rejects the submission or any
+stage. ZIP packaging records its source DMG and final ZIP hashes in the retained
+stage; resuming checks those hashes and reuses the ZIP without replacing its bytes.
+If the ZIP has not been created, derive it from the accepted DMG without another
+build or notarization submission. Matching existing appcasts are verified and
+reused. If Apple rejects the submission or any
 other check fails, stop and diagnose before making a new candidate.
 
 No separate UpgradeQA run is required by the standard release procedure.
 `make release-local` still runs all offline tests and production Sparkle-driver
-checks, then validates the signed, notarized and stapled artifact, mounted app,
-entitlements, architecture, checksum and appcast. Record those results against
-the release commit and final DMG SHA-256. For changes that need native update
+checks, then validates both signed, notarized applications, their tickets,
+entitlements, architecture, checksums, code-hash equality and appcasts. Record
+those results against the release commit and both final archive SHA-256 values. For changes that need native update
 evidence, follow the affected checks in
 [Update verification](../specs/verification/updates.md#sparkle-installation-checks);
 the UpgradeQA fixture is only an optional diagnostic there. Report installed Finder,
@@ -138,8 +146,8 @@ After local artifact checks pass, run:
 make publish-local
 ```
 
-This rechecks the exact local DMG, checksum, appcast, source commit and certificate
-against the local manifest, pushes `main` and the tag, and uploads the three assets
+This rechecks both local archives, checksums, appcasts, source commit and certificate
+against the local manifest, pushes `main` and the tag, and uploads the six assets
 to a **draft** Release. Draft staging is reported as not yet available for online
 updates. It never uploads the local source manifest or Apple credentials, downloads
 remote assets locally or compares remote bytes/hashes with local files.
@@ -154,7 +162,9 @@ uploads can add missing assets, but never replace an existing asset.
 Source CI must succeed for the exact release commit on `main`. The command explicitly
 dispatches the candidate workflow against the release tag; that job reads the
 draft assets with authenticated GitHub access and performs the existing complete
-DMG, Developer ID, notarization, Sparkle helper and embedded-entitlement checks.
+DMG/ZIP, Developer ID, notarization, Sparkle helper and embedded-entitlement checks.
+ZIP signatures and bounded entries are checked before extraction. The two
+verified app code hashes must match, and each feed must point to its own archive.
 It additionally requires the expected source version/build and download sizes.
 No Apple or Sparkle signing keys enter Actions. The local GitHub identity needs
 release-write and Actions-dispatch/read access; missing permissions stop the draft.
@@ -207,7 +217,7 @@ Actions, promotion, public update-discovery checks and applicable website deploy
 artifact results, the time online updates became available and the Actions results;
 record native update results when targeted acceptance is performed.
 
-Release evidence should include the local notarization result, local DMG checksum,
+Release evidence should include the local notarization result, both local archive checksums,
 published asset names, candidate verification and website run IDs. Do not claim that
 local/remote byte equality was checked. Earlier release records retain their
 historical readback results. Include native runtime results when that targeted
@@ -227,8 +237,11 @@ means to retain that submitted file and resume the same ID, not upload another
 copy merely to retry a status check.
 
 After `Accepted`, staple and validate the DMG ticket, then calculate the final
-SHA-256 and run the artifact checks. Only then push the source/tag and publish
-the exact validated DMG and checksum to GitHub. A pending or rejected submission
+SHA-256. Copy its signed app, staple and validate the app's ticket, then build the
+ZIP with `ditto -c -k --sequesterRsrc --keepParent`. ZIP cannot be codesigned or
+stapled directly; preserve the app's signatures and tickets inside it. Compute the
+ZIP checksum, sign both final archives for Sparkle, and run the pair checks. Only
+then push the source/tag and publish the validated six assets to GitHub. A pending or rejected submission
 does not qualify for a normal stable release. The historical 0.5.3 exception
 does not change this flow.
 
@@ -268,19 +281,33 @@ expiring local request tickets, with no dependency on App Group provisioning.
 ## In-app updates
 
 GitHub metadata discovery and the weekly scheduler remain in FileMint. The
-Sparkle-enabled client offers Update and Restart, then uses that exact release's
-`appcast.xml` asset for signed download, installation and relaunch. Its own
+current client offers Update and Restart, then uses that exact release's
+`appcast-zip.xml` for ZIP, or `appcast.xml` for a historical DMG-only release.
+Sparkle performs signed download, installation and relaunch. Its own
 background checks/downloads and system profiling are disabled. The main app and
 Finder extension remain sandboxed; only the main app embeds Sparkle.
 
 The dependency is pinned in `project.yml`. `make build` resolves it under
 `build/SourcePackages`; `sign_app.sh` signs its nested XPC services and helpers,
 then the framework, Finder extension and app. `release-local` signs the final
-notarized/stapled DMG with the FileMint-specific EdDSA key, generates an immutable
-appcast and verifies it using the public key before accepting the release.
-The feed hash is bound into the local release manifest. `publish-local` uploads
-it as `appcast.xml` alongside the DMG/checksum in a draft. After candidate checks
-pass, the same assets become public without changing the feed's final URLs or
+notarized/stapled DMG and final ZIP with the existing FileMint-specific EdDSA key,
+generates two immutable appcasts and verifies both using the public key before
+accepting the release. Both archive/feed hashes are bound into the local release
+manifest. `publish-local` uploads the following exact set in a draft:
+
+- `FileMint-VERSION.dmg` and `FileMint-VERSION.dmg.sha256`
+- `appcast.xml`, continuing to point to the DMG for older clients
+- `FileMint-VERSION.zip` and `FileMint-VERSION.zip.sha256`
+- `appcast-zip.xml`, pointing to ZIP for new clients
+
+Keep the legacy trio on every future Latest release; users who skipped the first
+ZIP-capable version must still be able to update directly from their DMG client.
+New clients prefer a complete valid ZIP set. An incomplete or malformed ZIP set
+fails instead of silently falling back; releases with no ZIP assets still use DMG.
+The ZIP contains `FileMint.app` and only ditto's additional resource metadata.
+`make zip` packages an existing local Release app for development; `make package`
+builds both development archives. Neither command publishes anything.
+After candidate checks pass, the same assets become public without changing the feeds' final URLs or
 signature. The stable release and Latest discovery are confirmed before reporting
 online-update availability.
 No new server or GitHub credential in the app

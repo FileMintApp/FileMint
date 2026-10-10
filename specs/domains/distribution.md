@@ -6,7 +6,7 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 
 ## Distribution
 
-- New Release apps and DMGs support M-series Macs running macOS 13 or later.
+- New Release apps, DMGs and ZIPs support M-series Macs running macOS 13 or later.
   Build the main app, Finder extension and embedded Sparkle executables as
   arm64-only. Reject any x86_64 slice in local and published bundle checks.
   Previously published universal releases keep their original architecture
@@ -31,9 +31,15 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   published 0.5.3 bytes after the fact.
 - Public stable releases after 0.5.3 require Apple notarization on the owner's
   Mac. Staple and validate the DMG ticket before computing its portable SHA-256
-  checksum. Only the validated local DMG and checksum are uploaded to GitHub
-  Releases. Missing credentials, rejected notarization or failed validation
-  must stop publication.
+  checksum. Derive the ZIP from the same DMG's signed app, staple and validate
+  the app ticket before archiving it with `ditto`, and preserve framework symlinks,
+  executable permissions and macOS metadata. ZIP itself cannot be codesigned or
+  stapled. A ZIP contains only `FileMint.app` plus ditto's resource metadata;
+  verification rejects escaping paths/links and limits expanded data to 1 GiB.
+  Only the validated local archives, checksums and feeds are uploaded to GitHub
+  Releases. Missing credentials, rejected notarization or failed validation must
+  stop publication. A resumed accepted DMG can supply the ZIP without rebuilding
+  the application or submitting another notarization request.
 - GitHub Releases remain the distribution channel. GitHub CI verifies the core
   without holding Apple signing assets or rebuilding the public DMG. A locally
   built release is not represented as a GitHub Actions build or GitHub build
@@ -66,7 +72,7 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - A normal stable release has one version/build source in `project.yml` and two
   explicit stages: `release-local` checks the committed release notes and source
   tag, then builds and verifies the notarized artifact; `publish-local` uploads
-  the verified DMG, checksum and appcast to a draft Release. Source CI, remote
+  the verified DMG/ZIP, both checksums and both appcasts to a draft Release. Source CI, remote
   candidate verification and applicable website builds must succeed before the
   same draft is made public and Latest. Only then announce online-update
   availability, deploy the verified website artifact and complete release records.
@@ -116,20 +122,25 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   exact `<bundle-id>-spks` and `<bundle-id>-spki` Mach service names and no unresolved
   build variables. Verify the embedded entitlements in both app and extension;
   valid signatures/notarization alone do not prove sandbox communication works.
-- Publish appcast.xml alongside the existing DMG and checksum. Generate the
-  EdDSA signature only after notarization/stapling fixes the final DMG bytes.
+- Publish `appcast.xml` for the retained DMG and `appcast-zip.xml` for the ZIP,
+  alongside both archives and their portable checksums. Generate each
+  EdDSA signature only after notarization/stapling fixes its final archive bytes.
   The feed binds the numeric build, marketing version, exact GitHub asset URL,
   minimum macOS version, size and signature. Release builds and publication must
   fail if the feed/signature/public-key configuration is missing or mismatched.
 - Stable release verification requires the Sparkle installer configuration and
-  signed framework/helper contents in the mounted app. A missing configuration
+  signed framework/helper contents in each verified app. A missing configuration
   cannot turn appcast verification into an optional check. The remote release must
-  contain exactly the DMG, portable checksum and `appcast.xml`. Upload the locally
+  contain exactly the DMG, ZIP, their two portable checksums, `appcast.xml` and
+  `appcast-zip.xml`. Both feeds use the same version/build, public key, minimum OS
+  and architecture requirements; bind both archive/feed hashes in the local
+  source manifest and verify both remote artifacts. Their verified app code hashes
+  must match, establishing the same sealed payload. Upload the locally
   verified files as a draft, verify them on GitHub and only then make that Release
   public, without a local remote-content comparison.
   GitHub's independent checksum/signature/ticket verification and the client's
   signed update validation remain in place. Preserve the Sparkle public key,
-  final DMG signature, immutable tag-based appcast/download URLs, version/build
+  final archive signatures, immutable tag-based appcast/download URLs, version/build
   binding and installer Mach permissions across publication orchestration changes.
   A post-publication failure must not relabel a public version as unpublished;
   keep the published assets immutable.

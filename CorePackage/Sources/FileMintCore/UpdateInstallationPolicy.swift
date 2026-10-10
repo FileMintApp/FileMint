@@ -3,7 +3,7 @@ import Foundation
 /// Bind Sparkle's independently fetched feed to the release the user accepted.
 public enum UpdateInstallationPolicy {
     public static func appcastURL(for update: AppUpdate) -> URL {
-        update.downloadURL.deletingLastPathComponent().appendingPathComponent("appcast.xml")
+        update.downloadURL.deletingLastPathComponent().appendingPathComponent(update.archiveFormat.appcastFileName)
     }
 
     public static func accepts(_ update: AppUpdate, displayVersion: String, downloadURL: URL?,

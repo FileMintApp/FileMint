@@ -33,10 +33,79 @@ struct AppUpdateTests {
         let update = try #require(result)
         #expect(update.version.description == "0.10.0")
         #expect(update.fileName == "FileMint-0.10.0.dmg")
+        #expect(update.archiveFormat == .dmg)
         #expect(update.checksumURL.lastPathComponent == "FileMint-0.10.0.dmg.sha256")
         #expect(update.releaseURL.absoluteString == "https://github.com/FileMintApp/FileMint/releases/tag/v0.10.0")
         #expect(update.digest == hash)
         #expect(update.size == 512)
+    }
+
+    @Test("new clients select ZIP while retaining the legacy DMG assets")
+    func zipUpdate() throws {
+        let data = try zipRelease()
+        let result = try AppUpdatePolicy.availableUpdate(from: data, currentVersion: "0.2.0")
+        let update = try #require(result)
+        #expect(update.archiveFormat == .zip)
+        #expect(update.fileName == "FileMint-0.3.0.zip")
+        #expect(update.checksumURL.lastPathComponent == "FileMint-0.3.0.zip.sha256")
+        #expect(update.size == 256 && update.digest == hash)
+        #expect(UpdateInstallationPolicy.appcastURL(for: update).lastPathComponent == "appcast-zip.xml")
+        #expect(UpdateInstallationPolicy.accepts(update, displayVersion: "0.3.0", downloadURL: update.downloadURL,
+            size: 256, informationOnly: false, delta: false))
+        let legacyURL = update.downloadURL.deletingLastPathComponent().appendingPathComponent("FileMint-0.3.0.dmg")
+        #expect(!UpdateInstallationPolicy.accepts(update, displayVersion: "0.3.0", downloadURL: legacyURL,
+            size: 512, informationOnly: false, delta: false))
+    }
+
+    @Test("incomplete or invalid ZIP sets cannot silently fall back to a valid DMG", arguments: [
+        "missing-zip", "missing-checksum", "missing-feed", "duplicate-zip", "duplicate-feed",
+        "duplicate-checksum", "unuploaded", "oversized", "empty", "wrong-version", "bad-digest",
+        "unuploaded-feed", "oversized-feed", "empty-feed", "bad-feed-url", "bad-zip-url", "bad-checksum-url"
+    ])
+    func invalidZip(scenario: String) throws {
+        let data = try zipRelease { assets in
+            switch scenario {
+            case "missing-zip": assets.remove(at: 2)
+            case "missing-checksum": assets.remove(at: 3)
+            case "missing-feed": assets.remove(at: 4)
+            case "duplicate-zip": assets.append(assets[2])
+            case "duplicate-checksum": assets.append(assets[3])
+            case "duplicate-feed": assets.append(assets[4])
+            case "unuploaded": assets[2]["state"] = "new"
+            case "oversized": assets[2]["size"] = AppUpdatePolicy.maximumInstallerSize + 1
+            case "empty": assets[2]["size"] = 0
+            case "wrong-version": assets[2]["name"] = "FileMint-0.2.0.zip"
+            case "bad-digest": assets[2]["digest"] = "sha256:invalid"
+            case "unuploaded-feed": assets[4]["state"] = "new"
+            case "oversized-feed": assets[4]["size"] = 65_537
+            case "empty-feed": assets[4]["size"] = 0
+            case "bad-feed-url": assets[4]["browser_download_url"] = "https://example.com/appcast-zip.xml"
+            case "bad-zip-url": assets[2]["browser_download_url"] = "https://github.com/FileMintApp/FileMint/releases/download/v0.2.0/FileMint-0.3.0.zip"
+            default: assets[3]["browser_download_url"] = "https://example.com/FileMint-0.3.0.zip.sha256"
+            }
+        }
+        let expected: UpdateValidationError = scenario == "bad-digest" ? .invalidChecksum :
+            (["bad-feed-url", "bad-zip-url", "bad-checksum-url"].contains(scenario) ? .untrustedURL : .missingAssets)
+        #expect(throws: expected) {
+            try AppUpdatePolicy.availableUpdate(from: data, currentVersion: "0.2.0")
+        }
+    }
+
+    private func zipRelease(change: (inout [[String: Any]]) -> Void = { _ in }) throws -> Data {
+        try release { value in
+            var assets = value["assets"] as! [[String: Any]]
+            let base = "https://github.com/FileMintApp/FileMint/releases/download/v0.3.0"
+            assets += [
+                ["name": "FileMint-0.3.0.zip", "browser_download_url": "\(base)/FileMint-0.3.0.zip",
+                 "size": 256, "state": "uploaded", "digest": "sha256:\(hash)"],
+                ["name": "FileMint-0.3.0.zip.sha256", "browser_download_url": "\(base)/FileMint-0.3.0.zip.sha256",
+                 "size": 85, "state": "uploaded"],
+                ["name": "appcast-zip.xml", "browser_download_url": "\(base)/appcast-zip.xml",
+                 "size": 1024, "state": "uploaded"]
+            ]
+            change(&assets)
+            value["assets"] = assets
+        }
     }
 
     @Test("bad responses and prereleases are errors, not up-to-date results")

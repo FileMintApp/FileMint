@@ -36,8 +36,15 @@ public struct ReleaseVersion: Comparable, Equatable, Sendable, CustomStringConve
     }
 }
 
+public enum UpdateArchiveFormat: String, Sendable {
+    case dmg, zip
+
+    public var appcastFileName: String { self == .zip ? "appcast-zip.xml" : "appcast.xml" }
+}
+
 public struct AppUpdate: Equatable, Sendable {
     public let version: ReleaseVersion
+    public let archiveFormat: UpdateArchiveFormat
     public let releaseURL: URL
     public let downloadURL: URL
     public let checksumURL: URL
@@ -70,7 +77,11 @@ public enum AppUpdatePolicy {
         guard release.html_url == expectedPage else { throw UpdateValidationError.untrustedURL }
         guard version > current else { return nil }
 
-        let name = "FileMint-\(version).dmg"
+        let zipNames = ["FileMint-\(version).zip", "FileMint-\(version).zip.sha256", "appcast-zip.xml"]
+        // Older releases have no ZIP set. A broken new set must fail closed,
+        // rather than hiding an invalid or partially published update behind DMG.
+        let format: UpdateArchiveFormat = release.assets.contains { zipNames.contains($0.name) } ? .zip : .dmg
+        let name = "FileMint-\(version).\(format.rawValue)"
         let installers = release.assets.filter { $0.name == name }
         let checksums = release.assets.filter { $0.name == "\(name).sha256" }
         guard installers.count == 1, checksums.count == 1,
@@ -83,6 +94,14 @@ public enum AppUpdatePolicy {
               checksum.browser_download_url == base.appendingPathComponent("\(name).sha256") else {
             throw UpdateValidationError.untrustedURL
         }
+        if format == .zip {
+            let feeds = release.assets.filter { $0.name == format.appcastFileName }
+            guard feeds.count == 1, let feed = feeds.first, feed.state == "uploaded",
+                  (1...65_536).contains(feed.size) else { throw UpdateValidationError.missingAssets }
+            guard feed.browser_download_url == base.appendingPathComponent(format.appcastFileName) else {
+                throw UpdateValidationError.untrustedURL
+            }
+        }
         var digest: String?
         if let value = installer.digest {
             guard value.hasPrefix("sha256:"), let hash = normalizedHash(String(value.dropFirst(7))) else {
@@ -90,7 +109,7 @@ public enum AppUpdatePolicy {
             }
             digest = hash
         }
-        return AppUpdate(version: version, releaseURL: expectedPage,
+        return AppUpdate(version: version, archiveFormat: format, releaseURL: expectedPage,
                          downloadURL: installer.browser_download_url, checksumURL: checksum.browser_download_url,
                          size: installer.size, digest: digest)
     }

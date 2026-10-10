@@ -5,12 +5,14 @@ export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Develope
 mkdir -p build/sparkle-installation-harness.noindex
 SPARKLE_QA_ROOT="$(mktemp -d "$PWD/build/sparkle-installation-harness.noindex/run.XXXXXX")"
 SPARKLE_QA_FRAMEWORK="$PWD/build/SourcePackages/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64"
+SPARKLE_QA_COMPRESSION="$PWD/build/DerivedData/Build/Products/Release/FileMint.app/Contents/Frameworks/FileMintCompression.framework"
+[[ -d "$SPARKLE_QA_COMPRESSION" ]] || { echo 'Run the unsigned make build first.' >&2; exit 2; }
 swiftc -swift-version 6 -parse-as-library -target "arm64-apple-macos13.0" \
   scripts/sparkle_installation_smoke.swift -F "$SPARKLE_QA_FRAMEWORK" -framework Sparkle \
   -Xlinker -rpath -Xlinker @executable_path/../Frameworks -o "$SPARKLE_QA_ROOT/UpgradeQA"
-python3 - "$SPARKLE_QA_ROOT" "$SPARKLE_QA_FRAMEWORK" <<'PY'
+python3 - "$SPARKLE_QA_ROOT" "$SPARKLE_QA_FRAMEWORK" "$SPARKLE_QA_COMPRESSION" <<'PY'
 import json, pathlib, plistlib, shutil, socket, subprocess, sys
-root, framework = map(pathlib.Path, sys.argv[1:])
+root, framework, compression = map(pathlib.Path, sys.argv[1:])
 identifier = 'io.github.daigua.filemint.upgrade-qa.' + root.name.split('.')[-1].lower()
 with socket.socket() as listener:
     listener.bind(('127.0.0.1', 0))
@@ -24,6 +26,7 @@ for folder, build, version in [('installation', '1', '1.0.0'), ('payload', '2', 
     shutil.copyfile(root / 'UpgradeQA', app / 'Contents/MacOS/UpgradeQA')
     (app / 'Contents/MacOS/UpgradeQA').chmod(0o755)
     subprocess.run(['ditto', str(framework / 'Sparkle.framework'), str(app / 'Contents/Frameworks/Sparkle.framework')], check=True)
+    subprocess.run(['ditto', str(compression), str(app / 'Contents/Frameworks/FileMintCompression.framework')], check=True)
     info = dict(CFBundleIdentifier=identifier, CFBundleName='FileMint Update QA', CFBundleExecutable='UpgradeQA',
                 CFBundlePackageType='APPL', CFBundleVersion=build, CFBundleShortVersionString=version,
                 SUFeedURL=f'http://127.0.0.1:{port}/appcast.xml', SUEnableInstallerLauncherService=True,

@@ -1,6 +1,6 @@
 -include .local/signing.mk
 
-.PHONY: verify verify-favorite-model verify-appcast verify-release-metadata verify-release-notarization verify-release-publication verify-signing-entitlements verify-sparkle-driver verify-context verify-harness-cli verify-updates update-sandbox-harness test harness project build dmg package release-local publish-local doctor icon clean
+.PHONY: verify verify-favorite-model verify-appcast verify-release-metadata verify-release-notarization verify-release-publication verify-signing-entitlements verify-sparkle-driver verify-context verify-harness-cli verify-updates update-sandbox-harness test harness project build dmg zip package release-local publish-local doctor icon clean
 
 DEVELOPER_DIR ?= /Applications/Xcode.app/Contents/Developer
 export DEVELOPER_DIR
@@ -33,6 +33,7 @@ verify-release-metadata:
 
 verify-release-notarization:
 	python3 scripts/test_notarize_dmg.py
+	python3 scripts/test_release_zip.py
 	python3 scripts/test_release_resume.py
 
 verify-release-publication:
@@ -61,6 +62,9 @@ build:
 
 dmg:
 	./scripts/make_dmg.sh
+
+zip:
+	bash scripts/make_zip.sh
 
 package:
 	./scripts/package_release.sh

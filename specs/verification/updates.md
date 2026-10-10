@@ -45,7 +45,11 @@ publication; website deployment follows afterward. The candidate job invokes the
 full artifact verifier with the expected build, including nested Sparkle signatures,
 installer configuration, resolved Mach permissions, public-key/EdDSA validation,
 final URLs and sizes. Public metadata must still satisfy the existing client's
-Latest discovery contract. A website failure must not relabel a public app as
+Latest DMG discovery contract, while new clients select ZIP and `appcast-zip.xml`.
+The candidate contains both archives/checksums and both feeds. Verify each
+archive's signature and ticket; the signed app code hash must be identical across
+DMG and ZIP. ZIP validation rejects escaping paths/links and oversized expansion
+before extraction. A website failure must not relabel a public app as
 unpublished. These checks do not by themselves prove an installed upgrade.
 
 Manual signing resolves entitlement variables before codesign. Both signing and
@@ -56,7 +60,9 @@ and invalid-input rejection without signing keys.
 
 `bash scripts/build_sparkle_installation_harness.sh` creates an isolated sandbox
 host and signed update, using the production signing script and an in-memory
-fixture-only Ed25519 key. Serve its `server` directory on the loopback port in
+fixture-only Ed25519 key. Run the unsigned app build first; the fixture copies
+its compression framework so the production signing path covers that dependency.
+Serve its `server` directory on the loopback port in
 `fixture.json`, launch `installation/UpgradeQA.app`, and choose Run isolated update.
 The QA driver accepts download/install for that explicit test action. Require a running build 2 at the same
 installation path, with both launch PIDs recorded in that fixture's private
@@ -70,8 +76,11 @@ of a defect in the published FileMint app.
 
 `UpdateInstallationTests` binds the selected release version, URL and size,
 rejects informational/delta updates and covers restart protection. The Python
-appcast tests reject mismatched metadata, unexpected payloads and malformed
-signatures. These run offline in `make verify`.
+appcast tests reject mismatched metadata, crossed DMG/ZIP feeds, unexpected payloads
+and malformed signatures. ZIP tests exercise real ditto symlink/permission
+round-trips, offline ticket adapters, immutable resume and both artifact checks.
+`AppUpdateTests` covers ZIP preference, historical DMG fallback and rejection of
+partial/duplicate/untrusted ZIP sets. These run offline in `make verify`.
 After the app build, `make verify-sparkle-driver` compiles the production driver
 against the real Sparkle framework with test UI sinks. It exercises callbacks,
 Objective-C delegate selectors, cancellation, progress, restart deferral and
@@ -94,6 +103,9 @@ installation:
    old process exit and helper cleanup. Check Finder creation, preferences,
    bookmarks, login and menu bar settings. Do not claim helper replacement or
    rollback from download success alone.
+   For ZIP migration, cover an existing DMG client using the unchanged legacy feed
+   and a new client using the ZIP feed; also cover a client that skips intervening
+   versions. Preserve the same application identity, signing key and permissions.
 6. Test a readonly DMG and an installation owned by another user; report the
    actual authorization/failure behavior. No quarantine bypass is permitted.
 
