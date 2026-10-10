@@ -14,6 +14,7 @@ from unittest.mock import patch
 
 sys.dont_write_bytecode = True
 import native_qa as qa
+import access_migration_fixture as access_fixture
 
 
 class NativeQATests(unittest.TestCase):
@@ -68,9 +69,9 @@ class NativeQATests(unittest.TestCase):
         return qa.publish(self.kind, source, root)
 
     def test_each_kind_has_a_distinct_stable_non_production_identity_and_path(self):
-        self.assertEqual(len(qa.KINDS), 8)
+        self.assertEqual(len(qa.KINDS), 9)
         identifiers = [value[1] for value in qa.KINDS.values()]
-        self.assertEqual(len(set(identifiers)), 8)
+        self.assertEqual(len(set(identifiers)), 9)
         self.assertNotIn("io.github.daigua.filemint", identifiers)
         self.assertEqual(qa.KINDS["design-ui"][1], "io.github.daigua.filemint.design-qa")
         self.assertEqual(qa.KINDS["sparkle-installation"][1], "io.github.daigua.filemint.upgrade-qa")
@@ -175,6 +176,14 @@ class NativeQATests(unittest.TestCase):
         with self.assertRaisesRegex(qa.QAError, "different fixture run ID"):
             qa.publish(kind, source, root, already_signed=True)
 
+    def test_access_migration_keeps_presigned_archive_session(self):
+        kind = "access-migration"
+        source, root = self.source(kind=kind, run_id=True)
+        original = (source / "Contents/Info.plist").read_bytes()
+        destination = qa.publish(kind, source, root, already_signed=True)
+        self.assertEqual((destination / "Contents/Info.plist").read_bytes(), original)
+        self.assertFalse(any(args[:2] == ["codesign", "--force"] for args in self.calls))
+
     def test_failed_swap_restores_the_previous_app_and_failed_rollback_retains_its_backup(self):
         destination = self.publish()
         original = (destination / "Contents/MacOS/Fixture").read_bytes()
@@ -256,6 +265,30 @@ sys.exit(int(os.environ['FILEMINT_TEST_OPENING_EXIT']))
                 self.assertEqual(result.returncode, 64, result.stderr)
                 self.assertIn("Expected the stable template workflow QA bundle", result.stderr)
                 self.assertFalse(log.exists(), "Rejected app reached registration or launch")
+
+
+class AccessMigrationTests(unittest.TestCase):
+    def test_only_candidate_host_loses_sandbox_and_finder_keeps_no_network(self):
+        old = access_fixture.entitlements(True)
+        new = access_fixture.entitlements(False)
+        finder = access_fixture.entitlements(True, extension=True)
+        self.assertTrue(old["com.apple.security.app-sandbox"])
+        self.assertEqual(new, {})
+        self.assertTrue(finder["com.apple.security.app-sandbox"])
+        self.assertNotIn("com.apple.security.network.client", finder)
+        self.assertEqual(old["com.apple.security.temporary-exception.mach-lookup.global-name"],
+                         [access_fixture.IDENTIFIER + "-spks", access_fixture.IDENTIFIER + "-spki"])
+        for entitlements in (old, finder):
+            self.assertEqual(entitlements["com.apple.security.temporary-exception.files.home-relative-path.read-write"],
+                             ["/Library/Application Support/FileMintAccessQA/"])
+
+    def test_fixture_cannot_sign_production_or_another_qa_run(self):
+        valid = qa.ROOT / "build/access-migration-harness.noindex/run.fixture"
+        self.assertEqual(access_fixture.validate_root(valid), valid)
+        for path in (qa.ROOT, qa.ROOT / "build/DerivedData", qa.ROOT / "build/other/run.fixture",
+                     qa.ROOT / "build/access-migration-harness.noindex/production"):
+            with self.subTest(path=path), self.assertRaises(ValueError):
+                access_fixture.validate_root(path)
 
 
 if __name__ == "__main__":

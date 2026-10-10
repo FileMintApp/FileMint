@@ -24,6 +24,7 @@ KINDS = {
     "design-ui": ("FileMintDesignQA.app", "io.github.daigua.filemint.design-qa", ()),
     "resource-tools": ("FileMintResourceQA.app", "io.github.daigua.filemint.resource-qa", ()),
     "sparkle-installation": ("UpgradeQA.app", "io.github.daigua.filemint.upgrade-qa", ()),
+    "access-migration": ("FileMintAccessQA.app", "io.github.daigua.filemint.access-qa", ("io.github.daigua.filemint.access-qa.finder",)),
 }
 
 
@@ -128,8 +129,8 @@ def publish(kind, source_app, run_root, already_signed=False):
     pin_path = destination.parent / "identity.json"
     if pin_path.is_symlink() or destination.is_symlink():
         raise QAError("Stable QA app/identity record must not be symlinks")
-    if already_signed and kind != "sparkle-installation":
-        raise QAError("Only the pre-signed installer fixture preserves its archive signing session")
+    if already_signed and kind not in ("sparkle-installation", "access-migration"):
+        raise QAError("Only pre-signed installer fixtures preserve their archive signing session")
     info = read_info(source_app)
     if info.get("CFBundleIdentifier") != KINDS[kind][1]:
         raise QAError("QA bundle identifier differs from its fixed kind")

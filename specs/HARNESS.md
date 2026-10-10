@@ -93,6 +93,10 @@ nor FileMint's runtime sandbox entitlements or system security settings.
   them. Initial migration may require one approval per kind. Verify approval reuse
   through actual repeated access before claiming it. Never modify Codex approval
   stores or substitute blanket shell/computer access.
+- The explicitly requested access-migration prototype is a separate QA kind:
+  its build 27 host is sandboxed and build 28 host is not; both Finder extensions
+  remain sandboxed. It never changes production entitlements or uses production
+  stores. Full Disk Access is granted only by the user in System Settings.
 - Detailed workflow and verification: [Native QA](verification/native-qa.md).
 
 ## Completion evidence
