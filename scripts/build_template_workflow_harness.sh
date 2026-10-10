@@ -2,6 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}"
+python3 scripts/native_qa.py check-stopped template-workflow
 swift build --package-path CorePackage >/dev/null
 TEMPLATE_CORE="$(swift build --package-path CorePackage --show-bin-path)"
 TEMPLATE_RUN="$(mktemp -d "$PWD/build/template-workflow-harness.XXXXXX")"
@@ -39,4 +40,4 @@ TEMPLATE_SPARKLE="$PWD/build/SourcePackages/artifacts/sparkle/Sparkle/Sparkle.xc
 swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.0 "${TEMPLATE_SOURCES[@]}" FinderSyncExtension/FileMintFinderSync/FinderIntegrationStatus.swift scripts/template_workflow_smoke.swift scripts/creation_opening_checks.swift "${TEMPLATE_LINK[@]}" -F "$TEMPLATE_SPARKLE" -framework Sparkle -Xlinker -rpath -Xlinker "$TEMPLATE_SPARKLE" -o "$TEMPLATE_APP/Contents/MacOS/TemplateWorkflowSmoke"
 codesign --force --sign - --timestamp=none --entitlements "$TEMPLATE_RUN/entitlements.plist" "$TEMPLATE_APP"
 codesign --verify --strict "$TEMPLATE_APP"
-echo "$TEMPLATE_APP"
+python3 scripts/native_qa.py publish template-workflow "$TEMPLATE_APP" "$TEMPLATE_RUN"

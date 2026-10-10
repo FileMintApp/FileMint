@@ -2,6 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}"
+python3 scripts/native_qa.py check-stopped move-sandbox
 swift build --package-path CorePackage
 CORE_BUILD="$(swift build --package-path CorePackage --show-bin-path)"
 mkdir -p build/move-sandbox-harness.noindex
@@ -31,7 +32,7 @@ fi
 source scripts/image_compression_link.sh
 CORE_LINK+=("${FILEMINT_COMPRESSION_LINK[@]}")
 filemint_embed_compression "$APP_PATH"
-swiftc -swift-version 6 -parse-as-library \
+swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.0 \
   App/FileMint/DesignSystem.swift App/FileMint/ResourceToolsController.swift App/FileMint/ResourceToolsView.swift \
   App/FileMint/MenuIconControl.swift App/FileMint/SystemSymbolCatalog.swift scripts/native_qa_preferences.swift \
   App/FileMint/PlainTextEditor.swift SharedUI/CustomFileSavePanelController.swift SharedUI/FolderAccess.swift \
@@ -45,4 +46,4 @@ codesign --force --options runtime --sign - --timestamp=none \
   --entitlements "$SMOKE_DIRECTORY/entitlements.plist" "$APP_PATH"
 codesign --verify --strict "$APP_PATH"
 echo "Built isolated sandbox harness (interactive authorization checks required):"
-echo "$APP_PATH"
+python3 scripts/native_qa.py publish move-sandbox "$APP_PATH" "$SMOKE_DIRECTORY"

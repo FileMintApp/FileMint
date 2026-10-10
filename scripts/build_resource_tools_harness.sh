@@ -2,6 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}"
+python3 scripts/native_qa.py check-stopped resource-tools
 swift build --package-path CorePackage
 RESOURCE_BUILD="$(swift build --package-path CorePackage --show-bin-path)"
 mkdir -p build/resource-tools-harness.noindex
@@ -25,11 +26,11 @@ fi
 source scripts/image_compression_link.sh
 RESOURCE_LINK+=("${FILEMINT_COMPRESSION_LINK[@]}")
 filemint_embed_compression "$RESOURCE_APP"
-swiftc -swift-version 6 -parse-as-library \
+swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.0 \
   App/FileMint/DesignSystem.swift App/FileMint/ResourceToolsController.swift App/FileMint/ResourceToolsView.swift \
   App/FileMint/MenuIconControl.swift App/FileMint/SystemSymbolCatalog.swift scripts/native_qa_preferences.swift \
   App/FileMint/PlainTextEditor.swift SharedUI/CustomFileSavePanelController.swift SharedUI/FolderAccess.swift \
   SharedUI/FileToolAppearance.swift \
   scripts/resource_tools_smoke.swift "${RESOURCE_LINK[@]}" \
   -o "$RESOURCE_APP/Contents/MacOS/FileMintResourceQA"
-echo "$RESOURCE_APP"
+python3 scripts/native_qa.py publish resource-tools "$RESOURCE_APP" "$RESOURCE_FIXTURE"

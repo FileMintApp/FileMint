@@ -2,6 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}"
+python3 scripts/native_qa.py check-stopped design-ui
 swift build --package-path CorePackage
 DESIGN_BUILD="$(swift build --package-path CorePackage --show-bin-path)"
 mkdir -p build/design-ui-harness.noindex
@@ -13,7 +14,7 @@ cp -R "$DESIGN_BUILD/FileMintCore_FileMintCore.bundle" "$DESIGN_APP/Contents/Res
 cp Resources/SFSymbolNames.txt Resources/SFSymbolRestrictedNames.txt \
   Resources/SFSymbolCatalog-LICENSE.txt "$DESIGN_APP/Contents/Resources/"
 plutil -create xml1 "$DESIGN_APP/Contents/Info.plist"
-plutil -insert CFBundleIdentifier -string "io.github.daigua.filemint.design-qa.${DESIGN_FIXTURE##*/}" "$DESIGN_APP/Contents/Info.plist"
+plutil -insert CFBundleIdentifier -string io.github.daigua.filemint.design-qa "$DESIGN_APP/Contents/Info.plist"
 plutil -insert CFBundleName -string 'FileMint Design QA' "$DESIGN_APP/Contents/Info.plist"
 plutil -insert CFBundleExecutable -string FileMintDesignQA "$DESIGN_APP/Contents/Info.plist"
 plutil -insert CFBundlePackageType -string APPL "$DESIGN_APP/Contents/Info.plist"
@@ -37,4 +38,4 @@ swiftc -swift-version 6 -parse-as-library -target "arm64-apple-macos13.0" \
   "${DESIGN_SOURCES[@]}" SharedUI/*.swift FinderSyncExtension/FileMintFinderSync/FinderIntegrationStatus.swift \
   scripts/design_ui_smoke.swift "${DESIGN_LINK[@]}" -F "$DESIGN_FRAMEWORKS" -framework Sparkle \
   -Xlinker -rpath -Xlinker "$DESIGN_FRAMEWORKS" -o "$DESIGN_APP/Contents/MacOS/FileMintDesignQA"
-echo "$DESIGN_APP"
+python3 scripts/native_qa.py publish design-ui "$DESIGN_APP" "$DESIGN_FIXTURE"

@@ -2,6 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}"
+python3 scripts/native_qa.py check-stopped file-tools-settings
 swift build --package-path CorePackage
 CORE_BUILD="$(swift build --package-path CorePackage --show-bin-path)"
 mkdir -p build/file-tools-settings-harness.noindex
@@ -27,11 +28,11 @@ if [[ -f "$CORE_BUILD/libFileMintCore.a" ]]; then
 else
   CORE_LINK=(-I "$CORE_BUILD/Modules" "$CORE_BUILD"/FileMintCore.build/*.o)
 fi
-swiftc -swift-version 6 -parse-as-library \
+swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.0 \
   App/FileMint/DesignSystem.swift App/FileMint/FileToolsSettingsView.swift App/FileMint/MenuIconControl.swift \
   App/FileMint/SystemSymbolCatalog.swift \
   SharedUI/FileToolAppearance.swift \
   scripts/file_tools_settings_smoke.swift "${CORE_LINK[@]}" \
   -o "$APP_PATH/Contents/MacOS/FileMintToolsUIQA"
-echo "Built isolated native settings fixture:"
-echo "$APP_PATH"
+echo "Built stable native settings fixture:"
+python3 scripts/native_qa.py publish file-tools-settings "$APP_PATH" "$FIXTURE_DIRECTORY"

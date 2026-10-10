@@ -62,11 +62,12 @@ and invalid-input rejection without signing keys.
 host and signed update, using the production signing script and an in-memory
 fixture-only Ed25519 key. Run the unsigned app build first; the fixture copies
 its compression framework so the production signing path covers that dependency.
-Serve its `server` directory on the loopback port in
-`fixture.json`, launch `installation/UpgradeQA.app`, and choose Run isolated update.
+Serve its per-run `server` directory on the loopback port in `fixture.json`,
+launch the stable app path in that file's `application` field, and choose Run
+isolated update. See [Native QA](native-qa.md) for identity and build ownership.
 The QA driver accepts download/install for that explicit test action. Require a running build 2 at the same
-installation path, with both launch PIDs recorded in that fixture's private
-container (also displayed in the QA window). It uses a minimal QA driver and an inert extension bundle;
+installation path, with both launch PIDs recorded under the fixture's run ID in
+its private container (also displayed in the QA window). It uses a minimal QA driver and an inert extension bundle;
 it proves sandbox installer replacement/relaunch, not FileMint's custom driver,
 public-feed restrictions, installed Finder callbacks or clean-Mac permissions.
 On macOS 27.2, the default ad-hoc fixture was rejected because its process and

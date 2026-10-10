@@ -16,8 +16,12 @@ final class MoveSandboxSmoke: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         do {
             fixture = URL(fileURLWithPath: Bundle.main.object(forInfoDictionaryKey: "FixturePath") as! String)
+            guard let runID = Bundle.main.object(forInfoDictionaryKey: "FixtureRunID") as? String,
+                  !runID.isEmpty, !runID.contains("/"), runID != ".", runID != ".." else {
+                fatalError("Missing native QA run identity")
+            }
             let local = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-                .appendingPathComponent("move-smoke")
+                .appendingPathComponent("move-smoke").appendingPathComponent(runID)
             store = PendingFileMoveStore(file: local.appendingPathComponent("pending.json"))
             tickets = FileOperationTicketStore(directory: local.appendingPathComponent("requests"))
             let preferencesURL = local.appendingPathComponent("preferences.json")

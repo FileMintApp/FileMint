@@ -25,11 +25,12 @@ observed result; mark unavailable checks as not run.
 
 For Open with App, `OpenWithTests` covers migration, malformed/duplicate entries,
 menu partitioning, captured app/selection identity, scope and ticket replay/expiry.
-`bash scripts/build_open_with_harness.sh` builds a disposable sandboxed app whose
+`bash scripts/build_open_with_harness.sh` publishes a stable sandboxed QA app whose
 production coordinator sends a real file/folder batch to a native receiver app.
 It checks the received selection, source preservation, clipboard, busy guard and
 single-use ticket. This does not prove installed Finder callbacks or compatibility
-with every chosen application. See [Open with App QA](../../docs/FINDER_QA.md#open-with-app).
+with every chosen application. See [Open with App QA](../../docs/FINDER_QA.md#open-with-app)
+and [Native QA identity](native-qa.md) for stable paths and per-run fixtures.
 
 `make verify-favorite-model` compiles the production favorite model against Core
 and runs it with an isolated catalog. It covers asynchronous initial loading,
@@ -40,7 +41,7 @@ several rows down to one, ensuring the displayed row and Return action use that
 entry's stable ID; clearing history must empty Recent while preserving All.
 
 For the optional template workflow, `bash scripts/build_template_workflow_harness.sh`
-builds a disposable sandboxed fixture with production model, preview, panel and
+publishes a stable sandboxed fixture with production model, preview, panel and
 executor code. Run the returned bundle's executable with
 `FILEMINT_TEMPLATE_QA_MODE=screenshots` for bounded source/receiver/preview checks
 and native view-cache renders. See the

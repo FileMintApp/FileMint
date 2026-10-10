@@ -2,6 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}"
+python3 scripts/native_qa.py check-stopped open-with
 swift build --package-path CorePackage
 OPEN_WITH_BUILD="$(swift build --package-path CorePackage --show-bin-path)"
 mkdir -p build/open-with-harness.noindex
@@ -53,4 +54,4 @@ swiftc -swift-version 6 -parse-as-library -target "arm64-apple-macos13.0" \
   -o "$OPEN_WITH_APP/Contents/MacOS/OpenWithSmoke"
 codesign --force --sign - --timestamp=none --entitlements "$OPEN_WITH_FIXTURE/entitlements.plist" "$OPEN_WITH_APP"
 codesign --verify --strict "$OPEN_WITH_APP"
-echo "$OPEN_WITH_APP"
+python3 scripts/native_qa.py publish open-with "$OPEN_WITH_APP" "$OPEN_WITH_FIXTURE"

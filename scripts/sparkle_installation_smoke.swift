@@ -112,7 +112,14 @@ final class InstallationSmoke: NSObject, NSApplicationDelegate, SPUUpdaterDelega
 
     private func record(_ event: String, detail: String = "") {
         // This is the QA app's private sandbox container, never FileMint's store.
-        let url = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support/UpgradeQA/events.jsonl")
+        guard let runID = Bundle.main.object(forInfoDictionaryKey: "FixtureRunID") as? String,
+              !runID.isEmpty, !runID.contains("/"), runID != ".", runID != ".." else {
+            status.stringValue = "FAIL: missing native QA run identity"
+            return
+        }
+        let url = URL(fileURLWithPath: NSHomeDirectory())
+            .appendingPathComponent("Library/Application Support/UpgradeQA")
+            .appendingPathComponent(runID).appendingPathComponent("events.jsonl")
         do {
             try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
             var data = try JSONSerialization.data(withJSONObject: ["event": event, "detail": detail,

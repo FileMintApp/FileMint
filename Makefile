@@ -1,12 +1,15 @@
 -include .local/signing.mk
 
-.PHONY: verify verify-favorite-model verify-appcast verify-release-metadata verify-release-notarization verify-release-publication verify-signing-entitlements verify-sparkle-driver verify-context verify-harness-cli verify-updates update-sandbox-harness test harness project build dmg zip package release-local publish-local doctor icon clean
+.PHONY: verify verify-native-qa verify-favorite-model verify-appcast verify-release-metadata verify-release-notarization verify-release-publication verify-signing-entitlements verify-sparkle-driver verify-context verify-harness-cli verify-updates update-sandbox-harness test harness project build dmg zip package release-local publish-local doctor icon clean
 
 DEVELOPER_DIR ?= /Applications/Xcode.app/Contents/Developer
 export DEVELOPER_DIR
 export DEVELOPMENT_TEAM
 
-verify: verify-context verify-image-compression test harness verify-harness-cli verify-appcast verify-release-metadata verify-release-notarization verify-release-publication verify-signing-entitlements
+verify: verify-context verify-image-compression test harness verify-harness-cli verify-appcast verify-release-metadata verify-release-notarization verify-release-publication verify-signing-entitlements verify-native-qa
+
+verify-native-qa:
+	python3 scripts/test_native_qa.py
 
 .PHONY: verify-image-compression
 verify-image-compression:

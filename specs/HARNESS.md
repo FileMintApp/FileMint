@@ -72,6 +72,29 @@ where sufficient, including documentation checks. This rule grants no blanket
 shell access, `sudo`, installation or publication, and changes neither the checks
 nor FileMint's runtime sandbox entitlements or system security settings.
 
+## Native QA application identity
+
+- Each native GUI QA kind has a fixed bundle identifier, a fixed launch path under
+  `build/native-qa.noindex`, and a stable Developer ID designated requirement.
+  Reuse existing fixture identifiers where they were already stable. Each kind
+  keeps its own identity; never use the production FileMint identity as a fixture.
+- Build and sign in a fresh per-run staging directory, then publish only the
+  completed verified application to its stable QA path. Refuse replacement while
+  that kind or its receiver is running, or another publisher owns its lock.
+  Build/signing failures preserve the last good QA app. Do not force-quit apps.
+- Keep fixture files, preferences, pending work and sandbox event logs separate
+  for each run. Retain sandbox and entitlement behavior; do not broaden folder
+  grants, clear privacy databases or write the user's FileMint stores.
+- QA signing uses the existing local Developer ID certificate, or an explicitly
+  selected `FILEMINT_QA_CODESIGN_IDENTITY`. Reject ad-hoc signing for a persistent
+  identity and reject an unrequested change of the pinned signing requirement.
+  QA builds never publish releases or export signing keys to CI.
+- Stable QA identity supports saved Computer Use approvals; it does not create
+  them. Initial migration may require one approval per kind. Verify approval reuse
+  through actual repeated access before claiming it. Never modify Codex approval
+  stores or substitute blanket shell/computer access.
+- Detailed workflow and verification: [Native QA](verification/native-qa.md).
+
 ## Completion evidence
 
 - Matching product behavior exists in the owning [domain SPEC](SPEC.md).
