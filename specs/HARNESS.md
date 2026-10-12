@@ -30,7 +30,8 @@ a generic review/check request into the full suite automatically.
 | Build, packaging, signing or release | `make verify`; Release build and applicable artifact checks | [Distribution procedure](../docs/DISTRIBUTION.md), [Finder QA distribution checks](../docs/FINDER_QA.md#distribution). Publication remains a separate action. |
 
 The existing `make verify` runs context and compression-artifact checks, Swift tests and the public JSON
-harness plus real CLI regression, appcast and signing-entitlement preparation tests.
+harness plus real CLI regression, fork-sync permission/merge/CI-dispatch regressions,
+appcast and signing-entitlement preparation tests.
 It stays offline and does not build the app/extension or website.
 PR and main-branch CI invoke that same command independently on arm64 macOS 15
 and macOS 26. Both jobs must pass the stable `Verify core behavior` aggregate

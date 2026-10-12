@@ -22,11 +22,15 @@ jobs:
     if: ${{ github.event.repository.fork == true }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    env:
+      SYNC_TOKEN_CONFIGURED: ${{ secrets.FORK_SYNC_TOKEN != '' }}
     steps:
       - name: Check out the fork default branch
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0 (Node 24)
         with:
           ref: ${{ github.event.repository.default_branch }}
+          # The built-in token cannot push changes to .github/workflows.
+          token: ${{ secrets.FORK_SYNC_TOKEN || github.token }}
           fetch-depth: 0
           persist-credentials: true
 
@@ -53,6 +57,7 @@ jobs:
           # A normal merge preserves commits made in the fork. A conflict
           # stops the job before push so a maintainer can resolve it manually.
           before_sync=$(git rev-parse HEAD)
+          echo "before_sync=$before_sync" >> "$GITHUB_OUTPUT"
           if ! git merge --no-edit "upstream/${UPSTREAM_BRANCH}"; then
             echo "Upstream merge failed; inspect the conflict details above."
             git status --short
@@ -67,16 +72,32 @@ jobs:
 
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
+      - name: Check workflow update permission
+        if: ${{ steps.sync.outputs.changed == 'true' && env.SYNC_TOKEN_CONFIGURED != 'true' }}
+        env:
+          BEFORE_SYNC: ${{ steps.sync.outputs.before_sync }}
+        run: |
+          set -euo pipefail
+          workflow_commits=$(git rev-list --full-history "${BEFORE_SYNC}..HEAD" -- .github/workflows/)
+          if [[ -n "$workflow_commits" ]]; then
+            echo "::error title=Fork sync token required::Upstream commits change .github/workflows. Configure the FORK_SYNC_TOKEN secret in this fork with Contents and Workflows read/write permissions. See docs/FORK_SYNC.md for setup and the one-time manual sync."
+            exit 1
+          fi
+
       - name: Push merge to fork
         if: ${{ steps.sync.outputs.changed == 'true' }}
         env:
           TARGET_BRANCH: ${{ github.event.repository.default_branch }}
-        run: git push origin "HEAD:${TARGET_BRANCH}"
+        run: |
+          set -euo pipefail
+          git push origin "HEAD:${TARGET_BRANCH}"
 
       - name: Dispatch fork CI after sync
+        # A dedicated-token push to main already triggers ci.yml. The built-in
+        # token and other default branches still need an explicit dispatch.
         # A manual run can retry CI dispatch after a previous post-push
         # dispatch failure, even when the fork is already current.
-        if: ${{ steps.sync.outputs.changed == 'true' || github.event_name == 'workflow_dispatch' }}
+        if: ${{ (steps.sync.outputs.changed == 'true' && (env.SYNC_TOKEN_CONFIGURED != 'true' || github.event.repository.default_branch != 'main')) || (steps.sync.outputs.changed != 'true' && github.event_name == 'workflow_dispatch') }}
         env:
           GH_TOKEN: ${{ github.token }}
           CI_WORKFLOW: ci.yml

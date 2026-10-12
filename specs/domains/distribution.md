@@ -57,6 +57,17 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   architecture and Xcode/Swift versions with each run. This matrix does not prove
   macOS 13/14 or installed Finder/UI compatibility; those need separate runtime
   evidence on the target system.
+- Fork synchronization runs only in downstream forks and preserves downstream
+  commits through a normal merge without force pushing. A fork may configure
+  `FORK_SYNC_TOKEN` with repository-scoped Contents and Workflows read/write
+  permissions so checkout and Git push can include upstream workflow updates.
+  The built-in `GITHUB_TOKEN` remains sufficient for source-only updates; incoming
+  workflow changes without the dedicated token stop before push with setup
+  guidance. Sync credentials belong to the fork, never to the upstream source.
+  A dedicated-token push to `main` starts the existing push CI. Explicitly
+  dispatch CI after built-in-token updates or updates to another default branch,
+  and on an up-to-date manual run to retry CI without creating duplicate runs.
+  Merge, permission and push failures must stop before CI dispatch.
 - The Developer ID certificate stays in the project's ignored local signing
   directory. The certificate, private key, exported signing identity and Apple
   notarization credentials must remain local and never be committed, uploaded
