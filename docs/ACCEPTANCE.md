@@ -3,6 +3,65 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Installed Debug and Finder acceptance — 2026-10-12
+
+Overall status: **partial; native acceptance is incomplete**. Only the listed
+scenarios below passed; untested scenarios remain open.
+
+Tested primary checkout `14c825f23b8695573a10d9c81a244b9483697fa5`, version
+0.6.8/build 27, on macOS 27.2 arm64 / Xcode 27.0. The user explicitly requested
+Debug build, installation, real app acceptance and fixes for observed defects.
+
+- **Passed:** Debug compilation with `ENABLE_DEBUG_DYLIB=NO`, existing Developer
+  ID signing, and verification of the actual `/Applications/FileMint.app` copy:
+  arm64 app/extension/Sparkle, compression load paths, nested signatures, sandbox
+  entitlements and resolved Sparkle services. Previous apps remain in local ZIP
+  backups. This is a local Debug installation, not a notarized release.
+- **Passed after recovery:** the final bundle replacement did not automatically
+  reload Finder's extension. Its existing on switch was toggled off/on in the
+  visible macOS extension manager, then restored to on. The final process ran
+  from `/Applications/FileMint.app`, PluginKit listed one current extension,
+  and the actual background menu again showed all restored creation entries.
+  No Finder restart, global registration reset or privacy-permission change was
+  used. The final app launched normally after computer-use bindings were reset.
+- **Passed:** live installed Finder background/item menus; mixed independent
+  action/template Main menu, Hidden and Submenu positions; hidden Markdown
+  remained enabled. Three fresh quick actions produced `Untitled.txt`,
+  `Untitled 2.txt` and `Untitled 3.txt`, each empty, in the captured test folder.
+- **Passed:** native filename-to-suffix synchronization, Command-Return creation
+  and exact 58-byte UTF-8 output, including Unicode, quotes, newlines and literal
+  `{{year}}`. A repeated Finder draft request retained its name. Template
+  double-click opened the correct editor; Escape discarded its modified name.
+  The cancelled `cancel-native-qa.txt` draft produced no file.
+- **Passed:** Finder resource integration off while the app's explicit picker
+  still worked. JPEG compression was 476,413 → 160,901 bytes; PNG compression
+  was 164,187 → 29,341 bytes. Both kept 960×640. Native JPEG-to-PNG conversion
+  kept 960×640; resize produced 480×320. Source-image hashes stayed unchanged.
+  Chinese/system appearance and English/dark settings and processing surfaces
+  were observed through live computer use.
+- **Diagnostic:** a cold Finder URL delivered `openURLs count=1` and
+  `didFinish default=false`. Cancelling alone caused no reopen; querying the
+  now-windowless app's accessibility tree then caused `reopen visible=false`
+  and showed settings. Exited-process inspection also produced LaunchServices
+  errors and macOS alerts. Those tool actions are excluded from product
+  acceptance. The inspection procedure was corrected; temporary event-only
+  instrumentation was removed from source and the final installed Debug app.
+- **Preserved:** original template bytes/order/enablement, language, appearance,
+  startup/menu-bar choices, resource child choices, folder roots and original
+  bookmark bytes. Temporary placements and the test-folder grant were restored
+  through the app UI. Saving materialized default placement maps and reordered
+  the encoded resource-tool set without changing their effective choices.
+- **Not run:** macOS 13/14, desktop-wallpaper menus, exhaustive all-hidden menu
+  combinations, full VoiceOver/focus/minimum-window coverage, remaining image
+  actions/batch cancellation, FDA/Accessibility changes, NAS or update installs.
+  Closed-window/Dock state is not inferred from an app-reopening inspection.
+
+[Build log](../build/debug-build.log), [signing log](../build/debug-sign.log),
+[installed-bundle check](../build/debug-acceptance.noindex/installed-bundle-check.log),
+[installation identity](../build/debug-acceptance.noindex/installation.json),
+[cancel-only events](../build/debug-acceptance.noindex/launch-events-cancel-only.log),
+[closed-app inspection events](../build/debug-acceptance.noindex/launch-events-inspect-closed-app.log).
+
 ## FileMint 0.6.8 release — 2026-10-08
 
 The arm64/macOS 13+ [0.6.8 release](tasks/release-0.6.8.md), build 27, was built

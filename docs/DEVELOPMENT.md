@@ -22,6 +22,34 @@ Sparkle executables, adds ad-hoc bundle signatures, checks arm64-only contents
 and creates the DMG.
 Outputs are under build/ and ignored by Git.
 
+For an explicitly requested installed Debug check, generate the project and use
+the Debug configuration with a direct executable:
+
+```sh
+make project
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
+  -project FileMint.xcodeproj -scheme FileMint -configuration Debug \
+  -derivedDataPath build/DebugDerivedData \
+  -clonedSourcePackagesDirPath build/SourcePackages \
+  ENABLE_DEBUG_DYLIB=NO CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+```
+
+`ENABLE_DEBUG_DYLIB=NO` retains Debug compilation while avoiding Xcode's
+separate debug-library launcher, which the distribution executable checks do not
+support. Before installation, sign the resulting
+`build/DebugDerivedData/Build/Products/Debug/FileMint.app` with the existing local
+Developer ID using `scripts/sign_app.sh`, then check it with
+`scripts/verify_bundle.sh`. Keep the production sandbox and signing identity.
+Back up the previous installed app, quit it normally, replace only its bundle,
+and verify the installed copy. Installation is a separate requested operation;
+these commands neither install nor publish. Follow the computer-use precautions
+in [creation window isolation](FINDER_QA.md#creation-window-isolation).
+If an already enabled extension does not reload after bundle replacement,
+check the actual process and visible menu. Refresh its existing switch through
+macOS extension management and restore its original state; an enabled-status
+label alone is not proof of a running extension. Do not reset system databases
+or silently enable an extension with `pluginkit`.
+
 Packaging uses an isolated temporary directory under `build/package-work.noindex`
 and removes its app/extension registrations and build products when it finishes
 or fails. The final DMG and checksum remain in `build/`. `make build` still keeps

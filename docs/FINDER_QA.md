@@ -322,11 +322,14 @@ This fixture does not prove that Finder has loaded the new extension.
   remain Downloads. Default settings must show menus for the dynamically resolved
   home background and files, including after upgrading the old three-folder defaults.
 - Background and file context menus within monitored folders show New File under
-  its own submenu by default; its root entry has the FileMint logo and action rows
-  are text-only. Switch its location to the main menu and verify New File…,
-  New File from Clipboard, Paste Image as File and each enabled type appear directly, once and in template
-  order; switch back and relaunch to check persistence. Other apps may contribute
-  similarly named menus.
+  its own submenu by default, with the configured root/action/template icons.
+  Independently place New File… in Main menu, New File from Clipboard in Hidden,
+  and Paste Image as File in Submenu. Place one enabled template in Main menu,
+  another in Hidden and a third in Submenu. Confirm each visible entry appears
+  once, in contract order, and hidden templates remain enabled in the app.
+  Restore the original placements and relaunch to check persistence. Also hide
+  every creation entry: the empty root must disappear while other modules remain.
+  Other apps may contribute similarly named menus.
 - Verify each quick action creates on disk, then verify automatic name increments.
 - Create at least three files consecutively from fresh context menus. After each
   completed creation/reveal, right-click again and confirm FileMint is still
@@ -386,3 +389,11 @@ This fixture does not prove that Finder has loaded the new extension.
   hidden, reopening from Applications or Spotlight must still open settings.
 - When automating this check, do not treat an inspection tool's explicit app
   reopen as part of the Finder URL action. Observe the URL and reopen separately.
+  After Quit, check process inventory instead of reading the exited app's UI.
+  After closing the last window, do not query that app's accessibility tree to
+  prove it stayed closed: the tool may issue a reopen or report a stale-process
+  LaunchServices error. Observe window/Dock state without reopening FileMint;
+  if that observation is unavailable, mark that part unverified. After replacing
+  an installed bundle, discard old computer-use bindings before an explicit app
+  launch. A macOS "cannot be opened again" alert is an automation failure to
+  investigate, never an expected FileMint permission prompt or a passed check.

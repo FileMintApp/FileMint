@@ -1,7 +1,7 @@
 # Issue #8：设置与 Finder 菜单改进方案
 
 Status: in-progress
-Next action: 审核 T2 两处回归的修复结果；本轮离线验证与未签名 App/Finder 构建通过，安装版 Finder 菜单及 macOS 13/14 验收仍待补充。T6 全部暂缓。
+Next action: 本机 Debug 已安装并补充真实 Finder 混合菜单、连续新建、模板编辑及图片处理证据；继续按需要补充剩余原生场景与 macOS 13/14。无窗口检查工具的重新打开行为已从产品验收中分离。T6 全部暂缓。
 
 ## 目标与范围
 
@@ -403,7 +403,7 @@ Finder 扩展未启用的真实状态指引仍保留，与 FDA 帮助区别呈�
 | 本批 App / Finder 构建 | passed | `CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO make build`，macOS 27.2 arm64，主程序和扩展未签名 Release 构建通过。未修改生产沙箱或权限配置。 |
 | 本批隔离原生模型与布局 | passed | 现有 design-ui QA 身份；`--check-settings --templates --long-templates` 使用独立数据验证文本/Office 编辑、停用状态、复制/恢复/删除、忙时保护与保存失败回滚；9 页 × 中英文两组尺寸/外观共 18 张原生视图捕获。 |
 | 模板滚动与交互复查 | passed | 本机 QA 的 178 项列表可连续滚至末段，双击第 158 个附加模板打开对应草稿，编辑面板保留图标配置；保存隐藏位置后列表同步且启用不变。另观察到双击进入、Escape 取消不提交及分体菜单的两个剪贴板入口。未量化帧率或完成 VoiceOver 全流程验收。 |
-| 安装版 Finder / 支持系统 | not-run | 未安装或启用新的 Finder 扩展；真实混合菜单连续打开、macOS 13/14 原生行为尚未验证，Core 分组和本机 QA 不能代替。 |
+| 安装版 Finder / 支持系统 | partial | 2026-10-12 本机 Debug 安装版的混合菜单、连续新建与取消已补充真实证据，最终扩展经系统管理界面刷新后恢复；macOS 13/14 与剩余原生场景仍未验证。见下方本机安装版验收。 |
 
 原型可编辑源位于本对话的可视化目录：
 `/Users/daigua/.codex/visualizations/2026/10/10/01a124af-2a1b-7c83-80bd-57a43ed50b59/filemint-settings-review.html`。
@@ -427,6 +427,13 @@ Finder 扩展未启用的真实状态指引仍保留，与 FDA 帮助区别呈�
 - T6、签名配置与权限处理未修改；未提交、推送或发布。
 
 ## Handoff
+
+### 本机安装版验收（2026-10-12）
+
+- 用户授权本地 Debug 构建、安装、真实 App 验收及修复实际问题；基于 `14c825f`，同 Developer ID 的正式包标识安装到 `/Applications/FileMint.app`，保留生产沙箱，旧包以 ZIP 备份。
+- 真实 Finder 独立动作/模板的混合层级和隐藏配置、连续三次一键新建递增、原文落盘、模板双击与取消、资源 Finder 开关关闭时的 App 入口及压缩/转换/缩放通过。模板与授权等原有用户设置已恢复。
+- 临时启动事件诊断确认：读取已退出或无窗口的 App 会触发检查工具的 LaunchServices 错误或额外 reopen。已修正验收流程并移除临时诊断代码；这类工具结果不作为产品启动缺陷。完整边界和日志见 [本次验收记录](../ACCEPTANCE.md#installed-debug-and-finder-acceptance--2026-10-12)。
+- macOS 13/14、桌面墙纸、全隐藏组合、完整 VoiceOver、剩余图片动作及批次取消等仍未验证；T6、更新、公证和公开发布未纳入此次验收。
 
 - T1–T5 已获实施授权，对应领域契约随实现更新；T3 确定为分体新建按钮，T6 全部暂缓。
 - 保持六个子任务；T6 的三阶段与四项审核补充仍仅为规划。实施反馈已纳入 T2：列表移除图标编辑按钮，编辑面板保留；单行悬停状态与统一默认标记计算用于减少滚动开销。
