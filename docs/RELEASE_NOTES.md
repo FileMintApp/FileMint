@@ -24,6 +24,11 @@
 
 The stable installer supports M-series Macs running macOS 13 or later and contains no Intel code. Upgrade through **About → Check for Updates → Update and Restart**, or install the DMG manually. Existing templates, application choices, folder grants and feature settings are retained; creation-menu migration preserves the previous menu level. Versions 0.5.7/0.5.8 still require one manual installation of 0.5.9 or later.
 
+## 关联问题 / Related issues
+
+- [#8：设置布局一致性与 Finder 菜单项按需隐藏](https://github.com/FileMintApp/FileMint/issues/8)
+- [#7：压缩后的图片体积比原始文件还大](https://github.com/FileMintApp/FileMint/issues/7)
+
 # FileMint 0.6.8
 
 ## 修复与改进

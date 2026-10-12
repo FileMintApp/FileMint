@@ -25,6 +25,7 @@ Next action: None for standard publication. Full installed DMG/ZIP update accept
 - Committed release preparation as `318ee90f217b4c254c23d1a78553b79047afa118` and created/pushed `v0.7.0` at that source commit.
 - `make release-local` and `make publish-local` completed successfully. The same six-asset draft passed all required remote checks before promotion; website deployment reused artifact `11723719802` afterward.
 - Stable Latest became public at **2026-10-12 11:00:06 Asia/Shanghai**. Release ID: `410098527`; [public release](https://github.com/FileMintApp/FileMint/releases/tag/v0.7.0).
+- At the owner's request, associated Issues #8 and #7 in both the local and public 0.7.0 release notes, posted Simplified Chinese release/implementation follow-ups, and closed both as `completed`. Issue #8's comment describes the shipped layout/menu scope and retains the existing authorization boundaries; it does not claim the deferred permissions work shipped.
 
 ## Evidence
 
@@ -46,6 +47,7 @@ Local manifests/logs: `build/FileMint-0.7.0.release.json`, `build/FileMint-0.7.0
 | Public stable Latest | passed | Release `410098527` is public, stable and Latest. All six asset IDs/names/sizes match the journal. [Publication log](../../build/release-0.7.0.noindex/publish-local.log), [journal](../../build/FileMint-0.7.0.publication.json), [public metadata](../../build/release-0.7.0.noindex/published-release.json). |
 | Website deployment | passed | [Run 38198021071](https://github.com/FileMintApp/FileMint/actions/runs/38198021071), request `adfb210084ba41e797e188abe421da7b`; deployed the verified build after publication. [Website](https://filemintapp.github.io/FileMint/). |
 | Live website copy | passed | HTTP reads of both public homepages contain 0.7.0 and its final release link; retained as `site-zh.html` and `site-en.html` in the local evidence directory. |
+| Resolved-issue association and closure | passed | [#8 follow-up](https://github.com/FileMintApp/FileMint/issues/8#issuecomment-6117041818), closed at 11:09:41; [#7 follow-up](https://github.com/FileMintApp/FileMint/issues/7#issuecomment-6117047463), closed at 11:10:20 on 2026-10-12 Asia/Shanghai. REST readback confirmed `closed`/`completed` and one matching follow-up each. Release-note readback confirmed both links and unchanged asset records. Local evidence: `build/release-0.7.0.noindex/issue-followup/evidence.json`. |
 | Native ZIP/legacy DMG update acceptance | not-run | This standard release run did not replace/launch the installed production app. The full FileMint old-DMG/new-ZIP runtime check from the ZIP compatibility task remains pending; historical minimal-host replacement and current artifact/CI checks do not prove it or installed Finder refresh. |
 | Local remote-asset byte/hash comparison | not-run | Omitted under the current publication policy. Remote candidate validation and public metadata identity checks passed; no local/remote content equality claim. |
 
