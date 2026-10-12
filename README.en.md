@@ -10,11 +10,13 @@ Creating a file should not require opening an editor, choosing Save As and findi
 FileMint puts the action back in Finder: **right-click, choose a type and your file is there.**
 When you need a name, starter content, image processing or selected-item tools, the same native workflow continues.
 
-## What's new in 0.6.8
+<!-- #region release -->
+## What's new in 0.7.0
 
-Fixes incorrect rejection of configured applications after creation. Selected applications open the new file directly, while default opening follows the current macOS file association. Opening failures preserve the file and show the appropriate recovery message; retries do not create duplicate files. Existing templates, application choices and feature settings are retained. The stable installer supports M-series Macs on macOS 13+; Intel users should stay on a compatible earlier release.
+Choose the Finder main menu, submenu or Hidden separately for creation actions and each template. Finder settings and bottom spacing are consistent across modules, and double-clicking a template opens its editor. Image compression adds local MozJPEG, PNG and TIFF encoding while preserving originals and showing actual output sizes. New clients use a ZIP update archive; the DMG feed remains available for older clients. Existing templates, folder grants and feature settings are retained. The stable installer supports M-series Macs on macOS 13+.
 
-[0.6.8 release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.6.8)
+[0.7.0 release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.7.0)
+<!-- #endregion release -->
 
 ## Recent features
 
@@ -28,7 +30,7 @@ Fixes incorrect rejection of configured applications after creation. Selected ap
 - **Word / Excel templates**: Create blank `.docx` and `.xlsx` files from built-in templates, or import your own documents and create independent copies with their formatting and content intact.
 - **Themes and settings**: General now offers Follow System, Light and Dark, with consistent control alignment and interaction styles.
 
-[Full release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.6.8)
+[Full release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.7.0)
 
 ## Why FileMint
 
@@ -65,16 +67,17 @@ The creation panel supports:
 - Automatic numbering for quick creation and confirmation before custom replacement.
 - Literal multiline text, Unicode, spaces and template-looking tokens.
 
-### 3. Six image Resource Tools
+### 3. Seven image Resource Tools
 
 Select an image in Finder and open Resource Tools, or choose a local image explicitly from the app:
 
 - **Convert Image**: JPEG, PNG, HEIC and TIFF.
-- **Compress Image**: system encoders, with originals kept unchanged.
+- **Compress Image**: MozJPEG for JPEG, lossless PNG / TIFF encoding and the system HEIC encoder. Keep originals and dimensions, save successful results and show actual sizes.
 - **Resize Image**: preserve proportions, batch resize and never enlarge the source.
 - **Generate Icons**: ICNS, ICO and PNG size sets.
 - **Stitch Images**: horizontal or vertical layouts with preview and ordering.
 - **Extract Text**: system OCR with editable, copyable and savable results.
+- **Remove Private Metadata**: Clear GPS, capture time and device metadata, then verify and save a separate copy while preserving the original.
 
 <p align="center">
   <img src="website/public/images/resource-tools-en.png" width="760" alt="FileMint Resource Tools page with six image actions">
@@ -134,7 +137,7 @@ Read the complete [privacy policy](PRIVACY.md).
 
 ## Install
 
-The 0.6.7 stable installer supports **M-series Macs on macOS 13+** only. Intel Macs cannot install or update to this version. Published installers through 0.5.10 keep their original compatibility.
+The 0.7.0 stable installer supports **M-series Macs on macOS 13+** only. Intel Macs cannot install or update to this version. Published installers through 0.5.10 keep their original compatibility.
 
 **Stable installers from 0.5.9 onward are Developer ID signed, Apple notarized and stapled.** First use still follows macOS prompts for Finder enablement and folder authorization.
 

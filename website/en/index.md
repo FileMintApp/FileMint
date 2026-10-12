@@ -18,10 +18,12 @@ hero:
 
 <p class="guide-entry">New to FileMint? Follow the <a href="./guide.html">user guide</a> to create your first file.</p>
 
+<!--@include: ../../README.en.md#release-->
+
 <div class="hero-proof" aria-label="FileMint product facts">
   <span><strong>Swift + AppKit</strong> native app</span>
   <span><strong>Small footprint</strong> no web runtime</span>
-  <span><strong>6</strong> image tools in the stable release</span>
+  <span><strong>7</strong> image tools in the stable release</span>
   <span>Local processing, no remote detour</span>
 </div>
 
@@ -151,12 +153,12 @@ hero:
 <section id="resources" class="landing-section landing-section--tint">
   <p class="section-kicker">05 / RESOURCE TOOLS</p>
   <h2>Image work, next to the selected files.</h2>
-  <p class="section-intro">Select images, choose Resource Tools from Finder, or start from the FileMint app. The six tools in the stable release work locally, even with Finder menu integration off. Preview first, then choose parameters and output.</p>
+  <p class="section-intro">Select images, choose Resource Tools from Finder, or start from the FileMint app. Seven image tools work locally, even with Finder menu integration off. Originals stay intact; you choose processing options and output.</p>
 
   <div class="visual-grid visual-grid--wide">
     <figure class="screen-card screen-card--panel">
       <div class="screen-window"><img width="1800" height="1300" loading="lazy" decoding="async" src="/images/resource-tools-en.jpg" alt="FileMint Resource Tools page with six image actions"></div>
-      <figcaption>Stable release interface example · Six local image tools. Originals stay intact; results are saved separately.</figcaption>
+      <figcaption>Interface example · Six tools are shown here; Remove Private Metadata is also available. Originals stay intact; results are saved separately.</figcaption>
     </figure>
     <div class="copy-stack">
       <div class="mini-label">SIX SMALL TOOLS, ONE NATIVE SURFACE</div>

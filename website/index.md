@@ -18,10 +18,12 @@ hero:
 
 <p class="guide-entry">第一次使用？从 <a href="./guide.html">使用指南</a> 开始，跟着步骤完成第一份文件。</p>
 
+<!--@include: ../README.md#release-->
+
 <div class="hero-proof" aria-label="FileMint product facts">
   <span><strong>Swift + AppKit</strong> 原生应用</span>
   <span><strong>小体积</strong> 无网页运行时</span>
-  <span><strong>6</strong> 个正式版图片工具</span>
+  <span><strong>7</strong> 个正式版图片工具</span>
   <span>本地处理，不绕远程服务</span>
 </div>
 
@@ -151,19 +153,19 @@ hero:
 <section id="resources" class="landing-section landing-section--tint">
   <p class="section-kicker">05 / RESOURCE TOOLS</p>
   <h2>图片处理，也回到你选中的文件旁边。</h2>
-  <p class="section-intro">从主应用选择图片，或启用 Finder 菜单后在选中的图片旁直接开始。正式版的六个工具都在本机处理，先看预览，再确定参数和输出位置。</p>
+  <p class="section-intro">从主应用选择图片，或启用 Finder 菜单后在选中的图片旁直接开始。七个图片工具都在本机处理，原图保留；处理参数和输出位置由你选择。</p>
 
   <div class="visual-grid visual-grid--wide">
     <figure class="screen-card screen-card--panel">
       <div class="screen-window"><img width="1800" height="1300" loading="lazy" decoding="async" src="/images/resource-tools-zh.jpg" alt="FileMint 资源工具页面，显示六个图片处理工具"></div>
-      <figcaption>正式版界面示例 · 六个本地图片工具，原图保留，输出单独保存。</figcaption>
+      <figcaption>界面示例 · 图中展示六项工具，另有移除隐私元数据。原图保留，输出单独保存。</figcaption>
     </figure>
     <div class="copy-stack">
       <div class="mini-label">SIX SMALL TOOLS, ONE NATIVE SURFACE</div>
       <h3>把重复的图片小事一次收好</h3>
       <ul class="benefit-list">
         <li><strong>转换图片格式</strong>：JPEG、PNG、HEIC、TIFF</li>
-        <li><strong>压缩与调整尺寸</strong>：保留比例，批量处理，不放大原图</li>
+        <li><strong>压缩与调整尺寸</strong>：JPEG 使用 MozJPEG，PNG / TIFF 无损压缩；缩放保留比例，不放大原图</li>
         <li><strong>生成图标</strong>：ICNS、ICO 与多尺寸 PNG</li>
         <li><strong>拼接图片与 OCR</strong>：排序、预览，识别后还能编辑文字</li>
       </ul>

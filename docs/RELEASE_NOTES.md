@@ -1,3 +1,29 @@
+# FileMint 0.7.0
+
+## 新功能与改进
+
+- **独立配置新建菜单位置**：为“新建文件…”、从剪贴板新建、图片粘贴为文件以及每个模板分别选择一级菜单、子菜单或隐藏。模板启用状态与菜单位置分别保存，升级后沿用原有菜单层级。
+- **统一 Finder 设置**：创建、文件工具、资源工具、使用 App 打开与常用文件（夹）页面优先展示 Finder 菜单设置，统一控件对齐和底部间距。资源工具的 Finder 开关关闭时，仍可从主应用使用图片工具。
+- **模板操作更直接**：新建按钮提供文本与剪贴板入口，双击模板进入编辑。模板列表保留默认标记、菜单位置与停用状态；编辑面板继续提供图标配置。
+- **新的图片压缩引擎**：JPEG 使用 MozJPEG，PNG 与 TIFF 使用无损编码，HEIC 继续使用系统编码器。保留原图和尺寸，显示实际输出大小；成功编码的结果即使变大也会保存，质量设置不代表目标体积百分比。
+- **ZIP 在线更新包**：新增签名、公证的 ZIP 包供新版更新器使用，同时保留 DMG、校验文件和旧版更新源，支持已有客户端直接升级及跨版本升级。
+
+## 系统要求与升级
+
+正式安装包支持 macOS 13 或更新版本的 M 系列 Mac，不含 Intel 代码。可通过“关于 → 检查更新 → 更新并重启”升级，也可下载 DMG 手动安装。已有模板、应用选择、文件夹授权和开关设置保留；新建菜单迁移沿用原有层级。0.5.7/0.5.8 用户仍需手动安装 0.5.9 或更新版本一次。
+
+## New features and improvements
+
+- **Individual creation-menu placement**: Choose the main menu, submenu or Hidden separately for New File, New File from Clipboard, Paste Image as File and each template. Template enablement and menu placement are stored separately; upgrades retain the previous menu level.
+- **Consistent Finder settings**: Creation, File & Folder Tools, Resource Tools, Open with App and Favorite Locations put Finder menu settings first, with aligned controls and consistent bottom spacing. Image tools remain available in the app when their Finder integration is off.
+- **Direct template actions**: The New File split button provides text and clipboard entry points. Double-click a template to edit it. The list retains default markers, menu placement and disabled states; icon configuration remains in the editor.
+- **Dedicated image compression**: JPEG uses MozJPEG, PNG and TIFF use lossless encoding, and HEIC keeps the system encoder. Originals and dimensions are preserved, with actual output sizes shown. Every successful encoding is saved, including larger results; quality is not a target-size percentage.
+- **ZIP online-update archive**: Add a signed, notarized ZIP for new clients while retaining the DMG, checksums and legacy feed so existing clients can upgrade directly, including across skipped versions.
+
+## System requirements and upgrading
+
+The stable installer supports M-series Macs running macOS 13 or later and contains no Intel code. Upgrade through **About → Check for Updates → Update and Restart**, or install the DMG manually. Existing templates, application choices, folder grants and feature settings are retained; creation-menu migration preserves the previous menu level. Versions 0.5.7/0.5.8 still require one manual installation of 0.5.9 or later.
+
 # FileMint 0.6.8
 
 ## 修复与改进
