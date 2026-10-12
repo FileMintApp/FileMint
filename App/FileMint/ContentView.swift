@@ -30,7 +30,10 @@ struct ContentView: View {
                         .font(.system(size: 12)).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }.frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 30).padding(.top, 28).padding(.bottom, 23)
-                page.padding(.horizontal, 30).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                page
+                    .padding(.horizontal, 30)
+                    .padding(.bottom, 30)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 if let error = model.lastError {
                     Text(error).foregroundStyle(.red).font(.callout).textSelection(.enabled)
                         .padding([.horizontal, .bottom], 28)

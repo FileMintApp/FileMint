@@ -3,6 +3,24 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Settings bottom spacing — 2026-10-12
+
+Tested primary checkout `a8de2a5d312a4c1981e0ffe63f0c56f62471a995` plus the
+uncommitted shared 30-point settings bottom inset, on macOS 27.2 arm64 / Xcode 27.0.
+Unsigned app build and context checks passed. The isolated Design UI fixture
+produced 18 inspected native view-cache captures: all nine pages in Chinese/light
+at 1040×720 and English/dark at 960×680. Live minimum-size checks visited every
+page and scrolled available content to the end; observed Templates & Types,
+General, File & Folder Tools and Resource Tools kept their lower content/actions
+clear of the window edge. Production installation, macOS 13/14 and full
+VoiceOver acceptance were not run.
+
+[Verification and limits](../build/settings-spacing-qa.noindex/verification.md),
+[build log](../build/settings-spacing-qa.noindex/build.log),
+[UI capture log](../build/settings-spacing-qa.noindex/ui-captures.log),
+[Chinese/light captures](../build/settings-spacing-qa.noindex/zh-Hans-settings-contact-sheet.png),
+[English/dark captures](../build/settings-spacing-qa.noindex/en-settings-contact-sheet.png).
+
 ## Installed Debug and Finder acceptance — 2026-10-12
 
 Overall status: **partial; native acceptance is incomplete**. Only the listed

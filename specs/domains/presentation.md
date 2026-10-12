@@ -57,8 +57,10 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - Use a 1040 × 720 initial content size and a 960 × 680 minimum where the display
   permits. Clamp to the screen's visible content area on small displays and keep
   the page scrollable without clipped controls. The creation panel size stays compact.
-  With scrolling
-  for long content. Sidebar labels, focus/selection and controls remain readable
+  Settings detail pages share a 30-point bottom inset outside their scroll or
+  list area, keeping content and bottom actions clear of the window edge even
+  when long content is scrolled to the end.
+  Sidebar labels, focus/selection and controls remain readable
   in English/Chinese and system light/dark appearances. Native keyboard and
   accessibility labels must remain available; icons supplement text, not replace it.
 - Sidebar navigation uses a continuous background and a subdued mint selection

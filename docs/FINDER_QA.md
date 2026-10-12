@@ -49,6 +49,10 @@ Record actual results in ACCEPTANCE.md.
 - Navigate General, Creation, Templates & Types, Finder & Folders and About
   using the sidebar and Up/Down keys. Verify selection and keyboard focus remain
   distinguishable in light/dark mode, without a bright solid selection block.
+- At 1040×720 and 960×680, inspect every settings page in both languages and
+  appearances. Scroll long pages to the end and confirm the shared 30-point
+  bottom inset remains visible, including below the Templates & Types actions;
+  lower controls remain reachable and unclipped.
 - At the 840×600 minimum content size, check both languages, list actions, editor
   sheets and scrolling of the expanded Full Disk Access guide. New File remains
   accessible from each page. About menu commands reuse the same settings window.
