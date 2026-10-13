@@ -7,14 +7,10 @@ description: FileMint's local-first privacy promise.
 
 FileMint creates files, stores document templates and processes images locally. It does not require an account or collect usage analytics.
 
-## Data boundaries for the 0.6.2 features
+## Data access you initiate
 
 - **New File from Clipboard** reads plain text once only when you explicitly choose the action. It does not monitor the clipboard or save a file automatically.
 - **Open the current folder with an app** passes only Finder's captured, authorized directory to a local app you configured. The terminal controls what it does afterward.
-
-## Data boundaries for the 0.6.1 features
-
-These notes describe features included in the FileMint 0.6.1 stable release:
 
 - **Favorite Locations** stores bookmarks and display details only for local items you add. It does not crawl folders or read file contents.
 - **Remove Private Metadata** processes only local images you choose and writes a new copy after a readback check. Images are not uploaded and the original stays unchanged.
@@ -33,5 +29,7 @@ These notes describe features included in the FileMint 0.6.1 stable release:
 ## When it uses the network
 
 The main app uses GitHub to check for and retrieve updates. Automatic checks are enabled by default and can be disabled in General. They run only while FileMint is running, at most once every 7 days, and fetch release metadata only. Manual checks are also available. Downloading, installing and relaunching require you to choose Update and Restart; there are no automatic background downloads. The Finder extension stays offline.
+
+When a website page opens, it requests the latest stable release metadata from GitHub’s public API to display the version and download link. This request does not read your local files or send account credentials.
 
 Read the complete [privacy policy on GitHub](https://github.com/FileMintApp/FileMint/blob/main/PRIVACY.md).

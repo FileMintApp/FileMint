@@ -51,13 +51,11 @@ export default defineConfig({
       themeConfig: {
         outline: { level: 'deep', label: '本页目录' },
         nav: [
-          { text: '功能', link: '/#finder' },
-          { text: '为什么是 FileMint', link: '/#privacy' },
-          { text: '未来规划', link: '/#roadmap' },
-          { text: '安装', link: '/install' },
+          { text: '功能', link: '/#features' },
+          { text: '设计理念', link: '/#privacy' },
           { text: '使用指南', link: '/guide' },
-          { text: '隐私', link: '/privacy' },
-          { text: 'GitHub', link: repository }
+          { text: '更新记录', link: `${repository}/releases` },
+          { text: '下载', link: '/#download' }
         ],
         footer: {
           message: '个人及非商业使用免费；商业使用须获得授权或单独购买商业许可。',
@@ -73,13 +71,11 @@ export default defineConfig({
       description: 'Create files from text and Office templates, open your apps and process images locally from Finder.',
       themeConfig: {
         nav: [
-          { text: 'Features', link: '/en/#finder' },
-          { text: 'Why FileMint', link: '/en/#privacy' },
-          { text: 'Roadmap', link: '/en/#roadmap' },
-          { text: 'Install', link: '/en/install' },
+          { text: 'Features', link: '/en/#features' },
+          { text: 'Our approach', link: '/en/#privacy' },
           { text: 'User Guide', link: '/en/guide' },
-          { text: 'Privacy', link: '/en/privacy' },
-          { text: 'GitHub', link: repository }
+          { text: 'Releases', link: `${repository}/releases` },
+          { text: 'Download', link: '/en/#download' }
         ],
         footer: {
           message: 'Free for personal and non-commercial use. Commercial use requires authorization.',
@@ -89,6 +85,7 @@ export default defineConfig({
     }
   },
   themeConfig: {
+    search: { provider: 'local', options: { locales: { root: { translations: { button: { buttonText: '搜索指南', buttonAriaLabel: '搜索指南' }, modal: { noResultsText: '没有找到相关内容', resetButtonTitle: '清除搜索', footer: { selectText: '选择', navigateText: '切换', closeText: '关闭' } } } } } } },
     logo: { src: '/filemint-icon.png', alt: 'FileMint' },
     siteTitle: 'FileMint',
     socialLinks: [{ icon: 'github', link: repository }],

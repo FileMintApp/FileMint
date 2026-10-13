@@ -1,0 +1,66 @@
+name: Deploy website-only update
+run-name: FileMint website deploy ${{ inputs.commit }}
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: Current main commit containing the website update
+        required: true
+        type: string
+      build_run_id:
+        description: Successful main-push Build FileMint website run
+        required: true
+        type: string
+      artifact_id:
+        description: Exact unexpired github-pages artifact from that run
+        required: true
+        type: string
+      release_id:
+        description: Current published stable Latest application Release ID
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+      - name: Verify website-only source and fetch the successful build
+        id: candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SITE_COMMIT: ${{ inputs.commit }}
+          SITE_BUILD_RUN_ID: ${{ inputs.build_run_id }}
+          SITE_ARTIFACT_ID: ${{ inputs.artifact_id }}
+          SITE_RELEASE_ID: ${{ inputs.release_id }}
+        run: node website/scripts/prepare-deployment.mjs
+      - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+        with:
+          enablement: true
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: github-pages
+          path: ${{ steps.candidate.outputs.archive }}
+          if-no-files-found: error
+      - name: Deploy the verified website without rebuilding
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4

@@ -343,3 +343,29 @@ administrator authorization. A readonly mounted DMG cannot update in place.
 - [Apple: Finder Sync](https://developer.apple.com/library/archive/documentation/General/Conceptual/ExtensibilityPG/Finder.html)
 - [Apple: notarizing macOS software](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution)
 - [GitHub: artifact attestations](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/use-artifact-attestations)
+
+
+## Website-only updates
+
+For an explicitly requested website redesign or documentation update after the
+application is already public, use `deploy-website.yml`. This is independent of
+`publish-local` and does not create an application release or move any tag.
+
+1. Commit and push the reviewed website changes to `main`.
+2. Wait for **Build FileMint website** for that exact push to succeed. Its build
+   runs the website's release-data and deployment-policy regression tests.
+3. Read the current public stable Release ID, the successful build run ID and
+   its unique, unexpired `github-pages` artifact ID from GitHub.
+4. Dispatch **Deploy website-only update** on `main` with `commit`,
+   `build_run_id`, `artifact_id` and `release_id` set to those exact identities.
+5. Wait for deployment success, then inspect both live homepages and live
+   latest-release discovery. Record the commit, build and deployment run URLs.
+
+The workflow checks current main, ancestry and a website/documentation-only diff
+from the public stable tag. App/Core/Finder/build configuration changes are
+rejected. It checks the exact successful main-push build and artifact before and
+after fetching the archive, then deploys that retained archive without rebuilding.
+Both website deployment paths share the `pages` concurrency group. An expired
+artifact requires a successful rerun of the exact build; a moved main or latest
+Release requires a new identity review. Application publication still follows the
+release-bound procedure above.

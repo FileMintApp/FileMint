@@ -6,7 +6,7 @@ pageClass: guide-page
 
 # FileMint 使用指南
 
-跟着下面的步骤，先在 Finder 创建一份文件，再按需要开启其他功能。尚未安装？先看[安装指引](./install)。截图中的文件、应用和开关仅用于演示，你的初始设置可能不同。
+跟着下面的步骤，先在 Finder 创建一份文件，再按需要开启其他功能。尚未安装？先看[安装指引](./install)。截图中的文件、应用和开关仅用于演示，你的初始设置可能不同；界面可能随版本更新。
 
 ## 先完成首次设置
 
@@ -91,42 +91,38 @@ pageClass: guide-page
 
 在主应用打开“扩展功能 → 资源工具 → 使用工具”，选择本地图片即可开始，无需启用 Finder 菜单。若想从 Finder 右键启动，在同页“Finder 菜单设置”中开启资源工具总开关和需要的动作，再选中图片右键操作；这个总开关默认关闭。
 
-![资源工具页面，显示格式转换、压缩、调整尺寸、图标、拼接和文字提取六项操作](/images/resource-tools-zh.jpg)
+![资源工具页面，显示格式转换、压缩、调整尺寸、图标、拼接和文字提取等操作](/images/resource-tools-zh.jpg)
 
 <p class="guide-caption">“使用工具”用于主应用内操作；Finder 菜单可单独开启。</p>
 
 可转换 JPEG、PNG、HEIC、TIFF，压缩或调整尺寸，生成图标，拼接至少两张图片，或用 OCR 提取文字。处理面板会先显示预览和输出位置；选好参数后再执行。原图保持不变，结果保存为新文件。OCR 结果可以编辑，再由你选择拷贝或保存为 TXT。
 
-## 0.6.1 新增功能
+## 切换 Finder 隐藏项目
 
-以下操作均包含在 FileMint 0.6.1 正式版中；配图来自正式包实际运行的界面。
+![FileMint Finder 与文件夹设置页的隐藏项目切换界面](/images/finder-hidden-items-zh.jpg)
 
-### 切换 Finder 隐藏项目
-
-![FileMint 0.6.1 Finder 与文件夹设置页的隐藏项目切换界面](/images/finder-hidden-items-zh.jpg)
-
-<p class="guide-caption">FileMint 0.6.1 正式版截图。实际显示状态由 Finder 控制。</p>
+<p class="guide-caption">界面示例。实际显示状态由 Finder 控制。</p>
 
 1. 打开 FileMint 的“Finder 与文件夹”页面，找到 Finder 显示设置；也可使用菜单栏中的 FileMint 命令。
 2. 由你点按“切换”后，首次使用会引导你前往 macOS“系统设置 → 隐私与安全性 → 辅助功能”授权 FileMint。
 3. 授权后回到 FileMint，再明确点按一次“切换”。应用不会在你离开系统设置后自动切换，也不会保存或显示猜测的 Finder 当前状态。无法使用时可在 Finder 中手动按 `⌘⇧.`。
 
-### 保存和查找常用文件（夹）
+## 保存和查找常用文件（夹）
 
-![FileMint 0.6.1 常用文件（夹）管理页](/images/favorite-locations-zh.jpg)
+![FileMint 常用文件（夹）管理页](/images/favorite-locations-zh.jpg)
 
-<p class="guide-caption">FileMint 0.6.1 正式版截图。只保存你主动添加的项目，不会扫描文件夹。</p>
+<p class="guide-caption">界面示例。只保存你主动添加的项目，不会扫描文件夹。</p>
 
 1. 打开“扩展功能 → 常用文件（夹）”，选择“添加文件或文件夹…”，也可以把项目拖到列表中。
 2. 在已配置的 Finder 文件夹内，选中文件或文件夹后右键选择“加入常用文件（夹）”。这不会扩大 Finder 菜单的授权范围。
 3. 按名称、路径或分组搜索；需要时固定常用项或批量调整分组。Finder 菜单只显示最多 6 个固定项和 4 个最近定位项，再提供“搜索全部”。
 4. “定位”会在 Finder 中打开文件夹，或打开文件所在位置并选中文件；“打开文件”是单独的操作。
 
-### 移除图片隐私元数据
+## 移除图片隐私元数据
 
-![FileMint 0.6.1 资源工具中的移除隐私元数据入口](/images/remove-private-metadata-zh.jpg)
+![FileMint 资源工具中的移除隐私元数据入口](/images/remove-private-metadata-zh.jpg)
 
-<p class="guide-caption">FileMint 0.6.1 正式版截图。原图不会被覆盖；结果另存为带 `-clean` 后缀的副本。</p>
+<p class="guide-caption">界面示例。原图不会被覆盖；结果另存为带 `-clean` 后缀的副本。</p>
 
 在“资源工具 → 使用工具”中明确选择本地图片，或在 Finder 已启用资源工具后选中图片并使用“移除隐私元数据”。Finder 菜单项本身就是开始处理的操作。它会清理定位、拍摄时间、相机标识、IPTC、XMP 和其他文本元数据。当前目标格式为 JPEG、PNG、TIFF 和系统支持的普通单图 HEIC；超出支持范围或校验失败时不会生成“已清理”副本。重新编码可能改变文件大小或颜色。文件名和画面中可见的信息不会被移除。
 

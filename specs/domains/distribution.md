@@ -49,6 +49,13 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   enablement remains a separate system action.
 - CI and website-deployment workflows pin third-party GitHub Actions to reviewed
   commit IDs. Dependency lockfiles remain frozen during website builds.
+- Website-only deployments use an explicit manual `deploy-website.yml` dispatch,
+  serialized with release website deployments. Validate current main, ancestry
+  and an allowlisted website/documentation-only diff from the latest public
+  stable release, plus the exact successful main-push website run and unexpired
+  artifact ID. The published release identity is checked independently of the
+  newer website commit. Deploy the retained artifact without rebuilding or
+  modifying releases. The existing release-bound deployment gates are unchanged.
 - Source CI runs the complete offline `make verify` suite on the standard arm64
   `macos-15` and `macos-26` runners. Both environments must pass; a failure in
   one must not cancel the other. Keep the stable `Verify core behavior` check

@@ -11,6 +11,7 @@ on:
       - pnpm-lock.yaml
       - .github/workflows/build-pages.yml
       - .github/workflows/deploy-pages.yml
+      - .github/workflows/deploy-website.yml
   workflow_dispatch:
     inputs:
       request_id:

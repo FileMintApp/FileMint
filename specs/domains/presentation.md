@@ -152,10 +152,31 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 
 ## Product presentation
 
+- The bilingual website uses a workflow-led landing page: a real product capture,
+  selectable creation/image/app scenarios, a compact capability overview, local
+  processing facts, installation FAQ and a clear download action. Keep the mint
+  identity, readable mobile layouts, keyboard controls and reduced-motion support.
+  Guides and privacy pages describe capabilities without stale release banners;
+  historical compatibility and updater exceptions retain their actual versions.
+- Current-release labels come from the public GitHub `releases/latest` endpoint
+  for FileMintApp/FileMint at page load, never from project.yml, README release
+  includes or a hard-coded version. Accept only published, non-draft,
+  non-prerelease stable tags. Share one bounded request per page session; fetch
+  no credentials and render no remote HTML. On failure retain a working GitHub
+  latest-release link and a neutral Latest stable release label, without claiming
+  an unverified version. Site builds remain offline with respect to release data,
+  so pre-publication builds cannot bake an unpublished release into the page.
+
 - Release-related website changes are built before public Release availability
   and deployed afterward from that exact successful build artifact. A push can
   build the website but must not automatically deploy unpublished release copy.
   Website failures have a separate status from application publication.
+- An explicitly requested website-only update can deploy independently of an
+  App release, using the manual website deployment workflow. Its source must
+  be current main, descend from the latest public stable release and contain
+  only website/documentation changes since that release. Reuse the exact
+  successful main-push Pages artifact, with validated run and artifact IDs.
+  This path never creates or changes application releases, tags or assets.
 - Website homepages present the current creation, text/Office templates,
   clipboard-image creation, Open with App, file tools, image tools and appearance
   choices in both languages. Use real app captures with matching-language captions;

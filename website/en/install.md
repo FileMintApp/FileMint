@@ -5,7 +5,9 @@ description: Install and enable FileMint on macOS.
 
 # Install FileMint
 
-The 0.6.0 stable installer supports **M-series Macs on macOS 13+** only and contains no Intel code. Intel Macs cannot install or update to 0.6.0; published installers through 0.5.10 keep their original compatibility.
+<LatestRelease lang="en" />
+
+The current stable release supports **M-series Macs on macOS 13+** and contains no Intel code. Intel support ended with 0.6.0; published installers through 0.5.10 keep their original compatibility.
 
 Stable installers from 0.5.9 onward are Developer ID signed, Apple notarized and stapled.
 
@@ -53,8 +55,9 @@ File & Folder Tools is off by default. Once enabled, select one or more local fi
 
 Open **Extensions → Resource Tools → Use Tools** to choose images directly in the app, even with Finder integration off. To start from Finder, enable the default-off module and the actions you need under **Finder Menu Settings**.
 
-- Convert formats, compress, resize, generate ICNS/ICO/PNG icon sets, stitch images and extract editable text with OCR.
-- The panel shows a preview and output location before processing; originals stay unchanged and outputs are sibling copies or go to a folder you explicitly choose.
+- Seven actions cover format conversion, compression, resizing, ICNS/ICO/PNG icon generation, image stitching, editable text extraction with OCR and private metadata removal.
+- Conversion, compression and similar actions show a preview and output location before you run them. Private metadata removal starts when you confirm your image selection or choose its Finder menu item.
+- Originals stay unchanged. Image outputs are sibling copies or go to a folder you explicitly choose.
 - Images and OCR results stay local. FileMint does not upload them or keep a processing history.
 
 ## Appearance and language
@@ -65,7 +68,7 @@ Under **General → Appearance**, choose Follow System, Light or Dark, and selec
 
 Automatic update checks are enabled by default and can be disabled in **General**. While FileMint is running, it checks release metadata at most once every 7 days. Downloads and installation remain your choice; manual checks still work with automatic checks off.
 
-After installing 0.5.9, choose **About → Check for Updates → Update and Restart** for later releases. Finish creating or editing first; macOS may request administrator authorization.
+With 0.5.9 or later installed, choose **About → Check for Updates → Update and Restart** for later releases. Finish creating or editing first; macOS may request administrator authorization.
 
 When upgrading from 0.5.7/0.5.8, manually install 0.5.9 or later once. Those older versions have incorrect installer permissions that their own updater cannot repair:
 

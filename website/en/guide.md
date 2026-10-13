@@ -6,7 +6,7 @@ pageClass: guide-page
 
 # FileMint User Guide
 
-Start by creating one file in Finder, then turn on the other features as you need them. If FileMint is not installed yet, follow the [installation guide](./install). Screenshots show example files, apps and settings; your initial setup may differ.
+Start by creating one file in Finder, then turn on the other features as you need them. If FileMint is not installed yet, follow the [installation guide](./install). Screenshots show example files, apps and settings; your initial setup may differ and the interface may change between releases.
 
 ## Complete the first-time setup
 
@@ -93,36 +93,32 @@ In the app, open **Extensions → Resource Tools → Use Tools** and choose loca
 
 Convert between JPEG, PNG, HEIC and TIFF; compress or resize; generate icons; stitch at least two images; or extract text with OCR. The processing panel shows a preview and output location before you run an action. Originals stay unchanged and results are saved separately. You can edit OCR text, then explicitly copy it or save a TXT file.
 
-## New in FileMint 0.6.1
+## Toggle Finder hidden items
 
-These actions are included in the FileMint 0.6.1 stable installer. The screenshots below were captured from the official package.
+![FileMint Finder & Folders settings with the hidden-item toggle](/images/finder-hidden-items-en.jpg)
 
-### Toggle Finder hidden items
-
-![FileMint 0.6.1 Finder & Folders settings with the hidden-item toggle](/images/finder-hidden-items-en.jpg)
-
-<p class="guide-caption">FileMint 0.6.1 stable interface. Finder controls the actual hidden-item state.</p>
+<p class="guide-caption">Example interface. Finder controls the actual hidden-item state.</p>
 
 1. Open **Finder &amp; Folders** in FileMint and find Finder Display; you can also use the FileMint menu-bar command.
 2. Click **Toggle** yourself. On first use, FileMint directs you to **System Settings → Privacy &amp; Security → Accessibility** to authorize the app.
 3. Return to FileMint and click **Toggle** again. It does not switch automatically when you leave System Settings, and it does not store or guess Finder's current state. If the command is unavailable, use Finder's `⌘⇧.` shortcut.
 
-### Save and find Favorite Locations
+## Save and find Favorite Locations
 
-![FileMint 0.6.1 Favorite Locations manager](/images/favorite-locations-en.jpg)
+![FileMint Favorite Locations manager](/images/favorite-locations-en.jpg)
 
-<p class="guide-caption">FileMint 0.6.1 stable interface. Favorites include only items you add; folders are not crawled.</p>
+<p class="guide-caption">Example interface. Favorites include only items you add; folders are not crawled.</p>
 
 1. Open **Extensions → Favorite Locations** and choose **Add Files or Folders…**, or drop items onto the list.
 2. In a configured Finder folder, select a file or folder and choose **Add to Favorite Locations** from its context menu. This does not expand Finder's authorized scope.
 3. Search saved names, paths or groups; pin items or change groups in batches. Finder shows at most 6 pinned and 4 recently located items, followed by **Search All**.
 4. **Locate** opens a folder, or opens a file's parent and selects the file. **Open File** is a separate action.
 
-### Remove private image metadata
+## Remove private image metadata
 
-![FileMint 0.6.1 Resource Tools entry for Remove Private Metadata](/images/remove-private-metadata-en.jpg)
+![FileMint Resource Tools entry for Remove Private Metadata](/images/remove-private-metadata-en.jpg)
 
-<p class="guide-caption">FileMint 0.6.1 stable interface. The original stays untouched; the output is a separate `-clean` copy.</p>
+<p class="guide-caption">Example interface. The original stays untouched; the output is a separate `-clean` copy.</p>
 
 Choose local images in **Resource Tools → Use Tools**, or select images in Finder after enabling Resource Tools and choose **Remove Private Metadata**. The Finder menu item starts the job. It removes location, capture-time, camera, IPTC, XMP and other text metadata. Target formats are JPEG, PNG, TIFF and ordinary single-image HEIC when supported by the system. Unsupported files and failed readback checks do not produce a “clean” copy. Re-encoding can change size or color; filenames and information visible in the pixels are not removed.
 
