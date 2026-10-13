@@ -145,6 +145,10 @@ The 0.7.0 stable installer supports **M-series Macs on macOS 13+** only. Intel M
 2. Launch it, enable the Finder extension and authorize your working folders.
 3. Return to Finder and start creating or processing images.
 
+For a fresh installation, the [official FileMint Homebrew tap](https://github.com/FileMintApp/homebrew-tap)
+provides `brew install --cask filemintapp/tap/filemint`. Migration from a manual
+installation and Finder behavior after upgrade or removal still need isolated native acceptance; read the tap instructions first.
+
 After installing 0.5.9, use **About → Check for Updates → Update and Restart** for later releases. Finish creating or editing first; macOS may request administrator authorization.
 
 When upgrading from 0.5.7/0.5.8, manually install 0.5.9 or later once: quit FileMint, replace it in Applications, eject the installer volume and reopen it. Those older updaters cannot repair their own signed permissions.
@@ -184,7 +188,7 @@ These are unfinished directions only; the list changes with real use and feedbac
 
 ### Installation and distribution
 
-- [ ] **Homebrew installation** — A planned FileMint-maintained tap for installing and upgrading with brew; not yet implemented.
+- [ ] **Homebrew installation** — The official FileMint tap is public for fresh downloads; upgrade, migration and removal still need isolated native acceptance.
 
 </div>
 <!-- #endregion roadmap -->

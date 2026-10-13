@@ -32,6 +32,15 @@ class APIError(PublicationError):
         self.status = status
 
 
+def synchronize_homebrew(manifest_path):
+    """The helper verifies public evidence again; it never publishes an app release."""
+    result = subprocess.run([sys.executable, str(ROOT / "scripts/homebrew_tap.py"),
+                             "publish", "--manifest", str(manifest_path)],
+                            cwd=ROOT, timeout=1800)
+    if result.returncode:
+        raise PublicationError("Homebrew synchronization failed")
+
+
 def command(args, **kwargs):
     result = subprocess.run(args, cwd=ROOT, text=True, capture_output=True, timeout=120, **kwargs)
     if result.returncode:
@@ -196,6 +205,7 @@ class Publication:
         self.path = self.manifest_path.with_name(f"FileMint-{self.version}.publication.json")
         self.gh, self.clock, self.sleep = gh or GitHub(), clock, sleep
         self.public = False
+        self.homebrew_failed = False
         self.unknown = False
         self.observed = False
         self.timeout = int(os.environ.get("FILEMINT_ACTIONS_TIMEOUT_SECONDS", "2700"))
@@ -208,6 +218,11 @@ class Publication:
             "schemaVersion": 1, "candidate": self.manifest, "phase": "preparing", "requests": {}}
         if self.state.get("schemaVersion") != 1 or self.state.get("candidate") != self.manifest:
             raise PublicationError("Publication journal does not match this local candidate")
+        homebrew = os.environ.get("FILEMINT_HOMEBREW_SYNC", "0")
+        if homebrew not in ("0", "1"):
+            raise PublicationError("FILEMINT_HOMEBREW_SYNC must be 0 or 1")
+        if homebrew == "1":
+            self.state["homebrew_requested"] = True
         self.unknown = self.state.get("phase") == "publishing"
         self.public = self.state.get("phase") in ("published", "complete")
 
@@ -319,8 +334,33 @@ class Publication:
             command(["git", "fetch", "--no-tags", "origin", f"refs/tags/{tag}:refs/tags/{tag}"])
         return bool(command(["git", "diff", "--name-only", f"refs/tags/{tag}", self.commit, "--", *SITE_INPUTS]))
 
+    def homebrew(self):
+        if not self.state.get("homebrew_requested"):
+            return
+        self.state["homebrew"] = {"status": "running"}
+        self.save()
+        try:
+            synchronize_homebrew(self.manifest_path)
+        except (PublicationError, OSError, subprocess.SubprocessError, KeyboardInterrupt):
+            self.homebrew_failed = True
+            self.state["homebrew"] = {"status": "failed"}
+            self.save()
+            print("App release published and verified; Homebrew synchronization failed. "
+                  "Retry with: python3 scripts/homebrew_tap.py publish --manifest "
+                  f"build/FileMint-{self.version}.release.json", file=sys.stderr)
+            raise
+        self.state["homebrew"] = {"status": "succeeded"}
+        self.save()
+
     def run(self):
         was_complete = self.state.get("phase") == "complete"
+        distribution_complete = was_complete or self.state.get("distribution_complete") is True
+        if distribution_complete:
+            self.state["distribution_complete"] = True
+        if self.state.get("homebrew_requested") or distribution_complete:
+            # Preserve legacy completion before a failed public-status recheck can
+            # leave phase=published. A retry must not need expired Pages artifacts.
+            self.save()
         release = (self.gh.api(f"releases/{positive_id(self.state['release_id'])}", missing_ok=True)
                    if self.state.get("release_id") else find_release(self.gh, self.tag))
         self.observed = True
@@ -430,7 +470,10 @@ class Publication:
         self.save()
         check_public(self.gh, self.state["release_id"], self.tag, self.commit, self.state["assets"])
         print(f"Published and confirmed Latest online-update availability: {self.tag}", flush=True)
-        if was_complete:
+        if distribution_complete:
+            self.state["distribution_complete"] = True
+            self.save()
+            self.homebrew()
             self.state["phase"] = "complete"
             self.save()
             print(f"Release workflow already complete: {self.tag}", flush=True)
@@ -455,6 +498,9 @@ class Publication:
             self.dispatch("deploy", inputs)
         else:
             print("Website inputs unchanged; deployment is not applicable.", flush=True)
+        self.state["distribution_complete"] = True
+        self.save()
+        self.homebrew()
         self.state["phase"] = "complete"
         self.save()
         print(f"Release workflow complete: {self.tag}", flush=True)
@@ -540,7 +586,10 @@ def main():
         if publication and publication.unknown:
             status = "Publication status is unknown; query GitHub and resume the saved journal before retrying"
         elif publication and publication.public:
-            status = "Release is already published; online-update confirmation or website follow-up failed; keep its assets intact"
+            if publication.homebrew_failed:
+                status = "App release published and verified; Homebrew synchronization failed; keep its assets intact"
+            else:
+                status = "Release is already published; online-update confirmation or website follow-up failed; keep its assets intact"
         elif publication and publication.observed:
             status = "Pre-publication work stopped; retain the candidate and draft"
         else:

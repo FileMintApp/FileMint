@@ -160,6 +160,8 @@ class PublicationTests(unittest.TestCase):
         self.addCleanup(patch.stopall)
         patch.object(publication, "command", side_effect=self.command).start()
         patch.dict(os.environ, {"FILEMINT_ACTIONS_TIMEOUT_SECONDS": "3", "FILEMINT_ACTIONS_POLL_SECONDS": "1"}).start()
+        patch.dict(os.environ, {"FILEMINT_HOMEBREW_SYNC": "0"}).start()
+        self.tap_sync = patch.object(publication, "synchronize_homebrew").start()
 
     def command(self, args, **kwargs):
         self.commands.append(args)
@@ -208,6 +210,138 @@ class PublicationTests(unittest.TestCase):
         self.assertEqual(self.feed.read_bytes(), original)
         self.assertLess(output.index("not available for online updates"), output.index("Published and confirmed"))
         self.assertTrue(all(args[:3] != ["gh", "release", "download"] for args in self.commands))
+        self.tap_sync.assert_not_called()
+
+    def test_homebrew_is_opt_in_and_follows_completed_website_deployment(self):
+        def sync(path):
+            self.assertEqual(path, self.manifest)
+            state = json.loads(self.manifest.with_name(f"FileMint-{VERSION}.publication.json").read_text())
+            self.assertFalse(self.gh.release["draft"])
+            self.assertTrue(state["distribution_complete"])
+            deploy = self.gh.runs[state["requests"]["deploy"]["run_id"]]
+            self.assertEqual(deploy["conclusion"], "success")
+        self.tap_sync.side_effect = sync
+        with patch.dict(os.environ, {"FILEMINT_HOMEBREW_SYNC": "1"}):
+            runner, _ = self.run_publication()
+        self.tap_sync.assert_called_once_with(self.manifest)
+        self.assertEqual(runner.state["homebrew"]["status"], "succeeded")
+        self.assertEqual(runner.state["phase"], "complete")
+
+    def test_failure_before_publication_or_during_site_prevents_tap_sync(self):
+        for kind in ("candidate", "site", "deploy"):
+            with self.subTest(kind=kind):
+                self.gh = FakeGitHub()
+                self.gh.conclusions[kind] = "failure"
+                self.manifest.with_name(f"FileMint-{VERSION}.publication.json").unlink(missing_ok=True)
+                with patch.dict(os.environ, {"FILEMINT_HOMEBREW_SYNC": "1"}), \
+                        self.assertRaises(publication.PublicationError):
+                    self.run_publication()
+                self.tap_sync.assert_not_called()
+
+    def test_homebrew_failure_preserves_public_assets_and_resume_skips_site(self):
+        self.tap_sync.side_effect = publication.PublicationError("tap unavailable")
+        with patch.dict(os.environ, {"FILEMINT_HOMEBREW_SYNC": "1"}), \
+                self.assertRaisesRegex(publication.PublicationError, "tap unavailable"), \
+                contextlib.redirect_stderr(io.StringIO()) as errors:
+            self.run_publication()
+        self.assertIn("App release published and verified; Homebrew synchronization failed", errors.getvalue())
+        self.assertIn("homebrew_tap.py publish --manifest", errors.getvalue())
+        before = self.stages()
+        original_assets = copy.deepcopy(self.gh.release["assets"])
+        state = self.instance().state
+        self.assertEqual(state["phase"], "published")
+        self.assertTrue(state["distribution_complete"])
+        self.assertEqual(state["homebrew"]["status"], "failed")
+        self.tap_sync.side_effect = None
+        self.gh.events.clear()
+        runner, _ = self.run_publication()  # Stored opt-in survives a new shell.
+        self.assertEqual(self.stages(), [])
+        self.assertTrue(before)
+        self.assertFalse(any("actions/" in event[1] for event in self.gh.events))
+        self.assertEqual(self.gh.release["assets"], original_assets)
+        self.assertEqual(runner.state["phase"], "complete")
+        self.assertEqual(self.tap_sync.call_count, 2)
+
+    def test_completed_release_can_sync_tap_without_republishing_or_deploying(self):
+        self.run_publication()
+        self.tap_sync.assert_not_called()
+        self.gh.events.clear()
+        with patch.dict(os.environ, {"FILEMINT_HOMEBREW_SYNC": "1"}):
+            runner, _ = self.run_publication()
+        self.tap_sync.assert_called_once_with(self.manifest)
+        self.assertEqual(self.stages(), [])
+        self.assertEqual(runner.state["phase"], "complete")
+
+    def test_homebrew_opt_in_rejects_invalid_configuration(self):
+        with patch.dict(os.environ, {"FILEMINT_HOMEBREW_SYNC": "yes"}), \
+                self.assertRaisesRegex(publication.PublicationError, "must be 0 or 1"):
+            self.instance()
+        self.assertEqual(self.gh.events, [])
+
+    def test_failed_source_ci_or_latest_confirmation_blocks_enabled_tap(self):
+        with patch.dict(os.environ, {"FILEMINT_HOMEBREW_SYNC": "1"}):
+            self.gh.runs[1]["conclusion"] = "failure"
+            with self.assertRaises(publication.PublicationError):
+                self.run_publication()
+            self.tap_sync.assert_not_called()
+            self.gh.runs[1]["conclusion"] = "success"
+            with patch.object(publication, "check_public", side_effect=publication.PublicationError("Latest mismatch")), \
+                    self.assertRaisesRegex(publication.PublicationError, "Latest mismatch"):
+                self.run_publication()
+            self.tap_sync.assert_not_called()
+
+    def test_enabled_tap_follows_publication_when_website_is_not_applicable(self):
+        self.website_changed = False
+        with patch.dict(os.environ, {"FILEMINT_HOMEBREW_SYNC": "1"}):
+            runner, _ = self.run_publication()
+        self.tap_sync.assert_called_once_with(self.manifest)
+        self.assertTrue(runner.state["distribution_complete"])
+        self.assertNotIn("deploy-pages.yml", self.stages())
+
+    def test_homebrew_opt_in_survives_failure_of_first_remote_query(self):
+        self.run_publication()
+        self.gh.api_failure = "releases/7"
+        with patch.dict(os.environ, {"FILEMINT_HOMEBREW_SYNC": "1"}), \
+                self.assertRaises(publication.APIError):
+            self.run_publication()
+        self.assertTrue(self.instance().state["homebrew_requested"])
+        self.tap_sync.assert_not_called()
+        self.gh.api_failure = None
+        self.gh.events.clear()
+        self.run_publication()
+        self.tap_sync.assert_called_once_with(self.manifest)
+        self.assertEqual(self.stages(), [])
+
+    def test_old_tap_failure_does_not_mislabel_new_latest_failure(self):
+        self.tap_sync.side_effect = publication.PublicationError("tap unavailable")
+        with patch.dict(os.environ, {"FILEMINT_HOMEBREW_SYNC": "1"}), \
+                self.assertRaises(publication.PublicationError), contextlib.redirect_stderr(io.StringIO()):
+            self.run_publication()
+        self.tap_sync.reset_mock()
+        runner = self.instance()
+        with patch.object(publication, "Publication", return_value=runner), \
+                patch.object(publication, "check_public", side_effect=publication.PublicationError("Latest mismatch")), \
+                patch.object(sys, "argv", ["release_publication.py", "local", str(self.manifest)]), \
+                contextlib.redirect_stderr(io.StringIO()) as errors, contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(publication.main(), 1)
+        self.tap_sync.assert_not_called()
+        self.assertIn("online-update confirmation", errors.getvalue())
+        self.assertNotIn("Homebrew synchronization failed", errors.getvalue())
+
+    def test_legacy_completion_survives_failed_recheck_without_needing_old_site_artifact(self):
+        runner, _ = self.run_publication()
+        del runner.state["distribution_complete"]
+        runner.save()  # Journal created before the Homebrew stage existed.
+        with patch.dict(os.environ, {"FILEMINT_HOMEBREW_SYNC": "1"}), \
+                patch.object(publication, "check_public", side_effect=publication.PublicationError("Latest unavailable")), \
+                self.assertRaises(publication.PublicationError):
+            self.run_publication()
+        self.assertTrue(self.instance().state["distribution_complete"])
+        self.gh.expired = True
+        self.gh.events.clear()
+        self.run_publication()
+        self.tap_sync.assert_called_once_with(self.manifest)
+        self.assertFalse(any("actions/" in event[1] for event in self.gh.events))
 
     def test_prepublication_failed_cancelled_and_skipped_checks_keep_draft(self):
         for kind, conclusion in (("candidate", "failure"), ("candidate", "cancelled"),

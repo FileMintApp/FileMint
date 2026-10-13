@@ -1,0 +1,37 @@
+name: Validate FileMint Cask
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: macos-15
+    timeout-minutes: 15
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      HOMEBREW_NO_ANALYTICS: "1"
+      HOMEBREW_NO_ENV_HINTS: "1"
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0 (Node 24)
+        with:
+          persist-credentials: false
+      - name: Record validation environment
+        run: |
+          sw_vers
+          uname -m
+          brew --version
+      - name: Register checkout for validation
+        run: |
+          brew tap --custom-remote filemintapp/tap "$GITHUB_WORKSPACE"
+      - name: Validate syntax, metadata and upstream discovery
+        run: |
+          brew style Casks/filemint.rb
+          brew readall --os=all --arch=all filemintapp/tap
+          brew audit --cask --online --strict filemintapp/tap/filemint
+          brew livecheck --cask filemintapp/tap/filemint

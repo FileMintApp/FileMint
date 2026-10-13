@@ -190,15 +190,18 @@ promotion response is lost, query the saved Release ID to reconcile the result.
 If GitHub cannot be queried, report that publication status is unknown and retain
 the journal; do not assume that publication failed or upload another package.
 
-### 5. Deploy the website and complete the release
+### 5. Deploy the website and finish applicable distribution work
 
 If website work is applicable, explicitly dispatch deployment after publication.
 The deployment job checks the public Release and exact successful website build,
 downloads its retained Pages archive on the runner, and deploys it without rebuilding.
 The archive is retained for seven days. A successfully rerun website build for the
 same source can supply a fresh artifact for unfinished deployment; published app
-assets stay untouched. All required Actions must finish successfully before the
-command reports that the **release workflow is complete** and evidence is finalized.
+assets stay untouched. All required Actions must finish successfully before
+distribution can finish. When Homebrew synchronization is explicitly enabled,
+it follows successful website completion (or its recorded not-applicable result),
+as described below. Only after all requested stages succeed does the command
+report that the **release workflow is complete** and finalize evidence.
 
 Actions waits poll every 15 seconds and are bounded to 45 minutes per wait by
 default (`FILEMINT_ACTIONS_POLL_SECONDS` and `FILEMINT_ACTIONS_TIMEOUT_SECONDS`).
@@ -222,6 +225,86 @@ published asset names, candidate verification and website run IDs. Do not claim 
 local/remote byte equality was checked. Earlier release records retain their
 historical readback results. Include native runtime results when that targeted
 acceptance is run.
+
+### 6. Optional Homebrew tap synchronization
+
+The [FileMint official tap](https://github.com/FileMintApp/homebrew-tap) is public
+with a 0.7.0 Cask. Its public Actions check passed; the qualified install command
+resolves in a Homebrew dry run and its DMG fetch passed SHA-256 verification.
+The owner has no disposable VM/test Mac, so native installation, upgrade,
+migration, removal and Finder behavior remain unverified. Do not exercise those
+operations against their working app.
+See the [Homebrew task and acceptance gates](tasks/homebrew-tap.md).
+
+Prepare a reviewable local tap candidate from a genuine verified stable release:
+
+```sh
+make homebrew-prepare MANIFEST=build/FileMint-VERSION.release.json OUTPUT_DIR=build/homebrew-VERSION
+```
+
+Preparation writes the Cask, repository skeleton and local receipt only. Keep
+`receipt.json` local; initial tap publication contains only the Cask, bilingual
+READMEs and read-only workflow. Preparation does not invoke brew. It
+validates the ten-string release manifest, both local archives/checksums/feeds,
+matching local and remote source tags, public Latest identity, six asset IDs,
+exact successful source CI and draft candidate verification from the publication
+journal. Publication additionally requires successful applicable website
+deployment. Preparation reuses the local
+artifact verifier, never downloads remote release archives or dispatches Actions,
+and never installs FileMint. Missing journal/evidence is a blocker; do not
+manufacture success for an old Release or replace its already-published bytes.
+
+The Cask uses the existing immutable signed/notarized DMG, SHA-256, arm64 and
+macOS 13 requirements, and `auto_updates true`. Sparkle and the existing
+Finder/folder authorization flow remain unchanged. The Cask has no quit, signal,
+installer or cleanup hooks and no `zap`. Before any brew replacement, adoption or
+removal, users must save/cancel drafts, finish file operations and Sparkle updates,
+manually quit FileMint and confirm exit. Homebrew does not enforce this condition.
+Keep preferences, templates, bookmarks and user files; native tests must check
+whether macOS permissions and Finder registration remain usable.
+
+After isolated native acceptance, opt in for a normal release with:
+
+```sh
+FILEMINT_HOMEBREW_SYNC=1 make publish-local
+```
+
+The journal persists that request and the completed application/website stages.
+Synchronization validates the canonical Cask through a uniquely named temporary
+Homebrew metadata tap backed by an owned local Git snapshot, then removes only
+that temporary registration. No app is installed and no existing tap is changed
+by validation. Local online metadata audit uses
+`brew audit --cask --online --strict --except=download,signing,rosetta,min_os,missing_verified,unnecessary_verified`
+to prevent Homebrew's online mode from implicitly downloading release payloads.
+Those payload checks are covered by the existing local `verify_release_pair.sh`
+validation of the retained artifacts, including signatures, architecture and
+minimum OS. The tap's GitHub Actions workflow keeps the complete online audit,
+including payload downloads and checks on the disposable runner; its success
+still does not establish native installation or Finder behavior.
+The local Homebrew 6.0.11 additionally expects a `verified` URL parameter that
+the current Actions Homebrew rejects. The two local-only exclusions above keep
+the public Cask in the current format; they do not suppress the Actions audit.
+Synchronization uses the existing local GitHub identity, validates the intended
+tap and known Cask layout, rejects downgrades and same-version byte changes, and
+uses a normal fast-forward update of `main` followed by remote commit/Cask
+readback. It never creates a missing repository, bypasses protection or supplies
+Apple keys to CI. Identical verified retries are no-ops. Local builds and
+`release-local` never synchronize a tap, and the hook remains disabled by default.
+
+A failure reports **App release published and verified; Homebrew synchronization
+failed** and records that outcome without altering the six public assets. Retry
+only the helper from the retained manifest, or resume `publish-local`:
+
+```sh
+make homebrew-publish MANIFEST=build/FileMint-VERSION.release.json
+```
+
+Publication recovery skips completed application and website stages; it does not
+rebuild, re-sign, re-upload or redeploy them to retry the tap. Readback resolves an
+ambiguous push, and a concurrent remote update stops rather than resetting it.
+Record the tap commit separately from app publication and website deployment.
+Local Cask checks or a green read-only tap workflow do not prove native
+installation, upgrade, adoption, removal or Finder behavior.
 
 ## Standard notarytool workflow
 

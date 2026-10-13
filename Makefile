@@ -6,7 +6,19 @@ DEVELOPER_DIR ?= /Applications/Xcode.app/Contents/Developer
 export DEVELOPER_DIR
 export DEVELOPMENT_TEAM
 
-verify: verify-context verify-fork-sync verify-image-compression test harness verify-harness-cli verify-appcast verify-release-metadata verify-release-notarization verify-release-publication verify-signing-entitlements verify-native-qa
+verify: verify-context verify-fork-sync verify-image-compression test harness verify-harness-cli verify-appcast verify-release-metadata verify-release-notarization verify-release-publication verify-homebrew verify-signing-entitlements verify-native-qa
+
+.PHONY: verify-homebrew homebrew-prepare homebrew-publish
+verify-homebrew:
+	python3 scripts/test_homebrew_tap.py
+
+homebrew-prepare:
+	@test -n "$(MANIFEST)" -a -n "$(OUTPUT_DIR)" || { echo 'Set MANIFEST and OUTPUT_DIR'; exit 2; }
+	python3 scripts/homebrew_tap.py prepare --manifest "$(MANIFEST)" --output-dir "$(OUTPUT_DIR)"
+
+homebrew-publish:
+	@test -n "$(MANIFEST)" || { echo 'Set MANIFEST'; exit 2; }
+	python3 scripts/homebrew_tap.py publish --manifest "$(MANIFEST)"
 
 .PHONY: verify-fork-sync
 verify-fork-sync:

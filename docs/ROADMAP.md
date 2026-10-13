@@ -26,13 +26,13 @@
 
 ## 安装与分发
 
-### Homebrew tap（规划中 / 待实现）
+### Homebrew tap（已公开 / 原生验收待完成）
 
-**做什么：** 提供由 FileMint 维护的 Homebrew 安装源，目标命令为 `brew install --cask filemintapp/tap/filemint`；目前尚未上线。
+**做什么：** FileMint 官方维护的 [Homebrew 安装源](https://github.com/FileMintApp/homebrew-tap) 已公开，可通过 `brew install --cask filemintapp/tap/filemint` 获取安装包。
 
-**怎么做：** 复用正式 GitHub Release 的 DMG 和 SHA-256，在现有发布验证成功后同步 tap。保留 Sparkle 更新、Finder 扩展启用及文件夹授权边界；后续再评估官方 Cask 收录。
+**怎么做：** 复用正式 GitHub Release 的 DMG 和 SHA-256，先完成草稿候选精确验证、公开发布和适用的网站部署，再通过显式启用的发布钩子同步 tap。适配现有六产物、十字符串字段发布清单和恢复日志；保留 Sparkle 更新、Finder 扩展启用及文件夹授权边界。后续再评估官方 Cask 收录。
 
-**怎样算完成：** 安装、升级、普通卸载、手动安装迁移、配置保留及版本同步均有验证；详细方案与未完成清单见 [Homebrew tap 任务](tasks/homebrew-tap.md)。本轮仅记录规划，不实现。
+**怎样算完成：** 安装、升级、普通卸载、手动安装迁移、配置保留及版本同步均有验证。2026-10-13 tap 已公开，公开 CI、安装命令 dry run 和下载校验通过；用户暂时没有隔离 VM 或测试 Mac，原生验收阻塞，因此不勾选完成项。详细实现与证据见 [Homebrew tap 任务](tasks/homebrew-tap.md)。
 
 ## 模板与命名
 

@@ -130,6 +130,45 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   submission can be resumed without uploading again. Preparation requires a
   reviewed commit and tag; development commands must not publish implicitly.
 
+## Homebrew distribution
+
+- A FileMint-maintained `FileMintApp/homebrew-tap` Cask reuses the immutable,
+  signed and notarized release DMG, with an explicit stable version, SHA-256,
+  arm64 and macOS 13 requirements. It declares `auto_updates true`; Sparkle,
+  Finder extension enablement and folder authorization keep their existing rules.
+  No new build, runtime dependency, installer script or quarantine bypass is added.
+- Prepare and synchronize from the current ten-string-field release manifest
+  (including DMG/ZIP and both appcast hashes) and its publication journal. Require
+  local archive/checksum/feed integrity, matching local and remote tag commits,
+  the same six asset identities, a successful exact source CI run and exact draft
+  candidate verification run, and public Latest discovery. Read-only preparation
+  never dispatches workflows or downloads remote release archives. Reuse the
+  existing local artifact verifier; GitHub Actions owns remote artifact checks.
+- Tap synchronization follows successful application publication and applicable
+  website deployment. It is opt-in until the initial tap has passed isolated
+  native acceptance and been explicitly published. A missing tap fails clearly;
+  the release hook never creates a repository. Preserve the public release and
+  assets on tap failure, report partial success, and allow manifest-based retries
+  without rebuilding, re-signing, uploading or deploying again.
+- Tap writes use the existing local GitHub identity and a normal fast-forward
+  update of `main`. Validate the declarative Cask and remote layout before writing;
+  reject downgrades, same-version byte changes and concurrent updates. Revalidate
+  release evidence before pushing, then read back the remote commit and Cask.
+  Identical verified retries are no-ops. Development and `release-local` never
+  publish a tap.
+- The Cask does not quit, kill or relaunch any process and contains no `zap`.
+  Before brew replacement, adoption or removal, finish/save/cancel work, wait for
+  active file or Sparkle operations, manually quit FileMint and confirm exit.
+  Homebrew does not enforce this prerequisite. Keep user files, preferences,
+  templates and bookmarks; permission usability still depends on macOS state.
+- Native installation, upgrade, migration and removal acceptance requires a
+  disposable Apple-silicon macOS VM or test Mac with separate Homebrew,
+  Applications, home and Finder state. The owner explicitly requested initial
+  tap publication without that environment. Record those runtime checks as
+  blocked; public Cask CI, command resolution and checksum fetch prove only
+  distribution availability. Do not describe native installation or Finder
+  behavior as verified. See the [Homebrew task](../../docs/tasks/homebrew-tap.md).
+
 ## Automatic-update artifacts
 
 - Pin Sparkle in project.yml; embed its framework and installer tools only in the

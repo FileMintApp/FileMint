@@ -145,6 +145,9 @@ Finder 菜单图标可选择彩色或系统单色；支持自定义的菜单和�
 2. 启动 FileMint，按应用内提示启用 Finder 扩展并授权常用文件夹。
 3. 回到 Finder，开始创建或处理图片。
 
+全新安装也可使用 [FileMint 官方 Homebrew tap](https://github.com/FileMintApp/homebrew-tap)：
+`brew install --cask filemintapp/tap/filemint`。已有手动安装的迁移及升级、卸载后的 Finder 行为仍待隔离环境验收；请先阅读 tap 的说明。
+
 安装 0.5.9 后，可通过 **关于 → 检查更新 → 更新并重启** 获取后续版本。请先完成创建或编辑操作；macOS 可能要求管理员授权。
 
 从 0.5.7/0.5.8 升级时，请手动安装 0.5.9 或更新版本一次：退出 FileMint，将新版拖入“应用程序”替换，推出安装磁盘后重新打开。旧版的签名权限问题无法通过自身的更新器修正。
@@ -184,7 +187,7 @@ Finder 菜单图标可选择彩色或系统单色；支持自定义的菜单和�
 
 ### 安装与分发
 
-- [ ] **Homebrew 安装支持** — 规划由 FileMint 维护的 tap，支持通过 brew 安装和升级；尚未实现。
+- [ ] **Homebrew 安装支持** — FileMint 官方 tap 已公开，可获取全新安装包；升级、迁移和卸载仍待隔离环境验收。
 
 </div>
 <!-- #endregion roadmap -->

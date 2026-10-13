@@ -8,6 +8,16 @@
 0.7.0 同时提供签名、公证的 ZIP 在线更新包，并保留 DMG 与旧版更新源。
 已有客户端可继续通过“关于 → 检查更新 → 更新并重启”升级；手动安装仍推荐 DMG。
 
+## FileMint 官方 Homebrew tap
+
+没有现存 FileMint 安装时，可以从 [FileMint 官方 tap](https://github.com/FileMintApp/homebrew-tap)获取正式 DMG：
+
+```sh
+brew install --cask filemintapp/tap/filemint
+```
+
+公开 Cask 的 CI、Homebrew dry run 和下载校验已通过。隔离测试机上的实际安装、已有手动安装迁移、升级、卸载及 Finder 行为仍待验收；已有安装请先阅读 tap 的说明，不使用强制覆盖。Homebrew 不会替你启用 Finder 扩展或授权文件夹。
+
 ## 首次启动
 
 1. 打开 DMG，把 FileMint 拖入“应用程序”，推出“FileMint”安装磁盘，再从“应用程序”打开。
@@ -89,9 +99,16 @@ FileMint 会用书签记住它，而不是每次创建都重新选择。下方�
 
 ## English
 
-The 0.6.2 stable installer requires an M-series Mac running macOS 13 or later
-and contains no Intel code. Intel Macs cannot install or update to 0.6.2;
+The 0.7.0 stable installer requires an M-series Mac running macOS 13 or later
+and contains no Intel code. Intel Macs cannot install or update to 0.7.0;
 previously published installers retain their original compatibility.
+
+For a fresh installation, the [official FileMint Homebrew tap](https://github.com/FileMintApp/homebrew-tap)
+provides `brew install --cask filemintapp/tap/filemint`. Public CI, Homebrew dry run
+and checksum-verified fetch have passed. Actual installation on an isolated Mac,
+migration from a manual installation, upgrade, removal and Finder behavior still
+need native acceptance. Homebrew does not enable the Finder extension or grant
+folder access.
 
 Drag FileMint from the DMG into Applications, eject the FileMint installer volume,
 then open FileMint from Applications. Stable releases from 0.5.9 onward are Developer ID signed,
