@@ -1,7 +1,7 @@
 # Task: Workflow-led website and live release metadata
 
-Status: in-progress
-Next action: Commit, push and deploy the approved website update.
+Status: complete
+Next action: None. The approved website is deployed and live verification passed.
 
 ## Objective and scope
 
@@ -33,7 +33,8 @@ Next action: Commit, push and deploy the approved website update.
 
 ## Evidence
 
-Tested primary checkout on 2026-10-13, with uncommitted website changes.
+Tested primary checkout on 2026-10-13; website source committed and pushed as
+`28db0299a9765544ddd5f3170a6dfeb905cecffc`.
 
 | Check | Status | Observed result |
 | --- | --- | --- |
@@ -46,10 +47,19 @@ Tested primary checkout on 2026-10-13, with uncommitted website changes.
 | Live release metadata | passed | Public GitHub request displayed v0.7.0 at observation time; one request served both homepage badges. |
 | Browser release fixtures | passed | A simulated 403 retained neutral labels and latest-release links; a simulated future stable tag changed both labels without a rebuild. Test tab closed. |
 | Screenshot capture | passed | New Chinese creation-panel capture from the installed app using only a temporary demo folder and sample text; draft cancelled without creating a document. |
-| Public deployment | pending | User authorized publication; adding a distinct website-only dispatch while preserving existing application-release gates. |
+| Public deployment | passed | [Deployment 38338914858](https://github.com/FileMintApp/FileMint/actions/runs/38338914858) succeeded using the exact retained Pages archive. |
 
 Preview screenshot: `build/website-preview/home-desktop.jpg` (ignored local output).
-The live preview uses the existing VitePress dev server on loopback port 5173.
+Production: https://filemintapp.github.io/FileMint/ and
+https://filemintapp.github.io/FileMint/en/.
+
+Build: [38338849454](https://github.com/FileMintApp/FileMint/actions/runs/38338849454),
+Pages artifact `11786171562`; public App Release `410098527` (`v0.7.0`).
+The build and deployment both concluded successfully. After deployment, both
+live languages showed the new layout, all three scenario tabs, working latest
+release links and dynamically fetched `v0.7.0`; no broken visible images.
+The existing App Release identity remained unchanged. The independent macOS
+source CI was still running at the time of this website verification.
 Current-version metadata requires GitHub availability; failure intentionally omits
 the number. Historical compatibility and updater exceptions remain in install docs.
 
