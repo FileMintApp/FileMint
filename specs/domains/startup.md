@@ -91,6 +91,32 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - An explicitly requested updater relaunch must wait until creation work and
   modal editing are finished. Preserve saved startup preferences and bookmarks.
 
+## Batch rename lifecycle
+
+P0 contract for review; not implemented. [File tools](file-tools.md#batch-rename)
+owns the operation behavior and private-state format/limits.
+
+- Decode the new batch-rename child switch independently, default off for new,
+  missing or malformed values; its placement defaults to submenu. Preserve valid
+  neighboring tool choices, icons, placements, preferences and pending moves.
+  Disabling switches preserves choices and operation records without new actions.
+- Finder rename requests open only the app-owned rename/recovery panel. They do
+  not open, restore or close settings; Dock/menu-bar behavior remains determined
+  by existing explicit-settings ownership and visibility preferences.
+- The active panel, authorization, commit, cancellation/rollback and explicit
+  recovery/undo or manual record retirement hold the coordinator's busy/quit/update
+  guard until safely closed.
+  A second rename request cannot replace the session or expire silently in a queue.
+  Idle interrupted-state discovery alone does not hold the app busy or prevent quit.
+- Startup reads only the bounded private operation store; no automatic user-folder
+  access, unfinished rename, undo or recovery. File & Folder Tools shows passive
+  recovery status and explicit Restore / export-and-unblock actions outside
+  disabled child settings. Interrupted retirement offers metadata-only finalization
+  on explicit action, never automatic restoration or archival on startup.
+  The File menu/result window offers normal last-batch undo under current switches
+  and scope; compensating recovery follows its separate authority. Closing an idle
+  panel never forgets a pending record or starts a write.
+
 ## Optional creation features and template recovery
 
 - Creation Behavior retains basic reveal settings and adds independent Create and

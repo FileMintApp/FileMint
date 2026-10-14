@@ -1,6 +1,6 @@
 # File and folder tools
 
-Load for: Optional Finder file/folder actions, selection snapshots and tool switches.
+Load for: Optional Finder file/folder actions, batch rename, selection snapshots and tool switches.
 
 ## Module and menus
 
@@ -155,12 +155,292 @@ Load for: Optional Finder file/folder actions, selection snapshots and tool swit
   and remaining counts; keep successful aliases and original resources intact.
   A successful operation opens no settings or confirmation window.
 
+## Batch rename
+
+Planned target contract; implementation has not started. The
+[task](../../docs/tasks/2026-10-14-batch-rename.md) records phase status and evidence.
+The following rules apply only to batch rename, not to the existing tools above.
+
+### Selection and availability
+
+- Batch Rename… / 批量重命名… is a File & Folder Tools child, default off for
+  new, absent and malformed saved values. Its independent placement defaults to
+  submenu. The module switch and configured scope govern normal rename and undo;
+  interrupted-operation recovery has the separate authority defined below.
+- Offer the Finder entry for 2–1,000 distinct local URLs with one lexical parent
+  inside configured scope. Use cached preferences and URL/count checks when
+  constructing the entry; inspect no additional filesystem metadata there.
+  Background, toolbar and sidebar menus have no batch rename entry. No app-local
+  item picker, menu-bar rename entry or global hotkey in this version.
+- On the explicit click capture the complete selection and filesystem identities;
+  main-app authorization and validation must confirm one real parent object,
+  available regular files or ordinary directories, and distinct volume/file
+  identities. Two selected hard links to the same object are unsupported.
+  Invalid, missing, replaced or unsupported neighbors reject the entire batch.
+- Initial support is local, writable APFS with known case-sensitivity, exclusive
+  rename support and stable parent/item identities. Validate the selected items,
+  actual parent, scope, grants, availability and required filesystem capabilities.
+  Missing or failed required checks reject the batch; a file URL alone does not
+  prove locality. System permissions and native operation results remain
+  authoritative. Do not copy, request downloads or broaden access to bypass a
+  denied, unavailable or unsupported operation.
+- Ordinary local files and ordinary directories are both in the first version.
+  Renaming a directory changes its own entry; do not enumerate, rename or classify
+  its descendants. Possible unverified descendant environments do not by
+  themselves disqualify an otherwise eligible ordinary directory.
+- Proving that a location is unmanaged is not an admission or implementation
+  prerequisite. Do not require provider lookups, custom-service queries or
+  cloud-root exclusion scans. Missing optional provider information is neither
+  proof of safety nor a reason by itself to reject an otherwise valid request;
+  it never substitutes for required identity, authorization or operation checks.
+- NAS, iCloud and third-party sync compatibility remain unverified, not a gate
+  for ordinary local implementation or acceptance. Do not promise universal
+  compatibility or infer it from a successful local call. Requests still obey
+  the same first-version filesystem scope and native safety checks; no separate
+  provider-specific support path is part of this task.
+- Reject symlinks, Finder aliases, packages and nonregular nodes. Protect root
+  and volume-root objects; the canonical /System, /Library, /Applications,
+  /Users and /Volumes directory objects; the OS-resolved real user home and its
+  Desktop, Documents, Downloads, Library, Applications, Pictures, Movies, Music
+  and Public directory objects; every configured observation-root object; and
+  FileMint's storage and known owned operation-workspace subtrees. Also reject
+  selected directories that contain any such private storage/workspace: renaming
+  an ancestor must not move preferences, tickets, pending moves or recovery state.
+  Check resolved ancestor relationships against known protected locations without
+  enumerating directory contents; unresolved protection checks reject the batch.
+  Match actual canonical locations/identities, not any ordinary folder sharing
+  those names. A special directory's ordinary children remain eligible only when
+  they satisfy these protections; for example, the real user's Library/Application
+  Support cannot be renamed because it contains FileMint's private storage.
+- Keep the 1,000-item cap and existing 1 MiB serialized ticket limit independent;
+  report either limit and reject rather than truncate. A selection may contain
+  unchanged rows and commit fewer than two changes. A zero-change plan writes
+  nothing and cannot be submitted.
+
+### Names and ordering
+
+- Freeze each original filename's exact UTF-8 spelling, hidden marker, body and
+  suffix once per session. Detach one leading period as a protected hidden marker.
+  Directories have no suffix. For files, use the longest case-insensitive suffix
+  match from tar.gz, tar.bz2, tar.xz, tar.zst and d.ts, requiring a nonempty body;
+  otherwise the last remaining period separates a suffix only when both sides
+  are nonempty. Preserve the suffix's original bytes, including its period/case.
+  Thus .env has marker '.', body 'env', no suffix; .env.local has marker '.',
+  body 'env', suffix '.local'; archive.TAR.GZ keeps '.TAR.GZ'. No type/content
+  inference or dependency on the configured creation-template catalog.
+- Rules and name-list lines operate only on the body. Reattach the protected
+  marker and suffix after calculation; do not reparse the generated body.
+  Changing hidden status or extensions is unavailable. For regular files whose
+  captured suffix is empty, a changed body must contain no period (U+002E):
+  README -> README.txt and .env -> .env.local are invalid. This guard uses the
+  frozen input kind/suffix; it does not reparse or repair the generated body.
+  Directories and files with a protected suffix may contain literal periods
+  inside the body; Photos -> Photos.2026 is valid for an ordinary directory.
+  A list line containing a suffix is not guessed or stripped.
+- Validate changed outputs without trimming, substituting, truncating, fallback
+  names or output Unicode normalization. Reject an empty body, a body beginning
+  with a period, complete names '.'/'..', leading/trailing Unicode whitespace,
+  trailing periods, /, :, backslash, Unicode control category Cc and line/paragraph
+  separators. Preserve format scalars needed for emoji, including ZWJ; do not use
+  the creation sanitizer's broader control-character set for rename.
+- Changed output components are at most 255 UTF-8 bytes, additionally bounded by
+  the positive native name limit when available. This conservative product cap
+  is not a claim about the filesystem's universal maximum. Original components
+  up to 1,024 UTF-8 bytes may be captured. Unchanged originals are not rewritten
+  to satisfy the output policy. Recovery/undo restores the exact previously
+  captured original component without applying the new-output body, character
+  or length policy, including the suffixless-period restriction. It must still
+  validate a single component with no slash/NUL and never '.' or '..'.
+- Default to natural ascending original-name order: numeric, case-insensitive
+  Foundation comparison with en_US_POSIX, then raw UTF-8 byte order, then captured
+  ordinal as stable tie breakers. Descending reverses that total order. Sorting
+  is independent of system-language changes and not a claim about Finder's
+  display or user click order. Freeze the order in every submitted plan.
+- Compare final-name namespace keys using canonical decomposition and, only on
+  a known case-insensitive volume, Unicode case folding with en_US_POSIX; no
+  diacritic, width or compatibility folding. This conservative precheck is not
+  a complete filesystem emulator. Probe exact candidate locations and let native
+  exclusive rename be authoritative. Unchanged means byte-identical spelling,
+  not namespace equivalence: case-only changes remain changes.
+- All final rows, including unchanged ones, reserve their final names. Duplicate
+  targets or an occupied target outside the batch are errors. A target currently
+  held by another changing row is a permitted dependency, not an external conflict.
+  Do not treat a metadata/access error as target absence.
+
+### Rules and name lists
+
+- Rule mode supports ordered literal, case-sensitive replace/delete; prepend or
+  append text; numbering before/after a current body or a unified body; and
+  locale-independent Unicode uppercase/lowercase. No regex, ignore-case search,
+  dates, arbitrary-position insertion or extension editing. Recompute from
+  original bodies on every revision; validate final names rather than silently
+  repairing intermediate text. Replace all nonoverlapping scalar-exact matches
+  left-to-right once; do not search again inside inserted replacement text.
+- Numbering covers all selected rows in order: start + zero-based sorted ordinal × step.
+  Start is 0…Int64.max; step is 1…Int64.max; padding width is 1…20 and is a minimum,
+  never digit truncation. Check arithmetic before allocation. Defaults are start 1,
+  step 1, width 3 and separator '_'. For an empty chosen body emit digits alone;
+  otherwise join body/digits with the explicit separator in the chosen position.
+- At most 32 rules, 1 KiB UTF-8 per literal parameter and 4 KiB UTF-8 per working
+  body. Reject an oversized intermediate before building it. Invalid parameters
+  block the whole plan even if some rows would be unchanged.
+- Name-list mode is exclusive with rule mode, has a 1 MiB UTF-8 input cap, and maps
+  one body to every selected row, including unchanged rows. Normalize CRLF and CR
+  to LF for line splitting; ignore exactly one final line terminator. Preserve
+  all line text; internal blank/whitespace-only lines, count mismatch or invalid
+  resulting names are errors, not skipped or trimmed entries.
+- Changing order with a populated active list requires explicit reassignment
+  confirmation, with Cancel as default. Confirmation retains the text, rebuilds
+  the mapping and invalidates the old plan; cancellation preserves mapping/order.
+  Mode changes preserve both in-memory drafts and invalidate submission. Returning
+  to a populated list after its order changed requires the same reassignment;
+  cancellation keeps the previous mode/order. Clipboard text is read only on
+  explicit Paste; oversized input leaves previous text intact. There are no saved
+  rule/list presets or clipboard history.
+
+### Preview and request ownership
+
+- One app-owned rename/recovery panel and one immutable source batch at a time.
+  Show every original/final name, state and actual changed/unchanged/error counts.
+  Async metadata work is bounded and off the UI thread; outdated generations
+  cannot enable Execute. Any rule, mode or order change invalidates submission
+  until its newest preview checks finish. No filesystem watches or directory scans.
+- Explicit Rename N Items / 重命名 N 个项目 is the final confirmation; there is
+  no silent/quick mode or second generic confirmation dialog. Invalid, checking,
+  conflicting or zero-change plans disable it. Before execution, closing/cancelling
+  changes no user directory entry and creates no recovery workspace.
+- Consume rename tickets promptly at intake, including while another operation
+  owns the coordinator, preserving the current 60-second/single-use validation.
+  Busy requests are consumed and explicitly rejected, focusing an existing rename
+  panel when present; never replace its inputs or queue a rename behind a long
+  preview. Leave other operation types' existing queue behavior unchanged.
+  An accepted panel has no ticket-age expiry; it is revalidated on submission.
+- Submission freezes batch/parent identities, complete original/final components,
+  row order, parameters and revision. Recheck preferences, resolved scope, grants,
+  identities and targets just before the first mutation and before each forward
+  step. Menu eligibility and per-step continuation are distinct: do not apply the
+  two-item menu minimum to a remaining single item.
+
+### Execution and recovery
+
+- The main app alone renames, serialized with existing file operations. Hold exact
+  parent write access and a pinned parent identity/directory handle; use same-volume
+  relative exclusive operations where available. No content reads/copies or user-item chmod,
+  cross-volume fallback, shell, AppleScript, wider observation or new entitlements.
+- Before the first source mutation, persist an immutable versioned manifest with
+  operation ID/kind, original batch, parent/volume identities and bookmark, stable
+  row IDs, original/target components, and known staging-directory/slot names and
+  identities. Record each step's intent before the syscall and observed outcome
+  afterwards. Journal errors stop forward work; a save failure is not success.
+- Stage all changing sources into the batch's private 0700 sibling directory,
+  exclusively, then verify each claimed object's identity before publishing any
+  result. An unexpected replacement is preserved and restored exclusively, never
+  published as the captured item. Staging preserves unchanged rows and supports
+  case-only changes, swaps and cycles without overwriting user entries.
+- Publish the frozen targets exclusively; native collision or unsupported-operation
+  errors stop. Verify identity at each publication. Failure, explicit Stop and
+  preference/scope revocation initiate bounded best-effort rollback, not automatic
+  forward retries or a revised naming plan.
+- Rollback first claims any already-published owned entries back into staging,
+  then restores pre-operation components exclusively. A conflict/replaced parent
+  must not overwrite, delete or redirect another object. Retain originals still
+  in staging and report each row's actual state/location when restoration fails.
+  Cleanup may remove only verified owned state and empty staging directories;
+  it must never recursively erase remaining or unknown entries.
+- Recovery reads only known manifest locations after an explicit user action,
+  checks original/stage/target locations and identities, and reconciles syscall/
+  journal-update crash gaps. Deduplicate same-namespace aliases for case-only
+  changes; multiple independent identity matches, missing objects, corrupt records
+  or unverifiable parent identity stop recovery and preserve evidence. Never infer
+  success from a logged phase alone or scan user folders to find missing objects.
+- On restart offer Restore Pre-operation Names / 恢复操作前名称, not Resume Rename.
+  For an interrupted undo, pre-operation names are the renamed names at undo start.
+  Compensation may restore the same parent object through its valid bookmark or
+  an explicit exact-object picker even when the feature/scope is now disabled;
+  it cannot move into a different directory or widen configured scope. Cancellation
+  or denied access preserves the recovery record without writes.
+- Each exclusive step can succeed independently; the batch is not atomic. Report
+  restored, renamed and recovery-required states honestly. Guarantee no silent
+  overwrite and preservation of owned originals, not unconditional rollback or
+  persistence across power loss. An unresolved/corrupt rename record blocks new
+  batch rename and undo until restored or explicitly retired by the manual
+  resolution protocol below; it does not disable unrelated idle tools.
+
+### Manual resolution of recovery records
+
+- When restoration is unavailable or the user has handled the files manually,
+  offer Export Recovery Evidence and Unblock… / 导出恢复证据并解除阻塞… outside
+  disabled feature settings. This explicit action acquires or retains exclusive
+  coordinator ownership, rejects unrelated in-flight work, and holds the
+  busy/quit/update guard through export and metadata finalization.
+  It works for missing objects, corrupt records and unsupported record versions;
+  preserve opaque bytes instead of requiring a valid rename manifest to proceed.
+- Explain that this action does not restore or verify user files, that remaining
+  staging files stay in place, and that automatic recovery and the current last
+  rename undo will no longer be available. Require explicit acknowledgement of
+  manual handling and these consequences, with Cancel as default. Report the
+  result as manually closed, never restored or successfully renamed.
+- Before retiring state, export the raw bytes of the known private rename control
+  files, including indexes, manifest/journal and the current receipt when present,
+  to a user-chosen local destination. Preserve corrupt/unsupported bytes, verify
+  the complete export, and never overwrite an existing export. Access only owned
+  control-file locations; do not trust paths in corrupt records, inspect user
+  staging directories, or include preferences, tickets or pending moves.
+- After verified export, atomically persist a versioned retirement marker in the
+  same unresolved-operation slot, binding the exported snapshot to the state
+  being retired. Finalization invalidates the exported receipt and removes only
+  the exact private control files covered by the verified snapshot before clearing
+  the blocker. Changed, unreadable or unexported state, denied export access, and
+  any export/verification/journal/cleanup failure keep the blocker and evidence.
+  The action never renames, deletes or recursively cleans user items or staging.
+- An interrupted retirement remains blocked and offers explicit metadata-only
+  finalization from the durable marker; it must never replay the retired rename
+  or undo. A damaged marker preserves evidence and permits a fresh raw export.
+  Cancellation before retirement leaves active state intact; cancellation/close
+  afterwards pauses metadata finalization with the blocker intact and never
+  reactivates the retired operation. Temporary retirement state uses the existing
+  bounded operation slot, not a second operation or an
+  app-managed archive history; completed exports are user-managed evidence files.
+
+### Persistent state and undo
+
+- Keep a private, bounded versioned operation store, separate from preferences,
+  ticket files and existing pending moves: at most one unresolved operation and
+  one most-recent successful rename receipt, 8 MiB per manifest/receipt or operation
+  event stream. Directories use 0700 and files 0600. Per-step state can use compact
+  bounded records; do not repeatedly expand names/paths into unbounded history.
+- A valid commit marker atomically binds a successful operation to its receipt
+  after every target is verified. A crash during receipt/cleanup must not turn a
+  committed success into an instruction to automatically restore. Retain failed
+  cleanup/recovery state; do not automatically purge or replace it to make space
+  for a new batch. Explicit manual retirement follows the separate protocol above.
+- Retain one successful receipt until it is explicitly forgotten, successfully
+  undone, explicitly retired with recovery evidence, or replaced by the next
+  successful normal rename. Failed/zero-change attempts do not replace it.
+  Receipt fields contain only parent authorization/
+  identity and the original/final components and item identities needed for undo;
+  persist no rule inputs, clipboard, file contents or telemetry/path logs. Do not
+  include operation state in preferences/template import/export or cloud sync.
+- Undo Last Batch Rename… / 撤销上次批量重命名… is available in the result panel
+  and main app's File menu, not Finder menus or Finder Command-Z. It requires the
+  normal module/child switches, current resolved scope and exact-parent grants.
+  Show a complete reverse preview and require explicit Undo N Items. Preflight
+  all current identities and original-name destinations before any write.
+- Undo uses the same journal/staging/exclusive machinery. A failed/cancelled undo
+  rolls back to its own pre-operation state and preserves the successful receipt;
+  completed undo consumes the receipt and does not create a redo/history entry.
+- Startup inspects only private indexes/records, presents passive recovery status,
+  and does no user-directory probe or mutation until an explicit action. Damaged
+  or unsupported-version records retain their bytes; do not silently reset,
+  reinterpret names, grant access or treat an unreadable store as empty.
+
 ## Working context
 
 - Core policies: `FileTools.swift`, `PendingFileMove.swift`, `FileOperationTicket.swift`,
   `FileMenuAction.swift`, `Preferences.swift`.
 - Native adapters: `FinderSync.swift`, `FileOperationCoordinator.swift`; settings in
-  `SettingsSections.swift`. The coordinator's active requests also guard app quit
+  `FileToolsSettingsView.swift`. Planned rename rules/executor are `BatchRename*`
+  in Core; planned panel/controller live in the app. The coordinator's active requests also guard app quit
   and updater relaunch.
 - Load [Finder](finder-permissions.md) for scope and native callbacks,
   [startup](startup.md) for preference migration, and [presentation](presentation.md)

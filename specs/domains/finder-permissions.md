@@ -78,6 +78,43 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   When access is absent, show the manual Finder shortcut. Authorization and the
   event path require installed signed-app acceptance before claiming success.
 
+## Batch rename authorization
+
+P0 contract for review; the [file-tools contract](file-tools.md#batch-rename)
+owns selection, naming, storage support and recovery semantics.
+
+- Finder keeps only the menu-captured complete URLs until explicit invocation;
+  capture identities away from the UI thread and transfer them with a private
+  single-use ticket. Main-app validation after accurate parent authorization
+  rechecks the whole snapshot, real parent identity and resolved scope. Never
+  substitute a later Finder selection or authorize just a file for parent writes.
+- Pin the real parent object for source/staging/target steps; scope checks and
+  directory handles must not follow a replacement at the saved parent path.
+  Bound metadata probes to selected items, their parent, exact generated targets
+  and known protected locations. No directory enumeration, provider-domain crawl
+  or broader filesystem entitlement. Required identity, scope and access checks
+  must succeed; no unmanaged-storage classification or provider query is required.
+  Respect native permission, availability and unsupported-operation errors. Do
+  not request downloads or widen access as a fallback when an operation fails.
+  Finder callback availability does not replace main-app validation and is not
+  a guarantee about storage compatibility.
+- Resolve selected-directory ancestry against known private storage/workspace
+  locations as well as checking their protected subtrees. Reject an ancestor
+  that would carry FileMint state into staging; never enumerate its contents.
+- Normal rename/undo require current configured scope and saved/explicit parent
+  write access. Restore an interrupted operation only inside its captured parent
+  object, with a matching bookmark or explicit picker and fresh identity checks.
+  This compensating action remains reachable when switches/scope are disabled;
+  it never changes menu roots or accepts a different directory as a substitute.
+- Manual record retirement follows the [file-tools protocol](file-tools.md#manual-resolution-of-recovery-records).
+  It needs explicit export-destination access but no user-item access or restored
+  Finder scope. An export grant never authorizes touching remaining staged items
+  or broadens observation roots; cancellation/failure preserves the blocker.
+- Keep user permission prompts authoritative and operation grants alive through
+  the panel, commit or recovery; release active access on close. Restore consent
+  comes from the explicit recovery action, not startup, ticket replay or opening
+  a status card. Legacy creation, moves and other tools retain their own rules.
+
 ## Privacy permission guidance
 
 - Folder settings include an optional Full Disk Access guide and a button to

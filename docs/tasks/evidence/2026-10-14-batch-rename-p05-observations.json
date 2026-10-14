@@ -1,0 +1,528 @@
+{
+  "baseline_commit": "46da9813aa9878104f9d8a946400e35dbad95e19",
+  "command_sandbox": {
+    "app_sandbox_entitlement": false,
+    "materialization_policy": {
+      "errno": 0,
+      "observed": 1,
+      "original": 2,
+      "set_rc": 0
+    },
+    "metadata_only": true,
+    "policy_restore_rc": 0,
+    "probe_status": "completed",
+    "runtime": "Version 27.2 (Build 26B5101f)",
+    "samples": [
+      {
+        "extended_flags": {
+          "errno": 0,
+          "rc": 0,
+          "returned": true,
+          "sync_root": 0,
+          "value": 0
+        },
+        "fixture": "ordinary-file",
+        "identity_and_size_unchanged": 1,
+        "lstat": {
+          "dataless": 0,
+          "flags": 0,
+          "mode_type": 32768,
+          "size": 0
+        },
+        "own_provider_lookup": {
+          "domain_present": 0,
+          "error": {
+            "code": 4099,
+            "domain": "NSCocoaErrorDomain"
+          },
+          "item_present": 0,
+          "status": "callback"
+        },
+        "resources": {
+          "NSURLIsAliasFileKey": {
+            "error": {},
+            "ok": true,
+            "value": false
+          },
+          "NSURLIsDirectoryKey": {
+            "error": {},
+            "ok": true,
+            "value": false
+          },
+          "NSURLIsPackageKey": {
+            "error": {},
+            "ok": true,
+            "value": false
+          },
+          "NSURLIsRegularFileKey": {
+            "error": {},
+            "ok": true,
+            "value": true
+          },
+          "NSURLIsSymbolicLinkKey": {
+            "error": {},
+            "ok": true,
+            "value": false
+          },
+          "NSURLIsUbiquitousItemKey": {
+            "error": {},
+            "ok": true,
+            "value": null
+          },
+          "NSURLIsWritableKey": {
+            "error": {},
+            "ok": true,
+            "value": true
+          },
+          "NSURLUbiquitousItemDownloadingStatusKey": {
+            "error": {},
+            "ok": true,
+            "value": null
+          },
+          "NSURLUbiquitousItemIsExcludedFromSyncKey": {
+            "error": {},
+            "ok": true,
+            "value": null
+          },
+          "NSURLVolumeIsLocalKey": {
+            "error": {},
+            "ok": true,
+            "value": true
+          },
+          "NSURLVolumeIsReadOnlyKey": {
+            "error": {},
+            "ok": true,
+            "value": false
+          },
+          "NSURLVolumeSupportsCaseSensitiveNamesKey": {
+            "error": {},
+            "ok": true,
+            "value": false
+          },
+          "NSURLVolumeSupportsExclusiveRenamingKey": {
+            "error": {},
+            "ok": true,
+            "value": true
+          },
+          "NSURLVolumeSupportsPersistentIDsKey": {
+            "error": {},
+            "ok": true,
+            "value": true
+          }
+        },
+        "services": {
+          "count": 0,
+          "dictionary_present": 0,
+          "error": {
+            "code": 0,
+            "domain": "NSFileProviderInternalErrorDomain"
+          },
+          "status": "callback"
+        },
+        "statfs": {
+          "local": 1,
+          "readonly": 0,
+          "type": "apfs"
+        },
+        "unmanaged_classification": "unknown: no proven cross-provider predicate"
+      },
+      {
+        "extended_flags": {
+          "errno": 0,
+          "rc": 0,
+          "returned": true,
+          "sync_root": 0,
+          "value": 0
+        },
+        "fixture": "ordinary-directory",
+        "identity_and_size_unchanged": 1,
+        "lstat": {
+          "dataless": 0,
+          "flags": 0,
+          "mode_type": 16384,
+          "size": 64
+        },
+        "own_provider_lookup": {
+          "domain_present": 0,
+          "error": {
+            "code": 4099,
+            "domain": "NSCocoaErrorDomain"
+          },
+          "item_present": 0,
+          "status": "callback"
+        },
+        "resources": {
+          "NSURLIsAliasFileKey": {
+            "error": {},
+            "ok": true,
+            "value": false
+          },
+          "NSURLIsDirectoryKey": {
+            "error": {},
+            "ok": true,
+            "value": true
+          },
+          "NSURLIsPackageKey": {
+            "error": {},
+            "ok": true,
+            "value": false
+          },
+          "NSURLIsRegularFileKey": {
+            "error": {},
+            "ok": true,
+            "value": false
+          },
+          "NSURLIsSymbolicLinkKey": {
+            "error": {},
+            "ok": true,
+            "value": false
+          },
+          "NSURLIsUbiquitousItemKey": {
+            "error": {},
+            "ok": true,
+            "value": null
+          },
+          "NSURLIsWritableKey": {
+            "error": {},
+            "ok": true,
+            "value": true
+          },
+          "NSURLUbiquitousItemDownloadingStatusKey": {
+            "error": {},
+            "ok": true,
+            "value": null
+          },
+          "NSURLUbiquitousItemIsExcludedFromSyncKey": {
+            "error": {},
+            "ok": true,
+            "value": null
+          },
+          "NSURLVolumeIsLocalKey": {
+            "error": {},
+            "ok": true,
+            "value": true
+          },
+          "NSURLVolumeIsReadOnlyKey": {
+            "error": {},
+            "ok": true,
+            "value": false
+          },
+          "NSURLVolumeSupportsCaseSensitiveNamesKey": {
+            "error": {},
+            "ok": true,
+            "value": false
+          },
+          "NSURLVolumeSupportsExclusiveRenamingKey": {
+            "error": {},
+            "ok": true,
+            "value": true
+          },
+          "NSURLVolumeSupportsPersistentIDsKey": {
+            "error": {},
+            "ok": true,
+            "value": true
+          }
+        },
+        "services": {
+          "count": 0,
+          "dictionary_present": 0,
+          "error": {
+            "code": 0,
+            "domain": "NSFileProviderInternalErrorDomain"
+          },
+          "status": "callback"
+        },
+        "statfs": {
+          "local": 1,
+          "readonly": 0,
+          "type": "apfs"
+        },
+        "unmanaged_classification": "unknown: no proven cross-provider predicate"
+      },
+      {
+        "eligibility": "rejected-before-provider-query",
+        "fixture": "missing-control",
+        "lstat": {
+          "errno": 2
+        }
+      },
+      {
+        "eligibility": "rejected-before-provider-query",
+        "fixture": "symlink-control",
+        "lstat": {
+          "dataless": 0,
+          "flags": 0,
+          "mode_type": 40960,
+          "size": 13
+        }
+      }
+    ],
+    "schema": 1
+  },
+  "date": "2026-10-14",
+  "host": {
+    "app_sandbox_entitlement": false,
+    "materialization_policy": {
+      "errno": 0,
+      "observed": 1,
+      "original": 2,
+      "set_rc": 0
+    },
+    "metadata_only": true,
+    "policy_restore_rc": 0,
+    "probe_status": "completed",
+    "runtime": "Version 27.2 (Build 26B5101f)",
+    "samples": [
+      {
+        "extended_flags": {
+          "errno": 0,
+          "rc": 0,
+          "returned": true,
+          "sync_root": 0,
+          "value": 0
+        },
+        "fixture": "ordinary-file",
+        "identity_and_size_unchanged": 1,
+        "lstat": {
+          "dataless": 0,
+          "flags": 0,
+          "mode_type": 32768,
+          "size": 0
+        },
+        "own_provider_lookup": {
+          "domain_present": 0,
+          "error": {
+            "code": 4,
+            "domain": "NSCocoaErrorDomain"
+          },
+          "item_present": 0,
+          "status": "callback"
+        },
+        "resources": {
+          "NSURLIsAliasFileKey": {
+            "error": {},
+            "ok": true,
+            "value": false
+          },
+          "NSURLIsDirectoryKey": {
+            "error": {},
+            "ok": true,
+            "value": false
+          },
+          "NSURLIsPackageKey": {
+            "error": {},
+            "ok": true,
+            "value": false
+          },
+          "NSURLIsRegularFileKey": {
+            "error": {},
+            "ok": true,
+            "value": true
+          },
+          "NSURLIsSymbolicLinkKey": {
+            "error": {},
+            "ok": true,
+            "value": false
+          },
+          "NSURLIsUbiquitousItemKey": {
+            "error": {},
+            "ok": true,
+            "value": null
+          },
+          "NSURLIsWritableKey": {
+            "error": {},
+            "ok": true,
+            "value": true
+          },
+          "NSURLUbiquitousItemDownloadingStatusKey": {
+            "error": {},
+            "ok": true,
+            "value": null
+          },
+          "NSURLUbiquitousItemIsExcludedFromSyncKey": {
+            "error": {},
+            "ok": true,
+            "value": null
+          },
+          "NSURLVolumeIsLocalKey": {
+            "error": {},
+            "ok": true,
+            "value": true
+          },
+          "NSURLVolumeIsReadOnlyKey": {
+            "error": {},
+            "ok": true,
+            "value": false
+          },
+          "NSURLVolumeSupportsCaseSensitiveNamesKey": {
+            "error": {},
+            "ok": true,
+            "value": false
+          },
+          "NSURLVolumeSupportsExclusiveRenamingKey": {
+            "error": {},
+            "ok": true,
+            "value": true
+          },
+          "NSURLVolumeSupportsPersistentIDsKey": {
+            "error": {},
+            "ok": true,
+            "value": true
+          }
+        },
+        "services": {
+          "count": 0,
+          "dictionary_present": 0,
+          "error": {
+            "code": 0,
+            "domain": "NSFileProviderInternalErrorDomain"
+          },
+          "status": "callback"
+        },
+        "statfs": {
+          "local": 1,
+          "readonly": 0,
+          "type": "apfs"
+        },
+        "unmanaged_classification": "unknown: no proven cross-provider predicate"
+      },
+      {
+        "extended_flags": {
+          "errno": 0,
+          "rc": 0,
+          "returned": true,
+          "sync_root": 0,
+          "value": 0
+        },
+        "fixture": "ordinary-directory",
+        "identity_and_size_unchanged": 1,
+        "lstat": {
+          "dataless": 0,
+          "flags": 0,
+          "mode_type": 16384,
+          "size": 64
+        },
+        "own_provider_lookup": {
+          "domain_present": 0,
+          "error": {
+            "code": 4,
+            "domain": "NSCocoaErrorDomain"
+          },
+          "item_present": 0,
+          "status": "callback"
+        },
+        "resources": {
+          "NSURLIsAliasFileKey": {
+            "error": {},
+            "ok": true,
+            "value": false
+          },
+          "NSURLIsDirectoryKey": {
+            "error": {},
+            "ok": true,
+            "value": true
+          },
+          "NSURLIsPackageKey": {
+            "error": {},
+            "ok": true,
+            "value": false
+          },
+          "NSURLIsRegularFileKey": {
+            "error": {},
+            "ok": true,
+            "value": false
+          },
+          "NSURLIsSymbolicLinkKey": {
+            "error": {},
+            "ok": true,
+            "value": false
+          },
+          "NSURLIsUbiquitousItemKey": {
+            "error": {},
+            "ok": true,
+            "value": null
+          },
+          "NSURLIsWritableKey": {
+            "error": {},
+            "ok": true,
+            "value": true
+          },
+          "NSURLUbiquitousItemDownloadingStatusKey": {
+            "error": {},
+            "ok": true,
+            "value": null
+          },
+          "NSURLUbiquitousItemIsExcludedFromSyncKey": {
+            "error": {},
+            "ok": true,
+            "value": null
+          },
+          "NSURLVolumeIsLocalKey": {
+            "error": {},
+            "ok": true,
+            "value": true
+          },
+          "NSURLVolumeIsReadOnlyKey": {
+            "error": {},
+            "ok": true,
+            "value": false
+          },
+          "NSURLVolumeSupportsCaseSensitiveNamesKey": {
+            "error": {},
+            "ok": true,
+            "value": false
+          },
+          "NSURLVolumeSupportsExclusiveRenamingKey": {
+            "error": {},
+            "ok": true,
+            "value": true
+          },
+          "NSURLVolumeSupportsPersistentIDsKey": {
+            "error": {},
+            "ok": true,
+            "value": true
+          }
+        },
+        "services": {
+          "count": 0,
+          "dictionary_present": 0,
+          "error": {
+            "code": 0,
+            "domain": "NSFileProviderInternalErrorDomain"
+          },
+          "status": "callback"
+        },
+        "statfs": {
+          "local": 1,
+          "readonly": 0,
+          "type": "apfs"
+        },
+        "unmanaged_classification": "unknown: no proven cross-provider predicate"
+      },
+      {
+        "eligibility": "rejected-before-provider-query",
+        "fixture": "missing-control",
+        "lstat": {
+          "errno": 2
+        }
+      },
+      {
+        "eligibility": "rejected-before-provider-query",
+        "fixture": "symlink-control",
+        "lstat": {
+          "dataless": 0,
+          "flags": 0,
+          "mode_type": 40960,
+          "size": 13
+        }
+      }
+    ],
+    "schema": 1
+  },
+  "run_labels": {
+    "command_sandbox": "Codex command sandbox, no App Sandbox entitlement",
+    "host": "command-scoped approved host run, no App Sandbox entitlement"
+  },
+  "schema": 1,
+  "source_sha256": "8747fa4021a439acf18ecb78fefbd5dcc1a4a09c07cc0d44d6cbcce30d10d414"
+}

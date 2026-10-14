@@ -150,6 +150,50 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   seventh card for private metadata removal and shows progress/results without
   an extra Run button after the user's explicit selection.
 
+## Batch rename presentation
+
+P0 contract for review; not implemented. [File tools](file-tools.md#batch-rename)
+owns the rules, supported storage, counts, explicit actions and recovery behavior.
+
+- Use one native app-owned window with a rule/list inspector, a virtualized table
+  of every original/final filename and state, and fixed counts/actions. Preserve
+  readable full names through accessible labels/details; an ellipsis is not the
+  only way to inspect a proposed target. Show metadata preparation and rule errors
+  plainly without technical backend details in the normal user flow.
+- The preview supports ordinary local files and folders. Explain actual access,
+  unavailable-item, collision and unsupported-operation failures at their failed
+  stage; do not require a storage-ownership confirmation or claim that a location
+  has been proved unmanaged. Compatibility notes do not add a separate gate to
+  the normal preview/commit flow.
+- Label the exclusive modes Rules / 规则 and Name List / 名称列表. The list editor
+  says names exclude protected extensions and files without a suffix must stay
+  suffixless; adding a period to such a file's body shows a row error. Ordinary
+  directory names may still contain internal periods. Support explicit Paste and
+  standard editing, and disable smart substitutions. Reassigning a populated list
+  after an order change uses the owning contract's confirmation, with Cancel default;
+  mode changes preserve in-memory drafts and invalidate the submitted preview.
+- Rename N Items / 重命名 N 个项目 and Undo N Items / 撤销 N 个项目 explicitly commit
+  their complete previews. Ordinary Return edits/confirms the focused field or
+  inserts a list newline; it never commits. Command-Return invokes only an enabled
+  visible commit action; Escape closes before execution or requests Stop and Restore
+  / 停止并恢复 during execution. Running close requests the same safe stop path;
+  it does not discard remaining originals or imply rollback has already completed.
+- Results distinguish success, fully restored cancellation/failure, and items still
+  needing recovery. Show actual counts/locations and explicit recovery/reveal
+  actions; do not claim all-or-nothing success or send details to logs. A recovery
+  card outside disabled settings remains usable without enabling new rename work.
+- The recovery card also exposes Export Recovery Evidence and Unblock… /
+  导出恢复证据并解除阻塞… under the [manual resolution protocol](file-tools.md#manual-resolution-of-recovery-records).
+  Explain remaining staging files, loss of automatic recovery/current rename undo,
+  and manual-handling acknowledgement before export, with Cancel as default.
+  Show export/finalization failures without clearing the blocker; distinguish a
+  manually closed operation from verified restoration. No automatic discard action.
+- The new settings row follows existing file-tool switch/placement/disabled rules,
+  with mint/teal pencil as the default SF Symbol and normal icon customization.
+  Preserve Colored/System Monochrome, Chinese/English, minimum window size,
+  keyboard focus, VoiceOver and Reduce Motion. Add no simulated Finder-menu mock,
+  remote assets or new UI dependency.
+
 ## Product presentation
 
 - The bilingual website uses a workflow-led landing page: a real product capture,
