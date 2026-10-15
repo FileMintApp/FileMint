@@ -133,20 +133,29 @@ struct BatchRenameIntegrationTests {
         }
     }
 
-    @Test("ticket byte limit rejects a complete small-count selection without truncation")
+    @Test("ticket byte limit rejects valid paths below the item cap without truncation")
     func ticketByteLimit() throws {
-        try workspace { directory, selection in
-            let captured = try BatchRenameSelection.capture(selection: selection)
-            var object = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(captured)) as? [String: Any])
-            var items = try #require(object["items"] as? [[String: Any]])
-            for index in items.indices {
-                items[index]["source"] = directory.appendingPathComponent(String(repeating: "x", count: 600_000) + String(index)).absoluteString
+        try workspace { directory, _ in
+            // Keep every path within native limits. A 600,000-character component
+            // fails URL admission on older Foundation versions before ticket sizing.
+            let parent = (0..<3).reduce(directory) {
+                $0.appendingPathComponent(String(repeating: "p", count: 180) + String($1), isDirectory: true)
             }
-            object["items"] = items
-            let oversized = try JSONDecoder().decode(BatchRenameSelection.self, from: JSONSerialization.data(withJSONObject: object))
+            try FileManager.default.createDirectory(at: parent, withIntermediateDirectories: true)
+            let selection = (0..<700).map {
+                parent.appendingPathComponent(String(repeating: "x", count: 180) + "\($0).txt")
+            }
+            try #require(selection.allSatisfy {
+                $0.path.utf8.count < 1_024 && $0.lastPathComponent.utf8.count <= 255
+            })
+            try #require(FileToolsPolicy.canBatchRename(selection))
+            for source in selection { try Data("original".utf8).write(to: source, options: .withoutOverwriting) }
+            let captured = try BatchRenameSelection.capture(selection: selection)
+            try #require(captured.items.count == 700)
+            try #require(JSONEncoder().encode(captured).count > 1_048_576)
             let store = FileOperationTicketStore(directory: directory.appendingPathComponent("tickets"))
             #expect(throws: FileOperationTicketError.batchRenameTicketLimit) {
-                try store.enqueue(.batchRename(selection: oversized))
+                try store.enqueue(.batchRename(selection: captured))
             }
             #expect(!FileManager.default.fileExists(atPath: directory.appendingPathComponent("tickets").path))
         }
