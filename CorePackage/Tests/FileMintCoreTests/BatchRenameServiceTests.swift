@@ -221,6 +221,25 @@ struct BatchRenameServiceTests {
         }
     }
 
+    @Test("a parent replaced between Finder capture and main-app authorization is rejected")
+    func capturedParentReplacement() throws {
+        try fixture { root, parent, store in
+            try files(parent)
+            let selection = try BatchRenameSelection.capture(selection: [parent.appendingPathComponent("a"), parent.appendingPathComponent("b")])
+            let displaced = root.appendingPathComponent("original-parent")
+            try FileManager.default.moveItem(at: parent, to: displaced)
+            try FileManager.default.createDirectory(at: parent, withIntermediateDirectories: false)
+            try files(parent)
+            #expect(throws: BatchRenameError.parentChanged) {
+                try BatchRenameService(store: store).prepare(selection: selection, parentBookmark: Data([1]),
+                                                            observationRoots: [parent])
+            }
+            #expect(try text(displaced, "a") == "a")
+            #expect(try text(parent, "a") == "a")
+            #expect(!store.status().hasUnresolvedOperation && !store.status().canUndo)
+        }
+    }
+
     @Test("private store ancestors and configured roots are protected without crawling descendants")
     func protections() throws {
         try fixture { _, parent, store in

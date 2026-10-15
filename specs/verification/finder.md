@@ -23,6 +23,14 @@ A Core test does not prove a visible menu, native authorization, Dock state or
 a successful installation. Record the tested build, environment, scenario and
 observed result; mark unavailable checks as not run.
 
+`make verify-batch-rename-capture` runs the production click-time capture and
+ticket path in a headless child sandbox that denies fixture directory/content
+reads and all fixture writes. It verifies complete metadata capture while normal
+operation handles remain denied, plus source preservation and rejection of
+symlinks and duplicate hard-link identities. It runs in `make verify`; actual
+Finder delivery, the main-app authorization picker, rename and undo still need
+signed installed-app acceptance.
+
 For Open with App, `OpenWithTests` covers migration, malformed/duplicate entries,
 menu partitioning, captured app/selection identity, scope and ticket replay/expiry.
 `bash scripts/build_open_with_harness.sh` publishes a stable sandboxed QA app whose

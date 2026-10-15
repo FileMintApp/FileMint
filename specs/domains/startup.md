@@ -35,6 +35,10 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   in-session page selection without saving navigation into user preferences.
   About/update commands select About in that same window; page navigation does
   not change the explicit-launch and Finder-creation window ownership rules.
+- Reopening the app while a native modal authorization/confirmation window is
+  active focuses that window first. Do not put settings in front of it or strand
+  the operation in an obscured modal session. Ordinary reopening when no modal
+  window is active keeps the existing settings behavior.
 - File & Folder Tools and Resource Tools have their own settings entry under Extensions. Their
   master switches default off on new installs and migration, preserve child
   choices and menu placement when disabled, and never alter existing creation

@@ -62,10 +62,15 @@ public struct BatchRenameSelection: Codable, Equatable, Sendable {
             throw BatchRenameError.invalidSelection
         }
         let parent = lexicalParent.resolvingSymlinksInPath().standardizedFileURL
-        let handle = try RenameDirectory(parent)
+        // Finder can inspect selected-entry metadata without being authorized to
+        // read their parent directory. Do not open an operation handle here:
+        // the main app does that after its exact-parent authorization picker.
+        guard let parentIdentity = try BatchRenameIdentity.path(parent), parentIdentity.isDirectory else {
+            throw BatchRenameError.parentChanged
+        }
         var items: [FileMoveItem] = [], identities: [BatchRenameIdentity] = []
         for url in selection {
-            guard let identity = try BatchRenameIdentity.at(url.lastPathComponent, in: handle.fd),
+            guard let identity = try BatchRenameIdentity.path(parent.appendingPathComponent(url.lastPathComponent)),
                   identity.isRegular || identity.isDirectory else { throw BatchRenameError.unsupportedItem }
             let item = try FileMoveItem.capture(url)
             guard item.canonicalParent == parent, item.device == identity.device, item.inode == identity.inode else {
@@ -76,8 +81,8 @@ public struct BatchRenameSelection: Codable, Equatable, Sendable {
         guard Set(identities.map { "\($0.device):\($0.inode)" }).count == identities.count else {
             throw BatchRenameError.invalidSelection
         }
-        try handle.validatePath()
-        return Self(id: UUID(), items: items, parent: parent, parentIdentity: handle.identity, itemIdentities: identities)
+        guard try BatchRenameIdentity.path(parent) == parentIdentity else { throw BatchRenameError.parentChanged }
+        return Self(id: UUID(), items: items, parent: parent, parentIdentity: parentIdentity, itemIdentities: identities)
     }
 }
 

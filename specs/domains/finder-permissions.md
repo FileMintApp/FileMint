@@ -88,6 +88,11 @@ owns selection, naming, storage support and recovery semantics.
   single-use ticket. Main-app validation after accurate parent authorization
   rechecks the whole snapshot, real parent identity and resolved scope. Never
   substitute a later Finder selection or authorize just a file for parent writes.
+- Click-time capture requires only metadata access to the selected entries and
+  their parent; it must not open that directory for reading its contents before
+  the main app can request authorization. Capture and recheck the parent identity;
+  the main app then opens its pinned operation handle after exact-parent access
+  and rejects a replaced parent or item before preview or mutation.
 - Pin the real parent object for source/staging/target steps; scope checks and
   directory handles must not follow a replacement at the saved parent path.
   Bound metadata probes to selected items, their parent, exact generated targets

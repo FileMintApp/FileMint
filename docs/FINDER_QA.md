@@ -156,6 +156,14 @@ remain successful; size feedback must not prevent publication.
 
 ## File and folder tools
 
+For batch rename, use synthetic items in a configured local folder without a
+saved parent grant. Invoke the actual Finder action and explicitly reopen
+FileMint while its native parent picker is active: the picker must remain
+focused, with settings behind it. Cancel and verify no source/operation changes,
+then retry, grant only that exact parent, rename and undo. A successful retry and
+normal quit verify that cancellation released operation ownership; unchanged
+files alone do not establish that the modal session finished.
+
 For isolated settings regression checks, build with
 `bash scripts/build_file_tools_settings_harness.sh` and open its printed QA app.
 It uses the production settings view and icons with disposable preferences;

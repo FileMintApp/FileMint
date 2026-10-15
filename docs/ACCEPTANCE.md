@@ -3,6 +3,38 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Installed Debug batch rename fixes — 2026-10-15
+
+Overall status: **passed for the tested local rename, undo and authorization
+scenarios**. On base `7b3ebea` plus the recorded local fixes, final verification
+passed Core 319, Images 22, the existing offline checks and a new 15-assertion
+restricted metadata-capture regression. The final signed Debug is installed at
+`/Applications/FileMint.app` with the original sandbox entitlements. Native Finder
+requests, exact-parent cancel / retry / grant, case-only rename with an unchanged
+neighbor, normal relaunch and File-menu undo passed. The preceding candidate
+also exercised four-row rule naming and a name-list swap with undo. Sixteen
+synthetic regular files retained their original names, identities and content
+after all undo operations; private rename state is empty and saved preferences
+and menu scope are unchanged. A modal-reopen defect found during acceptance was
+fixed and rechecked. Older OS, VoiceOver and other storage compatibility are not
+implied; no publication ran.
+
+[Final source, artifact, candidate boundaries and evidence](tasks/evidence/2026-10-15-batch-rename-finder-fix.md).
+
+## Initial installed Debug batch rename — 2026-10-15
+
+Overall status: **failed at Finder intake**. Tested primary checkout `7b3ebea`,
+version 0.7.0/build 28, on macOS 27.2 arm64. Debug build, existing Developer ID
+signing, installation and bundle verification passed; 83 focused rename tests
+passed. The real Finder submenu appeared in a configured ordinary local scope,
+but its click produced an extension alert. Matching kernel logs show a denied
+parent-directory read before the main app's exact-parent authorization. Installed
+preview, rename, conflict handling, recovery and undo remain blocked. All 16
+synthetic source files retained their identities and content hashes; no rename
+store was created. No product fix, notarization or publication ran.
+
+[Installed Debug evidence and next action](tasks/evidence/2026-10-15-batch-rename-installed-debug.md).
+
 ## Settings bottom spacing — 2026-10-12
 
 Tested primary checkout `a8de2a5d312a4c1981e0ffe63f0c56f62471a995` plus the

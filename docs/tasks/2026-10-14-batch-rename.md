@@ -1,15 +1,15 @@
 # Task: 批量重命名
 
 Status: in-progress
-Readiness: P1 pushed / P2–P4 implemented / P5 local verification; installed-runtime checks remain
-Next action: P1 已推送 `4469763`。P2–P4 代码已实现，P5 本地离线 / 构建 / 隔离原生验证见下方记录；剩余安装版 Finder、VoiceOver 和旧系统运行验收单独进行。公开发布仍是独立动作。
+Readiness: Finder sandbox and modal-reopen fixes implemented / Debug installed / local rename and undo accepted
+Next action: 本轮 Finder 沙盒与模态窗口修复、Debug 安装及本地改名 / 撤销验收已完成，见 [修复证据](evidence/2026-10-15-batch-rename-finder-fix.md)。VoiceOver、旧系统、独立大小写敏感卷及公开发布仍分别处理。
 
 Created: 2026-10-14
 
 ## Objective and scope
 
 - User-visible outcome: 在 Finder 选中一批项目，通过“批量重命名…”组合规则、查看完整预览，再明确执行；保留扩展名、禁止覆盖，失败可恢复，最近一次成功批次可撤销。
-- 当前授权范围（2026-10-15）：P1 提交推送完成，继续实现 P2–P5 的文件执行 / 恢复、原生窗口、Finder / 配置和适用验收。首版保留普通本地文件和文件夹。安装、发布仍是独立动作；当前实现不更改用户的生产偏好和文件。
+- 当前授权范围（2026-10-15 追加）：修复 Finder 扩展授权前读取父目录的沙盒问题，重新构建签名安装本地 Debug，继续验收批量重命名、撤销和准确父目录授权。只使用合成文件，保存偏好与菜单范围不变；公开发布仍是独立动作。
 - 首版定位：文件（夹）工具中的可选动作，沿用本地、离线、原生交互和准确目录授权边界。
 
 ### P0 review snapshot
@@ -50,7 +50,7 @@ IMG_10.JPG  -> 产品图_002.JPG
 - 符号链接、Finder 替身、应用和其他包目录、同批重复文件身份（例如同一对象的两个硬链接）、根目录 / 卷根、系统特殊目录本体、观察根目录本体、FileMint 私有存储和已知操作暂存子树，以及包含这些私有存储 / 工作区的祖先目录。具体保护集合见 owning SPEC。
 - 为绕过不可用项目而主动下载、跨卷复制降级或扩大权限。首版不增加非本地 / 非 APFS 的专用执行路径；NAS、iCloud 等兼容性标记为未验证，不作为本地实现或验收的前置条件，也不按存储归属名称额外拦截。
 - Finder 的 Command-Z 集成、长期操作历史、多个改名窗口、应用内手动选择项目入口。
-- 公开发布、正式安装、打包和存储环境兼容性扩展不在本轮范围；P2–P5 产品代码、适用构建和隔离验收已获授权。
+- 前序 P2–P5 实施不含安装和打包；后续用户已单独授权本地 Debug 构建、安装与验收。公开发布及存储环境兼容性扩展仍不在本轮范围。
 
 ### Acceptance criteria
 
@@ -101,6 +101,27 @@ Load additional context when:
 - 若需要修改项目注册或构建配置，加载 [Distribution](../../specs/domains/distribution.md)；仅编辑 `project.yml` 后 `make project`，不编辑生成的 Xcode 项目。
 
 ## Decisions and progress
+
+### Finder sandbox fix and completed local acceptance — 2026-10-15
+
+用户追加授权修复 Finder 沙盒问题并重新构建安装、继续验收。Finder 捕获改为仅探测
+完整选区及父目录元数据，主 App 授权后的固定目录句柄与执行校验保留；新增父目录
+替换回归和拒绝目录内容读取的真实子进程沙盒回归。原生验收又发现重开设置遮挡授权
+面板，已修复为先聚焦活动模态窗口，并补入原生回归清单。
+
+最终 `make verify`（Core 319、Images 22、沙盒新增 15 项断言及其余离线检查）、
+未签名 App/Finder 与签名 Debug 构建 / 安装校验通过。规则改名、名单交换、最近批次
+撤销与重启后 File-menu 撤销已观察；最终包额外验证准确父目录取消 / 退出 / 冷重试 / 授权、
+单项大小写改名及重启撤销。16 个合成常规文件全部还原，私有改名状态为空，保存的偏好
+和菜单范围未变。候选包与最终包证据边界见 [完整记录](evidence/2026-10-15-batch-rename-finder-fix.md)。
+
+### Installed Debug acceptance — 2026-10-15
+
+用户单独授权本地 Debug 构建、安装和批量重命名验收。基于 `7b3ebea`
+完成 Debug 构建、原 Developer ID 签名、旧 App 备份及安装副本校验；当前针对性
+回归 83 项通过。真实 Finder 菜单出现，但点击后扩展读取父目录被沙盒拒绝，
+尚未进入主 App 授权 / 预览，验收结论为 failed。16 个合成测试文件均未改动。
+本轮未修改产品代码，后续执行 / 撤销仍 blocked；[完整证据与状态保留边界](evidence/2026-10-15-batch-rename-installed-debug.md)。
 
 ### Completed analysis
 
@@ -270,7 +291,7 @@ Additional P0 source checks (2026-10-14):
 
 ## Handoff
 
-- Remaining work: P2–P4 实现与本地验证已完成；P5 的安装版 Finder、VoiceOver、macOS 13/14 和独立大小写敏感卷运行证据仍待补。NAS / iCloud / 第三方同步兼容性未验证，不重新建立 provider 分类前置关口。
-- Delivery scope: P1 已推送 `4469763`；当前新 Core 执行 / 存储及测试、App 窗口 / 授权 / 协调器、Finder / 配置 / 图标 / 双语、隔离 native fixture 与本轮文档均留在主工作区。公共 creation JSON Harness 和原 P0.5 数据未改变，无新增包依赖或生产权限。
-- Known limitations: 未安装覆盖生产 App、未改生产数据、未打包或公开发布。未签名构建不是安装验收；signed QA 使用独立身份、容器和合成样本。以本轮证据中的确切来源和环境为准。
-- Next action and minimum context: 先读本 task、[本轮证据](evidence/2026-10-15-batch-rename-p2-p5.md)，再按 SPEC router 加载 file-tools / Finder / startup / presentation 和 HARNESS；后续交付或新增 native 验收按用户指令继续。
+- Remaining work: 本轮 Finder 沙盒修复、模态窗口修复及本地 Debug 改名 / 撤销验收已完成。VoiceOver、macOS 13/14、独立大小写敏感卷和 NAS / iCloud / 第三方同步仍待专项验证，不重新建立 provider 分类前置关口。
+- Delivery scope: `7b3ebea` 基线上的 Finder 元数据捕获 / 模态窗口修复、Core / 子进程沙盒回归及文档。用户已追加授权分组提交并推送至既有 `origin/main`。签名 Debug 已安装并保留 ZIP。公共 creation JSON Harness 和原 P0.5 数据未改变，无新增包依赖或生产权限。
+- Known limitations: 证据限定本机 macOS 27.2 和合成批次；16 个常规样本恢复原名，身份 / 内容保留。私有改名状态为空，保存偏好及菜单范围未改。未公证或公开发布。
+- Next action and minimum context: 本轮无剩余安装 / 验收动作；后续先读本 task、[修复证据](evidence/2026-10-15-batch-rename-finder-fix.md)，再按 SPEC router 选择所需合同。公开发布或新增兼容性验收按后续用户指令继续。
