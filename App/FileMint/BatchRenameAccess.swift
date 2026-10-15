@@ -1,11 +1,19 @@
 import AppKit
 import FileMintCore
 
-/// Operation-local exact-parent grants. These bookmarks are only written to the
-/// rename control record; authorization never changes Finder observation scope.
+/// Each operation owns its active scopes. Normal batches also restore remembered
+/// parent grants; operation records remain independent undo/recovery authority.
 @MainActor
 final class BatchRenameAccess {
     private var active: [URL] = []
+    private let store: BatchRenameAccessStore?
+    private let chooseDirectory: @MainActor (URL, AppLanguage) -> URL?
+
+    init(store: BatchRenameAccessStore? = nil,
+         chooseDirectory: @escaping @MainActor (URL, AppLanguage) -> URL? = BatchRenameAccess.chooseDirectory) {
+        self.store = store
+        self.chooseDirectory = chooseDirectory
+    }
 
     func release() {
         active.forEach { $0.stopAccessingSecurityScopedResource() }
@@ -14,40 +22,27 @@ final class BatchRenameAccess {
 
     func authorize(parent: URL, identity: BatchRenameIdentity, bookmark: Data?,
                    allowRelocation: Bool, language: AppLanguage) async throws -> (URL, Data)? {
-        if let bookmark {
-            let restored = try? await Task.detached(priority: .userInitiated) {
-                var stale = false
-                return try URL(resolvingBookmarkData: bookmark, options: [.withSecurityScope, .withoutUI],
-                               relativeTo: nil, bookmarkDataIsStale: &stale)
-            }.value
-            if let restored {
-                let started = restored.startAccessingSecurityScopedResource()
-                if started { active.append(restored) }
-                if let grant = try await usable(restored, expected: parent, identity: identity,
-                                                allowRelocation: allowRelocation),
-                   let held = try await retain(grant, identity: identity) { return held }
-                if started {
-                    restored.stopAccessingSecurityScopedResource()
-                    active.removeLast()
-                }
+        var renewalRequired = false
+        if let store {
+            let saved = try await Task.detached(priority: .userInitiated) { try store.load() }.value
+            for candidate in BatchRenameAccessStore.candidates(for: parent, identity: identity, grants: saved) {
+                if candidate.grant.identity == identity,
+                   let grant = await restore(candidate.grant.bookmark, parent: parent, identity: identity,
+                                             allowRelocation: allowRelocation) { return grant }
+                renewalRequired = true
             }
         }
-        if let grant = try await usable(parent, expected: parent, identity: identity,
-                                        allowRelocation: allowRelocation),
-           let held = try await retain(grant, identity: identity) { return held }
+        // A rejected remembered grant needs renewed consent, even if a temporary
+        // Powerbox grant still makes the old pathname accessible in this process.
+        if !renewalRequired {
+            if let bookmark, let grant = await restore(bookmark, parent: parent, identity: identity,
+                                                       allowRelocation: allowRelocation) { return grant }
+            if let grant = try await usable(parent, expected: parent, identity: identity,
+                                            allowRelocation: allowRelocation),
+               let held = try await retain(grant, identity: identity) { return held }
+        }
 
-        let picker = NSOpenPanel()
-        picker.title = BatchRenameText.title.text(language)
-        picker.message = language.resolved() == .chinese
-            ? "请选择这次操作原来的父文件夹。授权不会扩大 Finder 菜单范围。"
-            : "Choose this operation’s original parent folder. This does not expand Finder menu scope."
-        picker.directoryURL = parent
-        picker.canChooseDirectories = true
-        picker.canChooseFiles = false
-        picker.canCreateDirectories = false
-        picker.allowsMultipleSelection = false
-        NSApp.activate(ignoringOtherApps: true)
-        guard picker.runModal() == .OK, let chosen = picker.url else { return nil }
+        guard let chosen = chooseDirectory(parent, language) else { return nil }
         if chosen.startAccessingSecurityScopedResource() { active.append(chosen) }
         guard let grant = try await usable(chosen, expected: parent, identity: identity,
                                           allowRelocation: allowRelocation) else {
@@ -57,6 +52,39 @@ final class BatchRenameAccess {
             throw BatchRenameError.invalidBookmark
         }
         return held
+    }
+
+    private func restore(_ bookmark: Data, parent: URL, identity: BatchRenameIdentity,
+                         allowRelocation: Bool) async -> (URL, Data)? {
+        let restored = try? await Task.detached(priority: .userInitiated) {
+            var stale = false
+            return try URL(resolvingBookmarkData: bookmark, options: [.withSecurityScope, .withoutUI, .withoutMounting],
+                           relativeTo: nil, bookmarkDataIsStale: &stale)
+        }.value
+        guard let restored, restored.startAccessingSecurityScopedResource() else { return nil }
+        active.append(restored)
+        do {
+            if let grant = try await usable(restored, expected: parent, identity: identity, allowRelocation: allowRelocation),
+               let held = try await retain(grant, identity: identity) { return held }
+        } catch { /* A failed saved grant requires the original-parent picker. */ }
+        restored.stopAccessingSecurityScopedResource()
+        active.removeLast()
+        return nil
+    }
+
+    static func chooseDirectory(_ parent: URL, language: AppLanguage) -> URL? {
+        let picker = NSOpenPanel()
+        picker.title = BatchRenameText.title.text(language)
+        picker.message = language.resolved() == .chinese
+            ? "请选择这次操作原来的父文件夹。将记住此文件夹的授权，不会扩大 Finder 菜单范围。"
+            : "Choose this operation’s original parent folder. Access will be remembered without expanding Finder menu scope."
+        picker.directoryURL = parent
+        picker.canChooseDirectories = true
+        picker.canChooseFiles = false
+        picker.canCreateDirectories = false
+        picker.allowsMultipleSelection = false
+        NSApp.activate(ignoringOtherApps: true)
+        return picker.runModal() == .OK ? picker.url : nil
     }
 
     /// Keep our own exact-parent extension alive even if preferences releases an

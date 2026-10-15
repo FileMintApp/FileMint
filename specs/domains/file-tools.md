@@ -420,6 +420,11 @@ plan does not grant filesystem authority or satisfy the native rechecks below.
 
 ### Persistent state and undo
 
+- Reusable parent-folder grants live separately from operation/receipt state,
+  as specified by [batch rename authorization](finder-permissions.md#batch-rename-authorization).
+  Consuming or forgetting undo, replacing its receipt, or retiring a recovery
+  record does not forget directory authorization. This private grant store is
+  excluded from operation-evidence and preferences/template export and sync.
 - Keep a private, bounded versioned operation store, separate from preferences,
   ticket files and existing pending moves: at most one unresolved operation and
   one most-recent successful rename receipt, 8 MiB per manifest/receipt or operation

@@ -14,14 +14,17 @@ final class BatchRenameOperations: ObservableObject {
     @Published private(set) var requiresMetadataFinalization = false
     @Published private(set) var requiresCommittedCleanup = false
     private let store: BatchRenameStore
+    private let accessStore: BatchRenameAccessStore
     private let controller: BatchRenameController
     private var preferencesFile: URL?
     private let feedback: ((String) -> Void)?
     private var statusGeneration = UUID()
 
-    init(store: BatchRenameStore = BatchRenameStore(), controller: BatchRenameController = .shared,
+    init(store: BatchRenameStore = BatchRenameStore(), accessStore: BatchRenameAccessStore = BatchRenameAccessStore(),
+         controller: BatchRenameController = .shared,
          preferencesFile: URL? = nil, feedback: ((String) -> Void)? = nil) {
         self.store = store
+        self.accessStore = accessStore
         self.controller = controller
         self.feedback = feedback
         self.preferencesFile = preferencesFile
@@ -51,7 +54,7 @@ final class BatchRenameOperations: ObservableObject {
 
     func present(selection: BatchRenameSelection, preferencesFile: URL?) async throws {
         self.preferencesFile = preferencesFile
-        let access = BatchRenameAccess()
+        let access = BatchRenameAccess(store: accessStore)
         defer { access.release(); refreshStatus() }
         let preferences = FileMintPreferencesStore(fileURL: preferencesFile).load()
         guard FileToolsPolicy.availableTools(selection: selection.items.map(\.source), isItemMenu: true,
@@ -64,19 +67,31 @@ final class BatchRenameOperations: ObservableObject {
             try await perform(action, preferencesFile: preferencesFile)
             return
         }
+        let operationStore = store
+        let previousAuthority = try await Task.detached(priority: .userInitiated) {
+            try operationStore.undoAuthorization()
+        }.value
+        let previousBookmark = previousAuthority?.parentIdentity == selection.parentIdentity
+            ? previousAuthority?.parentBookmark : nil
         guard let (_, bookmark) = try await access.authorize(parent: selection.parent,
             identity: selection.parentIdentity,
-            bookmark: preferences.monitoredFolderBookmarks[selection.parent.path],
+            bookmark: preferences.monitoredFolderBookmarks[selection.parent.path] ?? previousBookmark,
             allowRelocation: false, language: language) else { return }
         let service = BatchRenameService(store: store)
         let roots = observationRoots(preferences)
         let locations = privateLocations
+        let accessStore = self.accessStore
         let session = try await Task.detached(priority: .userInitiated) {
             guard Self.allowsForward(parent: selection.parent, preferencesFile: preferencesFile) else {
                 throw BatchRenameError.disabled
             }
-            return try service.prepare(selection: selection, parentBookmark: bookmark,
-                                       observationRoots: roots, privateLocations: locations)
+            let session = try service.prepare(selection: selection, parentBookmark: bookmark,
+                                              observationRoots: roots, privateLocations: locations)
+            guard Self.allowsForward(parent: session.parentURL, preferencesFile: preferencesFile) else {
+                throw BatchRenameError.disabled
+            }
+            try accessStore.remember(parent: session.parentURL, identity: selection.parentIdentity, bookmark: bookmark)
+            return session
         }.value
         let controlStore = store
         let action = try await controller.present(session: session, language: language,
@@ -203,7 +218,7 @@ final class BatchRenameOperations: ObservableObject {
             requiresCommittedCleanup: status.requiresCommittedCleanup, canExport: status.hasUnresolvedOperation)
     }
 
-    private var privateLocations: [URL] { [FileMintStorage.directory, store.directory] }
+    private var privateLocations: [URL] { [FileMintStorage.directory, store.directory, accessStore.file] }
 
     private func observationRoots(_ preferences: FileMintPreferences) -> [URL] {
         Array(FolderScope.observationRoots(for: preferences.monitoredFolderURLs,
@@ -256,6 +271,12 @@ final class BatchRenameOperations: ObservableObject {
     func show(_ error: Error) {
         if error is CancellationError { return }
         let chinese = language.resolved() == .chinese
+        if error is BatchRenameAccessStoreError {
+            showMessage(chinese ? "无法读取或保存文件夹授权，本次未开始重命名。"
+                                : "Folder access could not be read or saved. This rename has not started.")
+            refreshStatus()
+            return
+        }
         let message: String
         switch error as? BatchRenameError {
         case .invalidSelection, .unsupportedItem:

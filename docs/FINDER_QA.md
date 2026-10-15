@@ -164,6 +164,14 @@ then retry, grant only that exact parent, rename and undo. A successful retry an
 normal quit verify that cancellation released operation ownership; unchanged
 files alone do not establish that the modal session finished.
 
+After granting an eligible batch parent, cancel preview and quit completely.
+Start a new batch from Finder: it must restore the independent grant without a
+picker. Rename/undo, confirm the receipt is consumed, quit and repeat another
+new batch; authorization must still be reused. With synthetic fixtures only,
+replace the parent object at the same pathname: require renewed exact-parent
+selection, preserve the old grant on cancellation, then save and cold-reuse the
+new identity after explicit confirmation. Keep menu roots/preferences unchanged.
+
 For isolated settings regression checks, build with
 `bash scripts/build_file_tools_settings_harness.sh` and open its printed QA app.
 It uses the production settings view and icons with disposable preferences;

@@ -111,6 +111,26 @@ owns selection, naming, storage support and recovery semantics.
   object, with a matching bookmark or explicit picker and fresh identity checks.
   This compensating action remains reachable when switches/scope are disabled;
   it never changes menu roots or accepts a different directory as a substitute.
+- Remember batch-rename parent grants in a separate private, versioned store,
+  bounded to 1,024 directory grants and 4 MiB, with 0600 files. Store the exact
+  parent identity and read/write security-scoped bookmark. A new eligible batch
+  restores a matching saved grant, including the same directory object moved to
+  its current in-scope path, refreshes its bookmark and retains its own active
+  access only for that operation. Recheck the complete batch and current scope
+  before persisting a new/refreshed grant; cancelling the rename preview does not
+  forget a folder the user already explicitly authorized.
+- Unresolvable, denied or identity-mismatched saved grants require the exact-parent
+  picker again; do not treat a stale pathname or an ambient temporary grant as
+  proof that a rejected saved grant remains valid. A matching still-valid prior
+  rename receipt or configured folder grant may seed the independent store.
+  Cancelled renewal preserves existing records and changes no user entries.
+  Corrupt/unsupported/oversized or redirected grant-store bytes are preserved and
+  reported, not silently reset. Saving failure stops a new batch before mutation.
+- Undo, receipt replacement/forgetting, recovery cleanup and manual retirement do
+  not clear remembered directory grants. Existing operation bookmarks remain
+  independent authority for undo/recovery, so a damaged grant cache cannot prevent
+  compensating restoration. Remembered grants never add Finder observation roots,
+  change feature switches or bypass current scope, identity or write checks.
 - Manual record retirement follows the [file-tools protocol](file-tools.md#manual-resolution-of-recovery-records).
   It needs explicit export-destination access but no user-item access or restored
   Finder scope. An export grant never authorizes touching remaining staged items

@@ -3,6 +3,10 @@
 Date: 2026-10-15. Parent: [batch rename task](../2026-10-14-batch-rename.md).
 This follows the [earlier failed installed acceptance](2026-10-15-batch-rename-installed-debug.md).
 
+The later [independent persistent directory-grant work](2026-10-15-batch-rename-persistent-access.md)
+extends this result to cold new-batch reuse after undo. The candidate boundaries
+and artifact below remain the historical evidence for these preceding fixes.
+
 Result: **passed for the tested local rename, undo and authorization scenarios**.
 The signed final Debug is installed at `/Applications/FileMint.app`. The Finder
 capture no longer requires directory-content access before main-app authorization.

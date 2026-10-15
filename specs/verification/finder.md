@@ -31,6 +31,15 @@ symlinks and duplicate hard-link identities. It runs in `make verify`; actual
 Finder delivery, the main-app authorization picker, rename and undo still need
 signed installed-app acceptance.
 
+`BatchRenameAccessStoreTests` checks bounded private grant persistence and
+independence from real undo, forgotten receipts and manual recovery retirement.
+The signed batch-rename fixture exercises the production access adapter with
+isolated grant stores: valid bookmark restoration, renewal on invalid/replaced
+authority and operation-bookmark access despite a damaged reusable cache.
+Installed checks must additionally quit the main process and invoke a new Finder
+batch, both before and after undo, to distinguish saved grants from temporary
+process access; see [the native checklist](../../docs/FINDER_QA.md#file-and-folder-tools).
+
 For Open with App, `OpenWithTests` covers migration, malformed/duplicate entries,
 menu partitioning, captured app/selection identity, scope and ticket replay/expiry.
 `bash scripts/build_open_with_harness.sh` publishes a stable sandboxed QA app whose

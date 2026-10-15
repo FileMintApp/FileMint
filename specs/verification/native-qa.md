@@ -36,7 +36,11 @@ directory. It never opens production stores or registers a Finder extension.
 The fixture also drives the production operation coordinator with injected
 isolated stores: busy rename requests are consumed/rejected without replacing
 the current panel, other tickets retain queue timing, and expired/replayed
-requests release operation ownership. Set
+requests release operation ownership. Its independent grant-store scenarios
+exercise real scoped-bookmark restoration, invalid/replaced grants requiring
+renewal, cancelled renewal preserving records and operation bookmarks remaining
+usable with a damaged cache. All grant stores are injected per run, outside the
+isolated operation directory and without production-store access. Set
 `FILEMINT_BATCH_RENAME_EXPORT_ARTIFACTS=1` to emit each freshly rendered PNG as a
 JSON line on stdout (`artifact` and `pngBase64`); redirect stdout to an owned
 build file before decoding those artifacts. This explicit export avoids needing

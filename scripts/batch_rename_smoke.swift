@@ -53,6 +53,8 @@ final class BatchRenameSmoke: NSObject, NSApplicationDelegate {
                     return
                 }
                 let clipboardCount = NSPasteboard.general.changeCount
+                print("CHECK remembered folder access")
+                try await authorizationScenarios(root: root)
                 print("CHECK production engine")
                 try await engineScenarios(root: root)
                 print("CHECK interrupted recovery")
@@ -122,6 +124,57 @@ final class BatchRenameSmoke: NSObject, NSApplicationDelegate {
         let checked = try BatchRenamePlanner.checkingTargets(of: proposed,
             using: service.observeTargets(preview: proposed, session: session))
         return try BatchRenamePlanner.freeze(checked)
+    }
+
+    private func authorizationScenarios(root: URL) async throws {
+        let directory = root.appendingPathComponent("remembered-access", isDirectory: true)
+        let selection = try Self.fixture(directory, names: ["a.txt", "b.txt"])
+        let captured = try await Task.detached(priority: .userInitiated) {
+            try BatchRenameSelection.capture(selection: selection)
+        }.value
+        let cache = BatchRenameAccessStore(file: directory.appendingPathComponent("folder-access.json"))
+        let bookmark = try captured.parent.bookmarkData(options: .withSecurityScope,
+            includingResourceValuesForKeys: nil, relativeTo: nil)
+        try cache.remember(parent: captured.parent, identity: captured.parentIdentity, bookmark: bookmark)
+        var pickerCount = 0
+        for _ in 0..<2 {
+            let access = BatchRenameAccess(store: BatchRenameAccessStore(file: cache.file),
+                chooseDirectory: { _, _ in pickerCount += 1; return nil })
+            let restored = try await access.authorize(parent: captured.parent, identity: captured.parentIdentity,
+                bookmark: nil, allowRelocation: false, language: .english)
+            try require(restored != nil && pickerCount == 0, "Fresh access instance did not restore the remembered parent")
+            access.release()
+        }
+        try cache.save([captured.parent.path: .init(identity: captured.parentIdentity, bookmark: Data([255]))])
+        let invalidBytes = try Data(contentsOf: cache.file)
+        let invalid = BatchRenameAccess(store: cache, chooseDirectory: { _, _ in pickerCount += 1; return nil })
+        let cancelled = try await invalid.authorize(parent: captured.parent, identity: captured.parentIdentity,
+            bookmark: bookmark, allowRelocation: false, language: .english)
+        try require(cancelled == nil && pickerCount == 1, "Invalid saved authority did not request renewed consent")
+        invalid.release()
+        try require(try Data(contentsOf: cache.file) == invalidBytes, "Cancelled renewal changed remembered authority")
+
+        try Data("damaged".utf8).write(to: cache.file)
+        let recovery = BatchRenameAccess(chooseDirectory: { _, _ in pickerCount += 1; return nil })
+        let original = try await recovery.authorize(parent: captured.parent, identity: captured.parentIdentity,
+            bookmark: bookmark, allowRelocation: true, language: .english)
+        try require(original?.0.path == captured.parent.path && pickerCount == 1,
+                    "Independent operation bookmark could not restore access with a damaged cache")
+        recovery.release()
+
+        let replacementCache = BatchRenameAccessStore(file: directory.appendingPathComponent("replacement-access.json"))
+        try replacementCache.remember(parent: captured.parent, identity: captured.parentIdentity, bookmark: bookmark)
+        let displaced = directory.appendingPathComponent("original-parent", isDirectory: true)
+        try FileManager.default.moveItem(at: captured.parent, to: displaced)
+        try FileManager.default.createDirectory(at: captured.parent, withIntermediateDirectories: false)
+        for name in ["a.txt", "b.txt"] { try Data("replacement".utf8).write(to: captured.parent.appendingPathComponent(name)) }
+        let replacement = try BatchRenameSelection.capture(selection: ["a.txt", "b.txt"].map { captured.parent.appendingPathComponent($0) })
+        let replaced = BatchRenameAccess(store: replacementCache, chooseDirectory: { _, _ in pickerCount += 1; return nil })
+        let denied = try await replaced.authorize(parent: replacement.parent, identity: replacement.parentIdentity,
+            bookmark: nil, allowRelocation: false, language: .english)
+        try require(denied == nil && pickerCount == 2, "Replacement parent reused another directory's saved authority")
+        replaced.release()
+
     }
 
     private func engineScenarios(root: URL) async throws {
@@ -378,6 +431,7 @@ final class BatchRenameSmoke: NSObject, NSApplicationDelegate {
         activeController = controller
         var feedback: [String] = []
         let operations = BatchRenameOperations(store: BatchRenameStore(directory: directory.appendingPathComponent("rename-state")),
+            accessStore: BatchRenameAccessStore(file: directory.appendingPathComponent("rename-folder-access.json")),
             controller: controller, preferencesFile: preferencesFile, feedback: { feedback.append($0) })
         let coordinator = FileOperationCoordinator(store: pending, tickets: tickets, preferencesFile: preferencesFile,
             aliasAccessStore: DesktopAliasAccessStore(file: directory.appendingPathComponent("alias-access.json")),
@@ -389,6 +443,9 @@ final class BatchRenameSmoke: NSObject, NSApplicationDelegate {
         try require(coordinator.isBusy, "Rename intake did not synchronously reserve ownership")
         try await waitUntil { !feedback.isEmpty || !controller.isChecking && controller.rows.count == 2 }
         try require(feedback.isEmpty, "Initial coordinator request failed: \(feedback.joined(separator: "; "))")
+        let remembered = try BatchRenameAccessStore(file: directory.appendingPathComponent("rename-folder-access.json")).load()
+        try require(remembered[captures.0.parent.path]?.identity == captures.0.parentIdentity,
+                    "An eligible new preview did not persist its independent parent grant")
         let firstRows = controller.rows.map(\.id)
         let secondURL = try tickets.enqueue(.batchRename(selection: captures.1))
         coordinator.enqueue(secondURL)
@@ -449,7 +506,9 @@ final class BatchRenameSmoke: NSObject, NSApplicationDelegate {
         preferences.fileTools.batchRename = false
         try FileMintPreferencesStore(fileURL: preferencesFile).save(preferences)
         var feedback: [String] = []
-        let operations = BatchRenameOperations(store: store, controller: BatchRenameController(),
+        let operations = BatchRenameOperations(store: store,
+            accessStore: BatchRenameAccessStore(file: root.appendingPathComponent("rename-folder-access.json")),
+            controller: BatchRenameController(),
             preferencesFile: preferencesFile, feedback: { feedback.append($0) })
         try require(store.status().hasUnresolvedOperation && store.status().isCorrupt, "Synthetic corrupt record not blocked")
         for stage in ["cancel confirmation", "cancel save panel"] {

@@ -3,6 +3,23 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Persistent batch rename parent access — 2026-10-15
+
+Overall status: **passed for tested local persistent authorization reuse and
+renewal**. On base `7b3ebea` plus recorded local changes, Core 325, Images 22,
+the existing offline checks and restricted capture regression passed; the signed
+isolated native fixture passed 69 assertions. The latest Debug is installed with
+the original Developer ID and sandbox entitlements. Actual Finder cold launches
+reused parent authorization after preview cancellation, after rename/undo with
+no receipt remaining, and after explicit renewal. Replacing the synthetic parent
+object at its pathname required fresh confirmation; cancelling preserved records
+and files. Four original/replacement synthetic files retained their expected
+identities and content. Preferences and menu scope stayed byte-for-byte unchanged;
+the separate private grant file intentionally remains after operation cleanup.
+No system privacy setting, release or publication was changed.
+
+[Source, Debug ZIP and runtime evidence](tasks/evidence/2026-10-15-batch-rename-persistent-access.md).
+
 ## Installed Debug batch rename fixes — 2026-10-15
 
 Overall status: **passed for the tested local rename, undo and authorization
