@@ -157,7 +157,8 @@ Load for: Optional Finder file/folder actions, batch rename, selection snapshots
 
 ## Batch rename
 
-Planned target contract; implementation has not started. The
+Target contract; pure-rule implementation is tracked separately from the planned
+native feature. The
 [task](../../docs/tasks/2026-10-14-batch-rename.md) records phase status and evidence.
 The following rules apply only to batch rename, not to the existing tools above.
 
@@ -276,6 +277,7 @@ The following rules apply only to batch rename, not to the existing tools above.
   original bodies on every revision; validate final names rather than silently
   repairing intermediate text. Replace all nonoverlapping scalar-exact matches
   left-to-right once; do not search again inside inserted replacement text.
+  An empty search string is invalid; deletion uses an empty replacement.
 - Numbering covers all selected rows in order: start + zero-based sorted ordinal × step.
   Start is 0…Int64.max; step is 1…Int64.max; padding width is 1…20 and is a minimum,
   never digit truncation. Check arithmetic before allocation. Defaults are start 1,
@@ -322,6 +324,13 @@ The following rules apply only to batch rename, not to the existing tools above.
   two-item menu minimum to a remaining single item.
 
 ### Execution and recovery
+
+P1's immutable naming plan contains the captured name descriptors, order, mode,
+parameters and revision, and may consume caller-supplied exact-target observations.
+The pure planner performs no filesystem I/O. Missing target observations remain
+checking; failures are not absence. Observations from another batch/revision or
+different planning inputs cannot validate the current preview. Freezing this
+plan does not grant filesystem authority or satisfy the native rechecks below.
 
 - The main app alone renames, serialized with existing file operations. Hold exact
   parent write access and a pinned parent identity/directory handle; use same-volume
@@ -439,8 +448,9 @@ The following rules apply only to batch rename, not to the existing tools above.
 - Core policies: `FileTools.swift`, `PendingFileMove.swift`, `FileOperationTicket.swift`,
   `FileMenuAction.swift`, `Preferences.swift`.
 - Native adapters: `FinderSync.swift`, `FileOperationCoordinator.swift`; settings in
-  `FileToolsSettingsView.swift`. Planned rename rules/executor are `BatchRename*`
-  in Core; planned panel/controller live in the app. The coordinator's active requests also guard app quit
+  `FileToolsSettingsView.swift`. P1 rename rules/planning are `BatchRenameRule`,
+  `BatchRenamePlanner` and `RenameNamePolicy` in Core; the native executor and
+  app panel/controller remain planned. The coordinator's active requests also guard app quit
   and updater relaunch.
 - Load [Finder](finder-permissions.md) for scope and native callbacks,
   [startup](startup.md) for preference migration, and [presentation](presentation.md)

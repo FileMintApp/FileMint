@@ -1,15 +1,15 @@
 # Task: 批量重命名
 
-Status: planned
-Readiness: ready-for-implementation / 待实现
-Next action: 从 P1 纯规则开始实现普通本地文件和文件夹的批量重命名；P1–P5 当前均未开始。本轮仅完成最终设计复核、文档提交及远端推送，不进入产品实现。
+Status: in-progress
+Readiness: P1 complete / P1 已完成；P2–P5 未开始
+Next action: 本轮交付 P1 实现与验证结果，到此停止；后续如进入 P2，再实现真实文件执行与恢复。当前不进入 P2–P5，不提交或推送本轮变更。
 
 Created: 2026-10-14
 
 ## Objective and scope
 
 - User-visible outcome: 在 Finder 选中一批项目，通过“批量重命名…”组合规则、查看完整预览，再明确执行；保留扩展名、禁止覆盖，失败可恢复，最近一次成功批次可撤销。
-- 当前授权范围：最终设计复核后标记待实现，并提交 / 推送本任务的规划文档、相关 SPEC 与历史证据。首版保留普通本地文件和文件夹，尊重系统限制并保持不覆盖、失败停止和恢复；本轮不进入 P1–P5 产品实现。
+- 当前授权范围：实现 P1 纯规则并按 HARNESS 验证、汇报；首版保留普通本地文件和文件夹。P2–P5 不在本轮范围，不执行真实改名、不新增 App / Finder 入口，也不提交或推送本轮产品变更。
 - 首版定位：文件（夹）工具中的可选动作，沿用本地、离线、原生交互和准确目录授权边界。
 
 ### P0 review snapshot
@@ -50,7 +50,7 @@ IMG_10.JPG  -> 产品图_002.JPG
 - 符号链接、Finder 替身、应用和其他包目录、同批重复文件身份（例如同一对象的两个硬链接）、根目录 / 卷根、系统特殊目录本体、观察根目录本体、FileMint 私有存储和已知操作暂存子树，以及包含这些私有存储 / 工作区的祖先目录。具体保护集合见 owning SPEC。
 - 为绕过不可用项目而主动下载、跨卷复制降级或扩大权限。首版不增加非本地 / 非 APFS 的专用执行路径；NAS、iCloud 等兼容性标记为未验证，不作为本地实现或验收的前置条件，也不按存储归属名称额外拦截。
 - Finder 的 Command-Z 集成、长期操作历史、多个改名窗口、应用内手动选择项目入口。
-- 本轮产品代码、项目配置、产品测试 / 构建、安装或发布；本任务的文档提交及远端推送已获授权。
+- 本轮 P2–P5 产品代码、项目配置、App / Finder 构建、安装或发布；前序文档已提交推送。本轮仅 P1 Core 实现、单元覆盖及适用验证。
 
 ### Acceptance criteria
 
@@ -89,7 +89,7 @@ Implementation entry points:
 
 Verification:
 
-- 本轮 task / SPEC 与历史证据注记按 [HARNESS 文档行](../../specs/HARNESS.md)复验上下文、文本及链接，不运行新探针、产品测试或构建。
+- 本轮按 [HARNESS Core 行](../../specs/HARNESS.md)在 P1 实现完成后运行 `make verify`；通过 Swift 单元测试验证规则与规划器，公共文件创建 JSON Harness 格式不扩展。未改 App / Finder，不触发原生构建或验收。
 - 前序 P0.5 隔离 CLI 的 [历史证据](evidence/2026-10-14-batch-rename-p05.md)保留；其分类前置关口已取消，不补设替代前置关口。命令沙盒及宿主 CLI 均不是签名 FileMint App Sandbox 验证；后续需要原生 fixture 时加载 [Native QA](../../specs/verification/native-qa.md)。
 - 后续实现： [Core 检查](../../specs/verification/core.md)、[Finder / native 检查](../../specs/verification/finder.md)。
 - 工作流： [AI Playbook](../AI_PLAYBOOK.md)及 [Task template](TEMPLATE.md)。
@@ -115,7 +115,7 @@ Load additional context when:
 
 ### P0 review revisions completed
 
-P0 已修正三处审核问题；本轮依用户决策取消随后引入的分类前置关口，首版保留普通本地文件和文件夹。以下是当前目标契约摘要，不表示功能已实现或运行验收。
+P0 已修正三处审核问题，并按前序用户决策取消分类前置关口，首版保留普通本地文件和文件夹。以下是完整目标契约摘要；当前只实现了 P1 纯规则，不表示整项功能已经可用。
 
 | 决策 | 结论 / 理由 | Owning contract |
 | --- | --- | --- |
@@ -137,7 +137,7 @@ P0 已修正三处审核问题；本轮依用户决策取消随后引入的分�
 - 已补私有存储祖先保护，防止 `Application Support` 进入暂存时携带现有偏好、票据、待移动记录及可能位于其中的恢复索引。
 - 已补损坏 / 无法恢复记录的人工收口、原始证据导出、撤销失效及收口中断边界。
 - 扩展名决策采用保留原承诺的收紧方案：`README -> README.txt`、`.env -> .env.local` 禁止；普通目录 `Photos -> Photos.2026` 允许。不重新解析 / 修整生成主体。
-- 曾将正向非受管分类前移为 P0.5，并完成局部探针；用户现已取消这一前置门槛。原始观察保留，不把旧的 incomplete 改写成 passed；P1–P5 仍未开始。
+- 曾将正向非受管分类前移为 P0.5，并完成局部探针；用户随后取消这一前置门槛。原始观察保留，不把旧的 incomplete 改写成 passed，该门槛不再作为实施依赖。
 
 当前实施边界：
 
@@ -151,7 +151,7 @@ P0 已修正三处审核问题；本轮依用户决策取消随后引入的分�
 - 系统决定权限和原生操作能否执行；FileMint 负责冻结选区 / 预览、必要身份与范围检查、独占不覆盖、失败停止、尽力恢复及真实结果报告。系统成功单次改名不等于整个批次原子成功，现有日志 / 撤销 / 人工收口要求保留。
 - 不遍历目录以证明后代存储归属，不扫描提供商或云盘根，不要求用户声明项目“非受管”。目录仅改自身目录项，后代随其路径变化，不逐项处理内容。
 - NAS、iCloud 等兼容性留待确有需求或实际问题时专项验证，不阻塞本地实现 / 验收，不宣称已经支持。每次请求仍遵守同一必要能力与安全检查，不能绕过系统拒绝。
-- 后续验证聚焦普通本地文件 / 文件夹、冲突和并发替换、授权取消、系统返回不支持、暂存 / 发布失败及恢复。适用的 Harness / 原生验收要求保持；本轮不开始实现或运行新探针。
+- 后续验证聚焦普通本地文件 / 文件夹、冲突和并发替换、授权取消、系统返回不支持、暂存 / 发布失败及恢复。适用的 Harness / 原生验收要求保持；该范围决策阶段仅修订文档，当前 P1 实现进展见下方记录。
 
 ### Historical P0.5 observations (prerequisite withdrawn)
 
@@ -161,9 +161,18 @@ P0 已修正三处审核问题；本轮依用户决策取消随后引入的分�
 
 ### Final design review (2026-10-14)
 
-- 未发现阻碍进入实现的新设计问题，状态为待实现。命名 / 名单、普通目录、身份 / 授权、票据 / 窗口所有权、暂存 / 独占发布、失败恢复、撤销及人工收口的任务描述与 owning SPEC 一致。
+- 前序复核未发现阻碍进入实现的新设计问题，当时标记为待实现。命名 / 名单、普通目录、身份 / 授权、票据 / 窗口所有权、暂存 / 独占发布、失败恢复、撤销及人工收口的任务描述与 owning SPEC 一致。
 - 前序三项审核问题已闭合；原分类前置门槛已取消，未以兼容性待验重新引入。
 - 目录句柄、大小写 / Unicode 对照、系统错误、syscall 与日志间的崩溃窗口、回滚 / 撤销及恢复授权仍需按 P1–P5 实现和验证。这些是已规划的实现验收项，不是已通过的运行证据。
+
+### P1 implementation (2026-10-14)
+
+- [RenameNamePolicy](../../CorePackage/Sources/FileMintCore/RenameNamePolicy.swift) 独立于创建文件 sanitizer：捕获隐藏标记 / 后缀，严格输出校验，保留原始 UTF-8；包含 unchanged / restoration 豁免、namespace 预检键和固定自然排序。
+- [BatchRenameRule](../../CorePackage/Sources/FileMintCore/BatchRenameRule.swift) 实现按序字面替换 / 删除、前后缀、编号及默认 Unicode 大小写映射。字面参数使用字节精确相等，编号先检查全批溢出，字符串扩容前检查预算。
+- [BatchRenamePlanner](../../CorePackage/Sources/FileMintCore/BatchRenamePlanner.swift) 复用不可变原名批次；提供排序、名单行绑定与显式重分配、逐行状态 / 计数、最终命名空间冲突及不可变命名计划。名单先检查行数再拆分，避免为不匹配的百万空行分配逐行对象。
+- 目标观察为显式注入数据，不执行元数据查询；缺失 / pending 保持 checking，错误不当作 absent。观察绑定完整批次、revision、模式 / 参数、顺序及命名环境；更新观察会撤销旧的成功状态，不累积遗漏项。
+- 仅在命名和注入目标检查完整且有实际名称变化时允许 freeze。冻结的是命名提案，未验证真实父目录 / 文件身份、授权、源可用性或现场目标；P2 必须执行这些原生复验后才能操作文件。
+- 新增 [名称策略测试](../../CorePackage/Tests/FileMintCoreTests/RenameNamePolicyTests.swift)、[规则测试](../../CorePackage/Tests/FileMintCoreTests/BatchRenameRuleTests.swift)及 [规划器测试](../../CorePackage/Tests/FileMintCoreTests/BatchRenamePlannerTests.swift)，共 52 个纯测试，已随完整 `make verify` 通过；见 [P1 验证记录](evidence/2026-10-14-batch-rename-p1.md)。本轮不创建菜单、窗口、票据、恢复存储或文件执行器。
 
 ### Execution and recovery design
 
@@ -193,13 +202,13 @@ P0 已修正三处审核问题；本轮依用户决策取消随后引入的分�
 | --- | --- | --- | --- |
 | P0 — 契约 | complete; ready for implementation | 最终设计复核完成；保留普通本地文件 / 文件夹及既定安全约束 | 文档与链接检查通过；任务待实现 |
 | P0.5 — 原分类可行性研究 | archived; prerequisite withdrawn | 局部原生观察保留，原 incomplete 结论不改写成 passed | 历史记录，无当前实施依赖 |
-| P1 — 纯规则 | not-started | `BatchRenameRule`、`BatchRenamePlanner`、`RenameNamePolicy`、冻结计划和逐行状态 | 相同输入 / 环境得到相同输出；文件 / 文件夹排序、名单、扩展名及冲突规则有回归覆盖 |
+| P1 — 纯规则 | complete | 三份 Core 实现、冻结命名计划 / 逐行状态及 52 个纯测试 | 完整 `make verify` 已通过；P2–P5 不启动 |
 | P2 — 文件执行 | not-started | `BatchRenameService`、同卷暂存、独占发布、恢复日志、人工收口和最近批次撤销 | 普通文件和文件夹的句柄原语、祖先保护、互换 / 大小写改名、并发替换、系统拒绝、恢复冲突、导出收口及崩溃窗口在隔离目录验证 |
 | P3 — 原生窗口 | not-started | App-owned `BatchRenameController` / `BatchRenameView`，规则与名单模式、完整预览、计数、取消 / 恢复 / 撤销 | 一次只处理一个会话；过期预览不执行；键盘 / 无障碍可操作；原生窗口不打开设置 |
 | P4 — Finder / 配置 | not-started | 新 `FileTool`、票据及菜单动作，接入操作队列、开关迁移、菜单位置、图标及双语 | 新旧配置默认关闭；完整选区、旧菜单、忙碌请求、授权和退出 / 更新保护正确 |
 | P5 — 验收 | not-started | Core / Harness、未签名构建、隔离 native / installed Finder 验收 | 验证已承诺的普通本地文件 / 文件夹场景及失败恢复；其他环境未验证如实记录，不阻塞本地验收 |
 
-后续按 P1 → P2 → P3 → P4 → P5 推进，没有存储归属分类前置关口；本轮只交付文档修订。新类型名称是实现建议，不是已存在的代码。执行规则与文件执行器保持在 CorePackage；Finder API 留在扩展，操作窗口和设置留在 App。无需新包依赖。
+本轮结束于 P1；P2 → P3 → P4 → P5 仍为后续工作，没有存储归属分类前置关口。P1 类型已存在，后续执行器 / 窗口类型仍是实现建议。执行规则与文件执行器保持在 CorePackage；Finder API 留在扩展，操作窗口和设置留在 App。无需新包依赖。
 
 ### Verification scenarios for implementation
 
@@ -212,24 +221,24 @@ P0 已修正三处审核问题；本轮依用户决策取消随后引入的分�
 - 人工收口：损坏 / 不支持版本记录、对象缺失或人工归位；确认 / 导出取消，导出失败 / 被占用、验证失败、状态变化、退役标记及清理失败；逐个崩溃窗口、重启后显式收口、当前 undo 失效和关闭开关时的入口。验证原始字节保留、失败继续阻塞、用户暂存原件完全不动、手动关闭后可以开始新批次且无应用内档案增长。
 - 集成：完整选区与非法混合选择、旧菜单、票据过期 / 重放 / 超限、重复请求、功能关闭、范围收窄、授权取消、冷 / 热启动、设置不被打开、关闭窗口、退出及更新重启。
 - 原生交互：中英文、明暗外观、键盘、VoiceOver、1,000 项预览响应和实际变更计数；已有收藏项目改名后仍定位原对象，不能打开旧路径上的替换对象。
-- 后续完成实现时按 HARNESS 执行 `make verify`、`CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO make build` 和相关原生验收。本轮文档修订不触发完整产品检查。
+- P1 按 HARNESS 运行 `make verify`；后续 App / Finder 实现还需未签名构建及对应原生验收，不能以本轮纯规则测试代替。
 
 ## Evidence
 
-Tested commit/worktree: 主 checkout `/Users/daigua/Documents/Ray/FileMint`，审核基线为 `main` / `46da9813aa9878104f9d8a946400e35dbad95e19` 之上的本任务文档差异；该标记不表示产品测试通过。
-Environment: 2026-10-14，主 checkout；本轮仅最终设计复核、交付状态更新及文档 Git 交付。前序探针为 macOS 27.2（26B5101f）/ arm64 / CLT SDK 27.0；没有新增探针、产品测试、签名 App / Finder 验收或用户数据操作。
+Tested commit/worktree: 主 checkout `/Users/daigua/Documents/Ray/FileMint`，`main` / `ea9259bb978b555051e31e7d708d2d3f5d0b6ec1` 加本轮未提交 P1 变更；文件摘要见 P1 验证记录。
+Environment: 2026-10-14，macOS 27.2（26B5101f）/ arm64 / Xcode 27.0（27A266a）/ Swift 6.4。运行 P1 和现有仓库验证，未运行批量改名文件执行器、App / Finder 原生验收、安装或发布。
 
 | Check / command | Status | Observed result / evidence link |
 | --- | --- | --- |
 | 当前契约与相关调用路径静态核对 | passed | 已定位身份检查、单次票据、独占改名、队列及退出 / 更新保护；不构成新功能运行证据 |
-| 最终设计复核 | passed | 未发现实施阻塞；任务 / owning SPEC 的规则、事务、授权与生命周期一致，标记待实现 |
-| Task / 证据 / SPEC 文本与链接检查 | passed | 本轮 9 个待提交文档 / 证据文件、104 个本地链接（task 49 个）、必需章节、JSON 与空白检查通过；历史探针源码 hash 和原始观测未变；`git diff --check` 通过 |
-| `make verify-context` | passed | 本轮 22 个上下文文档、129 个本地链接通过；入口 6986/7000 UTF-8 bytes；task / evidence 另行检查 |
+| 前序最终设计复核 | passed (historical) | 当时未发现实施阻塞；P1 当前实现及运行结果单独记录 |
+| Task / 证据 / SPEC 文本与链接检查 | passed | P1 的 9 个改动文件、3 份 Markdown、70 个本地链接（task 57 个）、结构与空白检查通过；代码 / 测试及最终日志 hash 与验证记录一致；`git diff --check` 通过 |
+| `make verify-context` | passed | 随最终 `make verify` 及结果回写后检查通过；22 个上下文文档、129 个本地链接，入口 6986/7000 UTF-8 bytes |
 | 前序 P0.5 CLI 编译与本地观测 | passed (historical) | 同一隔离探针在命令沙盒 / 宿主执行完成；只证明 [记录中的元数据观察](evidence/2026-10-14-batch-rename-p05.md#probe-safety-and-raw-results)，本轮未重跑 |
 | 原 P0.5 正向非受管分类 gate | withdrawn | 当时结论为 incomplete / not passed；用户已取消该要求，未改写原始观察或宣称分类成功 |
 | iCloud / 第三方 provider / NAS 实测 | not-run | 兼容性待后续专项验证，不作为当前本地需求的阻塞条件 |
-| `make verify` / Swift / Harness | not-run | 产品尚未实现；本轮仅文档修订 |
-| App / Finder build、signed native QA | not-run | 未验证实际授权、Finder 回调、窗口、恢复或兼容性；不能用 CLI 代替 |
+| `make verify` / Swift / Harness | passed | Core 287（含新增 P1 52）、Images 22、公共 Harness 5/5、CLI 10 及其余离线检查通过；[完整 P1 记录](evidence/2026-10-14-batch-rename-p1.md)含初次失败与修正过程 |
+| App / Finder build、signed native QA | not-run | 本轮仅 P1；未验证实际授权、Finder 回调、窗口、真实改名 / 恢复或旧系统运行行为 |
 
 Background references, read during the preceding analysis:
 
@@ -246,7 +255,7 @@ Additional P0 source checks (2026-10-14):
 
 ## Handoff
 
-- Remaining work: 最终设计复核完成，任务待实现；P1–P5 全部未开始。下一实施阶段为 P1，原 P0.5 前置门槛已取消。
-- Delivery scope: 本 task、SPEC router 和四份 domain 文档，以及 `docs/tasks/evidence/2026-10-14-batch-rename-p05.md`、`2026-10-14-batch-rename-p05-probe.md`、`2026-10-14-batch-rename-p05-observations.json`。ignored `.local/` 工作目录和临时样本不纳入提交；没有产品代码、项目配置或路线图修改。
-- Known limitations / native checks still needed: 产品尚未实现；普通本地文件 / 文件夹在支持系统上的实际授权、独占执行、失败恢复和 Finder 回调仍需随实现验收。其他存储环境兼容性未验证，不扩写为已支持或当前阻塞。
-- Next action and the minimum context required: 后续实现按 P1 起步。最小上下文为本 task、SPEC 路由、文件工具 / Finder 契约及 HARNESS，其他领域按实际变更加载；原 P0.5 证据只在需要复查历史观察时读取。
+- Remaining work: P1 已完成并验证；P2–P5 未开始，本轮到此停止。后续阶段为 P2 的真实身份 / 授权复验、文件执行和恢复。
+- Delivery scope: 三份 P1 Core 源码、三份纯测试、owning file-tools SPEC、本 task 和 P1 验证记录；未改 App / Finder、票据 / 偏好开关、项目配置、公共 JSON Harness 或原 P0.5 数据。完整日志保留于 ignored `.local/verification/`，本轮未提交 / 推送。
+- Known limitations / native checks still needed: P1 冻结的是命名提案；注入目标观察不代表真实文件检查。目录句柄、真实授权、独占改名、故障恢复、窗口和 Finder 回调仍需后续实现验证；当前版本没有批量重命名产品入口。
+- Next action and the minimum context required: 本轮结束于 P1；后续明确进入 P2 时读取本 task、P1 验证记录、SPEC 路由、文件工具 / Finder 契约及 HARNESS。窗口 / 生命周期等领域按实际变更加载。
