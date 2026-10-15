@@ -3,6 +3,23 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Batch rename authorization review fixes — 2026-10-15
+
+On primary checkout `aaf966e` plus the recorded changes, both reviewed P2 defects
+are fixed. Persistent grants compare bookmark volume UUID and file identity,
+supporting version-1 grants across simulated mount device renumbering and directory
+relocation while retaining strict operation snapshots. Grant saves finish private
+0600 temporary files before atomic publication; native permission failures preserve
+the old readable store or its absence.
+
+**Passed:** full `make verify` (Core 328, Images 22, Harness 5/5, CLI 10,
+existing offline checks, capture 15 assertions and grant-publication 22 assertions),
+unsigned App/Finder build, and the Developer ID signed sandbox fixture (75 assertions).
+The fixture exercised real scoped-bookmark restoration with simulated previous
+device numbers. Actual reboot/remount, installed Finder reacceptance, older OS
+and VoiceOver were **not run**. Production installation and publication were not
+changed. [Source, logs and limits](tasks/evidence/2026-10-15-batch-rename-authorization-review.md).
+
 ## Persistent batch rename parent access — 2026-10-15
 
 Overall status: **passed for tested local persistent authorization reuse and

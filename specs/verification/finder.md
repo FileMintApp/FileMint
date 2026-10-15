@@ -33,9 +33,19 @@ signed installed-app acceptance.
 
 `BatchRenameAccessStoreTests` checks bounded private grant persistence and
 independence from real undo, forgotten receipts and manual recovery retirement.
+It also checks version-1 bookmark volume identity across simulated device
+renumbering, moved-grant deduplication, different/missing volume and changed-object
+rejection, and strict legacy/operation identity checks.
+`make verify-batch-rename-access` denies native permission changes in headless
+subprocesses. Denying chmod on the published pathname must not break a save;
+denying temporary-file permission changes must preserve the previous readable
+cache or its absence, for both updates and first saves, without temporary leaks.
 The signed batch-rename fixture exercises the production access adapter with
 isolated grant stores: valid bookmark restoration, renewal on invalid/replaced
-authority and operation-bookmark access despite a damaged reusable cache.
+authority and operation-bookmark access despite a damaged reusable cache. Its
+real security-scoped bookmarks also exercise simulated device renumbering at
+the original and moved directory paths, followed by validated grant refresh.
+This does not constitute an actual reboot/remount test.
 Installed checks must additionally quit the main process and invoke a new Finder
 batch, both before and after undo, to distinguish saved grants from temporary
 process access; see [the native checklist](../../docs/FINDER_QA.md#file-and-folder-tools).

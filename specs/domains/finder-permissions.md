@@ -119,13 +119,23 @@ owns selection, naming, storage support and recovery semantics.
   access only for that operation. Recheck the complete batch and current scope
   before persisting a new/refreshed grant; cancelling the rename preview does not
   forget a folder the user already explicitly authorized.
+- Persistent grant identity uses the bookmark's volume UUID plus inode,
+  generation, birth time and kind, so a changed mount device number does not
+  invalidate the same directory. Compare against fresh metadata after starting
+  access; reject a different/missing volume UUID or replaced object. Existing
+  version-1 bookmarks participate without a format reset; bookmarks lacking a
+  volume UUID retain strict device matching. Click-time snapshots, pinned handles
+  and operation/undo/recovery records retain their existing strict identity checks.
 - Unresolvable, denied or identity-mismatched saved grants require the exact-parent
   picker again; do not treat a stale pathname or an ambient temporary grant as
   proof that a rejected saved grant remains valid. A matching still-valid prior
   rename receipt or configured folder grant may seed the independent store.
   Cancelled renewal preserves existing records and changes no user entries.
   Corrupt/unsupported/oversized or redirected grant-store bytes are preserved and
-  reported, not silently reset. Saving failure stops a new batch before mutation.
+  reported, not silently reset. Create and finish a private 0600 temporary file
+  before atomically replacing the grant store; no fallible permission repair
+  follows publication. A failed save preserves the previous store (or its absence)
+  and stops a new batch before mutation.
 - Undo, receipt replacement/forgetting, recovery cleanup and manual retirement do
   not clear remembered directory grants. Existing operation bookmarks remain
   independent authority for undo/recovery, so a damaged grant cache cannot prevent

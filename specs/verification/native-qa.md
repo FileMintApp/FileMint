@@ -39,7 +39,11 @@ the current panel, other tickets retain queue timing, and expired/replayed
 requests release operation ownership. Its independent grant-store scenarios
 exercise real scoped-bookmark restoration, invalid/replaced grants requiring
 renewal, cancelled renewal preserving records and operation bookmarks remaining
-usable with a damaged cache. All grant stores are injected per run, outside the
+usable with a damaged cache. A simulated previous device number must not prevent
+real scoped-bookmark restoration, including after moving the same parent; refresh
+must replace the old path entry and preserve the current operation identity.
+This simulation is separate from actual reboot/remount evidence.
+All grant stores are injected per run, outside the
 isolated operation directory and without production-store access. Set
 `FILEMINT_BATCH_RENAME_EXPORT_ARTIFACTS=1` to emit each freshly rendered PNG as a
 JSON line on stdout (`artifact` and `pngBase64`); redirect stdout to an owned

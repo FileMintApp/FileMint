@@ -14,6 +14,12 @@ struct BatchRenameAccessStoreTests {
         try body(root, parent, .init(file: root.appendingPathComponent("private/access.json")), identity)
     }
 
+    private func changing(_ identity: BatchRenameIdentity, _ field: String, to value: UInt64) throws -> BatchRenameIdentity {
+        var fields = try #require(try JSONSerialization.jsonObject(with: JSONEncoder().encode(identity)) as? [String: Any])
+        fields[field] = value
+        return try JSONDecoder().decode(BatchRenameIdentity.self, from: JSONSerialization.data(withJSONObject: fields))
+    }
+
     @Test("fresh instances restore private versioned grants without operation state")
     func persistence() throws {
         try fixture { _, parent, store, identity in
@@ -24,6 +30,73 @@ struct BatchRenameAccessStoreTests {
             #expect(attributes[.posixPermissions] as? Int == 0o600)
             let directory = try FileManager.default.attributesOfItem(atPath: store.file.deletingLastPathComponent().path)
             #expect(directory[.posixPermissions] as? Int == 0o700)
+        }
+    }
+
+    @Test("version-1 grants survive device renumbering without weakening volume or file identity")
+    func persistentIdentity() throws {
+        try fixture { _, parent, store, identity in
+            let volume = try #require(try parent.resourceValues(forKeys: [.volumeUUIDStringKey]).volumeUUIDString)
+            // Existing grants did not explicitly request the volume key.
+            let bookmark = try parent.bookmarkData(options: .minimalBookmark,
+                includingResourceValuesForKeys: nil, relativeTo: nil)
+            let previous = try changing(identity, "device", to: identity.device + 37)
+            try store.save([parent.path: .init(identity: previous, bookmark: bookmark)])
+            let data = try Data(contentsOf: store.file)
+            let payload = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+            #expect(payload["version"] as? Int == 1)
+            let grant = try #require(try BatchRenameAccessStore(file: store.file).load()[parent.path])
+            #expect(grant.volumeUUID == volume)
+            #expect(grant.matchesIdentity(identity, volumeUUID: volume))
+            #expect(!grant.matchesIdentity(identity, volumeUUID: "another-volume"))
+            #expect(!grant.matchesIdentity(identity, volumeUUID: nil))
+            for (field, value) in [("inode", identity.inode + 1), ("generation", UInt64(identity.generation) + 1),
+                                   ("birthSeconds", UInt64(identity.birthSeconds) + 1),
+                                   ("birthNanoseconds", UInt64(identity.birthNanoseconds) + 1),
+                                   ("kind", UInt64(S_IFREG))] {
+                let changed = try changing(identity, field, to: value)
+                #expect(!grant.matchesIdentity(changed, volumeUUID: volume))
+            }
+            // Operation snapshots still reject a different mount identity.
+            #expect(throws: BatchRenameError.parentChanged) { try previous.matchesDirectory(at: parent) }
+            #expect(try Data(contentsOf: store.file) == data)
+        }
+    }
+
+    @Test("moved grants with a previous device number are found and refreshed without duplicates")
+    func relocationAfterRenumbering() throws {
+        try fixture { root, parent, store, identity in
+            let bookmark = try parent.bookmarkData(options: .minimalBookmark,
+                includingResourceValuesForKeys: [.volumeUUIDStringKey], relativeTo: nil)
+            let previous = try changing(identity, "device", to: identity.device + 37)
+            let other = root.appendingPathComponent("other")
+            try FileManager.default.createDirectory(at: other, withIntermediateDirectories: false)
+            let otherIdentity = try #require(try BatchRenameIdentity.path(other))
+            let otherGrant = BatchRenameAccessGrant(identity: otherIdentity, bookmark: Data([2]))
+            try store.save([parent.path: .init(identity: previous, bookmark: bookmark), other.path: otherGrant])
+            let moved = root.appendingPathComponent("moved")
+            try FileManager.default.moveItem(at: parent, to: moved)
+            let saved = try store.load()
+            #expect(BatchRenameAccessStore.candidates(for: moved, identity: identity, grants: saved).map(\.path) == [parent.path])
+            let refreshed = try moved.bookmarkData(options: .minimalBookmark,
+                includingResourceValuesForKeys: [.volumeUUIDStringKey], relativeTo: nil)
+            try store.remember(parent: moved, identity: identity, bookmark: refreshed)
+            let updated = try store.load()
+            #expect(updated.count == 2 && updated[parent.path] == nil)
+            #expect(updated[moved.path] == .init(identity: identity, bookmark: refreshed))
+            #expect(updated[other.path] == otherGrant)
+        }
+    }
+
+    @Test("bookmarks without a volume UUID retain strict device matching")
+    func legacyIdentity() throws {
+        try fixture { _, _, _, identity in
+            let grant = BatchRenameAccessGrant(identity: identity, bookmark: Data([1]))
+            let renumbered = try changing(identity, "device", to: identity.device + 37)
+            #expect(grant.volumeUUID == nil)
+            #expect(grant.matchesIdentity(identity, volumeUUID: nil))
+            #expect(!grant.matchesIdentity(renumbered, volumeUUID: nil))
+            #expect(!grant.matchesIdentity(renumbered, volumeUUID: "current-volume"))
         }
     }
 

@@ -32,7 +32,8 @@ a generic review/check request into the full suite automatically.
 The existing `make verify` runs context and compression-artifact checks, Swift tests and the public JSON
 harness plus real CLI regression, fork-sync permission/merge/CI-dispatch regressions,
 appcast and signing-entitlement preparation tests.
-It also runs a restricted subprocess regression for batch-rename metadata capture.
+It also runs restricted subprocess regressions for batch-rename metadata capture
+and private grant publication under native permission failures.
 It stays offline and does not build the app/extension or website.
 PR and main-branch CI invoke that same command independently on arm64 macOS 15
 and macOS 26. Both jobs must pass the stable `Verify core behavior` aggregate

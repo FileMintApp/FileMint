@@ -55,6 +55,7 @@ final class BatchRenameSmoke: NSObject, NSApplicationDelegate {
                 let clipboardCount = NSPasteboard.general.changeCount
                 print("CHECK remembered folder access")
                 try await authorizationScenarios(root: root)
+                try await renumberedAuthorizationScenarios(root: root)
                 print("CHECK production engine")
                 try await engineScenarios(root: root)
                 print("CHECK interrupted recovery")
@@ -175,6 +176,47 @@ final class BatchRenameSmoke: NSObject, NSApplicationDelegate {
         try require(denied == nil && pickerCount == 2, "Replacement parent reused another directory's saved authority")
         replaced.release()
 
+    }
+
+    private func renumberedAuthorizationScenarios(root: URL) async throws {
+        let directory = root.appendingPathComponent("renumbered-access", isDirectory: true)
+        let names = ["a.txt", "b.txt"]
+        let selection = try Self.fixture(directory, names: names)
+        let captured = try BatchRenameSelection.capture(selection: selection)
+        let bookmark = try captured.parent.bookmarkData(options: .withSecurityScope,
+            includingResourceValuesForKeys: nil, relativeTo: nil)
+        var fields = try JSONSerialization.jsonObject(with: JSONEncoder().encode(captured.parentIdentity)) as! [String: Any]
+        fields["device"] = captured.parentIdentity.device + 37
+        let previous = try JSONDecoder().decode(BatchRenameIdentity.self, from: JSONSerialization.data(withJSONObject: fields))
+        let cache = BatchRenameAccessStore(file: directory.appendingPathComponent("folder-access.json"))
+        try cache.save([captured.parent.path: .init(identity: previous, bookmark: bookmark)])
+        var pickerCount = 0
+        for moved in [false, true] {
+            let parent = moved ? directory.appendingPathComponent("moved-items", isDirectory: true) : captured.parent
+            if moved { try FileManager.default.moveItem(at: captured.parent, to: parent) }
+            let snapshot = try BatchRenameSelection.capture(selection: names.map { parent.appendingPathComponent($0) })
+            let access = BatchRenameAccess(store: BatchRenameAccessStore(file: cache.file),
+                chooseDirectory: { _, _ in pickerCount += 1; return nil })
+            defer { access.release() }
+            let restored = try await access.authorize(parent: snapshot.parent, identity: snapshot.parentIdentity,
+                bookmark: nil, allowRelocation: false, language: .english)
+            try require(restored != nil && pickerCount == 0,
+                        "Device renumbering or relocation prompted for an already granted directory")
+            guard let (resolved, refreshed) = restored else { throw RenameSmokeFailure(message: "Missing restored authority") }
+            try require(resolved.path == parent.path && (try snapshot.parentIdentity.matchesDirectory(at: resolved)),
+                        "Restored grant did not retain the current operation identity")
+            let service = BatchRenameService(store: BatchRenameStore(directory: directory.appendingPathComponent("state")))
+            _ = try service.prepare(selection: snapshot, parentBookmark: refreshed,
+                observationRoots: [directory], privateLocations: [cache.file])
+            if moved {
+                try cache.remember(parent: resolved, identity: snapshot.parentIdentity, bookmark: refreshed)
+                let grants = try cache.load()
+                try require(grants.count == 1 && grants[captured.parent.path] == nil
+                            && grants[resolved.path]?.identity == snapshot.parentIdentity,
+                            "Refreshing a relocated grant retained the old mount/path entry")
+                try require(grants[resolved.path]?.volumeUUID != nil, "Refreshed bookmark omitted persistent volume identity")
+            }
+        }
     }
 
     private func engineScenarios(root: URL) async throws {

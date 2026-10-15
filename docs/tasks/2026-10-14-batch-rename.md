@@ -1,14 +1,15 @@
 # Task: 批量重命名
 
 Status: in-progress
-Readiness: Persistent parent grants implemented / Debug installed / cold new-batch reuse, post-undo reuse and renewal passed
-Next action: 本轮目录授权独立持久保存、重启与撤销后新批次复用、目录身份变化重新授权均已完成，见 [持久授权证据](evidence/2026-10-15-batch-rename-persistent-access.md)。VoiceOver、旧系统、独立大小写敏感卷及公开发布仍分别处理；不从本机结果推断其通过。
+Readiness: Authorization review P2 fixes and regressions passed / full verify, unsigned App/Finder build and signed isolated QA passed
+Next action: 本轮两个授权 P2 修复及 HARNESS 验证已完成，见 [审查修复证据](evidence/2026-10-15-batch-rename-authorization-review.md)。本次未更新生产安装；前序安装版证据见 [持久授权证据](evidence/2026-10-15-batch-rename-persistent-access.md)。真实系统重启/重新挂载、安装版 Finder 重验、旧系统、VoiceOver 和公开发布均未由本轮模拟或夹具替代。
 
 Created: 2026-10-14
 
 ## Objective and scope
 
 - User-visible outcome: 在 Finder 选中一批项目，通过“批量重命名…”组合规则、查看完整预览，再明确执行；保留扩展名、禁止覆盖，失败可恢复，最近一次成功批次可撤销。
+- 本轮审查修复范围（2026-10-15）：修复 `aaf966e` 的两个 P2，补充设备号变化 / 身份拒绝及原生权限失败回归，按 HARNESS 执行全量验证、无签名构建和隔离原生夹具验证；本轮不包含生产安装或发布。
 - 当前授权范围（2026-10-15 追加）：在 Finder 沙盒与模态窗口修复后，将父目录授权独立持久保存，跨新批次 / 重启复用，不随撤销记录清理；失效或目录身份变化时再确认。延续本地 Debug 构建、签名、安装和实际验收，只使用合成文件，保存偏好和菜单范围保持不变。公开发布仍是独立动作。
 - 首版定位：文件（夹）工具中的可选动作，沿用本地、离线、原生交互和准确目录授权边界。
 

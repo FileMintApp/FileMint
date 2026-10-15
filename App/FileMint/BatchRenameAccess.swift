@@ -26,9 +26,8 @@ final class BatchRenameAccess {
         if let store {
             let saved = try await Task.detached(priority: .userInitiated) { try store.load() }.value
             for candidate in BatchRenameAccessStore.candidates(for: parent, identity: identity, grants: saved) {
-                if candidate.grant.identity == identity,
-                   let grant = await restore(candidate.grant.bookmark, parent: parent, identity: identity,
-                                             allowRelocation: allowRelocation) { return grant }
+                if let grant = await restore(candidate.grant.bookmark, parent: parent, identity: identity,
+                                             allowRelocation: allowRelocation, savedGrant: candidate.grant) { return grant }
                 renewalRequired = true
             }
         }
@@ -55,7 +54,7 @@ final class BatchRenameAccess {
     }
 
     private func restore(_ bookmark: Data, parent: URL, identity: BatchRenameIdentity,
-                         allowRelocation: Bool) async -> (URL, Data)? {
+                         allowRelocation: Bool, savedGrant: BatchRenameAccessGrant? = nil) async -> (URL, Data)? {
         let restored = try? await Task.detached(priority: .userInitiated) {
             var stale = false
             return try URL(resolvingBookmarkData: bookmark, options: [.withSecurityScope, .withoutUI, .withoutMounting],
@@ -64,7 +63,8 @@ final class BatchRenameAccess {
         guard let restored, restored.startAccessingSecurityScopedResource() else { return nil }
         active.append(restored)
         do {
-            if let grant = try await usable(restored, expected: parent, identity: identity, allowRelocation: allowRelocation),
+            if let grant = try await usable(restored, expected: parent, identity: identity,
+                                           allowRelocation: allowRelocation, savedGrant: savedGrant),
                let held = try await retain(grant, identity: identity) { return held }
         } catch { /* A failed saved grant requires the original-parent picker. */ }
         restored.stopAccessingSecurityScopedResource()
@@ -112,7 +112,7 @@ final class BatchRenameAccess {
     }
 
     private func usable(_ candidate: URL, expected: URL, identity: BatchRenameIdentity,
-                        allowRelocation: Bool) async throws -> (URL, Data)? {
+                        allowRelocation: Bool, savedGrant: BatchRenameAccessGrant? = nil) async throws -> (URL, Data)? {
         await Task.detached(priority: .userInitiated) {
             do {
                 let resolved = candidate.resolvingSymlinksInPath().standardizedFileURL
@@ -120,8 +120,15 @@ final class BatchRenameAccess {
                       try identity.matchesDirectory(at: resolved),
                       FileManager.default.isReadableFile(atPath: resolved.path),
                       FileManager.default.isWritableFile(atPath: resolved.path) else { return nil }
+                if let savedGrant {
+                    // Resolved bookmark URLs can cache old resource values.
+                    var fresh = URL(fileURLWithPath: resolved.path, isDirectory: true)
+                    fresh.removeAllCachedResourceValues()
+                    let volume = try fresh.resourceValues(forKeys: [.volumeUUIDStringKey]).volumeUUIDString
+                    guard savedGrant.matchesIdentity(identity, volumeUUID: volume) else { return nil }
+                }
                 let data = try candidate.bookmarkData(options: .withSecurityScope,
-                    includingResourceValuesForKeys: nil, relativeTo: nil)
+                    includingResourceValuesForKeys: [.volumeUUIDStringKey], relativeTo: nil)
                 return (resolved, data)
             } catch { return nil }
         }.value
