@@ -1,15 +1,15 @@
 # Task: 批量重命名
 
 Status: in-progress
-Readiness: P1 complete / P1 已完成；P2–P5 未开始
-Next action: 本轮交付 P1 实现与验证结果，到此停止；后续如进入 P2，再实现真实文件执行与恢复。当前不进入 P2–P5，不提交或推送本轮变更。
+Readiness: P1 pushed / P2–P4 implemented / P5 local verification; installed-runtime checks remain
+Next action: P1 已推送 `4469763`。P2–P4 代码已实现，P5 本地离线 / 构建 / 隔离原生验证见下方记录；剩余安装版 Finder、VoiceOver 和旧系统运行验收单独进行。公开发布仍是独立动作。
 
 Created: 2026-10-14
 
 ## Objective and scope
 
 - User-visible outcome: 在 Finder 选中一批项目，通过“批量重命名…”组合规则、查看完整预览，再明确执行；保留扩展名、禁止覆盖，失败可恢复，最近一次成功批次可撤销。
-- 当前授权范围：实现 P1 纯规则并按 HARNESS 验证、汇报；首版保留普通本地文件和文件夹。P2–P5 不在本轮范围，不执行真实改名、不新增 App / Finder 入口，也不提交或推送本轮产品变更。
+- 当前授权范围（2026-10-15）：P1 提交推送完成，继续实现 P2–P5 的文件执行 / 恢复、原生窗口、Finder / 配置和适用验收。首版保留普通本地文件和文件夹。安装、发布仍是独立动作；当前实现不更改用户的生产偏好和文件。
 - 首版定位：文件（夹）工具中的可选动作，沿用本地、离线、原生交互和准确目录授权边界。
 
 ### P0 review snapshot
@@ -50,7 +50,7 @@ IMG_10.JPG  -> 产品图_002.JPG
 - 符号链接、Finder 替身、应用和其他包目录、同批重复文件身份（例如同一对象的两个硬链接）、根目录 / 卷根、系统特殊目录本体、观察根目录本体、FileMint 私有存储和已知操作暂存子树，以及包含这些私有存储 / 工作区的祖先目录。具体保护集合见 owning SPEC。
 - 为绕过不可用项目而主动下载、跨卷复制降级或扩大权限。首版不增加非本地 / 非 APFS 的专用执行路径；NAS、iCloud 等兼容性标记为未验证，不作为本地实现或验收的前置条件，也不按存储归属名称额外拦截。
 - Finder 的 Command-Z 集成、长期操作历史、多个改名窗口、应用内手动选择项目入口。
-- 本轮 P2–P5 产品代码、项目配置、App / Finder 构建、安装或发布；前序文档已提交推送。本轮仅 P1 Core 实现、单元覆盖及适用验证。
+- 公开发布、正式安装、打包和存储环境兼容性扩展不在本轮范围；P2–P5 产品代码、适用构建和隔离验收已获授权。
 
 ### Acceptance criteria
 
@@ -89,7 +89,7 @@ Implementation entry points:
 
 Verification:
 
-- 本轮按 [HARNESS Core 行](../../specs/HARNESS.md)在 P1 实现完成后运行 `make verify`；通过 Swift 单元测试验证规则与规划器，公共文件创建 JSON Harness 格式不扩展。未改 App / Finder，不触发原生构建或验收。
+- 当前按 [HARNESS](../../specs/HARNESS.md)运行实现后的 `make verify`、未签名 App / Finder 构建及适用隔离 native 验收；公共文件创建 JSON Harness 格式不扩展。历史 P1 验证与本轮结果分别记录。
 - 前序 P0.5 隔离 CLI 的 [历史证据](evidence/2026-10-14-batch-rename-p05.md)保留；其分类前置关口已取消，不补设替代前置关口。命令沙盒及宿主 CLI 均不是签名 FileMint App Sandbox 验证；后续需要原生 fixture 时加载 [Native QA](../../specs/verification/native-qa.md)。
 - 后续实现： [Core 检查](../../specs/verification/core.md)、[Finder / native 检查](../../specs/verification/finder.md)。
 - 工作流： [AI Playbook](../AI_PLAYBOOK.md)及 [Task template](TEMPLATE.md)。
@@ -115,7 +115,7 @@ Load additional context when:
 
 ### P0 review revisions completed
 
-P0 已修正三处审核问题，并按前序用户决策取消分类前置关口，首版保留普通本地文件和文件夹。以下是完整目标契约摘要；当前只实现了 P1 纯规则，不表示整项功能已经可用。
+P0 已修正三处审核问题，并按前序用户决策取消分类前置关口，首版保留普通本地文件和文件夹。以下是当时的完整目标契约摘要；该复核结束时只实现 P1 纯规则。当前实施状态以下方阶段表和 2026-10-15 证据为准。
 
 | 决策 | 结论 / 理由 | Owning contract |
 | --- | --- | --- |
@@ -174,6 +174,15 @@ P0 已修正三处审核问题，并按前序用户决策取消分类前置关�
 - 仅在命名和注入目标检查完整且有实际名称变化时允许 freeze。冻结的是命名提案，未验证真实父目录 / 文件身份、授权、源可用性或现场目标；P2 必须执行这些原生复验后才能操作文件。
 - 新增 [名称策略测试](../../CorePackage/Tests/FileMintCoreTests/RenameNamePolicyTests.swift)、[规则测试](../../CorePackage/Tests/FileMintCoreTests/BatchRenameRuleTests.swift)及 [规划器测试](../../CorePackage/Tests/FileMintCoreTests/BatchRenamePlannerTests.swift)，共 52 个纯测试，已随完整 `make verify` 通过；见 [P1 验证记录](evidence/2026-10-14-batch-rename-p1.md)。本轮不创建菜单、窗口、票据、恢复存储或文件执行器。
 
+### P2–P5 implementation (2026-10-15)
+
+- 按用户指定顺序，先提交并推送 P1 为 `4469763`，随后实现后续阶段；实现与验证证据一起交付。
+- Core 新增 [native 身份 / 句柄](../../CorePackage/Sources/FileMintCore/BatchRenameNative.swift)、[文件执行器](../../CorePackage/Sources/FileMintCore/BatchRenameService.swift)、[私有状态存储](../../CorePackage/Sources/FileMintCore/BatchRenameStore.swift)。准备预留、固定有界 scratch、意图先记、全批暂存、独占发布、rollback / undo / 原始证据人工退役都已有实现和故障覆盖。
+- App 新增 [控制器](../../App/FileMint/BatchRenameController.swift)、[原生视图](../../App/FileMint/BatchRenameView.swift)、[操作与生命周期接入](../../App/FileMint/BatchRenameOperations.swift)和[准确父目录授权](../../App/FileMint/BatchRenameAccess.swift)。独立持有父目录 grant，范围收窄后仍保留补偿恢复能力；状态面板区分恢复原名、已提交操作收尾与纯私有记录收口。
+- Finder / 配置新增默认关闭的 batchRename、独立菜单位置 / 图标 / 双语及 rename 票据路由。忙碌时立即消费并明确拒绝，不替换窗口输入；原移动请求仍按既有队列执行。设置外部恢复卡、File 菜单 undo 和退出 / 更新 busy guard 已接入。
+- `make verify` 已通过 Core 318、Images 22、公共 Harness 5/5 和 CLI 10；未签名 App / Finder 构建及隔离 signed sandbox fixture 已通过。完整命令、测试修正、native 断言、源码快照和未验边界见 [P2–P5 证据](evidence/2026-10-15-batch-rename-p2-p5.md)。
+- 当前普通本地 APFS 实测与真实窗口证据不等于安装版 Finder 回调、VoiceOver、macOS 13/14 或其他存储环境已验证。没有安装覆盖生产 App、改生产偏好或公开发布。
+
 ### Execution and recovery design
 
 实现必须遵守 [执行协议](../../specs/domains/file-tools.md#execution-and-recovery)和 [私有状态 / undo](../../specs/domains/file-tools.md#persistent-state-and-undo)。下列是实现分工概要；每次底层改名可以独占执行，整个批次不具备原子性。
@@ -202,13 +211,13 @@ P0 已修正三处审核问题，并按前序用户决策取消分类前置关�
 | --- | --- | --- | --- |
 | P0 — 契约 | complete; ready for implementation | 最终设计复核完成；保留普通本地文件 / 文件夹及既定安全约束 | 文档与链接检查通过；任务待实现 |
 | P0.5 — 原分类可行性研究 | archived; prerequisite withdrawn | 局部原生观察保留，原 incomplete 结论不改写成 passed | 历史记录，无当前实施依赖 |
-| P1 — 纯规则 | complete | 三份 Core 实现、冻结命名计划 / 逐行状态及 52 个纯测试 | 完整 `make verify` 已通过；P2–P5 不启动 |
-| P2 — 文件执行 | not-started | `BatchRenameService`、同卷暂存、独占发布、恢复日志、人工收口和最近批次撤销 | 普通文件和文件夹的句柄原语、祖先保护、互换 / 大小写改名、并发替换、系统拒绝、恢复冲突、导出收口及崩溃窗口在隔离目录验证 |
-| P3 — 原生窗口 | not-started | App-owned `BatchRenameController` / `BatchRenameView`，规则与名单模式、完整预览、计数、取消 / 恢复 / 撤销 | 一次只处理一个会话；过期预览不执行；键盘 / 无障碍可操作；原生窗口不打开设置 |
-| P4 — Finder / 配置 | not-started | 新 `FileTool`、票据及菜单动作，接入操作队列、开关迁移、菜单位置、图标及双语 | 新旧配置默认关闭；完整选区、旧菜单、忙碌请求、授权和退出 / 更新保护正确 |
-| P5 — 验收 | not-started | Core / Harness、未签名构建、隔离 native / installed Finder 验收 | 验证已承诺的普通本地文件 / 文件夹场景及失败恢复；其他环境未验证如实记录，不阻塞本地验收 |
+| P1 — 纯规则 | complete | 三份 Core 实现、冻结命名计划 / 逐行状态及 52 个纯测试 | 完整 `make verify` 已通过；2026-10-15 已推送 `4469763` |
+| P2 — 文件执行 | implemented; local native verified | `BatchRenameService`、同卷暂存、独占发布、恢复日志、人工收口和最近批次撤销 | 普通文件和文件夹的句柄原语、祖先保护、互换 / 大小写改名、并发替换、系统拒绝、恢复冲突、导出收口及崩溃窗口在隔离目录验证 |
+| P3 — 原生窗口 | implemented; local native verified | App-owned `BatchRenameController` / `BatchRenameView`，规则与名单模式、完整预览、计数、取消 / 恢复 / 撤销 | 一次只处理一个会话；过期预览不执行；键盘 / 无障碍可操作；原生窗口不打开设置 |
+| P4 — Finder / 配置 | implemented; installed Finder pending | 新 `FileTool`、票据及菜单动作，接入操作队列、开关迁移、菜单位置、图标及双语 | 新旧配置默认关闭；完整选区、旧菜单、忙碌请求、授权和退出 / 更新保护正确 |
+| P5 — 验收 | local verification; installed/older OS pending | Core / Harness、未签名构建、隔离 native / installed Finder 验收 | 验证已承诺的普通本地文件 / 文件夹场景及失败恢复；其他环境未验证如实记录，不阻塞本地验收 |
 
-本轮结束于 P1；P2 → P3 → P4 → P5 仍为后续工作，没有存储归属分类前置关口。P1 类型已存在，后续执行器 / 窗口类型仍是实现建议。执行规则与文件执行器保持在 CorePackage；Finder API 留在扩展，操作窗口和设置留在 App。无需新包依赖。
+2026-10-15 已进入 P2 → P3 → P4 → P5，没有存储归属分类前置关口。P1–P4 类型均已落地，具体结果见本轮证据。执行规则与文件执行器保持在 CorePackage；Finder API 留在扩展，操作窗口和设置留在 App。无需新包依赖。
 
 ### Verification scenarios for implementation
 
@@ -224,6 +233,12 @@ P0 已修正三处审核问题，并按前序用户决策取消分类前置关�
 - P1 按 HARNESS 运行 `make verify`；后续 App / Finder 实现还需未签名构建及对应原生验收，不能以本轮纯规则测试代替。
 
 ## Evidence
+
+### Current P2–P5 evidence (2026-10-15)
+
+基线 `4469763` 加当前主 checkout 改动；本地检查及隔离原生结果见 [本轮验证记录](evidence/2026-10-15-batch-rename-p2-p5.md)。下方 P1 表格是历史结果，不代替当前实现验证。
+
+### Historical P1 evidence (2026-10-14)
 
 Tested commit/worktree: 主 checkout `/Users/daigua/Documents/Ray/FileMint`，`main` / `ea9259bb978b555051e31e7d708d2d3f5d0b6ec1` 加本轮未提交 P1 变更；文件摘要见 P1 验证记录。
 Environment: 2026-10-14，macOS 27.2（26B5101f）/ arm64 / Xcode 27.0（27A266a）/ Swift 6.4。运行 P1 和现有仓库验证，未运行批量改名文件执行器、App / Finder 原生验收、安装或发布。
@@ -255,7 +270,7 @@ Additional P0 source checks (2026-10-14):
 
 ## Handoff
 
-- Remaining work: P1 已完成并验证；P2–P5 未开始，本轮到此停止。后续阶段为 P2 的真实身份 / 授权复验、文件执行和恢复。
-- Delivery scope: 三份 P1 Core 源码、三份纯测试、owning file-tools SPEC、本 task 和 P1 验证记录；未改 App / Finder、票据 / 偏好开关、项目配置、公共 JSON Harness 或原 P0.5 数据。完整日志保留于 ignored `.local/verification/`，本轮未提交 / 推送。
-- Known limitations / native checks still needed: P1 冻结的是命名提案；注入目标观察不代表真实文件检查。目录句柄、真实授权、独占改名、故障恢复、窗口和 Finder 回调仍需后续实现验证；当前版本没有批量重命名产品入口。
-- Next action and the minimum context required: 本轮结束于 P1；后续明确进入 P2 时读取本 task、P1 验证记录、SPEC 路由、文件工具 / Finder 契约及 HARNESS。窗口 / 生命周期等领域按实际变更加载。
+- Remaining work: P2–P4 实现与本地验证已完成；P5 的安装版 Finder、VoiceOver、macOS 13/14 和独立大小写敏感卷运行证据仍待补。NAS / iCloud / 第三方同步兼容性未验证，不重新建立 provider 分类前置关口。
+- Delivery scope: P1 已推送 `4469763`；当前新 Core 执行 / 存储及测试、App 窗口 / 授权 / 协调器、Finder / 配置 / 图标 / 双语、隔离 native fixture 与本轮文档均留在主工作区。公共 creation JSON Harness 和原 P0.5 数据未改变，无新增包依赖或生产权限。
+- Known limitations: 未安装覆盖生产 App、未改生产数据、未打包或公开发布。未签名构建不是安装验收；signed QA 使用独立身份、容器和合成样本。以本轮证据中的确切来源和环境为准。
+- Next action and minimum context: 先读本 task、[本轮证据](evidence/2026-10-15-batch-rename-p2-p5.md)，再按 SPEC router 加载 file-tools / Finder / startup / presentation 和 HARNESS；后续交付或新增 native 验收按用户指令继续。

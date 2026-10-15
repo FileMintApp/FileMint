@@ -5,6 +5,7 @@ public enum FileOperationRequest: Codable, Equatable, Sendable {
     case permanentDelete(items: [FileMoveItem], confirmation: DeleteConfirmation)
     case airDrop([URL])
     case desktopAlias([FileMoveItem])
+    case batchRename(selection: BatchRenameSelection)
     case resource(tool: ResourceTool, selection: [URL])
     case openWith(application: OpenWithApplicationReference, selection: [URL])
     case openDirectory(application: OpenWithApplicationReference, directory: URL, mode: TerminalOpenMode)
@@ -19,6 +20,17 @@ private struct FileOperationTicket: Codable {
     let issuedAt: Date
 }
 
+public enum FileOperationTicketError: Error, Equatable, Sendable {
+    case batchRenameSelectionLimit, batchRenameTicketLimit
+
+    public var messageKey: FileMintTextKey {
+        switch self {
+        case .batchRenameSelectionLimit: .batchRenameSelectionLimit
+        case .batchRenameTicketLimit: .batchRenameTicketLimit
+        }
+    }
+}
+
 /// Preserve the existing private transport location and URL route; the ticket
 /// payload now describes all main-app file operations, not only moves.
 public struct FileOperationTicketStore: Sendable {
@@ -28,23 +40,37 @@ public struct FileOperationTicketStore: Sendable {
     }
 
     public func enqueue(_ request: FileOperationRequest, now: Date = Date()) throws -> URL {
+        let isBatchRename: Bool
+        if case .batchRename(let selection) = request {
+            guard FileToolsPolicy.canBatchRename(selection.items.map(\.source)) else {
+                throw FileOperationTicketError.batchRenameSelectionLimit
+            }
+            isBatchRename = true
+        } else { isBatchRename = false }
         let data = try JSONEncoder().encode(FileOperationTicket(request: request, issuedAt: now))
-        guard data.count <= 1_048_576 else { throw FileMoveError.invalidSelection }
+        guard data.count <= 1_048_576 else {
+            if isBatchRename { throw FileOperationTicketError.batchRenameTicketLimit }
+            throw FileMoveError.invalidSelection
+        }
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true,
                                                attributes: [.posixPermissions: 0o700])
         let id = UUID()
         let file = directory.appendingPathComponent("\(id.uuidString).json")
         try data.write(to: file, options: .withoutOverwriting)
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.path)
-        return URL(string: "filemint://move?id=\(id.uuidString)")!
+        let route = isBatchRename ? "rename" : "move"
+        return URL(string: "filemint://\(route)?id=\(id.uuidString)")!
+    }
+
+    /// Separate intake lets the app consume rename requests immediately while
+    /// retaining the existing queued consumption behavior for other operations.
+    public static func isBatchRenameURL(_ url: URL) -> Bool {
+        ticketID(url, expectedHost: "rename") != nil
     }
 
     public func consume(_ url: URL, now: Date = Date()) throws -> FileOperationRequest? {
-        guard let parts = URLComponents(url: url, resolvingAgainstBaseURL: false),
-              parts.scheme == "filemint", parts.host == "move", parts.path.isEmpty,
-              parts.user == nil, parts.password == nil, parts.port == nil, parts.fragment == nil,
-              parts.queryItems?.count == 1, let item = parts.queryItems?.first,
-              item.name == "id", let value = item.value, let id = UUID(uuidString: value) else { return nil }
+        let isBatchRename = Self.isBatchRenameURL(url)
+        guard let id = Self.ticketID(url, expectedHost: isBatchRename ? "rename" : "move") else { return nil }
         let source = directory.appendingPathComponent("\(id.uuidString).json")
         let claimed = directory.appendingPathComponent("\(id.uuidString).consumed")
         guard let info = try? source.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey]),
@@ -55,6 +81,18 @@ public struct FileOperationTicketStore: Sendable {
         defer { try? FileManager.default.removeItem(at: claimed) }
         let ticket = try JSONDecoder().decode(FileOperationTicket.self, from: Data(contentsOf: claimed))
         guard (0...60).contains(now.timeIntervalSince(ticket.issuedAt)) else { return nil }
+        if case .batchRename = ticket.request {
+            guard isBatchRename else { return nil }
+        } else if isBatchRename { return nil }
         return ticket.request
+    }
+
+    private static func ticketID(_ url: URL, expectedHost: String) -> UUID? {
+        guard let parts = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              parts.scheme == "filemint", parts.host == expectedHost, parts.path.isEmpty,
+              parts.user == nil, parts.password == nil, parts.port == nil, parts.fragment == nil,
+              parts.queryItems?.count == 1, let item = parts.queryItems?.first,
+              item.name == "id", let value = item.value, let id = UUID(uuidString: value) else { return nil }
+        return id
     }
 }

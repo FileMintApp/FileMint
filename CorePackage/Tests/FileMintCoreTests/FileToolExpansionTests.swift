@@ -11,6 +11,7 @@ struct FileToolExpansionTests {
         preferences.permanentDelete = true
         preferences.airDrop = true
         preferences.desktopAlias = true
+        preferences.batchRename = true
         for mask in 0..<(1 << FileTool.allCases.count) {
             preferences.mainMenuTools = Set(FileTool.allCases.enumerated().compactMap {
                 mask & (1 << $0.offset) != 0 ? $0.element : nil

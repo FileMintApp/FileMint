@@ -12,7 +12,9 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
         case selectedImages(ResourceTool, [URL], grants: [URL])
     }
     private var queue: [QueuedRequest] = []
-    private(set) var isBusy = false
+    private var operationIsBusy = false
+    private var renameIntakes = 0
+    var isBusy: Bool { operationIsBusy || renameIntakes > 0 }
     private var access: [URL] = []
     private let store: PendingFileMoveStore
     private let tickets: FileOperationTicketStore
@@ -21,6 +23,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
     private let openWithAccessStore: OpenWithFolderAccessStore
     private let desktopDirectory: URL
     private let resourceController: ResourceToolsController
+    private let renameOperations: BatchRenameOperations
     private var sharingService: NSSharingService?
     private var sharingContinuation: CheckedContinuation<Void, Error>?
     private var operationTitle: FileMintTextKey = .moveFailed
@@ -30,7 +33,8 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
          aliasAccessStore: DesktopAliasAccessStore = DesktopAliasAccessStore(),
          openWithAccessStore: OpenWithFolderAccessStore = OpenWithFolderAccessStore(),
          desktopDirectory: URL = DesktopAliasService.desktopDirectory,
-         resourceController: ResourceToolsController = .shared) {
+         resourceController: ResourceToolsController = .shared,
+         renameOperations: BatchRenameOperations = .shared) {
         self.store = store
         self.tickets = tickets
         self.preferencesFile = preferencesFile
@@ -38,12 +42,59 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
         self.openWithAccessStore = openWithAccessStore
         self.desktopDirectory = desktopDirectory
         self.resourceController = resourceController
+        self.renameOperations = renameOperations
         super.init()
     }
 
     func enqueue(_ url: URL) {
+        if FileOperationTicketStore.isBatchRenameURL(url) {
+            // Reserve ownership before suspending. Even rejected requests are
+            // consumed now, never behind the lifetime of an existing panel.
+            let accepted = !isBusy && queue.isEmpty
+            if accepted { operationIsBusy = true }
+            renameIntakes += 1
+            let tickets = self.tickets
+            Task {
+                defer {
+                    renameIntakes -= 1
+                    if accepted { operationIsBusy = false }
+                    consumeQueue()
+                }
+                do {
+                    let request = try await Task.detached(priority: .userInitiated) {
+                        try tickets.consume(url)
+                    }.value
+                    guard accepted else {
+                        renameOperations.showBusy()
+                        return
+                    }
+                    guard case .batchRename(let selection) = request else {
+                        renameOperations.showInvalidRequest()
+                        return
+                    }
+                    try await renameOperations.present(selection: selection,
+                                                                    preferencesFile: preferencesFile)
+                } catch { renameOperations.show(error) }
+            }
+            return
+        }
         queue.append(.ticket(url))
         consumeQueue()
+    }
+
+    /// Recovery and undo share ownership with moves, native authorization and
+    /// other panels. Passive discovery never reserves this guard.
+    func batchRenameAction(_ action: BatchRenamePanelAction) {
+        guard !isBusy && queue.isEmpty else {
+            renameOperations.showBusy()
+            return
+        }
+        operationIsBusy = true
+        Task {
+            defer { operationIsBusy = false; consumeQueue() }
+            do { try await renameOperations.perform(action, preferencesFile: preferencesFile) }
+            catch { renameOperations.show(error) }
+        }
     }
 
     /// This app-local entry cannot be constructed from a URL or ticket. The
@@ -58,8 +109,8 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             }
             return
         }
-        isBusy = true
-        defer { isBusy = false; consumeQueue() }
+        operationIsBusy = true
+        defer { operationIsBusy = false; consumeQueue() }
         let picker = NSOpenPanel()
         picker.title = tool.title(currentPreferences.language)
         picker.message = InterfaceText.chooseImages.text(currentPreferences.language)
@@ -77,10 +128,10 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
     }
 
     private func consumeQueue() {
-        guard !isBusy else { return }
-        isBusy = true
+        guard !isBusy, !queue.isEmpty else { return }
+        operationIsBusy = true
         Task {
-            defer { isBusy = false }
+            defer { operationIsBusy = false }
             while !queue.isEmpty {
                 let entry = queue.removeFirst()
                 let tickets = self.tickets
@@ -99,6 +150,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
                     if let request {
                         switch request {
                         case .prepare, .perform: operationTitle = .moveFailed
+                        case .batchRename: operationTitle = .batchRename
                         case .permanentDelete: operationTitle = .permanentDelete
                         case .airDrop: operationTitle = .airDrop
                         case .desktopAlias: operationTitle = .sendAliasToDesktop
@@ -116,6 +168,9 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
 
     private func handle(_ request: FileOperationRequest) async throws {
         switch request {
+        case .batchRename:
+            // Rename payloads are valid only on the immediate-intake route.
+            throw FileMoveError.staleRequest
         case .favoriteAdd(let selection):
             guard FavoriteLocationsPolicy.canAdd(selection, isItemMenu: true,
                 preferences: currentPreferences) else { throw FavoriteLocationError.invalidSelection }

@@ -152,7 +152,7 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 
 ## Batch rename presentation
 
-P0 contract for review; not implemented. [File tools](file-tools.md#batch-rename)
+Implementation contract; phase evidence is tracked in the batch-rename task. [File tools](file-tools.md#batch-rename)
 owns the rules, supported storage, counts, explicit actions and recovery behavior.
 
 - Use one native app-owned window with a rule/list inspector, a virtualized table
@@ -179,8 +179,10 @@ owns the rules, supported storage, counts, explicit actions and recovery behavio
   / 停止并恢复 during execution. Running close requests the same safe stop path;
   it does not discard remaining originals or imply rollback has already completed.
 - Results distinguish success, fully restored cancellation/failure, and items still
-  needing recovery. Show actual counts/locations and explicit recovery/reveal
-  actions; do not claim all-or-nothing success or send details to logs. A recovery
+  needing recovery. A durably committed batch awaiting cleanup offers Finish
+  Operation Cleanup, not an action promising to restore original names; metadata-only
+  finalization stays distinct from cleanup requiring the exact parent grant.
+  Show actual counts/locations and explicit recovery/reveal actions; do not claim all-or-nothing success or send details to logs. A recovery
   card outside disabled settings remains usable without enabling new rename work.
 - The recovery card also exposes Export Recovery Evidence and Unblock… /
   导出恢复证据并解除阻塞… under the [manual resolution protocol](file-tools.md#manual-resolution-of-recovery-records).

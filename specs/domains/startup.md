@@ -93,7 +93,7 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 
 ## Batch rename lifecycle
 
-P0 contract for review; not implemented. [File tools](file-tools.md#batch-rename)
+Implementation contract; phase evidence is tracked in the batch-rename task. [File tools](file-tools.md#batch-rename)
 owns the operation behavior and private-state format/limits.
 
 - Decode the new batch-rename child switch independently, default off for new,

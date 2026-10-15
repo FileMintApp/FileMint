@@ -9,6 +9,11 @@ final class PreferencesModel: ObservableObject {
 
     func save() {}
 
+    func preferenceBinding<Value>(_ keyPath: WritableKeyPath<FileMintPreferences, Value>) -> Binding<Value> {
+        Binding(get: { self.preferences[keyPath: keyPath] },
+                set: { self.preferences[keyPath: keyPath] = $0 })
+    }
+
     func text(_ key: FileMintTextKey) -> String {
         FileMintStrings.text(key, language: preferences.language)
     }

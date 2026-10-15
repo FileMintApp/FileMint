@@ -24,6 +24,7 @@ struct FileMintApp: App {
 private struct FileMintCommands: Commands {
     @ObservedObject var model: PreferencesModel
     @ObservedObject var updater: UpdateModel
+    @ObservedObject private var renameOperations = BatchRenameOperations.shared
 
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
@@ -34,6 +35,10 @@ private struct FileMintCommands: Commands {
                 FavoriteQuickPanelController.shared.show()
             }.keyboardShortcut("k")
             Button(model.text(.importSettings)) { model.importSettings() }
+            Divider()
+            Button(BatchRenameText.undoLast.text(model.preferences.language)) {
+                FileOperationCoordinator.shared.batchRenameAction(.undo)
+            }.disabled(!renameOperations.canUndo || !model.preferences.fileTools.allows(.batchRename))
         }
         CommandGroup(replacing: .appSettings) {
             Button(model.text(.openFileMint)) { SettingsWindowController.shared.show() }.keyboardShortcut(",")

@@ -124,9 +124,12 @@ struct FileToolsPane: View {
     @EnvironmentObject private var model: PreferencesModel
 
     var body: some View {
-        FileToolsSettingsView(preferences: model.preferenceBinding(\.fileTools),
-                              language: model.preferences.language,
-                              menuIcons: model.preferenceBinding(\.menuIcons))
+        VStack(alignment: .leading, spacing: 16) {
+            BatchRenameRecoveryCard(language: model.preferences.language)
+            FileToolsSettingsView(preferences: model.preferenceBinding(\.fileTools),
+                                  language: model.preferences.language,
+                                  menuIcons: model.preferenceBinding(\.menuIcons))
+        }
     }
 }
 

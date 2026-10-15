@@ -39,7 +39,8 @@ swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.0 \
   SharedUI/FileToolAppearance.swift \
   App/FileMint/FavoriteLocationsModel.swift App/FileMint/FavoriteQuickPanelController.swift \
   App/FileMint/FavoriteFeedbackController.swift \
-  App/FileMint/FileOperationCoordinator.swift App/FileMint/OpenWithApplicationAccess.swift App/FileMint/OpenWithFolderAccess.swift \
+  App/FileMint/BatchRenameText.swift App/FileMint/BatchRenameController.swift App/FileMint/BatchRenameView.swift \
+  App/FileMint/BatchRenameAccess.swift App/FileMint/BatchRenameOperations.swift App/FileMint/FileOperationCoordinator.swift App/FileMint/OpenWithApplicationAccess.swift App/FileMint/OpenWithFolderAccess.swift \
   App/FileMint/TerminalDirectoryLauncher.swift scripts/move_sandbox_smoke.swift \
   "${CORE_LINK[@]}" -o "$APP_PATH/Contents/MacOS/FileMintMoveSandboxSmoke"
 codesign --force --options runtime --sign - --timestamp=none \

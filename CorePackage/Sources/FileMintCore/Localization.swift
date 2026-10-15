@@ -101,6 +101,8 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case airDrop
     case sendAliasToDesktop
     case desktopAliasHint
+    case batchRename, batchRenameHint, batchRenameSelectionLimit, batchRenameTicketLimit
+    case batchRenameChangedSelection, batchRenameUnsupportedSelection, batchRenameUnavailableSelection
     case desktopAliasFailedCount
     case desktopAliasAuthorize
     case airDropHint
@@ -368,6 +370,13 @@ public enum FileMintStrings {
         .airDrop: ("AirDrop", "隔空投送"),
         .sendAliasToDesktop: ("Send Alias to Desktop", "发送替身到桌面"),
         .desktopAliasHint: ("Create Desktop shortcuts to the originals. Existing items are kept; duplicate names are numbered.", "在桌面创建指向原项目的替身，保留原文件，重名时自动编号。"),
+        .batchRename: ("Batch Rename…", "批量重命名…"),
+        .batchRenameHint: ("Preview and rename 2–1,000 files or folders in the same folder. Extensions are preserved.", "预览并重命名同一文件夹中的 2–1,000 个文件或文件夹，保留扩展名。"),
+        .batchRenameSelectionLimit: ("Select 2–1,000 distinct items in the same folder.", "请选择同一文件夹中的 2–1,000 个不同项目。"),
+        .batchRenameTicketLimit: ("This selection is too large to open. Select fewer items and try again.", "所选项目的数据量过大，无法打开。请减少选择的项目后重试。"),
+        .batchRenameChangedSelection: ("The selected items or their folder changed. Select the items again.", "所选项目或所在文件夹已变化，请重新选择。"),
+        .batchRenameUnsupportedSelection: ("Choose ordinary files and folders. Links, aliases and packages cannot be renamed in a batch.", "请选择普通文件和文件夹。链接、替身和包不能参与批量重命名。"),
+        .batchRenameUnavailableSelection: ("The selection could not be prepared. Check that all items and their folder are available and accessible.", "无法准备所选项目。请检查所有项目及所在文件夹是否可用，以及是否具有访问权限。"),
         .desktopAliasFailedCount: ("Alias creation stopped. Created: %d. Not completed: %d. Check the original items and folder access, then select the remaining items to try again.", "替身创建已停止。已创建 %d 个，未完成 %d 个。请检查原项目和文件夹权限，重新选择剩余项目后再试。"),
         .desktopAliasAuthorize: ("Choose Desktop to allow FileMint to create aliases there.", "请选择桌面文件夹，允许 FileMint 在其中创建替身。"),
         .airDropHint: ("Open the system AirDrop window for the selected files and folders.", "为选中的文件或文件夹打开系统隔空投送窗口。"),

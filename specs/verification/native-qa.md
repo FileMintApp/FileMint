@@ -15,6 +15,7 @@ All paths below are relative to that stable root.
 | template-workflow | TemplateWorkflowSmoke.app | io.github.daigua.filemint.template-workflow-smoke |
 | open-with | OpenWithSmoke.app | io.github.daigua.filemint.open-with-smoke |
 | file-tools-settings | FileMintToolsUIQA.app | io.github.daigua.filemint.tools-ui-qa |
+| batch-rename | BatchRenameSmoke.app | io.github.daigua.filemint.batch-rename-smoke |
 | move-sandbox | FileMintMoveSandboxSmoke.app | io.github.daigua.filemint.move-smoke |
 | update-sandbox | FileMintUpdateSandboxSmoke.app | io.github.daigua.filemint.update-smoke |
 | design-ui | FileMintDesignQA.app | io.github.daigua.filemint.design-qa |
@@ -25,6 +26,37 @@ All paths below are relative to that stable root.
 The template/opening receivers retain their own stable identifiers and sit inside
 their host's Resources. The update fixture's inert extension remains separate from
 the actual Finder extension. No running fixture or receiver may be overwritten.
+
+`bash scripts/build_batch_rename_harness.sh` builds the sandboxed batch-rename
+fixture using the production Core service, controller and SwiftUI view. Launch
+the printed stable application's executable. It creates a fresh invocation
+directory beneath its own container and the build's `FixtureRunID`; preferences,
+operation records, synthetic files/folders and screenshots stay inside that
+directory. It never opens production stores or registers a Finder extension.
+The fixture also drives the production operation coordinator with injected
+isolated stores: busy rename requests are consumed/rejected without replacing
+the current panel, other tickets retain queue timing, and expired/replayed
+requests release operation ownership. Set
+`FILEMINT_BATCH_RENAME_EXPORT_ARTIFACTS=1` to emit each freshly rendered PNG as a
+JSON line on stdout (`artifact` and `pngBase64`); redirect stdout to an owned
+build file before decoding those artifacts. This explicit export avoids needing
+host access to the QA app's private container.
+Set `FILEMINT_BATCH_RENAME_INTERACTIVE=1` to keep the preview open for explicit
+keyboard/accessibility inspection. Automated view renders and internal action
+checks are not evidence of VoiceOver or installed Finder callbacks.
+The PNGs are AppKit view-cache renders; macOS may omit composited control layers.
+Use the live fixture for visual acceptance instead of treating a missing cached
+layer as a product rendering defect.
+`FILEMINT_BATCH_RENAME_MODE=external-export` runs an interactive manual-resolution
+fixture with intentionally corrupt synthetic control bytes and both tool switches
+off. Cancel the first confirmation; acknowledge the second and cancel its Save
+panel; acknowledge the third and choose a unique JSON destination in a fresh
+host-owned QA directory. Read back that exported envelope from the host and verify
+the `index.json` bytes equal `FileMint QA corrupt control record\n`. The fixture
+checks that both cancellations preserve the blocker and original bytes, and that
+successful retirement preserves its separate synthetic remaining original. The
+Save panel grants only the chosen evidence destination; no production or broad
+home-folder grant is required.
 
 ## Build and data ownership
 

@@ -80,7 +80,7 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 
 ## Batch rename authorization
 
-P0 contract for review; the [file-tools contract](file-tools.md#batch-rename)
+Implementation contract; the [file-tools contract](file-tools.md#batch-rename)
 owns selection, naming, storage support and recovery semantics.
 
 - Finder keeps only the menu-captured complete URLs until explicit invocation;

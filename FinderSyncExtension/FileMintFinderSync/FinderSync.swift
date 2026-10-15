@@ -291,6 +291,10 @@ final class FinderSync: FIFinderSync {
                 FinderActions.shared.sendAliasesToDesktop(selection)
                 return
             }
+            if tool == .batchRename {
+                FinderActions.shared.batchRename(selection)
+                return
+            }
             if tool == .airDrop {
                 FinderActions.shared.perform(.airDrop(selection))
                 return
@@ -455,6 +459,21 @@ private final class FinderActions {
         }
     }
 
+    func batchRename(_ selection: [URL]) {
+        Task {
+            do {
+                let url = try await Task.detached(priority: .userInitiated) {
+                    guard FileToolsPolicy.canBatchRename(selection) else {
+                        throw FileOperationTicketError.batchRenameSelectionLimit
+                    }
+                    let captured = try BatchRenameSelection.capture(selection: selection)
+                    return try FileOperationTicketStore().enqueue(.batchRename(selection: captured))
+                }.value
+                open(url, activate: true)
+            } catch { showError(error, title: .batchRename) }
+        }
+    }
+
     func perform(_ request: FileOperationRequest, activate: Bool = false, errorTitle: FileMintTextKey = .fileToolsErrorTitle) {
         Task {
             do {
@@ -485,6 +504,17 @@ private final class FinderActions {
         alert.messageText = FileMintStrings.text(title, language: language)
         if let error = error as? OpenWithError {
             alert.informativeText = FileMintStrings.text(error.messageKey, language: language)
+        } else if let error = error as? FileOperationTicketError {
+            alert.informativeText = FileMintStrings.text(error.messageKey, language: language)
+        } else if title == .batchRename {
+            let key: FileMintTextKey
+            switch error as? BatchRenameError {
+            case .invalidSelection: key = .batchRenameSelectionLimit
+            case .sourceChanged, .parentChanged: key = .batchRenameChangedSelection
+            case .unsupportedItem: key = .batchRenameUnsupportedSelection
+            default: key = .batchRenameUnavailableSelection
+            }
+            alert.informativeText = FileMintStrings.text(key, language: language)
         } else { alert.informativeText = error.localizedDescription }
         NSApp.activate(ignoringOtherApps: true)
         alert.runModal()

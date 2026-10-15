@@ -1,7 +1,7 @@
 import Foundation
 
 public enum FileTool: String, Codable, CaseIterable, Sendable {
-    case copyNames, copyPaths, move, permanentDelete, airDrop, desktopAlias
+    case copyNames, copyPaths, move, permanentDelete, airDrop, desktopAlias, batchRename
 
     public var title: FileMintTextKey {
         switch self {
@@ -11,6 +11,7 @@ public enum FileTool: String, Codable, CaseIterable, Sendable {
         case .permanentDelete: .permanentDelete
         case .airDrop: .airDrop
         case .desktopAlias: .sendAliasToDesktop
+        case .batchRename: .batchRename
         }
     }
 }
@@ -31,6 +32,7 @@ public struct FileToolsPreferences: Codable, Equatable, Sendable {
     public var permanentDelete = false
     public var airDrop = false
     public var desktopAlias = false
+    public var batchRename = false
     public var mainMenuTools: Set<FileTool> = []
     public var moveHereInMainMenu = true
     public var deleteConfirmation: DeleteConfirmation = .required
@@ -38,7 +40,7 @@ public struct FileToolsPreferences: Codable, Equatable, Sendable {
     public init() {}
 
     private enum CodingKeys: String, CodingKey {
-        case isEnabled, copyNames, copyPaths, move, permanentDelete, airDrop, desktopAlias
+        case isEnabled, copyNames, copyPaths, move, permanentDelete, airDrop, desktopAlias, batchRename
         case mainMenuTools, moveHereInMainMenu, deleteConfirmation
     }
 
@@ -51,6 +53,7 @@ public struct FileToolsPreferences: Codable, Equatable, Sendable {
         permanentDelete = (try? values.decode(Bool.self, forKey: .permanentDelete)) ?? false
         airDrop = (try? values.decode(Bool.self, forKey: .airDrop)) ?? false
         desktopAlias = (try? values.decode(Bool.self, forKey: .desktopAlias)) ?? false
+        batchRename = (try? values.decode(Bool.self, forKey: .batchRename)) ?? false
         mainMenuTools = (try? values.decode(Set<FileTool>.self, forKey: .mainMenuTools)) ?? []
         moveHereInMainMenu = (try? values.decode(Bool.self, forKey: .moveHereInMainMenu)) ?? true
         deleteConfirmation = (try? values.decode(DeleteConfirmation.self, forKey: .deleteConfirmation)) ?? .required
@@ -66,6 +69,7 @@ public struct FileToolsPreferences: Codable, Equatable, Sendable {
         case .permanentDelete: permanentDelete = enabled
         case .airDrop: airDrop = enabled
         case .desktopAlias: desktopAlias = enabled
+        case .batchRename: batchRename = enabled
         }
     }
 
@@ -77,6 +81,7 @@ public struct FileToolsPreferences: Codable, Equatable, Sendable {
         case .permanentDelete: return permanentDelete
         case .airDrop: return airDrop
         case .desktopAlias: return desktopAlias
+        case .batchRename: return batchRename
         }
     }
 }
@@ -112,7 +117,22 @@ public enum FileToolsPolicy {
         guard isItemMenu, !selection.isEmpty,
               selection.allSatisfy({ $0.isFileURL && FolderScope.contains($0, in: preferences.monitoredFolderURLs) })
         else { return [] }
-        return FileTool.allCases.filter { preferences.fileTools.allows($0) }
+        return FileTool.allCases.filter {
+            preferences.fileTools.allows($0) && ($0 != .batchRename || canBatchRename(selection))
+        }
+    }
+
+    /// Finder menu construction performs only bounded URL checks. Actual item
+    /// identities, kinds and filesystem capabilities are checked after the click.
+    public static func canBatchRename(_ selection: [URL]) -> Bool {
+        guard (2...BatchRenameRuleEngine.maximumRowCount).contains(selection.count),
+              selection.allSatisfy({ $0.isFileURL && ($0.host == nil || $0.host == "" || $0.host == "localhost") })
+        else { return false }
+        let normalized = selection.map(\.standardizedFileURL)
+        let paths = normalized.map(\.path)
+        guard Set(paths).count == paths.count, let first = normalized.first else { return false }
+        let parent = first.deletingLastPathComponent().path
+        return normalized.allSatisfy { $0.path != "/" && $0.deletingLastPathComponent().path == parent }
     }
 
     public static func clipboardText(for tool: FileTool, selection: [URL]) -> String? {

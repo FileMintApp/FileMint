@@ -157,8 +157,7 @@ Load for: Optional Finder file/folder actions, batch rename, selection snapshots
 
 ## Batch rename
 
-Target contract; pure-rule implementation is tracked separately from the planned
-native feature. The
+Implementation contract; completed phases and native verification are tracked separately. The
 [task](../../docs/tasks/2026-10-14-batch-rename.md) records phase status and evidence.
 The following rules apply only to batch rename, not to the existing tools above.
 
@@ -339,7 +338,10 @@ plan does not grant filesystem authority or satisfy the native rechecks below.
 - Before the first source mutation, persist an immutable versioned manifest with
   operation ID/kind, original batch, parent/volume identities and bookmark, stable
   row IDs, original/target components, and known staging-directory/slot names and
-  identities. Record each step's intent before the syscall and observed outcome
+  identities. Reserve the bounded private operation slot before allocating its
+  staging directory, so an interrupted preparation is visible even before a full
+  manifest exists. Unverified staging ownership is preserved for explicit manual
+  resolution. Record each step's intent before the syscall and observed outcome
   afterwards. Journal errors stop forward work; a save failure is not success.
 - Stage all changing sources into the batch's private 0700 sibling directory,
   exclusively, then verify each claimed object's identity before publishing any
@@ -392,7 +394,12 @@ plan does not grant filesystem authority or satisfy the native rechecks below.
 - Before retiring state, export the raw bytes of the known private rename control
   files, including indexes, manifest/journal and the current receipt when present,
   to a user-chosen local destination. Preserve corrupt/unsupported bytes, verify
-  the complete export, and never overwrite an existing export. Access only owned
+  the complete export, and never overwrite an existing export. Fixed, bounded
+  atomic-write scratch slots are control files too and are included in this
+  snapshot. Only after verified export and an unchanged snapshot may the exact
+  exported index-write scratch slot be reused to publish the retirement marker.
+  Reuse retains a blocking control entry throughout the write/rename crash window;
+  it never clears or overwrites the active index before atomic marker publication. Access only owned
   control-file locations; do not trust paths in corrupt records, inspect user
   staging directories, or include preferences, tickets or pending moves.
 - After verified export, atomically persist a versioned retirement marker in the
@@ -416,7 +423,10 @@ plan does not grant filesystem authority or satisfy the native rechecks below.
 - Keep a private, bounded versioned operation store, separate from preferences,
   ticket files and existing pending moves: at most one unresolved operation and
   one most-recent successful rename receipt, 8 MiB per manifest/receipt or operation
-  event stream. Directories use 0700 and files 0600. Per-step state can use compact
+  event stream; atomic-write scratch uses a fixed finite set of known slots with
+  the same per-file bound. Interrupted scratch is unresolved state, never invisible
+  debris or an automatically discarded record. Directories use 0700 and files
+  0600. Per-step state can use compact
   bounded records; do not repeatedly expand names/paths into unbounded history.
 - A valid commit marker atomically binds a successful operation to its receipt
   after every target is verified. A crash during receipt/cleanup must not turn a
@@ -449,8 +459,10 @@ plan does not grant filesystem authority or satisfy the native rechecks below.
   `FileMenuAction.swift`, `Preferences.swift`.
 - Native adapters: `FinderSync.swift`, `FileOperationCoordinator.swift`; settings in
   `FileToolsSettingsView.swift`. P1 rename rules/planning are `BatchRenameRule`,
-  `BatchRenamePlanner` and `RenameNamePolicy` in Core; the native executor and
-  app panel/controller remain planned. The coordinator's active requests also guard app quit
+  `BatchRenamePlanner` and `RenameNamePolicy` in Core; native execution and private
+  state live in `BatchRenameService`, `BatchRenameNative` and `BatchRenameStore`.
+  The app owns `BatchRenameController`, `BatchRenameView`, `BatchRenameOperations`
+  and exact-parent access. The coordinator's active requests also guard app quit
   and updater relaunch.
 - Load [Finder](finder-permissions.md) for scope and native callbacks,
   [startup](startup.md) for preference migration, and [presentation](presentation.md)

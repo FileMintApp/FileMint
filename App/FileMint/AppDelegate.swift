@@ -5,6 +5,7 @@ import FileMintCore
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         UpdateModel.shared.startAutomaticChecks()
+        BatchRenameOperations.shared.refreshStatus()
         if notification.userInfo?[NSApplication.launchIsDefaultUserInfoKey] as? Bool == true {
             SettingsWindowController.shared.show()
         }

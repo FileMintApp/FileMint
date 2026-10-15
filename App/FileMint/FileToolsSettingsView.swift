@@ -111,6 +111,7 @@ struct FileToolsSettingsView: View {
         case .permanentDelete: .deleteSettingsHint
         case .airDrop: .airDropHint
         case .desktopAlias: .desktopAliasHint
+        case .batchRename: .batchRenameHint
         }
     }
 }
