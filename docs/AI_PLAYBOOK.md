@@ -70,6 +70,23 @@ from the current task rather than replaying a transcript.
   task decisions in their task; historical native evidence in [ACCEPTANCE](ACCEPTANCE.md).
   `specs/ROADMAP.md` is a legacy pointer, not a second active roadmap.
 
+## Ordinary Git delivery and release checks
+
+- For an ordinary commit or push, verify the authorized destination, branch and
+  change/commit scope, perform the requested Git operation, and read back the
+  resulting commit and remote branch as applicable. Finish after that Git
+  verification. Inspect, watch, wait for or troubleshoot remote Actions only
+  when the user explicitly requests it. Historical task instructions or copied
+  delivery skills requiring post-push CI do not authorize routine Actions checks.
+- A request for “构建发布” or a release/publication workflow follows
+  [Distribution](DISTRIBUTION.md), including its proactive remote source CI,
+  draft-candidate verification, publication and applicable website checks. The
+  ordinary-Git rule does not waive those gates or require another request to
+  inspect Actions inside the authorized release workflow.
+- This distinction controls agent follow-up, not CI triggers. Preserve automatic
+  push workflows, fork-sync automation and the release scripts/checks. A routine
+  commit/push request does not itself authorize starting a release.
+
 ## Maintaining this workflow
 
 - Keep the default `AGENTS.md` + SPEC index within 7,000 UTF-8 bytes, checked by
