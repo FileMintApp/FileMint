@@ -62,6 +62,8 @@ struct BatchRenameDisplayRow: Identifiable {
     let issue: String?
     let location: URL?
     let isError: Bool
+
+    var changesName: Bool { !original.utf8.elementsEqual(target.utf8) }
 }
 
 private final class BatchRenameStopToken: @unchecked Sendable {
@@ -146,6 +148,26 @@ final class BatchRenameController: NSObject, ObservableObject, NSWindowDelegate 
         return String(format: text(.counts), count.changed, count.unchanged, count.errors, count.checking)
     }
     var selectedRow: BatchRenameDisplayRow? { rows.first { $0.id == selectedRowID } }
+    var hasRowErrors: Bool { !isChecking && rows.contains(where: \.isError) }
+    var statusTitle: String {
+        if isStopping { return text(.stopping) }
+        if isRunning { return text(.executing) }
+        if isChecking { return text(.checking) }
+        if requiresCommittedCleanup || requiresFinalization { return text(.stoppedCleanup) }
+        if let result {
+            return text(result.outcome == .renamed ? .success : result.outcome == .undone ? .undone
+                : result.outcome == .restored ? .restored : .recoveryNeeded)
+        }
+        if isRecovery { return text(.recordBlocked) }
+        if operationFailed { return text(.operationFailed) }
+        if hasRowErrors { return text(.reviewIssues) }
+        if canSubmit { return isUndo ? text(.undoLast) : text(.ready) }
+        return text(mode == .rules && rules.isEmpty ? .chooseRule : .noChanges)
+    }
+    func selectFirstIssue() {
+        guard !isChecking, let row = rows.first(where: \.isError) else { return }
+        selectedRowID = row.id
+    }
     func text(_ key: BatchRenameText) -> String { key.text(language) }
 
     func focusExistingPanel() -> Bool {
@@ -239,19 +261,27 @@ final class BatchRenameController: NSObject, ObservableObject, NSWindowDelegate 
 
     private func showPanel() {
         let available = NSScreen.main?.visibleFrame.size ?? NSSize(width: 1120, height: 800)
-        let size = NSSize(width: min(1080, available.width - 32), height: min(720, available.height - 64))
+        let size = NSSize(width: min(1120, available.width - 32), height: min(740, available.height - 64))
         let panel = BatchRenamePanel(contentRect: NSRect(origin: .zero, size: size),
                             styleMask: [.titled, .closable, .resizable, .miniaturizable], backing: .buffered, defer: false)
         panel.title = text(isUndo ? .undoLast : .title)
-        panel.contentMinSize = NSSize(width: min(900, size.width), height: min(560, size.height))
+        panel.identifier = NSUserInterfaceItemIdentifier("batchRenamePanel")
+        panel.titlebarAppearsTransparent = true
+        panel.backgroundColor = FileMintStyle.backgroundNS
         panel.isReleasedWhenClosed = false
         panel.isRestorable = false
         panel.delegate = self
         panel.submitHandler = { [weak self] in self?.submit() }
         panel.cancelHandler = { [weak self] in self?.requestClose() }
-        let host = NSHostingView(rootView: BatchRenameView(model: self))
-        host.sizingOptions = []
+        let minimum = NSSize(width: min(900, size.width), height: min(560, size.height))
+        let host = NSHostingView(rootView: BatchRenameView(model: self)
+            .frame(minWidth: minimum.width, minHeight: minimum.height))
+        // Export only the explicit minimum to AppKit. Changing drafts must not
+        // resize the window to SwiftUI's ideal or maximum content dimensions.
+        host.sizingOptions = [.minSize]
+        host.frame = NSRect(origin: .zero, size: size)
         panel.contentView = host
+        panel.contentMinSize = minimum
         self.panel = panel
         panel.center()
         _ = focusExistingPanel()

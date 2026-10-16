@@ -160,6 +160,24 @@ owns the rules, supported storage, counts, explicit actions and recovery behavio
   readable full names through accessible labels/details; an ellipsis is not the
   only way to inspect a proposed target. Show metadata preparation and rule errors
   plainly without technical backend details in the normal user flow.
+- The rename workspace uses the shared porcelain/graphite surfaces and mint
+  accent. A quiet header identifies the operation and selection count; the
+  inspector groups the mode switch, ordered rule cards and adjacent Add Rule
+  action. With no rules, offer clearly labeled starting actions for replacing
+  text, adding a prefix and numbering, plus access to every other rule. These
+  actions add one ordinary editable rule, never a saved preset or an execution.
+- Keep original-name ordering next to the preview it affects. Give new names
+  stronger emphasis than originals; use text and symbols for row states, never
+  color alone. Keep every row visible in the virtualized table. Selecting a row
+  exposes selectable full names and any issue/current location. A visible
+  problem summary can select the first invalid/conflicting row without changing
+  the plan or hiding other rows.
+- The fixed footer pairs an honest readiness/result summary and actual counts
+  with one visually primary commit action. Do not repeat an empty-rule/no-change
+  notice as a warning banner. Reserve banners for actionable errors and operation
+  results; preparation, running and stopping remain visibly distinct. At minimum
+  size, both inspector and names remain usable and long explanatory content
+  scrolls or wraps without pushing the footer out of view.
 - The preview supports ordinary local files and folders. Explain actual access,
   unavailable-item, collision and unsupported-operation failures at their failed
   stage; do not require a storage-ownership confirmation or claim that a location

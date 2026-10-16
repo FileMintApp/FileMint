@@ -3,7 +3,7 @@ import FileMintCore
 
 /// Rename-only copy stays together, including the recovery controls that remain
 /// available when ordinary rename is disabled.
-enum BatchRenameText {
+enum BatchRenameText: Hashable {
     case title, rules, nameList, ascending, descending, order, addRule, replace, delete
     case prepend, append, numbering, uppercase, lowercase, search, replacement, text
     case start, step, width, separator, position, before, after, currentBody, unifiedBody
@@ -20,11 +20,42 @@ enum BatchRenameText {
     case missingSource, blankLine, lineCount, invalidList, invalidPreview, operationFailed
     case accessDenied, unsupported, featureDisabled, protectedItem, recordBlocked
     case stoppedStaging, stoppedPublishing, stoppedCommitting, stoppedCleanup, interrupted
+    case workspaceHint, selectedCount, namingMethod, rulesHint, listModeHint, ruleSequence
+    case startWithRule, replaceHint, prependHint, numberingHint, moreRules, ruleActions
+    case protectedNames, listRequired, previewHint, selectHint, reviewIssues, firstIssue
+    case ready, chooseRule, executing, results, resultHint, undoHint, nameBody, uppercaseHint, lowercaseHint
 
     func text(_ language: AppLanguage) -> String {
         let chinese = language.resolved() == .chinese
         switch self {
         case .title: return chinese ? "批量重命名" : "Batch Rename"
+        case .workspaceHint: return chinese ? "设置命名方式，预览并确认更改。" : "Set up your names, then review the changes."
+        case .selectedCount: return chinese ? "%d 个项目" : "%d items"
+        case .namingMethod: return chinese ? "命名方式" : "Naming method"
+        case .rulesHint: return chinese ? "组合规则，按顺序生成新名称。" : "Combine rules to build your new names in order."
+        case .listModeHint: return chinese ? "按右侧顺序，为每个项目填写新名称。" : "Enter one new name for each item in preview order."
+        case .ruleSequence: return chinese ? "按顺序应用" : "Applied in order"
+        case .startWithRule: return chinese ? "从一条规则开始" : "Start with a rule"
+        case .replaceHint: return chinese ? "查找并替换名称中的文字" : "Find and replace text in each name"
+        case .prependHint: return chinese ? "在名称前加入共同的文字" : "Add shared text before each name"
+        case .numberingHint: return chinese ? "为名称添加连续编号" : "Give your names a sequence"
+        case .moreRules: return chinese ? "更多规则" : "More rules"
+        case .ruleActions: return chinese ? "规则操作" : "Rule actions"
+        case .protectedNames: return chinese ? "保留扩展名与隐藏状态" : "Extensions and hidden status stay unchanged"
+        case .listRequired: return chinese ? "需要 %d 行名称" : "%d names required"
+        case .previewHint: return chinese ? "确认每一个新名称后，再执行重命名。" : "Review every new name before applying changes."
+        case .selectHint: return chinese ? "选择一个项目，查看完整名称与详情" : "Select an item to inspect its full names and details"
+        case .reviewIssues: return chinese ? "请先解决名称问题" : "Review naming issues"
+        case .firstIssue: return chinese ? "查看首个问题" : "Show first issue"
+        case .ready: return chinese ? "可以重命名" : "Ready to rename"
+        case .chooseRule: return chinese ? "添加规则，开始整理名称" : "Add a rule to get started"
+        case .executing: return chinese ? "正在应用新名称…" : "Applying new names…"
+        case .results: return chinese ? "操作结果" : "Results"
+        case .resultHint: return chinese ? "查看各个项目的实际状态与位置。" : "Review the actual status and location of each item."
+        case .undoHint: return chinese ? "确认要恢复的名称后，再执行撤销。" : "Review the names to restore before undoing."
+        case .nameBody: return chinese ? "名称主体" : "Name body"
+        case .uppercaseHint: return chinese ? "将名称主体中的字母转为大写。" : "Convert letters in the name body to uppercase."
+        case .lowercaseHint: return chinese ? "将名称主体中的字母转为小写。" : "Convert letters in the name body to lowercase."
         case .rules: return chinese ? "规则" : "Rules"
         case .nameList: return chinese ? "名称列表" : "Name List"
         case .ascending: return chinese ? "原名自然升序" : "Original Name, Ascending"
@@ -34,7 +65,7 @@ enum BatchRenameText {
         case .replace: return chinese ? "替换" : "Replace"
         case .delete: return chinese ? "删除文字" : "Delete Text"
         case .prepend: return chinese ? "添加前缀" : "Prepend"
-        case .append: return chinese ? "添加后缀" : "Append"
+        case .append: return chinese ? "添加尾部文字" : "Append Text"
         case .numbering: return chinese ? "编号" : "Numbering"
         case .uppercase: return chinese ? "转为大写" : "Uppercase"
         case .lowercase: return chinese ? "转为小写" : "Lowercase"

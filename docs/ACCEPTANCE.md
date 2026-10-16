@@ -3,6 +3,22 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Batch rename workspace redesign — 2026-10-16
+
+On primary checkout `9833b19` plus the recorded UI changes, offline verification
+(Core 328, Images 22, Harness 5/5 and CLI 10), unsigned App/Finder compilation and
+the affected signed batch-rename fixture passed. Its 118 assertions include the
+900 × 560 minimum window, ordered rules, retained drafts, issue selection and
+existing 1,000-row, keyboard, revision and sandbox-operation scenarios. Native
+renders cover Chinese/light and English/dark empty, editing and conflict states.
+Live Computer Use confirmed the normal controls, full-name details and disabled
+submission after invalid parameters. Contextual rule removal remained unverified
+after Computer Use timeouts; its menu did open. VoiceOver, older systems and
+installed Finder/provider behavior were not revalidated. Production installation,
+preferences migration and publication were not performed. The user subsequently
+authorized a routine commit and push.
+See [design task and local evidence](tasks/2026-10-16-batch-rename-design.md#evidence).
+
 ## Automatic native QA runner — 2026-10-16
 
 On primary checkout `a0e86bf` plus local automation changes, the final offline

@@ -45,6 +45,13 @@ final class BatchRenameSmoke: NSObject, NSApplicationDelegate {
                     throw RenameSmokeFailure(message: "Crash child returned without interruption")
                 }
                 let root = try makeRunRoot()
+                if ProcessInfo.processInfo.environment["FILEMINT_BATCH_RENAME_MODE"] == "workspace-preview" {
+                    try await workspaceScenarios(root: root)
+                    print("Completed workspace visual inspection")
+                    fflush(stdout)
+                    NSApp.terminate(nil)
+                    return
+                }
                 if ProcessInfo.processInfo.environment["FILEMINT_BATCH_RENAME_MODE"] == "external-export" {
                     try await externalExport(root: root)
                     print("PASS external recovery export: \(assertions) assertions; confirmation/save cancellation, disabled-switch access, manual retirement and original preservation")
@@ -61,6 +68,7 @@ final class BatchRenameSmoke: NSObject, NSApplicationDelegate {
                 print("CHECK interrupted recovery")
                 try await interruptedRecovery(root: root)
                 print("CHECK native previews and keyboard")
+                try await workspaceScenarios(root: root)
                 try await previewScenarios(root: root)
                 print("CHECK serialized coordinator")
                 try await coordinatorScenarios(root: root)
@@ -318,6 +326,90 @@ final class BatchRenameSmoke: NSObject, NSApplicationDelegate {
         try require(try String(contentsOf: directory.appendingPathComponent("items/Folder/child.txt"), encoding: .utf8) == "nested-original", "Crash recovery changed directory contents")
     }
 
+    private func workspaceScenarios(root: URL) async throws {
+        for (language, appearance) in [(AppLanguage.chinese, NSAppearance.Name.aqua), (.english, .darkAqua)] {
+            let directory = root.appendingPathComponent("workspace-\(language.rawValue)", isDirectory: true)
+            let (service, session) = try await Task.detached(priority: .userInitiated) {
+                let names = ["IMG_1042.JPG", "IMG_1043.JPG", "IMG_1044.HEIC", "IMG_1045.JPG",
+                             "IMG_1046.png", "IMG_1047.JPG", "IMG_1048.JPG", "Folder"]
+                return try Self.prepared(root: directory, selection: Self.fixture(directory, names: names))
+            }.value
+            NSApp.appearance = NSAppearance(named: appearance)
+            let controller = BatchRenameController()
+            activeController = controller
+            let presentation = Task {
+                try await controller.present(session: session, language: language, checkTargets: { preview in
+                    try service.observeTargets(preview: preview, session: session)
+                }, execute: { plan, continuation in
+                    try service.execute(plan: plan, session: session, shouldContinue: continuation)
+                })
+            }
+            try await waitUntil { !controller.isChecking && controller.rows.count == 8 }
+            try require(!controller.canSubmit && controller.statusTitle == controller.text(.chooseRule),
+                        "Empty workspace did not explain its disabled action")
+            let panel = try unwrap(NSApp.windows.first { $0.identifier?.rawValue == "batchRenamePanel" && $0.isVisible }, "Missing workspace panel")
+            panel.appearance = NSAppearance(named: appearance)
+            try await Task.sleep(for: .milliseconds(180))
+            try render(panel, to: root.appendingPathComponent("workspace-empty-\(language.rawValue).png"))
+            controller.addRule(.numbering)
+            var draft = try unwrap(controller.rules.first, "Missing workspace numbering rule")
+            draft.unified = true
+            draft.unifiedText = language == .chinese ? "京都漫步" : "Kyoto Walk"
+            controller.updateRule(draft)
+            try await waitUntil { !controller.isChecking && controller.canSubmit }
+            try require(controller.rows.count == 8 && controller.statusTitle == controller.text(.ready),
+                        "Ready workspace lost selection or readiness")
+            try require(controller.rows.first?.target == "\(draft.unifiedText)_001" &&
+                        controller.rows.last?.target == "\(draft.unifiedText)_008.JPG",
+                        "Numbered preview no longer follows natural order or preserves suffixes")
+            try await Task.sleep(for: .milliseconds(180))
+            try render(panel, to: root.appendingPathComponent("workspace-rules-\(language.rawValue).png"))
+            if ProcessInfo.processInfo.environment["FILEMINT_BATCH_RENAME_INTERACTIVE"] == "1" {
+                print("READY redesigned workspace \(language.rawValue)")
+                fflush(stdout)
+                _ = try await presentation.value
+                activeController = nil
+                continue
+            }
+            try require(panel.contentMinSize.width >= 900 && panel.contentMinSize.height >= 560,
+                        "Hosting the workspace removed the minimum window size: \(panel.contentMinSize)")
+            panel.setContentSize(panel.contentMinSize)
+            controller.selectedRowID = controller.rows.first?.id
+            try await Task.sleep(for: .milliseconds(180))
+            try render(panel, to: root.appendingPathComponent("workspace-minimum-\(language.rawValue).png"))
+            try require(controller.selectedRow?.target == "\(draft.unifiedText)_001", "Full-name details lost the selected item")
+            controller.chooseMode(.nameList)
+            controller.setListText(Array(repeating: "Duplicate", count: 8).joined(separator: "\n"))
+            try await waitUntil { !controller.isChecking && controller.hasRowErrors }
+            try require(!controller.canSubmit && controller.statusTitle == controller.text(.reviewIssues),
+                        "Conflicting workspace remained ready")
+            controller.selectedRowID = controller.rows.last?.id
+            controller.selectFirstIssue()
+            try require(controller.selectedRowID == controller.rows.first(where: \.isError)?.id && controller.rows.count == 8,
+                        "First-issue navigation changed or hid the complete selection")
+            try await Task.sleep(for: .milliseconds(180))
+            try render(panel, to: root.appendingPathComponent("workspace-issues-\(language.rawValue).png"))
+            controller.chooseMode(.rules)
+            try await waitUntil { !controller.isChecking && controller.canSubmit }
+            try require(controller.rules == [draft] && controller.listText.contains("Duplicate"),
+                        "Mode switch discarded the other draft")
+            controller.addRule(.prepend)
+            var prefix = try unwrap(controller.rules.last, "Missing workspace prefix")
+            prefix.text = "Trip_"; controller.updateRule(prefix)
+            try await waitUntil { !controller.isChecking && controller.canSubmit }
+            try require(controller.rows.allSatisfy { $0.target.hasPrefix("Trip_") }, "Ordered rules were not composed")
+            controller.moveRule(prefix.id, by: -1)
+            try await waitUntil { !controller.isChecking && controller.canSubmit }
+            try require(controller.rows.allSatisfy { $0.target.hasPrefix(draft.unifiedText) },
+                        "Moving a rule did not recompute from original names")
+            controller.requestClose()
+            _ = try await presentation.value
+            activeController = nil
+            try require(!BatchRenameStore(directory: directory.appendingPathComponent("state")).status().hasUnresolvedOperation,
+                        "Workspace editing created recovery state")
+        }
+    }
+
     private func previewScenarios(root: URL) async throws {
         for (language, appearance) in [(AppLanguage.chinese, NSAppearance.Name.aqua), (.english, .darkAqua)] {
             let directory = root.appendingPathComponent("ui-\(language.rawValue)", isDirectory: true)
@@ -346,7 +438,7 @@ final class BatchRenameSmoke: NSObject, NSApplicationDelegate {
             gate.release()
             try await waitUntil { !controller.isChecking && controller.canSubmit }
             try require(controller.rows.allSatisfy { $0.target.hasPrefix("Current_") }, "Obsolete preview replaced the latest revision")
-            let panel = try unwrap(NSApp.windows.first { $0 is NSPanel && $0.isVisible }, "Missing rename panel")
+            let panel = try unwrap(NSApp.windows.first { $0.identifier?.rawValue == "batchRenamePanel" && $0.isVisible }, "Missing rename panel")
             try require(panel.isKeyWindow && NSApp.isActive, "Rename panel did not take focus")
             panel.appearance = NSAppearance(named: appearance)
             try await Task.sleep(for: .milliseconds(180))
@@ -405,7 +497,7 @@ final class BatchRenameSmoke: NSObject, NSApplicationDelegate {
         try require(controller.rows.count == 1_000 && controller.rows.allSatisfy { $0.target.hasPrefix("Revised-") && $0.target.hasSuffix(".txt") }, "Name-list preview lost rows or protected suffixes")
         controller.setListText(String(repeating: "x", count: BatchRenameNameList.maximumBytes + 1))
         try require(controller.listText == list, "Oversized list edit replaced the previous draft")
-        let panel = try unwrap(NSApp.windows.first { $0 is NSPanel && $0.isVisible }, "Missing thousand-row panel")
+        let panel = try unwrap(NSApp.windows.first { $0.identifier?.rawValue == "batchRenamePanel" && $0.isVisible }, "Missing thousand-row panel")
         try await Task.sleep(for: .milliseconds(180))
         try render(panel, to: root.appendingPathComponent("name-list-1000.png"))
         let editor = try unwrap(descendant(in: panel.contentView, matching: { (view: NSTextView) in
@@ -424,6 +516,8 @@ final class BatchRenameSmoke: NSObject, NSApplicationDelegate {
     private func render(_ window: NSWindow, to output: URL) throws {
         let view = try unwrap(window.contentView, "Missing native content view")
         view.layoutSubtreeIfNeeded(); window.display()
+        try require(view.bounds.width > 0 && view.bounds.height > 0,
+                    "Native workspace has empty bounds for \(output.lastPathComponent): \(view.bounds.size); window \(window.frame.size)")
         let bitmap = try unwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds), "Native render allocation failed")
         view.cacheDisplay(in: view.bounds, to: bitmap)
         // NSHostingView's root can be transparent. Composite its real cached
