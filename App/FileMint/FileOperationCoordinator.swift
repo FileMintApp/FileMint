@@ -6,7 +6,8 @@ import UniformTypeIdentifiers
 /// serialized across URL callbacks, including native authorization dialogs.
 @MainActor
 final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
-    static let shared = FileOperationCoordinator()
+    // Pass actor-isolated defaults explicitly for Swift 6.1 global initialization.
+    static let shared = FileOperationCoordinator(resourceController: .shared, renameOperations: .shared)
     private enum QueuedRequest {
         case ticket(URL)
         case selectedImages(ResourceTool, [URL], grants: [URL])

@@ -22,12 +22,13 @@ struct BatchRenameView: View {
 
     private var inspector: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Picker(model.text(.title), selection: Binding(get: { model.mode }, set: model.chooseMode)) {
+            // Explicit closures avoid actor-isolated method-reference thunks on older toolchains.
+            Picker(model.text(.title), selection: Binding(get: { model.mode }, set: { model.chooseMode($0) })) {
                 Text(model.text(.rules)).tag(BatchRenameController.Mode.rules)
                 Text(model.text(.nameList)).tag(BatchRenameController.Mode.nameList)
             }
             .pickerStyle(.segmented)
-            Picker(model.text(.order), selection: Binding(get: { model.order }, set: model.chooseOrder)) {
+            Picker(model.text(.order), selection: Binding(get: { model.order }, set: { model.chooseOrder($0) })) {
                 Text(model.text(.ascending)).tag(BatchRenameOrder.ascending)
                 Text(model.text(.descending)).tag(BatchRenameOrder.descending)
             }
@@ -51,9 +52,9 @@ struct BatchRenameView: View {
             } else {
                 Text(model.text(.listHint)).font(.callout).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-                BatchRenameListEditor(text: Binding(get: { model.listText }, set: model.setListText),
+                BatchRenameListEditor(text: Binding(get: { model.listText }, set: { model.setListText($0) }),
                                       label: model.text(.nameList),
-                                      rejected: model.rejectOversizedList)
+                                      rejected: { model.rejectOversizedList() })
                     .frame(minHeight: 200)
                     .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color(nsColor: .separatorColor)))
                 Button(model.text(.paste)) { model.pasteList() }

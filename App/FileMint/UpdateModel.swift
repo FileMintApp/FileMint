@@ -5,7 +5,8 @@ import Foundation
 
 @MainActor
 final class UpdateModel: ObservableObject {
-    static let shared = UpdateModel()
+    // Pass actor-isolated defaults explicitly for Swift 6.1 global initialization.
+    static let shared = UpdateModel(preferencesModel: .shared)
 
     enum State: Equatable {
         case idle, checking, upToDate, available, downloading, verifying, installing, waitingToRestart

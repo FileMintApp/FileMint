@@ -7,7 +7,8 @@ import UniformTypeIdentifiers
 /// off the main actor. Its caller owns FileOperationCoordinator until panels close.
 @MainActor
 final class BatchRenameOperations: ObservableObject {
-    static let shared = BatchRenameOperations()
+    // Pass actor-isolated defaults explicitly for Swift 6.1 global initialization.
+    static let shared = BatchRenameOperations(controller: .shared)
     @Published private(set) var hasRecovery = false
     @Published private(set) var canUndo = false
     @Published private(set) var isCorrupt = false
