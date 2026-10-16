@@ -41,7 +41,8 @@ final class CustomFileSavePanelController: NSObject {
     var snapshotFollowUp: ((FileTemplate?, CreationActionSelection, CreationApplication?) -> CreationFollowUp?)?
     var completeCreation: ((FileCreationResult, CreationFollowUp?, AppLanguage) async -> Void)?
     var chooseApplication: (() async throws -> CreationApplication?)?
-    var loadApplicationIcon: ((CreationApplication) async -> NSImage?)?
+    // Keep AppKit images on the main actor, including with older SDK annotations.
+    var loadApplicationIcon: (@MainActor (CreationApplication) async -> NSImage?)?
     var makeDocumentPreview: ((FileTemplate, DocumentTemplateStore, AppLanguage) -> (NSView, () -> Void))?
     private var openingEnabled = false
     private var previewEnabled = false
