@@ -72,11 +72,6 @@ struct BatchRenameView: View {
             .padding(20)
             Divider().overlay(FileMintStyle.line)
             if model.mode == .rules { ruleInspector } else { listInspector }
-            Divider().overlay(FileMintStyle.line)
-            Label(model.text(.protectedNames), systemImage: "lock")
-                .font(.system(size: 10)).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, 20).padding(.vertical, 13)
         }
         .background(FileMintStyle.soft)
     }
@@ -305,9 +300,6 @@ struct BatchRenameView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(model.text(model.result == nil && !model.isRecovery ? .preview : .results))
                         .font(.system(size: 15, weight: .semibold)).accessibilityAddTraits(.isHeader)
-                    Text(model.text(model.result != nil || model.isRecovery ? .resultHint : model.isUndo ? .undoHint : .previewHint))
-                        .font(.system(size: 11)).foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 0)
                 if model.isEditing {
@@ -318,12 +310,8 @@ struct BatchRenameView: View {
                     .labelsHidden().pickerStyle(.menu).controlSize(.small).tint(.primary)
                     .fixedSize().accessibilityIdentifier("batchRenameOrder")
                 }
-            }.padding(20)
-            if let message = bannerMessage { banner(message).padding(.horizontal, 20).padding(.bottom, 14) }
-            if model.isRunning {
-                Label(model.text(model.isStopping ? .stopping : .running), systemImage: "info.circle")
-                    .font(.callout).foregroundStyle(.secondary).padding(.horizontal, 20).padding(.bottom, 14)
-            }
+            }.padding(.horizontal, 20).padding(.top, 18).padding(.bottom, 12)
+            previewNotice.padding(.horizontal, 20).padding(.bottom, 14)
             nameTable
             if let row = model.selectedRow {
                 rowDetails(row)
@@ -363,27 +351,64 @@ struct BatchRenameView: View {
         .accessibilityIdentifier("batchRenamePreview")
     }
 
-    private var bannerMessage: String? {
-        if model.isChecking { return nil }
-        if let message = model.message, message != model.text(.noChanges) { return message }
-        return model.hasRowErrors ? model.text(.reviewIssues) : nil
+    private var noticeMessage: String {
+        if model.isAwaitingReassignment { return model.text(.reassignMessage) }
+        if model.isChecking { return model.text(.checkingInstruction) }
+        if model.isRunning { return model.text(model.isStopping ? .stoppingInstruction : .running) }
+        if let message = model.message, message != model.statusTitle, message != model.text(.noChanges) {
+            return message
+        }
+        if model.hasRowErrors {
+            let issue = model.rows.first(where: \.isError)?.issue
+            return [issue, model.text(.reviewInstruction)].compactMap { $0 }.joined(separator: "\n")
+        }
+        if model.isUndo && model.result == nil { return model.text(.undoHint) }
+        if model.isEditing {
+            if model.mode == .rules && model.rules.isEmpty { return model.text(.startInstruction) }
+            return model.text(model.canSubmit ? .readyInstruction : .noChangesInstruction)
+        }
+        return model.text(.resultHint)
     }
 
-    private func banner(_ message: String) -> some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: statusSymbol).foregroundStyle(statusColor).padding(.top, 1).accessibilityHidden(true)
-            ScrollView {
-                Text(message).font(.system(size: 12)).textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }.frame(maxHeight: 66).fixedSize(horizontal: false, vertical: true)
-            if model.hasRowErrors {
-                Button(model.text(.firstIssue)) { model.selectFirstIssue() }
-                    .controlSize(.small).accessibilityIdentifier("batchRenameFirstIssue")
+    private var previewNotice: some View {
+        HStack(alignment: .top, spacing: 12) {
+            if model.isChecking || model.isRunning { ProgressView().controlSize(.small).padding(.top, 3) }
+            else {
+                Image(systemName: statusSymbol).font(.system(size: 23, weight: .medium))
+                    .foregroundStyle(statusColor).padding(.top, 1).accessibilityHidden(true)
             }
+            VStack(alignment: .leading, spacing: 7) {
+                HStack(alignment: .top, spacing: 12) {
+                    Text(model.statusTitle).font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.primary).fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("batchRenameStatus")
+                    Spacer(minLength: 0)
+                    if model.hasRowErrors {
+                        Button(model.text(.firstIssue)) { model.selectFirstIssue() }
+                            .buttonStyle(MintButtonStyle()).accessibilityIdentifier("batchRenameFirstIssue")
+                    }
+                }
+                if !model.rows.isEmpty {
+                    Text(model.countText).font(.system(size: 11, weight: .medium)).monospacedDigit()
+                        .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("batchRenameCounts")
+                }
+                Text(noticeMessage).font(.system(size: 12)).textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("batchRenameMessage")
+                if model.isEditing {
+                    Label(model.text(.protectedNames), systemImage: "lock.fill")
+                        .font(.system(size: 11, weight: .medium)).foregroundStyle(statusColor)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(12)
-        .background(statusColor.opacity(0.07), in: RoundedRectangle(cornerRadius: 8))
-        .accessibilityIdentifier("batchRenameMessage")
+        .padding(16)
+        .background(statusColor.opacity(needsAttention ? 0.12 : 0.08), in: RoundedRectangle(cornerRadius: 10))
+        .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(statusColor.opacity(0.3), lineWidth: 1))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("batchRenameStatusNotice")
     }
 
     private func rowDetails(_ row: BatchRenameDisplayRow) -> some View {
@@ -445,20 +470,7 @@ struct BatchRenameView: View {
                 recoveryActions
             }
             HStack(spacing: 18) {
-                HStack(spacing: 10) {
-                    if model.isChecking || model.isRunning { ProgressView().controlSize(.small) }
-                    else { Image(systemName: statusSymbol).font(.system(size: 18)).foregroundStyle(statusColor).accessibilityHidden(true) }
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text(model.statusTitle).font(.system(size: 12, weight: .medium))
-                            .fixedSize(horizontal: false, vertical: true)
-                            .accessibilityIdentifier("batchRenameStatus")
-                        if !model.rows.isEmpty {
-                            Text(model.countText).font(.system(size: 10)).foregroundStyle(.secondary).monospacedDigit()
-                                .fixedSize(horizontal: false, vertical: true)
-                                .accessibilityIdentifier("batchRenameCounts")
-                        }
-                    }
-                }.frame(maxWidth: .infinity, alignment: .leading)
+                Spacer(minLength: 0)
                 if model.isRunning {
                     Button(model.text(.stop)) { model.requestStop() }
                         .buttonStyle(MintButtonStyle()).disabled(model.isStopping)

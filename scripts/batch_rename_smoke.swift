@@ -45,6 +45,13 @@ final class BatchRenameSmoke: NSObject, NSApplicationDelegate {
                     throw RenameSmokeFailure(message: "Crash child returned without interruption")
                 }
                 let root = try makeRunRoot()
+                if ProcessInfo.processInfo.environment["FILEMINT_BATCH_RENAME_MODE"] == "workspace-transitions" {
+                    try await transitionScenarios(root: root)
+                    print("PASS batch rename workspace transitions: \(assertions) assertions")
+                    fflush(stdout)
+                    NSApp.terminate(nil)
+                    return
+                }
                 if ProcessInfo.processInfo.environment["FILEMINT_BATCH_RENAME_MODE"] == "workspace-preview" {
                     try await workspaceScenarios(root: root)
                     print("Completed workspace visual inspection")
@@ -70,6 +77,7 @@ final class BatchRenameSmoke: NSObject, NSApplicationDelegate {
                 print("CHECK native previews and keyboard")
                 try await workspaceScenarios(root: root)
                 try await previewScenarios(root: root)
+                try await transitionScenarios(root: root)
                 print("CHECK serialized coordinator")
                 try await coordinatorScenarios(root: root)
                 try require(NSPasteboard.general.changeCount == clipboardCount, "Fixture changed clipboard")
@@ -408,6 +416,170 @@ final class BatchRenameSmoke: NSObject, NSApplicationDelegate {
             try require(!BatchRenameStore(directory: directory.appendingPathComponent("state")).status().hasUnresolvedOperation,
                         "Workspace editing created recovery state")
         }
+    }
+
+    private func transitionScenarios(root: URL) async throws {
+        let directory = root.appendingPathComponent("transitions", isDirectory: true)
+        let (service, session) = try await Task.detached(priority: .userInitiated) {
+            try Self.prepared(root: directory, selection: Self.fixture(directory, names: ["Alpha.txt", "Beta.txt"]))
+        }.value
+        let controller = BatchRenameController()
+        activeController = controller
+        let presentation = Task {
+            try await controller.present(session: session, language: .english,
+                checkTargets: { try service.observeTargets(preview: $0, session: session) },
+                execute: { try service.execute(plan: $0, session: session, shouldContinue: $1) })
+        }
+        try await waitUntil { !controller.isChecking && controller.rows.count == 2 }
+        controller.chooseMode(.nameList)
+        controller.setListText("First\nSecond")
+        try await waitUntil { !controller.isChecking && controller.canSubmit }
+        controller.requestClose()
+        _ = try await presentation.value
+        // A queued NSTextView/SwiftUI binding callback can outlive its panel.
+        // It must not create a preview with no source session or worker to finish it.
+        controller.setListText("Late first\nLate second")
+        try require(controller.listText == "First\nSecond" && !controller.isChecking,
+                    "Closed editor callback started an ownerless checking state")
+
+        let sorting = Task {
+            try await controller.present(session: session, language: .english,
+                checkTargets: { try service.observeTargets(preview: $0, session: session) },
+                execute: { try service.execute(plan: $0, session: session, shouldContinue: $1) })
+        }
+        try await waitUntil { !controller.isChecking && controller.rows.count == 2 && controller.isEditing }
+        controller.chooseMode(.nameList)
+        controller.setListText("First\nSecond")
+        try await waitUntil { !controller.isChecking && controller.canSubmit }
+        let panel = try unwrap(NSApp.windows.first { $0.identifier?.rawValue == "batchRenamePanel" && $0.isVisible }, "Missing sort panel")
+        let originalRows = controller.rows.map { [$0.original, $0.target] }
+        controller.chooseOrder(.descending)
+        try await waitUntil { panel.attachedSheet != nil }
+        try require(controller.isAwaitingReassignment && !controller.canSubmit && controller.order == .ascending &&
+                    controller.statusTitle == controller.text(.awaitingReassignment),
+                    "Pending reassignment changed the checked order or enabled submission")
+        controller.setListText("Unexpected\nEdit")
+        controller.chooseMode(.rules)
+        try require(controller.mode == .nameList && controller.listText == "First\nSecond",
+                    "Underlying edits changed a pending reassignment")
+        let firstSheet = try unwrap(panel.attachedSheet, "Missing reassignment sheet")
+        let cancel = try unwrap(descendant(in: firstSheet.contentView, matching: { (button: NSButton) in
+            button.title == "Cancel" && button.cell === firstSheet.defaultButtonCell
+        }), "Reassignment does not default to Cancel")
+        if let content = firstSheet.contentView {
+            content.layoutSubtreeIfNeeded()
+            let frame = cancel.convert(cancel.bounds, to: content)
+            let bottomGap = content.isFlipped ? content.bounds.maxY - frame.maxY : frame.minY - content.bounds.minY
+            try require(bottomGap >= 8 && bottomGap <= 32 && content.bounds.height < 160,
+                        "Confirmation has excessive empty space below its actions")
+        }
+        try render(firstSheet, to: root.appendingPathComponent("confirmation-english.png"))
+        try require(cancel.keyEquivalent == "\r", "Cancel is not the default Return action")
+        try await waitUntil { firstSheet.isKeyWindow }
+        print("CHECK reassignment Return cancellation")
+        try sendKey("\r", code: 36, modifiers: [], window: firstSheet)
+        try await waitUntil { !controller.isAwaitingReassignment && panel.attachedSheet == nil }
+        try require(controller.order == .ascending && controller.rows.map { [$0.original, $0.target] } == originalRows && controller.canSubmit,
+                    "Cancelling reassignment changed the original mapping")
+
+        controller.chooseOrder(.descending)
+        try await waitUntil { panel.attachedSheet != nil }
+        let escapeSheet = try unwrap(panel.attachedSheet, "Missing Escape cancellation sheet")
+        try await waitUntil { escapeSheet.isKeyWindow }
+        print("CHECK reassignment Escape cancellation")
+        try sendKey("\u{1b}", code: 53, modifiers: [], window: escapeSheet)
+        try await waitUntil { !controller.isAwaitingReassignment && panel.attachedSheet == nil }
+        try require(panel.isVisible && controller.order == .ascending && controller.rows.map { [$0.original, $0.target] } == originalRows,
+                    "Escape closed the workspace or changed the name-list mapping")
+
+        controller.chooseOrder(.descending)
+        try await confirmReassignment(panel: panel)
+        try await waitUntil { !controller.isChecking && controller.canSubmit }
+        try require(controller.order == .descending && controller.listText == "First\nSecond" &&
+                    controller.rows.map(\.original) == ["Beta.txt", "Alpha.txt"] &&
+                    controller.rows.map(\.target) == ["First.txt", "Second.txt"],
+                    "Confirmed reassignment lost text or mapped names to the old order")
+        controller.chooseMode(.rules)
+        controller.chooseOrder(.ascending)
+        try await waitUntil { !controller.isChecking }
+        controller.chooseMode(.nameList)
+        try await waitUntil { panel.attachedSheet != nil }
+        let modeSheet = try unwrap(panel.attachedSheet, "Missing mode reassignment sheet")
+        let modeCancel = try unwrap(descendant(in: modeSheet.contentView, matching: { (button: NSButton) in
+            button.title == "Cancel"
+        }), "Missing mode cancellation")
+        modeCancel.performClick(nil)
+        try await waitUntil { !controller.isAwaitingReassignment }
+        try require(controller.mode == .rules && controller.order == .ascending && controller.listText == "First\nSecond",
+                    "Cancelled return to list changed mode, order or draft")
+        controller.chooseMode(.nameList)
+        try await confirmReassignment(panel: panel)
+        try await waitUntil { !controller.isChecking && controller.canSubmit }
+        try require(controller.mode == .nameList && controller.rows.map(\.original) == ["Alpha.txt", "Beta.txt"] &&
+                    controller.rows.map(\.target) == ["First.txt", "Second.txt"],
+                    "Confirmed return to list did not rebuild its mapping")
+        controller.chooseOrder(.descending)
+        try await waitUntil { panel.attachedSheet != nil }
+        controller.requestClose()
+        _ = try await sorting.value
+        try require(!controller.isAwaitingReassignment && !controller.isChecking && !panel.isVisible,
+                    "Closing confirmation retained an active modal or checking state")
+
+        // Reuse the same production controller through several list/result/undo
+        // windows, including late editor callbacks after the result window closes.
+        for cycle in 0..<5 {
+            let editing = Task {
+                try await controller.present(session: session, language: .english,
+                    checkTargets: { try service.observeTargets(preview: $0, session: session) },
+                    execute: { try service.execute(plan: $0, session: session, shouldContinue: $1) })
+            }
+            try await waitUntil { controller.isEditing && !controller.isChecking }
+            controller.chooseMode(.nameList)
+            controller.setListText("Renamed-\(cycle)-A\nRenamed-\(cycle)-B")
+            try await waitUntil { !controller.isChecking && controller.canSubmit }
+            controller.submit()
+            try await waitUntil { !controller.isRunning && controller.result != nil }
+            try require(controller.result?.outcome == .renamed, "Repeated list rename failed")
+            controller.chooseResultAction(.undo)
+            try require(try await editing.value == .undo, "Result action did not request undo")
+            let reverse = try await Task.detached(priority: .userInitiated) {
+                try service.undoPreview(parentURL: session.parentURL,
+                    observationRoots: [directory], privateLocations: [directory.appendingPathComponent("state")])
+            }.value
+            let undo = Task {
+                await controller.presentUndo(preview: reverse, language: .english) {
+                    try service.undo(preview: reverse, shouldContinue: $0)
+                }
+            }
+            try await waitUntil { controller.isUndo && controller.canSubmit }
+            controller.setListText("Late\nCallback")
+            controller.chooseOrder(.descending)
+            controller.chooseMode(.nameList)
+            controller.addRule(.prepend)
+            try require(controller.canSubmit && !controller.isChecking && controller.rules.isEmpty,
+                        "Late editing callback invalidated the undo preview")
+            controller.submit()
+            try await waitUntil { !controller.isRunning && controller.result != nil }
+            try require(controller.result?.outcome == .undone, "Repeated result-page undo failed")
+            controller.requestClose()
+            _ = await undo.value
+            let store = BatchRenameStore(directory: directory.appendingPathComponent("state"))
+            try require(!store.status().hasUnresolvedOperation && !store.status().canUndo &&
+                        (try String(contentsOf: session.parentURL.appendingPathComponent("Alpha.txt"), encoding: .utf8)) == "original-0" &&
+                        (try String(contentsOf: session.parentURL.appendingPathComponent("Beta.txt"), encoding: .utf8)) == "original-1",
+                        "Undo did not preserve originals or consume the receipt")
+        }
+        activeController = nil
+    }
+
+    private func confirmReassignment(panel: NSWindow) async throws {
+        try await waitUntil { panel.attachedSheet != nil }
+        let sheet = try unwrap(panel.attachedSheet, "Missing reassignment confirmation")
+        let confirm = try unwrap(descendant(in: sheet.contentView, matching: { (button: NSButton) in
+            button.title == "Reassign" && button.keyEquivalent != "\r"
+        }), "Missing explicit reassignment action")
+        confirm.performClick(nil)
+        try await waitUntil { panel.attachedSheet == nil }
     }
 
     private func previewScenarios(root: URL) async throws {

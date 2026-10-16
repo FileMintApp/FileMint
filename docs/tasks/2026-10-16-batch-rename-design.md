@@ -1,7 +1,7 @@
 # Batch rename workspace redesign
 
 Status: complete for implementation and automated acceptance; manual limits below
-Next action: Review design feedback or revisit the manually blocked menu interaction when requested.
+Next action: Requested installed follow-up and notice refinements are complete; review further design feedback when requested. See the follow-up evidence below.
 
 ## Objective and scope
 
@@ -48,6 +48,18 @@ Next action: Review design feedback or revisit the manually blocked menu interac
   Use had launched the previous fixture; no running bundle was replaced.
 
 ## Evidence
+
+### Installed follow-up and notice placement
+
+The subsequent user request authorized fixes and installed acceptance, including
+compact reassignment confirmation and prominent guidance above the right-hand
+preview. The final local changes passed full verification, App/Finder builds and
+156 signed native assertions; actual Finder sorting cancel/confirm, mode return,
+conflict navigation and result-page undo passed. See the
+[follow-up evidence](evidence/2026-10-16-batch-rename-workspace-followup.md).
+The original UI-only observations below retain their original scope and limits.
+
+### Original UI implementation checks
 
 Tested worktree: `9833b19` plus this task's changes. Environment: arm64 macOS 27.2,
 Xcode 27.1 (27A9275), Swift 6.4. Source hashes and local logs are under

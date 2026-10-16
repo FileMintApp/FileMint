@@ -172,12 +172,17 @@ owns the rules, supported storage, counts, explicit actions and recovery behavio
   exposes selectable full names and any issue/current location. A visible
   problem summary can select the first invalid/conflicting row without changing
   the plan or hiding other rows.
-- The fixed footer pairs an honest readiness/result summary and actual counts
-  with one visually primary commit action. Do not repeat an empty-rule/no-change
-  notice as a warning banner. Reserve banners for actionable errors and operation
-  results; preparation, running and stopping remain visibly distinct. At minimum
-  size, both inspector and names remain usable and long explanatory content
-  scrolls or wraps without pushing the footer out of view.
+- Put the readiness/result summary, actual counts and naming guidance in a
+  prominent notice above the right-hand preview table. Use a clear heading,
+  status icon and contrasting surface/border; explain the next action and show
+  the concrete first issue when invalid or conflicting names block submission.
+  Keep Show First Issue next to that explanation. The protected-extension/hidden
+  status reminder belongs here too, rather than in a quiet inspector footer.
+  Preparation, ready, errors, running, stopping and results remain distinct;
+  empty rules/no changes use guidance rather than warning styling. The fixed
+  footer contains the commit/cancel/stop and applicable recovery actions, without
+  duplicating the status notice. At minimum size, both inspector and names remain
+  usable and long explanations scroll or wrap without displacing the actions.
 - The preview supports ordinary local files and folders. Explain actual access,
   unavailable-item, collision and unsupported-operation failures at their failed
   stage; do not require a storage-ownership confirmation or claim that a location
@@ -190,6 +195,9 @@ owns the rules, supported storage, counts, explicit actions and recovery behavio
   standard editing, and disable smart substitutions. Reassigning a populated list
   after an order change uses the owning contract's confirmation, with Cancel default;
   mode changes preserve in-memory drafts and invalidate the submitted preview.
+  Confirmation uses a compact native sheet sized to its content and owned by the
+  current workspace. Return and Escape cancel; only the explicit Reassign action
+  applies the new mapping.
 - Rename N Items / 重命名 N 个项目 and Undo N Items / 撤销 N 个项目 explicitly commit
   their complete previews. Ordinary Return edits/confirms the focused field or
   inserts a list newline; it never commits. Command-Return invokes only an enabled

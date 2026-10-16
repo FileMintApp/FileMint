@@ -3,6 +3,53 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Batch rename confirmation, lifecycle and prominent notices — 2026-10-16
+
+On `c97f01b` plus the recorded local changes, a signed native regression reproduced
+late editor callbacks starting an ownerless checking state after panel closure.
+Active-session guards, per-presentation task/confirmation ownership and no-op
+input guards now prevent that state. Reassignment uses a compact owned native
+sheet, with default Return and Escape cancellation. User-requested readiness,
+counts, concrete issues and protected-name guidance now appear prominently above
+the right-hand preview rather than in the quiet lower-left area.
+
+Final full verification passed (Core 328, Images 22 and standard offline checks),
+as did App/Finder builds and 156 signed native assertions, including five real
+rename/undo cycles. The final Debug was signed with the original Developer ID,
+installed and verified against all 89 built files/links. Actual Finder checks
+passed default/keyboard cancellation, explicit sort reassignment, mode-return
+confirmation, conflict navigation, actual rename and direct result-page undo.
+The compact sheet and prominent notice were observed in the actual application.
+All 22 synthetic originals, including 16 files, were restored; preferences and
+scope stayed byte-identical, the operation store is empty and normal quit passed.
+
+The earlier one-off installed stall retains its historical uncertainty; the
+separate reproducible lifecycle defect and final passing checks are not an exact
+reconstruction of that old accessibility event sequence. Older systems,
+VoiceOver, reboot/remount and other providers were not revalidated. See the
+[final source, installation and runtime evidence](tasks/evidence/2026-10-16-batch-rename-workspace-followup.md).
+
+## Installed redesigned Debug batch rename — 2026-10-16
+
+On clean primary revision `c97f01b`, the direct Debug build, original Developer ID
+signing and installed-bundle validation passed on arm64 macOS 27.2 / Xcode 27.1.
+The previous app was backed up; all 89 installed files/links match the signed
+build. The affected signed native fixture passed 118 assertions. After refreshing
+the existing enabled Finder extension, actual selections exercised exact-parent
+cancel/retry, saved access across process exits and undo, Chinese prefix plus
+numbering, mixed files/folders, protected compound suffixes, name-list swaps,
+duplicate/external conflicts, first-issue details, restart/File-menu undo and a
+clean result-page undo with Command-Return.
+
+All 22 synthetic original entries, including 16 regular files, were restored with
+their original identities/content; rename state is empty and saved preferences
+and menu scope are byte-identical. Live name-list sorting confirmation remains
+blocked in Computer Use. One earlier result-page undo checking-state anomaly did
+not recur in the clean repeat and remains unconfirmed. No product source changed;
+full offline verification, installed crash/recovery, other systems/providers,
+VoiceOver, archive packaging and publication were not run in this acceptance.
+See [the exact installation, observations and limits](tasks/evidence/2026-10-16-batch-rename-installed-debug.md).
+
 ## Batch rename workspace redesign — 2026-10-16
 
 On primary checkout `9833b19` plus the recorded UI changes, offline verification

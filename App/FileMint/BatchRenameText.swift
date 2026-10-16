@@ -24,6 +24,8 @@ enum BatchRenameText: Hashable {
     case startWithRule, replaceHint, prependHint, numberingHint, moreRules, ruleActions
     case protectedNames, listRequired, previewHint, selectHint, reviewIssues, firstIssue
     case ready, chooseRule, executing, results, resultHint, undoHint, nameBody, uppercaseHint, lowercaseHint
+    case startInstruction, readyInstruction, checkingInstruction, reviewInstruction, noChangesInstruction
+    case awaitingReassignment, stoppingInstruction
 
     func text(_ language: AppLanguage) -> String {
         let chinese = language.resolved() == .chinese
@@ -49,6 +51,13 @@ enum BatchRenameText: Hashable {
         case .firstIssue: return chinese ? "查看首个问题" : "Show first issue"
         case .ready: return chinese ? "可以重命名" : "Ready to rename"
         case .chooseRule: return chinese ? "添加规则，开始整理名称" : "Add a rule to get started"
+        case .startInstruction: return chinese ? "在左侧添加规则，或切换到名称列表。这里会实时显示每个新名称。" : "Add a rule on the left, or switch to Name List. Every new name appears here."
+        case .readyInstruction: return chinese ? "请核对下方的新名称，确认无误后点击右下角的重命名按钮。" : "Check the new names below, then use Rename at the bottom right to apply them."
+        case .checkingInstruction: return chinese ? "正在核对名称和目标占用情况，检查完成后才能执行。" : "Checking names and target availability. Wait for the checks to finish before applying changes."
+        case .reviewInstruction: return chinese ? "请先修正标记的问题，所有项目检查通过后才能执行。" : "Fix the marked issues before applying changes to the selection."
+        case .noChangesInstruction: return chinese ? "当前名称没有变化。调整左侧规则或名称列表后，再查看新的预览。" : "The current names are unchanged. Edit the rules or name list to update the preview."
+        case .awaitingReassignment: return chinese ? "请确认名称重新分配" : "Confirm name reassignment"
+        case .stoppingInstruction: return chinese ? "正在停止后续改名，并尝试恢复原名。请等待操作结束。" : "Stopping further renames and attempting to restore the earlier names. Wait for the result."
         case .executing: return chinese ? "正在应用新名称…" : "Applying new names…"
         case .results: return chinese ? "操作结果" : "Results"
         case .resultHint: return chinese ? "查看各个项目的实际状态与位置。" : "Review the actual status and location of each item."

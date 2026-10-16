@@ -1,8 +1,8 @@
 # Task: 批量重命名
 
-Status: in-progress
-Readiness: Authorization review P2 fixes and regressions passed / full verify, unsigned App/Finder build and signed isolated QA passed
-Next action: 本轮两个授权 P2 修复及 HARNESS 验证已完成，见 [审查修复证据](evidence/2026-10-15-batch-rename-authorization-review.md)。本次未更新生产安装；前序安装版证据见 [持久授权证据](evidence/2026-10-15-batch-rename-persistent-access.md)。真实系统重启/重新挂载、安装版 Finder 重验、旧系统、VoiceOver 和公开发布均未由本轮模拟或夹具替代。
+Status: complete for implemented scope and requested local acceptance
+Readiness: Final Debug installed / full verify, App/Finder builds and 156 native assertions passed; requested installed confirmation and undo flows passed
+Next action: 本次排序确认、窗口生命周期修复、紧凑确认窗与预览顶部醒目提示已完成并重装验收，见 [最终跟进记录](evidence/2026-10-16-batch-rename-workspace-followup.md)。后续按用户反馈继续调整；真实系统重启/重新挂载、旧系统、VoiceOver 和其他存储环境仍不在本次通过范围内。
 
 Created: 2026-10-14
 
@@ -102,6 +102,30 @@ Load additional context when:
 - 若需要修改项目注册或构建配置，加载 [Distribution](../../specs/domains/distribution.md)；仅编辑 `project.yml` 后 `make project`，不编辑生成的 Xcode 项目。
 
 ## Decisions and progress
+
+### Confirmation, checking-state fix and prominent notices — 2026-10-16
+
+用户授权补齐排序确认验收、发现问题直接修复并重新安装，随后要求收紧确认窗留白、
+把提示移到右侧预览并增强说明。原生回归稳定复现关闭后迟到编辑回调启动无会话检查；
+已增加活动会话限制、逐窗口所有权及重复输入防护。排序确认改为当前窗口拥有的异步
+原生附属面板，默认 Return / Escape 取消，按内容收紧高度；提示区按 owning SPEC
+先行更新后移至预览顶部，明确状态、数量、具体问题和下一步。
+
+最终完整检查（Core 328、Images 22）、App/Finder 构建、156 项签名原生断言通过；
+安装版实测排序取消/确认、模式往返、醒目冲突与问题定位、实际改名和结果页撤销通过。
+22 个合成原始目录项全部还原，偏好与范围未变，操作状态为空并正常退出。
+[最终证据](evidence/2026-10-16-batch-rename-workspace-followup.md)保留先前异常与当前复现/通过边界。
+
+### Installed redesigned Debug acceptance — 2026-10-16
+
+用户单独要求构建 Debug、安装并实际验收。基于干净 `c97f01b`，完成直接 Debug
+构建、原 Developer ID 签名、旧包备份、安装与 89 项文件/链接一致性校验。
+118 项隔离原生断言通过；刷新原已启用的 Finder 扩展后，实测准确父目录取消/
+重试、跨进程授权复用、中文前缀加编号、文件夹及复合后缀保护、名单交换、重复/
+外部冲突拦截、重启后的 File-menu 撤销和结果页撤销。全部合成项目最终还原，
+保存偏好与菜单范围字节不变，操作状态为空。名单排序确认仍有工具验收缺口，
+一次结果页撤销停在检查中的现象在干净复验中未复现，不认定为已修复或确定缺陷。
+[完整记录](evidence/2026-10-16-batch-rename-installed-debug.md)保留通过范围与缺口。
 
 ### Persistent directory grants — 2026-10-15
 

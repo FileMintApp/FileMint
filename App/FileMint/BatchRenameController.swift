@@ -93,6 +93,7 @@ final class BatchRenameController: NSObject, ObservableObject, NSWindowDelegate 
     @Published private(set) var isChecking = false
     @Published private(set) var isRunning = false
     @Published private(set) var isStopping = false
+    @Published private(set) var isAwaitingReassignment = false
     @Published private(set) var message: String?
     @Published private(set) var result: BatchRenameResult?
     @Published private(set) var isUndo = false
@@ -105,6 +106,8 @@ final class BatchRenameController: NSObject, ObservableObject, NSWindowDelegate 
     @Published var selectedRowID: UUID?
 
     private var panel: NSPanel?
+    private var presentationID = UUID()
+    private var reassignmentPanel: BatchRenameConfirmationPanel?
     private var continuation: CheckedContinuation<BatchRenamePanelAction, Never>?
     private var session: BatchRenameSession?
     private var preview: BatchRenamePreview?
@@ -120,9 +123,14 @@ final class BatchRenameController: NSObject, ObservableObject, NSWindowDelegate 
     private var closeRequested = false
     private var operationFailed = false
 
-    var isEditing: Bool { !isRunning && result == nil && !isRecovery && !isUndo && !operationFailed }
+    var isEditing: Bool {
+        panel != nil && session != nil && !closeRequested && !isRunning && result == nil
+            && !isRecovery && !isUndo && !operationFailed
+    }
+    private var acceptsEdits: Bool { isEditing && !isAwaitingReassignment }
     var canSubmit: Bool {
-        guard !isRunning, !isChecking, result == nil, !isRecovery, !operationFailed, !closeRequested else { return false }
+        guard !isRunning, !isChecking, !isAwaitingReassignment, result == nil,
+              !isRecovery, !operationFailed, !closeRequested else { return false }
         if isUndo { return undoPreview?.rows.isEmpty == false }
         return preview?.reference.revision == revision && preview?.canFreeze == true
     }
@@ -152,6 +160,7 @@ final class BatchRenameController: NSObject, ObservableObject, NSWindowDelegate 
     var statusTitle: String {
         if isStopping { return text(.stopping) }
         if isRunning { return text(.executing) }
+        if isAwaitingReassignment { return text(.awaitingReassignment) }
         if isChecking { return text(.checking) }
         if requiresCommittedCleanup || requiresFinalization { return text(.stoppedCleanup) }
         if let result {
@@ -249,10 +258,14 @@ final class BatchRenameController: NSObject, ObservableObject, NSWindowDelegate 
     }
 
     private func reset(language: AppLanguage) {
+        presentationID = UUID()
+        previewWorker?.cancel()
+        previewWorker = nil
         self.language = language
         rules = []; mode = .rules; order = .ascending; listOrder = .ascending; listText = ""
         rows = []; preview = nil; session = nil; undoPreview = nil; selectedRowID = nil
         result = nil; message = nil; isChecking = false; isRunning = false; isStopping = false
+        isAwaitingReassignment = false; reassignmentPanel = nil
         isUndo = false; isRecovery = false; canRestore = false; canUndo = false; canExport = false
         requiresFinalization = false; requiresCommittedCleanup = false; closeRequested = false; operationFailed = false
         checkTargets = nil; execute = nil; executeUndo = nil; readStatus = nil; stopToken = BatchRenameStopToken()
@@ -293,59 +306,77 @@ final class BatchRenameController: NSObject, ObservableObject, NSWindowDelegate 
     }
 
     func addRule(_ kind: BatchRenameRuleDraft.Kind) {
-        guard isEditing, rules.count < BatchRenameRuleEngine.maximumRuleCount else { return }
+        guard acceptsEdits, rules.count < BatchRenameRuleEngine.maximumRuleCount else { return }
         rules.append(.init(kind: kind)); invalidatePreview()
     }
     func updateRule(_ draft: BatchRenameRuleDraft) {
-        guard isEditing, let index = rules.firstIndex(where: { $0.id == draft.id }) else { return }
+        guard acceptsEdits, let index = rules.firstIndex(where: { $0.id == draft.id }), rules[index] != draft else { return }
         rules[index] = draft; invalidatePreview()
     }
     func removeRule(_ id: UUID) {
-        guard isEditing else { return }
+        guard acceptsEdits else { return }
         rules.removeAll { $0.id == id }; invalidatePreview()
     }
     func moveRule(_ id: UUID, by offset: Int) {
-        guard isEditing, let index = rules.firstIndex(where: { $0.id == id }), rules.indices.contains(index + offset) else { return }
+        guard acceptsEdits, let index = rules.firstIndex(where: { $0.id == id }), rules.indices.contains(index + offset) else { return }
         rules.swapAt(index, index + offset); invalidatePreview()
     }
     func setListText(_ value: String) {
-        guard isEditing else { return }
+        guard acceptsEdits, !listText.utf8.elementsEqual(value.utf8) else { return }
         guard value.utf8.count <= BatchRenameNameList.maximumBytes else { rejectOversizedList(); return }
         listText = value
         listOrder = order
         invalidatePreview()
     }
-    func rejectOversizedList() { message = text(.listTooLarge) }
+    func rejectOversizedList() { if acceptsEdits { message = text(.listTooLarge) } }
     func pasteList() {
-        guard isEditing, let value = NSPasteboard.general.string(forType: .string) else { return }
+        guard acceptsEdits, let value = NSPasteboard.general.string(forType: .string) else { return }
         setListText(value)
     }
     func chooseMode(_ requested: Mode) {
-        guard isEditing, requested != mode else { return }
+        guard acceptsEdits, requested != mode else { return }
         if requested == .nameList, !listText.isEmpty, listOrder != order {
-            guard confirmReassignment() else { return }
-            listOrder = order
+            requestReassignment(mode: requested, order: order)
+            return
         }
         mode = requested; invalidatePreview()
     }
     func chooseOrder(_ requested: BatchRenameOrder) {
-        guard isEditing, requested != order else { return }
+        guard acceptsEdits, requested != order else { return }
         if mode == .nameList, !listText.isEmpty {
-            guard confirmReassignment() else { return }
-            listOrder = requested
+            requestReassignment(mode: mode, order: requested)
+            return
         }
         order = requested; invalidatePreview()
     }
-    private func confirmReassignment() -> Bool {
-        let alert = NSAlert()
-        alert.messageText = text(.reassignTitle)
-        alert.informativeText = text(.reassignMessage)
-        alert.addButton(withTitle: text(.cancel)).keyEquivalent = "\r"
-        alert.addButton(withTitle: text(.reassign)).keyEquivalent = ""
-        return alert.runModal() == .alertSecondButtonReturn
+    private func requestReassignment(mode requestedMode: Mode, order requestedOrder: BatchRenameOrder) {
+        guard let panel, acceptsEdits else { return }
+        let owner = presentationID
+        isAwaitingReassignment = true
+        // Leave Picker/menu tracking before presenting native confirmation. Its
+        // completion belongs to this panel, never a later undo/recovery panel.
+        Task { @MainActor [weak self, weak panel] in
+            await Task.yield()
+            guard let self, let panel, self.panel === panel, self.presentationID == owner,
+                  self.isEditing, self.isAwaitingReassignment else { return }
+            let sheet = BatchRenameConfirmationPanel(title: self.text(.reassignTitle),
+                message: self.text(.reassignMessage), cancel: self.text(.cancel), confirm: self.text(.reassign))
+            self.reassignmentPanel = sheet
+            panel.beginSheet(sheet) { [weak self, weak panel, weak sheet] response in
+                sheet?.orderOut(nil)
+                guard let self, let panel, self.panel === panel, self.presentationID == owner else { return }
+                self.releaseReassignment()
+                guard response == .alertSecondButtonReturn, self.acceptsEdits else { return }
+                self.mode = requestedMode
+                self.order = requestedOrder
+                self.listOrder = requestedOrder
+                self.invalidatePreview()
+            }
+        }
     }
 
     private func invalidatePreview() {
+        guard isEditing else { return }
         revision &+= 1
         preview = nil
         message = nil
@@ -353,9 +384,10 @@ final class BatchRenameController: NSObject, ObservableObject, NSWindowDelegate 
         // One worker at a time bounds metadata work. An obsolete worker can
         // finish, but only the newest complete reference can enable submission.
         guard previewWorker == nil else { return }
+        let owner = presentationID
         previewWorker = Task { [weak self] in
             guard let self else { return }
-            while !Task.isCancelled, !self.closeRequested,
+            while !Task.isCancelled, self.presentationID == owner, self.isEditing,
                   let session = self.session, let check = self.checkTargets {
                 let capturedRevision = self.revision
                 let drafts = self.rules, mode = self.mode, list = self.listText, order = self.order
@@ -381,7 +413,7 @@ final class BatchRenameController: NSObject, ObservableObject, NSWindowDelegate 
                     return try BatchRenamePlanner.checkingTargets(of: proposed, using: snapshot)
                 }
                 let value = await worker.result
-                guard !Task.isCancelled, !self.closeRequested else { break }
+                guard !Task.isCancelled, self.presentationID == owner, self.isEditing else { break }
                 guard capturedRevision == self.revision else { continue }
                 self.isChecking = false
                 switch value {
@@ -401,7 +433,7 @@ final class BatchRenameController: NSObject, ObservableObject, NSWindowDelegate 
                 }
                 break
             }
-            self.previewWorker = nil
+            if self.presentationID == owner { self.previewWorker = nil }
         }
     }
 
@@ -493,17 +525,35 @@ final class BatchRenameController: NSObject, ObservableObject, NSWindowDelegate 
         closeRequested = true
         revision &+= 1
         previewWorker?.cancel()
+        dismissReassignment()
+        let worker = previewWorker, owner = presentationID
         Task {
             // Retain the coordinator's grants until any in-flight read finishes.
-            await previewWorker?.value
+            await worker?.value
+            guard presentationID == owner else { return }
             finish(.closed)
         }
     }
     func chooseResultAction(_ action: BatchRenamePanelAction) {
-        guard !isRunning, !isChecking else { return }
+        guard !isRunning, !isChecking, !isAwaitingReassignment else { return }
         finish(action)
     }
+    private func dismissReassignment() {
+        if let sheet = reassignmentPanel, let panel {
+            panel.endSheet(sheet, returnCode: .alertFirstButtonReturn)
+            sheet.orderOut(nil)
+        }
+        releaseReassignment()
+    }
+    private func releaseReassignment() {
+        reassignmentPanel = nil
+        isAwaitingReassignment = false
+    }
     private func finish(_ action: BatchRenamePanelAction) {
+        closeRequested = true
+        presentationID = UUID()
+        previewWorker?.cancel()
+        dismissReassignment()
         let continuation = self.continuation
         self.continuation = nil
         panel?.delegate = nil
@@ -584,6 +634,76 @@ final class BatchRenameController: NSObject, ObservableObject, NSWindowDelegate 
     }
 }
 
+/// An owned native sheet keeps both cancellation keys local to confirmation.
+/// NSAlert assigns only one key equivalent to its default button; the panel
+/// routes Escape explicitly while AppKit retains ordinary Return for Cancel.
+private final class BatchRenameConfirmationPanel: NSPanel {
+    init(title: String, message: String, cancel: String, confirm: String) {
+        super.init(contentRect: NSRect(x: 0, y: 0, width: 460, height: 180),
+                   styleMask: [.titled], backing: .buffered, defer: false)
+        self.title = title
+        titleVisibility = .hidden
+        titlebarAppearsTransparent = true
+        identifier = NSUserInterfaceItemIdentifier("batchRenameReassignment")
+        isReleasedWhenClosed = false
+        let heading = NSTextField(wrappingLabelWithString: title)
+        heading.font = .boldSystemFont(ofSize: 13)
+        heading.preferredMaxLayoutWidth = 412
+        let explanation = NSTextField(wrappingLabelWithString: message)
+        explanation.font = .systemFont(ofSize: 13)
+        explanation.textColor = .secondaryLabelColor
+        explanation.preferredMaxLayoutWidth = 412
+        let cancelButton = NSButton(title: cancel, target: self, action: #selector(cancelChoice))
+        cancelButton.keyEquivalent = "\r"
+        let confirmButton = NSButton(title: confirm, target: self, action: #selector(confirmChoice))
+        confirmButton.keyEquivalent = ""
+        let buttons = NSStackView(views: [NSView(), cancelButton, confirmButton])
+        buttons.orientation = .horizontal
+        buttons.spacing = 8
+        let stack = NSStackView(views: [heading, explanation, buttons])
+        stack.orientation = .vertical
+        stack.alignment = .leading
+        stack.distribution = .fill
+        stack.spacing = 14
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        if let contentView {
+            contentView.addSubview(stack)
+            NSLayoutConstraint.activate([
+                stack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
+                stack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
+                stack.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
+                stack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20),
+                heading.widthAnchor.constraint(equalTo: stack.widthAnchor),
+                explanation.widthAnchor.constraint(equalTo: stack.widthAnchor),
+                buttons.widthAnchor.constraint(equalTo: stack.widthAnchor)
+            ])
+            contentView.layoutSubtreeIfNeeded()
+            let height = heading.fittingSize.height + explanation.fittingSize.height
+                + buttons.fittingSize.height + stack.spacing * 2 + 40
+            setContentSize(NSSize(width: 460, height: ceil(height)))
+            contentView.layoutSubtreeIfNeeded()
+        }
+        defaultButtonCell = cancelButton.cell as? NSButtonCell
+    }
+    required init?(coder: NSCoder) { nil }
+    @objc private func cancelChoice() { cancelOperation(nil) }
+    @objc private func confirmChoice() { sheetParent?.endSheet(self, returnCode: .alertSecondButtonReturn) }
+    override func cancelOperation(_ sender: Any?) { sheetParent?.endSheet(self, returnCode: .alertFirstButtonReturn) }
+    override func sendEvent(_ event: NSEvent) {
+        if isCancel(event) { cancelOperation(nil); return }
+        super.sendEvent(event)
+    }
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        guard isCancel(event) else { return super.performKeyEquivalent(with: event) }
+        cancelOperation(nil)
+        return true
+    }
+    private func isCancel(_ event: NSEvent) -> Bool {
+        event.type == .keyDown && event.keyCode == 53 &&
+            event.modifierFlags.intersection([.command, .shift, .control, .option]).isEmpty
+    }
+}
+
 /// Ordinary Return remains owned by the field/editor. Only Command-Return is
 /// routed to submit(), which independently checks the current preview revision.
 private final class BatchRenamePanel: NSPanel {
@@ -604,7 +724,7 @@ private final class BatchRenamePanel: NSPanel {
     }
 
     private func routeOperationKey(_ event: NSEvent) -> Bool {
-        guard event.type == .keyDown else { return false }
+        guard event.type == .keyDown, attachedSheet == nil else { return false }
         let modifiers = event.modifierFlags.intersection([.command, .shift, .control, .option])
         if event.keyCode == 36, modifiers == .command {
             // An unfinished input-method composition is not part of the checked
