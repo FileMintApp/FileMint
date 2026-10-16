@@ -17,6 +17,31 @@ For an explicit verification request or a diagnosis requiring execution, run the
 requested or smallest relevant check and state why it is needed. Do not expand
 a generic review/check request into the full suite automatically.
 
+### Default acceptance
+
+Passing applicable automated checks is the default completion evidence for the
+behavior they cover. Core rule or file-transaction changes can be accepted with
+SPEC-based unit/integration coverage and the required checks below when native
+interactions and system boundaries are unchanged. Tests must call production code
+and assert observable results against independent expectations. File operations
+need real isolated fixtures and preservation/failure checks, not only mocked
+success responses. Test counts or line coverage alone do not establish acceptance.
+
+Select additional native checks only when the change affects UI interactions,
+Finder delivery, authorization, cross-process/persisted access or installed-update
+behavior; when diagnosing a native regression or an automation coverage gap; or
+when explicitly requested. Run the smallest affected scenarios from the linked
+checklist, using an existing isolated fixture where it covers that boundary.
+Actual Finder callbacks, system permission persistence and installed updates need
+the corresponding signed/runtime environment; an injected fixture does not prove
+them. A missing required environment remains blocked, not passed.
+
+Compiling the app is separate from packaging, installation and GUI acceptance.
+Do not build an installable Debug package, replay every feature or repeat unrelated
+native QA as a routine prerequisite. Release verification still follows the
+distribution contract. Broaden checks only for additional affected surfaces,
+new failures or a concrete unresolved concern.
+
 | Changed surface | Automated checks | Additional evidence / load when needed |
 | --- | --- | --- |
 | Read-only questions, analysis, review or planning | None by default | Inspect relevant source/contracts; distinguish static findings from runtime evidence. |
@@ -27,6 +52,7 @@ a generic review/check request into the full suite automatically.
 | About or updater | `make verify`; unsigned app build for app-code changes | [Update checks](verification/updates.md); network smoke for client changes, sandbox flow for save/download/open changes, native scheduling checks for timer/cancellation changes. |
 | Website, site dependencies, README includes | `SITE_BASE=/FileMint/ pnpm run site:build` | Inspect affected pages and base-path links. Build success is not live deployment. |
 | Native appearance or icon assets | Unsigned app build; `make icon` only when icon sources change | Inspect affected native surfaces. Core tests are also needed when behavior changes. |
+| Source CI workflow or app/extension compilation setup | `make verify`; unsigned `CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO make build`; workflow syntax and failure-gate checks for CI edits | Confirm the main executable and embedded Finder extension executable exist. Compilation changes alone do not require GUI QA. |
 | Build, packaging, signing or release | `make verify`; Release build and applicable artifact checks | [Distribution procedure](../docs/DISTRIBUTION.md), [Finder QA distribution checks](../docs/FINDER_QA.md#distribution). Publication remains a separate action. |
 
 The existing `make verify` runs context and compression-artifact checks, Swift tests and the public JSON
@@ -35,10 +61,13 @@ appcast and signing-entitlement preparation tests.
 It also runs restricted subprocess regressions for batch-rename metadata capture
 and private grant publication under native permission failures.
 It stays offline and does not build the app/extension or website.
-PR and main-branch CI invoke that same command independently on arm64 macOS 15
-and macOS 26. Both jobs must pass the stable `Verify core behavior` aggregate
-check. Runner/toolchain versions are recorded in each job; additional checks in
-this table are not implied by a green CI run. In particular, the matrix does not
+PR and main-branch CI invoke that same command and build the unsigned Release
+app and embedded Finder extension independently on arm64 macOS 15 and macOS 26.
+XcodeGen is ensured before the build; package resolution may use the network.
+This conservative CI baseline is separate from the locally selected checks above.
+Both tests and compilation in both jobs must pass the stable `Verify core behavior`
+aggregate check. Runner/toolchain versions are recorded in each job; native,
+signed-artifact and website checks are not implied by a green CI run. The matrix does not
 exercise macOS 13/14 or installed Finder/UI behavior. Swift tests and the JSON
 CLI share the JSON cases; those cases are not independent coverage counted twice.
 
@@ -115,6 +144,9 @@ nor FileMint's runtime sandbox entitlements or system security settings.
   If a required toolchain is unavailable, record the command and blocking reason.
 - Run all applicable rows above, including build/native/artifact checks when
   those surfaces change. A missing environment does not turn a check into a pass.
+- State the changed behavior, selected checks and why any additional native
+  scenario is required. Passing automation is sufficient for its covered scope;
+  list uncovered boundaries without expanding unrelated acceptance work.
 - Report checks as `passed`, `failed`, `not-run` or `blocked`, with the tested
   revision/worktree, command, environment and result. Keep logs outside the
   default context and link them from the task or relevant acceptance entry.

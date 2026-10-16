@@ -37,8 +37,9 @@ DMG, staples the app ticket and archives it with `ditto` as a ZIP. It then uploa
 both validated archives, their checksums and their separate appcasts
 to a draft GitHub Release. The normal release command refuses missing credentials,
 rejected notarization or a mismatched artifact. Existing release assets are
-never replaced; use a fresh version for corrections. GitHub CI runs core tests
-without rebuilding the release artifacts.
+never replaced; use a fresh version for corrections. GitHub CI runs automated
+tests and compiles the unsigned app and Finder extension without rebuilding the
+release artifacts.
 Before publication, a GitHub job downloads and checks both uploaded draft archives
 without using Apple credentials or claiming it built the binary.
 
@@ -332,8 +333,9 @@ does not change this flow.
 
 GitHub Releases remain the distribution channel. Public stable releases after
 the explicit 0.5.3 exception require local Developer ID signing and Apple notarization.
-Ordinary CI runs deterministic tests only; local development may still produce
-ad-hoc bundles, but they are not public stable releases.
+Ordinary CI runs deterministic tests and unsigned app/extension compilation;
+local development may still produce ad-hoc bundles, but they are not public
+stable releases. Routine acceptance follows [HARNESS](../specs/HARNESS.md#default-acceptance).
 
 `Config/Signing/DeveloperIDApplication-8S66M2ZLD5.cer` is the local certificate
 for the authorized team. It is ignored by Git and not embedded in the app. The private key and any

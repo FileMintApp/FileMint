@@ -22,6 +22,13 @@ Sparkle executables, adds ad-hoc bundle signatures, checks arm64-only contents
 and creates the DMG.
 Outputs are under build/ and ignored by Git.
 
+For routine acceptance, select checks from
+[HARNESS](../specs/HARNESS.md#default-acceptance). Covered Core behavior uses
+automated results; app/extension changes also need unsigned compilation, with
+native checks selected only for affected interactions and system boundaries.
+Source CI runs both `make verify` and the unsigned app/extension build on its
+macOS matrix. Compilation does not require installing or launching the result.
+
 For an explicitly requested installed Debug check, generate the project and use
 the Debug configuration with a direct executable:
 

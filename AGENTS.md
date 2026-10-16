@@ -20,10 +20,10 @@ Keep these invariants across all tasks:
 - Work in the primary checkout; use worktrees only when the user requests one.
 - Update the owning domain SPEC before intentional product behavior changes;
   bug fixes restore the existing contract. Add regression coverage for behavior.
-- Choose checks by task intent and actual changes using HARNESS. Analysis/planning
-  needs no tests; docs-only edits use documentation checks. Test completed
-  implementation; pre-change tests need a diagnostic reason or explicit request.
-  Report blocked applicable checks.
+- Follow HARNESS: accept passing automation for covered behavior; scope native QA
+  to affected boundaries/gaps/requests. No routine Debug/GUI replay. Analysis needs
+  no tests; docs use doc checks. Test completed work; justify pre-change tests.
+  Report blocked checks and gaps.
 - Keep deterministic rules in `CorePackage`, Finder APIs in `FinderSyncExtension`,
   SwiftUI settings in `App/FileMint`, and native creation UI in `SharedUI`.
 - Preserve user files, preferences and authorization boundaries. No folder crawling,

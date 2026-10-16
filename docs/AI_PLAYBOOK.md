@@ -46,6 +46,11 @@ from the current task rather than replaying a transcript.
   restore the existing contract; do not weaken expectations to fit defective code.
 - Use [HARNESS](../specs/HARNESS.md) for applicable completion checks. Run
   `make doctor` only for environment diagnosis; it is not a test result.
+- Use the [default acceptance policy](../specs/HARNESS.md#default-acceptance):
+  select checks from changed behavior and accept passing automation within its
+  covered scope. Explain the trigger for additional native QA and keep it to the
+  affected scenarios. Routine work does not require a Debug package or a full
+  GUI replay. Keep compilation, runtime acceptance and publication evidence distinct.
 - Select checks for the current phase: analysis/planning has no default test run,
   documentation edits use documentation checks, and implementation tests run after
   completing the relevant change. Pre-change tests need a concrete diagnostic

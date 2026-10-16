@@ -41,8 +41,9 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   stop publication. A resumed accepted DMG can supply the ZIP without rebuilding
   the application or submitting another notarization request.
 - GitHub Releases remain the distribution channel. GitHub CI verifies the core
-  without holding Apple signing assets or rebuilding the public DMG. A locally
-  built release is not represented as a GitHub Actions build or GitHub build
+  and compiles the unsigned app and Finder extension without holding Apple
+  signing assets or rebuilding the public DMG. A locally built release is not
+  represented as a GitHub Actions build or GitHub build
   attestation. Existing published versions retain their original trust
   limitations; documentation must distinguish them from the first notarized
   release. Never tell users to disable Gatekeeper globally. Finder extension
@@ -56,14 +57,23 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   artifact ID. The published release identity is checked independently of the
   newer website commit. Deploy the retained artifact without rebuilding or
   modifying releases. The existing release-bound deployment gates are unchanged.
-- Source CI runs the complete offline `make verify` suite on the standard arm64
-  `macos-15` and `macos-26` runners. Both environments must pass; a failure in
+- Source CI runs the complete offline `make verify` suite and
+  `CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO make build` on the standard
+  arm64 `macos-15` and `macos-26` runners. The build uses the existing Release
+  scheme, generates the project from `project.yml`, and must produce both the
+  main executable and its embedded Finder extension executable. Ensure XcodeGen
+  is available and log its version; package resolution may use the network.
+  Both tests and compilation must pass in both environments; a failure in
   one must not cancel the other. Keep the stable `Verify core behavior` check
   as an aggregate that runs even when a dependency fails, is cancelled or is
   skipped, and succeeds only when every matrix job succeeds. Log the actual OS,
-  architecture and Xcode/Swift versions with each run. This matrix does not prove
-  macOS 13/14 or installed Finder/UI compatibility; those need separate runtime
-  evidence on the target system.
+  architecture and Xcode/Swift versions with each run. This is the conservative
+  source-CI baseline; local acceptance selects checks by actual changes using
+  [HARNESS](../HARNESS.md#choose-checks-by-change). The unsigned build checks
+  compilation, linking, resources and embedding, not runtime behavior or release
+  signatures. It must not install, launch, package or publish the app. This matrix
+  does not prove macOS 13/14 or installed Finder/UI compatibility; those need
+  separate runtime evidence on the target system.
 - Fork synchronization runs only in downstream forks and preserves downstream
   commits through a normal merge without force pushing. A fork may configure
   `FORK_SYNC_TOKEN` with repository-scoped Contents and Workflows read/write

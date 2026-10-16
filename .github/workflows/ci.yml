@@ -14,7 +14,7 @@ jobs:
       matrix:
         os: [macos-15, macos-26]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
+    timeout-minutes: 30
     env:
       DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
     steps:
@@ -30,9 +30,26 @@ jobs:
           swift --version
       - name: Verify deterministic behavior
         run: make verify
+      - name: Ensure XcodeGen
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+        run: |
+          if ! command -v xcodegen >/dev/null 2>&1; then
+            brew install xcodegen
+          fi
+          xcodegen --version
+      - name: Compile unsigned app and Finder extension
+        env:
+          CODE_SIGNING_ALLOWED: "NO"
+          CODE_SIGNING_REQUIRED: "NO"
+        run: |
+          make build
+          CI_APP=build/DerivedData/Build/Products/Release/FileMint.app
+          test -x "$CI_APP/Contents/MacOS/FileMint"
+          test -x "$CI_APP/Contents/PlugIns/FileMintFinderSync.appex/Contents/MacOS/FileMintFinderSync"
 
   verify:
-    # Preserve the existing required-check name as the matrix grows.
+    # Preserve the required-check name; each matrix job now requires tests and compilation.
     name: Verify core behavior
     needs: verify-macos
     if: ${{ always() }}
