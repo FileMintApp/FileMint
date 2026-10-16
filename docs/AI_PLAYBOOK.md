@@ -51,6 +51,11 @@ from the current task rather than replaying a transcript.
   covered scope. Explain the trigger for additional native QA and keep it to the
   affected scenarios. Routine work does not require a Debug package or a full
   GUI replay. Keep compilation, runtime acceptance and publication evidence distinct.
+- For affected native interactions, inspect `make native-qa-plan` and run
+  `make verify-native-affected`. Use `NATIVE_QA_BASE` after committing or
+  `NATIVE_QA_SUITES` for a reviewed shared-file scope. Follow
+  [native execution](../specs/verification/native-qa.md#automated-local-checks)
+  for reports, manual boundaries and unavailable environments.
 - Select checks for the current phase: analysis/planning has no default test run,
   documentation edits use documentation checks, and implementation tests run after
   completing the relevant change. Pre-change tests need a concrete diagnostic

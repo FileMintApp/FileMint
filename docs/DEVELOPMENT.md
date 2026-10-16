@@ -29,6 +29,23 @@ native checks selected only for affected interactions and system boundaries.
 Source CI runs both `make verify` and the unsigned app/extension build on its
 macOS matrix. Compilation does not require installing or launching the result.
 
+For changed native interactions, plan and run the existing isolated QA fixtures:
+
+```sh
+make native-qa-plan
+make verify-native-affected
+make verify-native-affected NATIVE_QA_BASE=HEAD~1
+make verify-native-affected NATIVE_QA_SUITES=batch-rename,file-tools-settings
+```
+
+The runner builds signed stable QA apps serially and writes a fresh JSON report
+with per-suite logs under `build/native-checks.noindex`. Exit 0 requires successful
+automatic checks in the selected scope; an empty plan is reported separately.
+Manual boundaries or unknown runtime paths remain blocked. Developer ID keys
+stay local, and the offline `make verify` only tests this runner's selection and
+failure handling. See [native QA](../specs/verification/native-qa.md#automated-local-checks)
+for suite coverage and requirements.
+
 For an explicitly requested installed Debug check, generate the project and use
 the Debug configuration with a direct executable:
 

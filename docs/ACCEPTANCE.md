@@ -3,6 +3,23 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Automatic native QA runner — 2026-10-16
+
+On primary checkout `a0e86bf` plus local automation changes, the final offline
+`make verify` passed, including 20 runner regressions. Actual local execution of
+the nine selected native modes passed on arm64 macOS 27.2 / Xcode 27.1. Existing
+Developer ID identities, signing requirements and stable launch paths were reused.
+Repeated batch-rename, native-icon and design fixtures kept those identities while
+using different build IDs and data roots. An initial design-fixture startup race
+failed the run and was fixed by waiting for bounded template-recovery readiness;
+the original appearance/persistence/rollback assertions remain in place.
+
+These results cover the connected fixture scenarios, not installed Finder
+callbacks, actual external authorization persistence, VoiceOver, Office-editor
+rendering or installed upgrade/migration acceptance. Signing keys remained local;
+production installation and publication were not changed. See the
+[task and exact local evidence](tasks/native-qa-automation.md#evidence).
+
 ## Batch rename authorization review fixes — 2026-10-15
 
 On primary checkout `aaf966e` plus the recorded changes, both reviewed P2 defects

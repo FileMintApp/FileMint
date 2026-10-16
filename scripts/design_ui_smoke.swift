@@ -129,6 +129,27 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
         NSApp.mainMenu = bar
         NSApp.activate(ignoringOtherApps: true)
         print("READY isolated FileMint UI: \(root.path)")
+        if CommandLine.arguments.contains("--verify-automation") {
+            Task { @MainActor in
+                do {
+                    try await waitForSettingsReady()
+                    print("CHECK automated design appearance"); fflush(nil)
+                    try checkAppearance(store: store, root: root)
+                    print("CHECK automated design settings"); fflush(nil)
+                    try await checkSettings(store: store, root: root)
+                    print("CHECK automated design window size"); fflush(nil)
+                    try await checkWindowSize()
+                    print("PASS automated design QA: appearance, settings edits/rollback, native captures and window size")
+                    fflush(nil)
+                    NSApp.terminate(nil)
+                } catch {
+                    print("FAIL automated design QA: \(error)")
+                    fflush(nil)
+                    exit(1)
+                }
+            }
+            return
+        }
         if CommandLine.arguments.contains("--check-settings") {
             Task { @MainActor in
                 do {
@@ -214,14 +235,21 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
         }
     }
 
+    private func waitForSettingsReady() async throws {
+        for _ in 0..<100 where model.isMutatingTemplates || model.templateRecoveryError != nil {
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        guard model.templateMutationAllowed else {
+            throw NSError(domain: "SettingsReview", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "Template recovery did not finish"])
+        }
+    }
+
     private func checkSettings(store: FileMintPreferencesStore, root: URL) async throws {
         func require(_ value: Bool, _ message: String) throws {
             if !value { throw NSError(domain: "SettingsReview", code: 1, userInfo: [NSLocalizedDescriptionKey: message]) }
         }
-        for _ in 0..<100 where model.isMutatingTemplates || model.templateRecoveryError != nil {
-            try await Task.sleep(for: .milliseconds(100))
-        }
-        try require(model.templateMutationAllowed, "Template recovery did not finish")
+        try await waitForSettingsReady()
         let original = model.preferences
         let templates = [model.preferences.templates.first { $0.document == nil }!,
                          model.preferences.templates.first { $0.document != nil }!]
@@ -293,6 +321,7 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
     private func checkAppearance(store: FileMintPreferencesStore, root: URL) throws {
         let original = model.preferences
         for choice in [AppAppearance.dark, .light, .system] {
+            print("CHECK appearance \(choice.rawValue)"); fflush(nil)
             model.setAppearance(choice)
             guard store.load().appearance == choice else { throw ResourceError.failed }
             if choice == .system {

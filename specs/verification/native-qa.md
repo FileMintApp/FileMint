@@ -3,6 +3,50 @@
 Load for native QA builders, signing, stable launch paths and per-run data.
 The owning rules are in [HARNESS](../HARNESS.md#native-qa-application-identity).
 
+## Automated local checks
+
+Use `make native-qa-plan` to select checks from tracked/untracked working changes
+against HEAD. Set `NATIVE_QA_BASE=HEAD~1` for an already committed change, or
+`NATIVE_QA_SUITES=batch-rename,file-tools-settings` after reviewing the actual
+behavior in a shared file. `make verify-native-affected` executes that plan.
+The equivalent CLI is `python3 scripts/native_checks.py plan|run`, with `--base`,
+repeatable `--path` / `--suite`, and explicit `--all` for runner maintenance.
+
+The runner reuses the existing builders, fixed identities and signed stable
+paths. It runs serially, verifies the published identity and fresh build run ID,
+and requires both exit 0 and each suite's completion marker. Logs and a JSON
+report live in a unique directory under `build/native-checks.noindex`. Every new
+invocation rebuilds selected fixtures with fresh data. No previous pass or last
+good bundle can substitute for a failed build. An empty plan is `not-applicable`,
+not a successful native test.
+
+Automatic suites are `batch-rename`, `template-workflow`, `creation-opening`,
+`update-scheduling`, `open-with`, `file-tools-settings`, `resource-tools`,
+`design-ui`, and the headless `favorite-model`. Template scenarios share one
+fresh build in a run and each create their own runtime workspace. Design QA uses
+`--verify-automation`; ordinary interactive modes remain available.
+
+The plan reports affected manual boundaries: real Finder delivery, external
+folder grants, login-item registration, the interactive move/update fixtures,
+isolated Sparkle installation and the access-migration experiment. Unknown
+runtime paths require review. Such unresolved requirements return a nonzero
+result even when the selected automatic suites pass. Explicit suite selection
+is a reviewed scope choice, not proof of unrelated manual boundaries.
+
+Local Developer ID signing and a logged-in macOS desktop are required for GUI
+fixtures. Keep keys local; source CI runs only the runner's offline regressions.
+Build/runtime deadlines are bounded. A timeout may stop only the process group
+started by this invocation; never terminate an app discovered as already running.
+If an owned process cannot stop normally, retain it as blocked and require normal
+closure before rebuilding. Do not force-kill an app or manipulate permission stores.
+Environment overrides that select external editors, terminals, pickers or
+interactive fixture modes are removed from automatic child processes.
+
+Selection is a conservative path-based plan, not semantic coverage analysis.
+Pure Core rule and documentation changes do not start GUI QA by default. Review
+shared-file changes against the owning contract before choosing a narrower set.
+See the [implementation task](../../docs/tasks/native-qa-automation.md) for evidence.
+
 ## Identity registry
 
 `scripts/native_qa.py` owns the finite QA kind registry. Builders create fresh

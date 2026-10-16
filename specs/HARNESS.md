@@ -42,6 +42,12 @@ native QA as a routine prerequisite. Release verification still follows the
 distribution contract. Broaden checks only for additional affected surfaces,
 new failures or a concrete unresolved concern.
 
+For affected native surfaces, use `make native-qa-plan`, then
+`make verify-native-affected` for the selected automatic fixtures. See
+[native execution and scope selection](verification/native-qa.md#automated-local-checks)
+for committed changes, explicit scopes and manual boundaries. This command is
+separate from the offline `make verify`; a green source CI does not imply it ran.
+
 | Changed surface | Automated checks | Additional evidence / load when needed |
 | --- | --- | --- |
 | Read-only questions, analysis, review or planning | None by default | Inspect relevant source/contracts; distinguish static findings from runtime evidence. |
@@ -58,6 +64,8 @@ new failures or a concrete unresolved concern.
 The existing `make verify` runs context and compression-artifact checks, Swift tests and the public JSON
 harness plus real CLI regression, fork-sync permission/merge/CI-dispatch regressions,
 appcast and signing-entitlement preparation tests.
+It also checks native-runner selection, subprocess failures/timeouts and reporting
+without launching GUI fixtures or accessing signing credentials.
 It also runs restricted subprocess regressions for batch-rename metadata capture
 and private grant publication under native permission failures.
 It stays offline and does not build the app/extension or website.
