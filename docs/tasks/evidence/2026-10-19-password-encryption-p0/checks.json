@@ -1,0 +1,159 @@
+{
+  "passed": true,
+  "assertionGroups": 38,
+  "observations": 76,
+  "checks": [
+    {
+      "check": "raw bytes roundtrip",
+      "passed": true
+    },
+    {
+      "check": "randomized ciphertext",
+      "passed": true
+    },
+    {
+      "check": "password boundary 19",
+      "passed": true
+    },
+    {
+      "check": "password boundary 20",
+      "passed": true
+    },
+    {
+      "check": "password boundary 256",
+      "passed": true
+    },
+    {
+      "check": "password boundary 257",
+      "passed": true
+    },
+    {
+      "check": "UTF8 roundtrip cjk8",
+      "passed": true
+    },
+    {
+      "check": "UTF8 roundtrip cjk11",
+      "passed": true
+    },
+    {
+      "check": "UTF8 roundtrip emoji8",
+      "passed": true
+    },
+    {
+      "check": "UTF8 roundtrip space32",
+      "passed": true
+    },
+    {
+      "check": "UTF8 roundtrip nul32",
+      "passed": true
+    },
+    {
+      "check": "UTF8 roundtrip nfc",
+      "passed": true
+    },
+    {
+      "check": "UTF8 roundtrip nfd",
+      "passed": true
+    },
+    {
+      "check": "Unicode alternate representation rejected nfc",
+      "passed": true
+    },
+    {
+      "check": "Unicode alternate representation rejected nfd",
+      "passed": true
+    },
+    {
+      "check": "directory contents modes mtime xattrs resource fork",
+      "passed": true
+    },
+    {
+      "check": "api_to_apple_cli",
+      "passed": true
+    },
+    {
+      "check": "apple_cli_to_api",
+      "passed": true
+    },
+    {
+      "check": "invalid archive rejected wrong_password",
+      "passed": true
+    },
+    {
+      "check": "invalid archive rejected header_flip",
+      "passed": true
+    },
+    {
+      "check": "invalid archive rejected middle_flip",
+      "passed": true
+    },
+    {
+      "check": "invalid archive rejected tail_flip",
+      "passed": true
+    },
+    {
+      "check": "invalid archive rejected truncate_tail",
+      "passed": true
+    },
+    {
+      "check": "invalid archive rejected truncate_half",
+      "passed": true
+    },
+    {
+      "check": "late error can leave plaintext",
+      "passed": true
+    },
+    {
+      "check": "raw API accepts trailing bytes",
+      "passed": true
+    },
+    {
+      "check": "authenticated length detects append_garbage.aea",
+      "passed": true
+    },
+    {
+      "check": "authenticated length detects truncate_tail.aea",
+      "passed": true
+    },
+    {
+      "check": "configuration change alone does not rekey",
+      "passed": true
+    },
+    {
+      "check": "stream migration verified without changing old",
+      "passed": true
+    },
+    {
+      "check": "new live old offline",
+      "passed": true
+    },
+    {
+      "check": "injected stop never published",
+      "passed": true
+    },
+    {
+      "check": "SIGTERM candidate cannot replace old",
+      "passed": true
+    },
+    {
+      "check": "old readable after SIGTERM",
+      "passed": true
+    },
+    {
+      "check": "64 MiB migration",
+      "passed": true
+    },
+    {
+      "check": "candidate collision preserves both sides",
+      "passed": true
+    },
+    {
+      "check": "mixed batch versions explicit",
+      "passed": true
+    },
+    {
+      "check": "original fixtures intact",
+      "passed": true
+    }
+  ]
+}

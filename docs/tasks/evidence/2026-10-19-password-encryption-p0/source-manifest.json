@@ -1,0 +1,75 @@
+{
+  "binary.bin": {
+    "kind": "file",
+    "mode": 420,
+    "mtime_ns": 1600000000123456789,
+    "size": 3145745,
+    "digest": "dedb2896365863fec1b7dc1b7405c1dc5c971d79d8c54148e541b999592cae3a",
+    "xattrs": {
+      "com.apple.provenance": "60333506d31e437bca5abd0c96c351a9a893fba4af827ae11accbd89bae32c53"
+    }
+  },
+  "empty-root": {
+    "kind": "directory",
+    "mode": 493,
+    "mtime_ns": 1600000000123456789,
+    "size": null,
+    "digest": null,
+    "xattrs": {
+      "com.apple.provenance": "60333506d31e437bca5abd0c96c351a9a893fba4af827ae11accbd89bae32c53",
+      "com.filemint.p0.folder": "c9976e2c4d2ffe9302a6658bd3aa32c86074aff6731527681896c75290dd3524"
+    }
+  },
+  "meta.txt": {
+    "kind": "file",
+    "mode": 416,
+    "mtime_ns": 1600000000123456789,
+    "size": 19,
+    "digest": "d0856a668058ec91e5c51b056ef0d3bbf9f245ee359edbccc584f4a973e4e8cb",
+    "xattrs": {
+      "com.apple.ResourceFork": "008f2996708fa15102536cf1da488e707ad5954cf51f250f73d1947d4d5b00d8",
+      "com.apple.provenance": "60333506d31e437bca5abd0c96c351a9a893fba4af827ae11accbd89bae32c53",
+      "com.filemint.p0.test": "8fdb67d655e758d5771020ec5e6ac11735daa9518085e8d2ac670ef117058167"
+    }
+  },
+  "zero": {
+    "kind": "file",
+    "mode": 420,
+    "mtime_ns": 1600000000123456789,
+    "size": 0,
+    "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "xattrs": {
+      "com.apple.provenance": "60333506d31e437bca5abd0c96c351a9a893fba4af827ae11accbd89bae32c53"
+    }
+  },
+  "层级": {
+    "kind": "directory",
+    "mode": 493,
+    "mtime_ns": 1600000000123456789,
+    "size": null,
+    "digest": null,
+    "xattrs": {
+      "com.apple.provenance": "60333506d31e437bca5abd0c96c351a9a893fba4af827ae11accbd89bae32c53"
+    }
+  },
+  "层级/empty": {
+    "kind": "directory",
+    "mode": 493,
+    "mtime_ns": 1600000000123456789,
+    "size": null,
+    "digest": null,
+    "xattrs": {
+      "com.apple.provenance": "60333506d31e437bca5abd0c96c351a9a893fba4af827ae11accbd89bae32c53"
+    }
+  },
+  "层级/name with spaces.txt": {
+    "kind": "file",
+    "mode": 420,
+    "mtime_ns": 1600000000123456789,
+    "size": 27,
+    "digest": "46c65f0c6990ff1c4f289abaa9193207609bbb64caf969da292ecefcc82c436e",
+    "xattrs": {
+      "com.apple.provenance": "60333506d31e437bca5abd0c96c351a9a893fba4af827ae11accbd89bae32c53"
+    }
+  }
+}
