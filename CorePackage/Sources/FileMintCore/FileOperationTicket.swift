@@ -6,6 +6,7 @@ public enum FileOperationRequest: Codable, Equatable, Sendable {
     case airDrop([URL])
     case desktopAlias([FileMoveItem])
     case batchRename(selection: BatchRenameSelection)
+    case fileInfo(FileInfoSelection)
     case resource(tool: ResourceTool, selection: [URL])
     case openWith(application: OpenWithApplicationReference, selection: [URL])
     case openDirectory(application: OpenWithApplicationReference, directory: URL, mode: TerminalOpenMode)
@@ -58,7 +59,9 @@ public struct FileOperationTicketStore: Sendable {
         let file = directory.appendingPathComponent("\(id.uuidString).json")
         try data.write(to: file, options: .withoutOverwriting)
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.path)
-        let route = isBatchRename ? "rename" : "move"
+        let route: String
+        if case .fileInfo = request { route = "file-info" }
+        else { route = isBatchRename ? "rename" : "move" }
         return URL(string: "filemint://\(route)?id=\(id.uuidString)")!
     }
 
@@ -68,9 +71,15 @@ public struct FileOperationTicketStore: Sendable {
         ticketID(url, expectedHost: "rename") != nil
     }
 
+    public static func isFileInfoURL(_ url: URL) -> Bool {
+        ticketID(url, expectedHost: "file-info") != nil
+    }
+
     public func consume(_ url: URL, now: Date = Date()) throws -> FileOperationRequest? {
         let isBatchRename = Self.isBatchRenameURL(url)
-        guard let id = Self.ticketID(url, expectedHost: isBatchRename ? "rename" : "move") else { return nil }
+        let isFileInfo = Self.isFileInfoURL(url)
+        let host = isBatchRename ? "rename" : isFileInfo ? "file-info" : "move"
+        guard let id = Self.ticketID(url, expectedHost: host) else { return nil }
         let source = directory.appendingPathComponent("\(id.uuidString).json")
         let claimed = directory.appendingPathComponent("\(id.uuidString).consumed")
         guard let info = try? source.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey]),
@@ -83,7 +92,9 @@ public struct FileOperationTicketStore: Sendable {
         guard (0...60).contains(now.timeIntervalSince(ticket.issuedAt)) else { return nil }
         if case .batchRename = ticket.request {
             guard isBatchRename else { return nil }
-        } else if isBatchRename { return nil }
+        } else if case .fileInfo = ticket.request {
+            guard isFileInfo else { return nil }
+        } else if isBatchRename || isFileInfo { return nil }
         return ticket.request
     }
 

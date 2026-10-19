@@ -139,6 +139,14 @@ final class SparkleInstaller: NSObject, SPUUserDriver, SPUUpdaterDelegate {
 
     func showReady(toInstallAndRelaunch reply: @escaping (SPUUserUpdateChoice) -> Void) {
         guard !cancelled else { reply(.skip); return }
+        guard let model else { reply(.skip); return }
+        model.afterFileInfoReadStops { [weak self] in
+            guard let self, !self.cancelled else { reply(.skip); return }
+            self.finishReady(reply)
+        }
+    }
+
+    private func finishReady(_ reply: @escaping (SPUUserUpdateChoice) -> Void) {
         guard model?.canSafelyRestart == true else {
             model?.installationChanged(.failed(.updateFinishWork))
             reply(.skip) // Cancel installation, including install-on-quit; keep the draft intact.

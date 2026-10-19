@@ -102,6 +102,7 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case sendAliasToDesktop
     case desktopAliasHint
     case batchRename, batchRenameHint, batchRenameSelectionLimit, batchRenameTicketLimit
+    case fileInfo, fileInfoHint
     case batchRenameChangedSelection, batchRenameUnsupportedSelection, batchRenameUnavailableSelection
     case desktopAliasFailedCount
     case desktopAliasAuthorize
@@ -371,6 +372,8 @@ public enum FileMintStrings {
         .sendAliasToDesktop: ("Send Alias to Desktop", "发送替身到桌面"),
         .desktopAliasHint: ("Create Desktop shortcuts to the originals. Existing items are kept; duplicate names are numbered.", "在桌面创建指向原项目的替身，保留原文件，重名时自动编号。"),
         .batchRename: ("Batch Rename…", "批量重命名…"),
+        .fileInfo: ("File Info…", "文件信息…"),
+        .fileInfoHint: ("View information and calculate file checksums.", "查看信息并计算文件校验值。"),
         .batchRenameHint: ("Preview and rename 2–1,000 files or folders in the same folder. Extensions are preserved.", "预览并重命名同一文件夹中的 2–1,000 个文件或文件夹，保留扩展名。"),
         .batchRenameSelectionLimit: ("Select 2–1,000 distinct items in the same folder.", "请选择同一文件夹中的 2–1,000 个不同项目。"),
         .batchRenameTicketLimit: ("This selection is too large to open. Select fewer items and try again.", "所选项目的数据量过大，无法打开。请减少选择的项目后重试。"),

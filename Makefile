@@ -6,7 +6,11 @@ DEVELOPER_DIR ?= /Applications/Xcode.app/Contents/Developer
 export DEVELOPER_DIR
 export DEVELOPMENT_TEAM
 
-verify: verify-context verify-fork-sync verify-image-compression test harness verify-harness-cli verify-appcast verify-release-metadata verify-release-notarization verify-release-publication verify-homebrew verify-signing-entitlements verify-native-qa verify-native-checks-runner verify-batch-rename-capture verify-batch-rename-access
+verify: verify-context verify-fork-sync verify-image-compression test harness verify-harness-cli verify-appcast verify-release-metadata verify-release-notarization verify-release-publication verify-homebrew verify-signing-entitlements verify-native-qa verify-native-checks-runner verify-batch-rename-capture verify-batch-rename-access verify-file-info-capture
+
+.PHONY: verify-file-info-capture
+verify-file-info-capture:
+	bash scripts/verify_file_info_capture.sh
 
 .PHONY: native-qa-plan verify-native-affected verify-native-checks-runner
 export NATIVE_QA_BASE NATIVE_QA_SUITES

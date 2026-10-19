@@ -1,0 +1,211 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-19",
+  "baseCommit": "e398fb5cea3d4ab2200715f6c70ad22db65c7727",
+  "workingTree": "primary checkout; uncommitted implementation",
+  "environment": {
+    "system": "Darwin",
+    "architecture": "arm64",
+    "macOS": "27.2",
+    "xcode": "Xcode 27.1\nBuild version 27A9275",
+    "swift": "swift-driver version: 1.168.6 Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx27.2.0"
+  },
+  "device": "Apple M3 Max / Mac15,9",
+  "deploymentTarget": "macOS 13",
+  "sourceSHA256": {
+    "App/FileMint/AppDelegate.swift": "6c0fbae5b5013b0ae3ea11448a3872619a23abefe7712a94a47a62f6eff999da",
+    "App/FileMint/FileInfoController.swift": "6c379e37822f0c0090ede14256fa7c15fbbe6d66be6ac466f4926bf4ed747366",
+    "App/FileMint/FileInfoView.swift": "d699c3aea414764006bfa494d2a23cb13506e63f5d8b147dd18e67c1eaa3acd2",
+    "App/FileMint/FileOperationCoordinator.swift": "9234252181b58cd98617f9f3bb716e0d3a953e58f1de287d59dfd62e02484439",
+    "App/FileMint/FileToolsSettingsView.swift": "713b246338188d3d757bbbc8b7464289d6fbd44e33ce0f85dd19fb10e64b14c4",
+    "App/FileMint/PreferencesModel.swift": "ae56950af1bd9c0c7fdcd86a41ef919b13ab992d360fbe08dea4089b4bcac032",
+    "App/FileMint/SparkleInstaller.swift": "f2f82d4474fe300d9502f5b7a311ace47f59493e58000b3fcfc6b4479e530e11",
+    "App/FileMint/UpdateModel.swift": "a5e463f4562d2ff7de8ae8c70733af1594d92d1eac1d910a544613f819ac2c86",
+    "CorePackage/Sources/FileMintCore/FileDigestService.swift": "7848efdb6cb58275ba8c6b4983e7703e9a5ae5eef6dd0f6715d625a4df6c27a7",
+    "CorePackage/Sources/FileMintCore/FileInfoPolicy.swift": "f14dd068a2484ddd754b949dbdd742aaf7c6057297d8ab49a875baa79ee93de1",
+    "CorePackage/Sources/FileMintCore/FileInfoText.swift": "800137fcb34954bc761b0fcd619987b1fce122c0b9703414c30b09e310f66d8b",
+    "CorePackage/Sources/FileMintCore/FileOperationTicket.swift": "fbbb857cdc2c217698068113ad41d3b65bc6e10fb71a65032f5f9760a4dfe9c1",
+    "CorePackage/Sources/FileMintCore/FileTools.swift": "49880b42ef15e533dab0eadf6b2ece478130474e03aa3914d579f702c31d8316",
+    "CorePackage/Sources/FileMintCore/Localization.swift": "10457edaf266ef397c388f31589288afd5c76525cd267a31d34d98bfbb14cb8f",
+    "CorePackage/Sources/FileMintCore/MenuIcons.swift": "79464a9db5019d2d67871c5e9186b992344ca0255cf96ca85a0e4b6239f0f111",
+    "CorePackage/Tests/FileMintCoreTests/FileInfoTests.swift": "1957941d2770b3750e5741686ac844e88906f2b130addae3dd966dc0ec64ef26",
+    "CorePackage/Tests/FileMintCoreTests/FileToolExpansionTests.swift": "784a5f6b128b537a36ba91ef3e0120aa3c9620e0093d3a78666829cd46258470",
+    "FinderSyncExtension/FileMintFinderSync/FinderSync.swift": "5aa7fe7e097cbef3f711ba573d714ef8ed7f285da48140992a93e366040d331a",
+    "Makefile": "5dcffc275648f82d2e29ee61d8782bd08fafd38fcc5630dc708d953175d298ec",
+    "SharedUI/FileToolAppearance.swift": "1cb16ed94749a0b7e062e764335384e7a06ca75125ffdb5338eb768f1f2c111f",
+    "scripts/batch_rename_smoke.swift": "613d8f07c88219bb6e7cb612963b864a2d49fb4f97f0350a56e465632a8235f6",
+    "scripts/build_batch_rename_harness.sh": "d55a690c21a7208e901ae010d6cc1c6452d134c122df3b2289c98cb64c969308",
+    "scripts/build_file_info_harness.sh": "51924403ec37f0f93ff1e11d5d1a259ecc0864d2e28c73c30ea6a71f04e89d78",
+    "scripts/build_move_sandbox_harness.sh": "42f9f7d2a7d0e397e8c9f30f77ef7f34598f2e678cc867aaf8cdd9b46423074f",
+    "scripts/build_open_with_harness.sh": "761625b282f1c5a6e4e9c04e14c9cd484bcfaa5531ecf4e1e7db60ec69d01151",
+    "scripts/file_info_benchmark.swift": "63c82db9f56425cab30212dc08f14f540d01bae57f493b9533c89d8cd6f45513",
+    "scripts/file_info_capture_smoke.swift": "e7224c80cd736ff8cfdb854310f2ea8085a4ae55479258d95917d93efed1f3b6",
+    "scripts/file_info_smoke.swift": "94b1ad9b32d6ffa6488926d8544f3275d4daacc6ca5cbfbf236569f10bdd9eff",
+    "scripts/native_checks.py": "c78bcf242d43928ec4bdb40f75ffc3470809c475a5ad68c2961ae741629f7dd8",
+    "scripts/native_qa.py": "0f32969168f63bef8f5a53f2a102770a9080d580800c4be99362bc9b95c7fdc4",
+    "scripts/sparkle_driver_smoke.swift": "094d5514a830e369949b2239b66872a1980ec60298e6c11e0e52eda60e095502",
+    "scripts/test_native_checks.py": "c262f10122a607acc37b597d57b7f16f2ead3ffc0431ed7e615b396b71a5de4f",
+    "scripts/test_native_qa.py": "d91ad6b9ef5418609add55de187d931ee020267829e4478cc3f429bc1d89b8fe",
+    "scripts/verify_file_info_capture.sh": "2fa374651f625e996584eb05b37f587a1fdd1edb8cdfb51408e0c7b38c0ec0ae"
+  },
+  "verification": {
+    "make verify": {
+      "status": "passed",
+      "log": "build/file-info-evidence/verify-final.log",
+      "coreTests": 336,
+      "coreSuites": 34,
+      "imageTests": 22,
+      "imageSuites": 2
+    },
+    "unsigned app and embedded Finder build": {
+      "status": "passed",
+      "log": "build/file-info-evidence/build-final.log"
+    },
+    "metadata-only restricted sandbox": {
+      "status": "passed",
+      "log": "build/file-info-evidence/metadata-capture.log"
+    },
+    "Sparkle callbacks": {
+      "status": "passed",
+      "log": "build/file-info-evidence/sparkle-driver.log"
+    }
+  },
+  "nativeChecks": {
+    "creation-opening": {
+      "status": "passed",
+      "report": "build/native-checks.noindex/run.a_fs_v7b/report.json",
+      "runID": "template-workflow-harness.f6vYvj",
+      "bundleID": "io.github.daigua.filemint.template-workflow-smoke"
+    },
+    "update-scheduling": {
+      "status": "passed",
+      "report": "build/native-checks.noindex/run.a_fs_v7b/report.json",
+      "runID": "template-workflow-harness.f6vYvj",
+      "bundleID": "io.github.daigua.filemint.template-workflow-smoke"
+    },
+    "open-with": {
+      "status": "passed",
+      "report": "build/native-checks.noindex/run.a_fs_v7b/report.json",
+      "runID": "run.HGXn2d",
+      "bundleID": "io.github.daigua.filemint.open-with-smoke"
+    },
+    "file-tools-settings": {
+      "status": "passed",
+      "report": "build/native-checks.noindex/run.a_fs_v7b/report.json",
+      "runID": "run.DSq8iN",
+      "bundleID": "io.github.daigua.filemint.tools-ui-qa"
+    },
+    "file-info": {
+      "status": "passed",
+      "report": "build/native-checks.noindex/run.tgdx2eq0/report.json",
+      "runID": "run.2LvmFI",
+      "bundleID": "io.github.daigua.filemint.file-info-smoke"
+    },
+    "design-ui": {
+      "status": "passed",
+      "report": "build/native-checks.noindex/run.a_fs_v7b/report.json",
+      "runID": "run.fZvj1I",
+      "bundleID": "io.github.daigua.filemint.design-qa"
+    },
+    "batch-rename": {
+      "status": "passed",
+      "report": "build/native-checks.noindex/run.tgdx2eq0/report.json",
+      "runID": "run.doqr9b",
+      "bundleID": "io.github.daigua.filemint.batch-rename-smoke"
+    }
+  },
+  "benchmarks": [
+    {
+      "baselinePeakRSSBytes": 20414464,
+      "bytes": 1073741824,
+      "cancellationMilliseconds": null,
+      "choice": "all",
+      "digests": {
+        "MD5": "cd573cfaace07e7949bc0c46028904ff",
+        "SHA-1": "2a492f15396a6768bcbca016993f4b4c8b0b5307",
+        "SHA-256": "49bc20df15e412a64472421e13fe86ff1c5165e18b2afccf160d4dc19fe68a14",
+        "SHA-512": "c5041ae163cf0f65600acfe7f6a63f212101687d41a57a4e18ffd2a07a452cd8175b8f5a4868dd2330bfe5ae123f18216bdbc9e0f80d131e64b94913a7b40bb5"
+      },
+      "extraPeakRSSBytes": 3031040,
+      "fixture": "local sparse logical bytes",
+      "MiBPerSecond": 351.5822790516595,
+      "peakRSSBytes": 23445504,
+      "seconds": 2.9125472499981697,
+      "status": "completed"
+    },
+    {
+      "baselinePeakRSSBytes": 20447232,
+      "bytes": 10737418240,
+      "cancellationMilliseconds": null,
+      "choice": "all",
+      "digests": {
+        "MD5": "2dd26c4d4799ebd29fa31e48d49e8e53",
+        "SHA-1": "a0b6e2ca4e28360a929943e8eb966f703a69dc44",
+        "SHA-256": "732377e7f4a2abdc13ddfa1eb4c9c497fd2a2b294674d056cf51581b47dd586d",
+        "SHA-512": "0a9ed4396868700784918a83a595845d70e582eb0e625c48ace24f4ee94e705247e210339c5f5a55e597f00d2c3217b0c0797e1bfc617161e00de96eaee2d068"
+      },
+      "extraPeakRSSBytes": 3031040,
+      "fixture": "local sparse logical bytes",
+      "MiBPerSecond": 355.9275709290979,
+      "peakRSSBytes": 23478272,
+      "seconds": 28.76989825000055,
+      "status": "completed"
+    },
+    {
+      "baselinePeakRSSBytes": 20430848,
+      "bytes": 10737418240,
+      "cancellationMilliseconds": 0.0882499989529606,
+      "choice": "sha256",
+      "digests": {},
+      "extraPeakRSSBytes": 2703360,
+      "fixture": "local sparse logical bytes",
+      "MiBPerSecond": null,
+      "peakRSSBytes": 23134208,
+      "seconds": 0.08459275000132038,
+      "status": "cancelled"
+    }
+  ],
+  "independentLargeFileVectors": [
+    {
+      "bytes": 1073741824,
+      "digests": {
+        "MD5": "cd573cfaace07e7949bc0c46028904ff",
+        "SHA-1": "2a492f15396a6768bcbca016993f4b4c8b0b5307",
+        "SHA-256": "49bc20df15e412a64472421e13fe86ff1c5165e18b2afccf160d4dc19fe68a14",
+        "SHA-512": "c5041ae163cf0f65600acfe7f6a63f212101687d41a57a4e18ffd2a07a452cd8175b8f5a4868dd2330bfe5ae123f18216bdbc9e0f80d131e64b94913a7b40bb5"
+      },
+      "seconds": 2.846502833002887
+    },
+    {
+      "bytes": 10737418240,
+      "digests": {
+        "MD5": "2dd26c4d4799ebd29fa31e48d49e8e53",
+        "SHA-1": "a0b6e2ca4e28360a929943e8eb966f703a69dc44",
+        "SHA-256": "732377e7f4a2abdc13ddfa1eb4c9c497fd2a2b294674d056cf51581b47dd586d",
+        "SHA-512": "0a9ed4396868700784918a83a595845d70e582eb0e625c48ace24f4ee94e705247e210339c5f5a55e597f00d2c3217b0c0797e1bfc617161e00de96eaee2d068"
+      },
+      "seconds": 28.10522908299754
+    }
+  ],
+  "boundariesNotVerified": [
+    "cold/warm Finder launch and special-folder callbacks; basic Finder flow accepted by user",
+    "external read grant and process-restart persistence",
+    "actual cloud placeholder/provider",
+    "disconnected volume",
+    "macOS 13/14 runtime",
+    "noncooperating writer atomic snapshot",
+    "real application quit or Sparkle installation",
+    "VoiceOver and Reduce Transparency",
+    "system clipboard write rejection"
+  ],
+  "measurementScope": "Local APFS sparse logical bytes; peak RSS is process high-water mark delta after metadata setup, not physical SSD throughput. Cancellation sample excludes system/provider/permission waiting.",
+  "userAcceptance": {
+    "date": "2026-10-19",
+    "status": "passed",
+    "source": "direct user report in this chat",
+    "statement": "文件信息和校验功能测试没问题",
+    "scope": "basic file information and checksum flow in installed Debug Finder integration; no broader matrix inferred",
+    "installedVersion": "0.7.0",
+    "installedBuild": "28"
+  }
+}

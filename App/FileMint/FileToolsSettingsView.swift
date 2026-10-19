@@ -112,6 +112,7 @@ struct FileToolsSettingsView: View {
         case .airDrop: .airDropHint
         case .desktopAlias: .desktopAliasHint
         case .batchRename: .batchRenameHint
+        case .fileInfo: .fileInfoHint
         }
     }
 }

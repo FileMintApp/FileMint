@@ -68,6 +68,8 @@ It also checks native-runner selection, subprocess failures/timeouts and reporti
 without launching GUI fixtures or accessing signing credentials.
 It also runs restricted subprocess regressions for batch-rename metadata capture
 and private grant publication under native permission failures.
+File-information metadata-only capture and denied content reads are checked in
+another restricted subprocess, without GUI or user-directory access.
 It stays offline and does not build the app/extension or website.
 PR and main-branch CI invoke that same command and build the unsigned Release
 app and embedded Finder extension independently on arm64 macOS 15 and macOS 26.

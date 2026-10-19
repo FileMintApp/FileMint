@@ -17,15 +17,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        if FileOperationCoordinator.shared.fileInfoController.isWorking {
+            Task {
+                await FileOperationCoordinator.shared.fileInfoController.cancelAndWait()
+                sender.reply(toApplicationShouldTerminate: self.mayTerminate)
+            }
+            return .terminateLater
+        }
+        return mayTerminate ? .terminateNow : .terminateCancel
+    }
+
+    private var mayTerminate: Bool {
         guard ApplicationTerminationPolicy.canQuit(
             pendingCreations: PreferencesModel.shared.pendingCreationCount,
             hasActiveWrite: CustomFileSavePanelController.shared.hasActiveWrite,
             hasFileOperation: FileOperationCoordinator.shared.isBusy,
-            hasFavoriteOperation: FavoriteLocationsModel.sharedIsBusy) else { return .terminateCancel }
+            hasFavoriteOperation: FavoriteLocationsModel.sharedIsBusy) else { return false }
         if UpdateModel.shared.isCommittingInstallation && !UpdateModel.shared.canSafelyRestart {
-            return .terminateCancel
+            return false
         }
-        return .terminateNow
+        return true
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }

@@ -14,6 +14,8 @@ import Sparkle
     var cancellable = false
     var canSafelyRestart = true
     var finished = false
+    var waitingForRead = false
+    var afterRead: (@MainActor () -> Void)?
     var isFailure: Bool { if case .failed = state { true } else { false } }
     func installationChanged(_ state: State, progress: Double = 0, cancellable: Bool = false) {
         self.state = state
@@ -21,6 +23,9 @@ import Sparkle
         self.cancellable = cancellable
     }
     func installationFinished() { finished = true }
+    func afterFileInfoReadStops(_ action: @escaping @MainActor () -> Void) {
+        if waitingForRead { afterRead = action } else { action() }
+    }
 }
 @MainActor final class PreferencesModel {
     enum Pane { case about }
@@ -74,6 +79,16 @@ import Sparkle
         model.canSafelyRestart = true
         active.showReady(toInstallAndRelaunch: { choice = $0 })
         precondition(choice == .install && model.state == .installing)
+        let waiting = SparkleInstaller(model: model)
+        model.waitingForRead = true
+        model.canSafelyRestart = false
+        var delayedChoice: SPUUserUpdateChoice?
+        waiting.showReady(toInstallAndRelaunch: { delayedChoice = $0 })
+        precondition(delayedChoice == nil, "Installer must wait for checksum cleanup")
+        model.canSafelyRestart = true
+        model.waitingForRead = false
+        model.afterRead?(); model.afterRead = nil
+        precondition(delayedChoice == .install, "Restart guards must be rechecked after cleanup")
         var retried = 0
         active.showInstallingUpdate(withApplicationTerminated: false, retryTerminatingApplication: { retried += 1 })
         active.retryTermination()

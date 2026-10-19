@@ -78,6 +78,22 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   When access is absent, show the manual Finder shortcut. Authorization and the
   event path require installed signed-app acceptance before claiming success.
 
+## File information authorization
+
+- Finder captures only the menu's single selected URL until explicit invocation,
+  then captures item/real-parent metadata identities off the UI thread. It reads
+  no content and cannot replace a failed capture with post-authorization identity.
+- The main app reuses configured security-scoped access when valid; otherwise
+  request the exact selected resource or necessary parent with a native picker,
+  using read-only bookmark options. No new persistent grant database, write
+  authority, Full Disk Access request or observation-root expansion. Keep grants
+  through worker cleanup, release them on completion/cancel, and reauthorize on
+  recalculation if needed. Validate current scope and both captured identities
+  after authorization and around coordinated reads; never follow a replaced item.
+- Metadata and digest work probes only the selected item and its real parent.
+  No folder enumeration, automatic cloud-download API or provider discovery.
+  Unsupported links/aliases/packages are presented without reading their content.
+
 ## Batch rename authorization
 
 Implementation contract; the [file-tools contract](file-tools.md#batch-rename)

@@ -56,7 +56,7 @@ public struct MenuIconCustomization: Codable, Equatable, Sendable {
 
 public enum MenuIconSlot: String, CaseIterable, Sendable {
     case newFile, customNewFile, clipboardText, clipboardImage
-    case fileTools, moveHere, copyNames, copyPaths, move, permanentDelete, airDrop, desktopAlias, batchRename
+    case fileTools, moveHere, copyNames, copyPaths, move, permanentDelete, airDrop, desktopAlias, batchRename, fileInfo
     case resourceTools, convert, compress, resize, icons, stitch, ocr, removeMetadata
     case openWith, favoriteLocations
 
@@ -74,6 +74,7 @@ public enum MenuIconSlot: String, CaseIterable, Sendable {
         case .airDrop: "airplayaudio"
         case .desktopAlias: "arrowshape.turn.up.right"
         case .batchRename: "pencil"
+        case .fileInfo: "info.circle"
         case .resourceTools: "photo.on.rectangle"
         case .convert: "arrow.triangle.2.circlepath"
         case .compress: "arrow.down.right.and.arrow.up.left"
@@ -98,6 +99,7 @@ extension FileTool {
         case .airDrop: .airDrop
         case .desktopAlias: .desktopAlias
         case .batchRename: .batchRename
+        case .fileInfo: .fileInfo
         }
     }
 }

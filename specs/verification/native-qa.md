@@ -21,7 +21,7 @@ good bundle can substitute for a failed build. An empty plan is `not-applicable`
 not a successful native test.
 
 Automatic suites are `batch-rename`, `template-workflow`, `creation-opening`,
-`update-scheduling`, `open-with`, `file-tools-settings`, `resource-tools`,
+`update-scheduling`, `open-with`, `file-tools-settings`, `file-info`, `resource-tools`,
 `design-ui`, and the headless `favorite-model`. Template scenarios share one
 fresh build in a run and each create their own runtime workspace. Design QA uses
 `--verify-automation`; ordinary interactive modes remain available.
@@ -59,6 +59,7 @@ All paths below are relative to that stable root.
 | template-workflow | TemplateWorkflowSmoke.app | io.github.daigua.filemint.template-workflow-smoke |
 | open-with | OpenWithSmoke.app | io.github.daigua.filemint.open-with-smoke |
 | file-tools-settings | FileMintToolsUIQA.app | io.github.daigua.filemint.tools-ui-qa |
+| file-info | FileInfoSmoke.app | io.github.daigua.filemint.file-info-smoke |
 | batch-rename | BatchRenameSmoke.app | io.github.daigua.filemint.batch-rename-smoke |
 | move-sandbox | FileMintMoveSandboxSmoke.app | io.github.daigua.filemint.move-smoke |
 | update-sandbox | FileMintUpdateSandboxSmoke.app | io.github.daigua.filemint.update-smoke |
@@ -70,6 +71,16 @@ All paths below are relative to that stable root.
 The template/opening receivers retain their own stable identifiers and sit inside
 their host's Resources. The update fixture's inert extension remains separate from
 the actual Finder extension. No running fixture or receiver may be overwritten.
+
+`bash scripts/build_file_info_harness.sh` builds a sandboxed fixture using the
+production information controller/view, streaming service, ticket store and file
+operation coordinator. Isolated files/preferences and a named pasteboard cover
+metadata-only opening, five choices, exact known digests, comparison/copy,
+invalidating results, cancellation/close, busy request consumption and revoked
+preferences. A synchronized read gate verifies the busy guard survives until the
+real descriptor is cleaned up. Cache renders cover minimum-size light/dark views;
+they are not live keyboard, VoiceOver, installed Finder or external-folder grant
+evidence. The fixture requests no production preference or directory access.
 
 `bash scripts/build_batch_rename_harness.sh` builds the sandboxed batch-rename
 fixture using the production Core service, controller and SwiftUI view. Launch

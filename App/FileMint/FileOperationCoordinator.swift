@@ -14,8 +14,18 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
     }
     private var queue: [QueuedRequest] = []
     private var operationIsBusy = false
-    private var renameIntakes = 0
-    var isBusy: Bool { operationIsBusy || renameIntakes > 0 }
+    private var immediateIntakes = 0
+    var isBusy: Bool { operationIsBusy || immediateIntakes > 0 }
+    private(set) lazy var fileInfoController = FileInfoController(preferencesFile: preferencesFile,
+        acquire: { [weak self] in
+            guard let self, !self.isBusy, self.queue.isEmpty else { return false }
+            self.operationIsBusy = true
+            return true
+        }, release: { [weak self] in
+            self?.operationIsBusy = false
+            self?.consumeQueue()
+        }, reader: fileInfoReader)
+    private let fileInfoReader: FileInfoController.Reader
     private var access: [URL] = []
     private let store: PendingFileMoveStore
     private let tickets: FileOperationTicketStore
@@ -35,7 +45,10 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
          openWithAccessStore: OpenWithFolderAccessStore = OpenWithFolderAccessStore(),
          desktopDirectory: URL = DesktopAliasService.desktopDirectory,
          resourceController: ResourceToolsController = .shared,
-         renameOperations: BatchRenameOperations = .shared) {
+         renameOperations: BatchRenameOperations = .shared,
+         fileInfoReader: @escaping FileInfoController.Reader = {
+             try FileDigestService.calculate($0, choice: $1, cancellation: $2, progress: $3)
+         }) {
         self.store = store
         self.tickets = tickets
         self.preferencesFile = preferencesFile
@@ -44,20 +57,43 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
         self.desktopDirectory = desktopDirectory
         self.resourceController = resourceController
         self.renameOperations = renameOperations
+        self.fileInfoReader = fileInfoReader
         super.init()
     }
 
     func enqueue(_ url: URL) {
+        if FileOperationTicketStore.isFileInfoURL(url) || fileInfoController.isWorking {
+            // Consume immediately even when busy; a 60-second ticket must never
+            // silently expire behind a long checksum calculation.
+            let accepted = !isBusy && queue.isEmpty && FileOperationTicketStore.isFileInfoURL(url)
+            if accepted { operationIsBusy = true }
+            immediateIntakes += 1
+            let tickets = self.tickets
+            Task {
+                defer {
+                    immediateIntakes -= 1
+                    if accepted { operationIsBusy = false }
+                    consumeQueue()
+                }
+                do {
+                    let request = try await Task.detached(priority: .userInitiated) { try tickets.consume(url) }.value
+                    guard accepted else { fileInfoController.showBusy(); return }
+                    guard case .fileInfo(let selection) = request else { fileInfoController.showInvalidRequest(); return }
+                    try await fileInfoController.present(selection)
+                } catch { fileInfoController.showInvalidRequest() }
+            }
+            return
+        }
         if FileOperationTicketStore.isBatchRenameURL(url) {
             // Reserve ownership before suspending. Even rejected requests are
             // consumed now, never behind the lifetime of an existing panel.
             let accepted = !isBusy && queue.isEmpty
             if accepted { operationIsBusy = true }
-            renameIntakes += 1
+            immediateIntakes += 1
             let tickets = self.tickets
             Task {
                 defer {
-                    renameIntakes -= 1
+                    immediateIntakes -= 1
                     if accepted { operationIsBusy = false }
                     consumeQueue()
                 }
@@ -86,6 +122,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
     /// Recovery and undo share ownership with moves, native authorization and
     /// other panels. Passive discovery never reserves this guard.
     func batchRenameAction(_ action: BatchRenamePanelAction) {
+        if fileInfoController.isWorking { fileInfoController.showBusy(); return }
         guard !isBusy && queue.isEmpty else {
             renameOperations.showBusy()
             return
@@ -101,6 +138,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
     /// This app-local entry cannot be constructed from a URL or ticket. The
     /// system picker provides the authority; Finder preferences are unchanged.
     func chooseImages(for tool: ResourceTool) {
+        if fileInfoController.isWorking { fileInfoController.showBusy(); return }
         guard !isBusy else {
             if !resourceController.focusExistingPanel() {
                 let alert = NSAlert()
@@ -152,6 +190,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
                         switch request {
                         case .prepare, .perform: operationTitle = .moveFailed
                         case .batchRename: operationTitle = .batchRename
+                        case .fileInfo: operationTitle = .fileInfo
                         case .permanentDelete: operationTitle = .permanentDelete
                         case .airDrop: operationTitle = .airDrop
                         case .desktopAlias: operationTitle = .sendAliasToDesktop
@@ -169,7 +208,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
 
     private func handle(_ request: FileOperationRequest) async throws {
         switch request {
-        case .batchRename:
+        case .batchRename, .fileInfo:
             // Rename payloads are valid only on the immediate-intake route.
             throw FileMoveError.staleRequest
         case .favoriteAdd(let selection):

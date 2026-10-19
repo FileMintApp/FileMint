@@ -649,7 +649,7 @@ final class PreferencesModel: ObservableObject {
     }
 
     func handle(url: URL) {
-        if url.scheme == "filemint", url.host == "move" || url.host == "rename" {
+        if url.scheme == "filemint", url.host == "move" || url.host == "rename" || url.host == "file-info" {
             FileOperationCoordinator.shared.enqueue(url)
             return
         }

@@ -3,6 +3,37 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## File information and checksums — 2026-10-19
+
+On primary `e398fb5` plus the recorded uncommitted implementation, arm64 macOS
+27.2 / Xcode 27.1 passed `make verify` (Core 336, Images 22), unsigned App/Finder
+compilation, restricted metadata-only/read-denial checks and seven affected
+native modes. The new stable read-only sandbox fixture uses production Core,
+window and coordinator code with isolated preferences, files and pasteboard. It
+covers five algorithm choices, exact known digests, copying/comparison, stale
+result invalidation, single/multiline Return, Escape/Command-W, cancellation,
+cleanup ownership, revoked policy and promptly consumed busy tickets. Existing
+rename confirmation checks now explicitly obtain keyboard focus; product rename
+behavior was unchanged. Deferred Sparkle callbacks passed without installation.
+
+Independent system tools and Python hashlib agree with the four digests,
+including 1 GiB / 10 GiB local sparse logical-byte samples. Extra peak RSS stayed
+about 2.89 MiB for both sizes; this is not physical SSD/provider throughput or a
+guarantee about system/provider cancellation latency. Minimum-size native cache
+renders were visually inspected in Chinese/light and English/dark appearances.
+Installed Finder callbacks, external-folder grants, real cloud placeholders,
+disconnected volumes, older systems, VoiceOver/Reduce Transparency, actual quit
+and installed updates remain unverified. No installation or publication evidence
+was claimed by that implementation run. The user subsequently requested a Debug
+installation: 0.7.0 (28), direct Debug executable, the original Developer ID team,
+exact installed-payload validation and unchanged preferences before launch passed.
+The old app was backed up and the new main/extension processes run from
+`/Applications`. The user then explicitly confirmed that the file-information
+and checksum test had no problems. Record the basic installed Finder flow as
+user-accepted; broader lifecycle, authorization/provider and accessibility
+coverage is not inferred from that report.
+See the [task, source snapshot and exact observations](tasks/2026-10-19-file-info-checksums.md#implementation-evidence--2026-10-19).
+
 ## Batch rename confirmation, lifecycle and prominent notices — 2026-10-16
 
 On `c97f01b` plus the recorded local changes, a signed native regression reproduced

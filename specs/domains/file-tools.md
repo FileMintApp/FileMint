@@ -44,6 +44,53 @@ Load for: Optional Finder file/folder actions, batch rename, selection snapshots
 - Chinese product copy uses 拷贝 consistently, including 文件（夹）名称 and
   文件（夹）路径; English uses Copy.
 
+## File information and checksums
+
+- File Info… / 文件信息… has an independent child switch, default off for new,
+  missing or malformed preferences, and the usual submenu/main placement. It is
+  offered only for one captured local item in scope, never a background, toolbar,
+  sidebar or multiple selection. Menu construction performs no metadata/content I/O.
+- Opening the native panel reads metadata only: name, kind, logical file size,
+  location, creation and modification dates. Unknown values say unavailable.
+  Ordinary directories show their own metadata without content size, enumeration
+  or item counts. Packages, symbolic links, Finder aliases and special items are
+  explained as unsupported; never read their content or follow their target.
+- Each window starts with SHA-256 selected. SHA-512, SHA-1, MD5 and All Four
+  Algorithms are available. Calculate is explicit; opening, changing selection
+  and focusing never calculate. Freeze selection during a calculation. Changing
+  algorithms or recalculating invalidates old results and disables copying.
+- Use system CryptoKit and a bounded 1 MiB buffer off the UI thread. Update only
+  selected algorithms from the same verified descriptor, in a single pass for
+  All. Hash file data bytes only, including sparse logical zero bytes; exclude
+  names, paths, resource forks and extended attributes. Empty files are valid.
+- Capture item and real-parent identities asynchronously on the click, transfer
+  via a private single-use 60-second ticket (at most 1 MiB), then recheck current
+  switches, resolved scope and identities after read authorization. Coordinate
+  reading on the worker thread, verify the coordinated URL, open without following
+  the final symlink and verify the descriptor. Compare identities, byte counts,
+  size, modification/change timestamps and available generation/version metadata
+  at both ends. Discard all digests on incomplete reads, changes, errors or cancel.
+  This is change detection, not an atomic snapshot against noncooperating writers.
+- Known undownloaded placeholders (including dataless items) require downloading
+  in Finder first. Never request a download or crawl provider domains. Ordinary
+  reads on unknown providers may still cause provider materialization or network
+  access; report actual access/I/O failures without claiming universal offline I/O.
+- Show actual byte progress, cancellable waiting, and per-window results only.
+  Close/Escape cancels and releases handles/grants after worker cleanup. Active
+  preparation/reading is mutually exclusive with other FileMint file operations;
+  consume and reject new busy requests promptly, focusing the panel. Idle result
+  windows release the guard; recalculation obtains it again and revalidates.
+  Quit/update restart requests cancel active reads and wait for cleanup.
+- Copy each digest as continuous lowercase hexadecimal; All copies MD5, SHA-1,
+  SHA-256, SHA-512 as four `ALGORITHM: value` lines, LF-separated without a trailing
+  newline or hidden path. Report clipboard failure. No clipboard polling,
+  persistent digest/history cache, content/path logging or upload.
+- Comparison accepts explicit user input for one selected algorithm: trim only
+  leading/trailing whitespace, accept ASCII hex in either case and exact length.
+  Distinguish invalid input, match and mismatch with text and symbols. All mode
+  asks for a single algorithm first. Checksums are not encryption or proof of
+  origin; MD5/SHA-1 have persistent compatibility-only warnings.
+
 ## Two-step move
 
 - Move File / Folder / 移动文件（夹） has a persistent child switch, initially

@@ -25,6 +25,9 @@ class SelectionTests(unittest.TestCase):
     def test_native_surface_selects_only_its_existing_fixture(self):
         self.assertEqual(checks.plan_checks(['App/FileMint/BatchRenameController.swift'])['suites'], ['batch-rename'])
         self.assertEqual(checks.plan_checks(['scripts/resource_tools_smoke.swift'])['suites'], ['resource-tools'])
+        plan = checks.plan_checks(['App/FileMint/FileInfoController.swift'])
+        self.assertEqual(plan['suites'], ['file-info'])
+        self.assertEqual([value['id'] for value in plan['manualChecks']], ['folder-grants'])
 
     def test_build_configuration_and_ci_edits_use_other_harness_checks(self):
         plan = checks.plan_checks(['project.yml', 'CorePackage/Package.swift', '.github/workflows/ci.yml'])

@@ -195,6 +195,18 @@ final class UpdateModel: ObservableObject {
     }
 
     func downloadUpdate() {
+        afterFileInfoReadStops { [weak self] in self?.beginDownloadUpdate() }
+    }
+
+    /// Restart requests may stop a read-only checksum operation; existing
+    /// creation/editing/mutation guards remain authoritative afterwards.
+    func afterFileInfoReadStops(_ action: @escaping @MainActor () -> Void) {
+        let controller = FileOperationCoordinator.shared.fileInfoController
+        guard controller.isWorking else { action(); return }
+        Task { await controller.cancelAndWait(); action() }
+    }
+
+    private func beginDownloadUpdate() {
         guard canDownload, let update else { return }
         guard canSafelyRestart else {
             state = .failed(.updateFinishWork)
@@ -224,8 +236,10 @@ final class UpdateModel: ObservableObject {
     }
 
     func retryInstallationRestart() {
-        guard canSafelyRestart else { return }
-        installer.retryTermination()
+        afterFileInfoReadStops { [weak self] in
+            guard let self, self.canSafelyRestart else { return }
+            self.installer.retryTermination()
+        }
     }
 
     func installationChanged(_ newState: State, progress value: Double = 0, cancellable: Bool = false) {

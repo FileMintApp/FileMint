@@ -1,7 +1,7 @@
 import Foundation
 
 public enum FileTool: String, Codable, CaseIterable, Sendable {
-    case copyNames, copyPaths, move, permanentDelete, airDrop, desktopAlias, batchRename
+    case copyNames, copyPaths, move, permanentDelete, airDrop, desktopAlias, batchRename, fileInfo
 
     public var title: FileMintTextKey {
         switch self {
@@ -12,6 +12,7 @@ public enum FileTool: String, Codable, CaseIterable, Sendable {
         case .airDrop: .airDrop
         case .desktopAlias: .sendAliasToDesktop
         case .batchRename: .batchRename
+        case .fileInfo: .fileInfo
         }
     }
 }
@@ -33,6 +34,7 @@ public struct FileToolsPreferences: Codable, Equatable, Sendable {
     public var airDrop = false
     public var desktopAlias = false
     public var batchRename = false
+    public var fileInfo = false
     public var mainMenuTools: Set<FileTool> = []
     public var moveHereInMainMenu = true
     public var deleteConfirmation: DeleteConfirmation = .required
@@ -40,7 +42,7 @@ public struct FileToolsPreferences: Codable, Equatable, Sendable {
     public init() {}
 
     private enum CodingKeys: String, CodingKey {
-        case isEnabled, copyNames, copyPaths, move, permanentDelete, airDrop, desktopAlias, batchRename
+        case isEnabled, copyNames, copyPaths, move, permanentDelete, airDrop, desktopAlias, batchRename, fileInfo
         case mainMenuTools, moveHereInMainMenu, deleteConfirmation
     }
 
@@ -54,6 +56,7 @@ public struct FileToolsPreferences: Codable, Equatable, Sendable {
         airDrop = (try? values.decode(Bool.self, forKey: .airDrop)) ?? false
         desktopAlias = (try? values.decode(Bool.self, forKey: .desktopAlias)) ?? false
         batchRename = (try? values.decode(Bool.self, forKey: .batchRename)) ?? false
+        fileInfo = (try? values.decode(Bool.self, forKey: .fileInfo)) ?? false
         mainMenuTools = (try? values.decode(Set<FileTool>.self, forKey: .mainMenuTools)) ?? []
         moveHereInMainMenu = (try? values.decode(Bool.self, forKey: .moveHereInMainMenu)) ?? true
         deleteConfirmation = (try? values.decode(DeleteConfirmation.self, forKey: .deleteConfirmation)) ?? .required
@@ -70,6 +73,7 @@ public struct FileToolsPreferences: Codable, Equatable, Sendable {
         case .airDrop: airDrop = enabled
         case .desktopAlias: desktopAlias = enabled
         case .batchRename: batchRename = enabled
+        case .fileInfo: fileInfo = enabled
         }
     }
 
@@ -82,6 +86,7 @@ public struct FileToolsPreferences: Codable, Equatable, Sendable {
         case .airDrop: return airDrop
         case .desktopAlias: return desktopAlias
         case .batchRename: return batchRename
+        case .fileInfo: return fileInfo
         }
     }
 }
@@ -119,6 +124,7 @@ public enum FileToolsPolicy {
         else { return [] }
         return FileTool.allCases.filter {
             preferences.fileTools.allows($0) && ($0 != .batchRename || canBatchRename(selection))
+                && ($0 != .fileInfo || FileInfoPolicy.canSelect(selection))
         }
     }
 

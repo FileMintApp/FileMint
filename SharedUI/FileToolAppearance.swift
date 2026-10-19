@@ -80,6 +80,7 @@ enum FileToolAppearance {
         case .airDrop: (.systemPurple, .systemIndigo)
         case .desktopAlias: (.systemBlue, .systemTeal)
         case .batchRename: (.systemMint, .systemTeal)
+        case .fileInfo: (.systemTeal, .systemBlue)
         case .convert: (.systemBlue, .systemTeal)
         case .compress: (.systemOrange, .systemRed)
         case .resize: (.systemIndigo, .systemBlue)

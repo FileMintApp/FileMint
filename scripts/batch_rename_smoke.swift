@@ -474,7 +474,10 @@ final class BatchRenameSmoke: NSObject, NSApplicationDelegate {
                         "Confirmation has excessive empty space below its actions")
         }
         try render(firstSheet, to: root.appendingPathComponent("confirmation-english.png"))
-        try require(cancel.keyEquivalent == "\r", "Cancel is not the default Return action")
+        // AppKit may normalize the key-equivalent string when installing the
+        // default cell. Check its ownership above and actual Return below.
+        NSApp.activate(ignoringOtherApps: true)
+        firstSheet.makeKeyAndOrderFront(nil)
         try await waitUntil { firstSheet.isKeyWindow }
         print("CHECK reassignment Return cancellation")
         try sendKey("\r", code: 36, modifiers: [], window: firstSheet)

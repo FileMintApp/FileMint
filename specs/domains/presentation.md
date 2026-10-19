@@ -150,6 +150,27 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   seventh card for private metadata removal and shows progress/results without
   an extra Run button after the user's explicit selection.
 
+## File information presentation
+
+- File Info uses one resizable native window, initially 600 × 560 pt with a
+  520 × 480 pt minimum (bounded by screen), porcelain/graphite system surfaces
+  and mint accent. A scrollable single column contains icon/name, metadata,
+  algorithm picker with a persistent label and explanation, selectable monospaced
+  results, and collapsed comparison. Bottom actions stay reachable. Long paths
+  can be expanded, selected and explicitly copied; SHA-512 wraps at readable size.
+- SHA-256 is labeled recommended; MD5/SHA-1 carry compatibility labels and quiet
+  amber information warnings. Do not require additional confirmation. Show
+  distinct not-calculated, waiting, progress, completed, cancelled and failed
+  states. Completed results describe this read, without promising live validity.
+- Use one Calculate/Recalculate primary action, Cancel while working, per-result
+  Copy and Copy All in All mode. Disable algorithm changes during work. Comparison
+  has explicit editable input and text/icon match state; All asks for one algorithm.
+  Unsupported items/directories disable calculation with a reason.
+- Escape and Command-W close and cancel. Return calculates only when enabled and
+  outside multiline editing. Preserve visible keyboard focus, natural Tab order,
+  Chinese/English, light/dark appearance, Reduce Transparency and VoiceOver labels.
+  The settings row follows existing child enablement, placement and icon controls.
+
 ## Batch rename presentation
 
 Implementation contract; phase evidence is tracked in the batch-rename task. [File tools](file-tools.md#batch-rename)

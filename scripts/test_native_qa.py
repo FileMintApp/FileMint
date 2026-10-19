@@ -69,9 +69,9 @@ class NativeQATests(unittest.TestCase):
         return qa.publish(self.kind, source, root)
 
     def test_each_kind_has_a_distinct_stable_non_production_identity_and_path(self):
-        self.assertEqual(len(qa.KINDS), 10)
+        self.assertEqual(len(qa.KINDS), 11)
         identifiers = [value[1] for value in qa.KINDS.values()]
-        self.assertEqual(len(set(identifiers)), 10)
+        self.assertEqual(len(set(identifiers)), 11)
         self.assertNotIn("io.github.daigua.filemint", identifiers)
         self.assertEqual(qa.KINDS["design-ui"][1], "io.github.daigua.filemint.design-qa")
         self.assertEqual(qa.KINDS["sparkle-installation"][1], "io.github.daigua.filemint.upgrade-qa")

@@ -1,7 +1,7 @@
 # Task: 文件信息与 MD5 / SHA-1 / SHA-256 / SHA-512 校验
 
-Status: planned
-Next action: 评审本轮修订的算法选择弹窗；本任务继续停在规划阶段，尚不实施产品代码。
+Status: completed — automated checks passed; installed Finder smoke accepted by user
+Next action: 当前范围已验收；更广的系统／存储／辅助功能兼容性按需另行验证。
 
 ## Objective and scope
 
@@ -10,11 +10,12 @@ Next action: 评审本轮修订的算法选择弹窗；本任务继续停在规�
 - 首版：单个普通文件的基本信息和四种校验值；单个普通文件夹只展示自身元数据，明确说明不计算目录校验值、总大小或子项数量。包、符号链接、Finder 替身及特殊设备不读取内容，不自动跟随目标；展示不支持说明。
 - 多选批量计算、目录摘要规范、包内递归、校验清单导入导出、后台监听、持久化摘要缓存不纳入首版。单选是本方案的首版取舍，不是 Apple 限制。
 - 独立子开关默认关闭，旧配置缺失／损坏值也关闭；默认位于子菜单，可按既有规则设置一级菜单。模块关闭保留子项选择。新建文件、资源工具原有行为不变。
-- 本轮只新增 task 和路线图入口，不把未来行为写成已上线功能；实施前更新所属 SPEC。
+- 规划阶段只新增 task 和路线图入口；之后按用户“实现任务”指令更新所属 SPEC 并实施。另获授权的 Debug 安装与用户验收记录见后文；没有发布。
 
 ## Selected context
 
 - 所属契约：[File tools](../../specs/domains/file-tools.md)、[Finder and permissions](../../specs/domains/finder-permissions.md)、[Startup](../../specs/domains/startup.md)、[Presentation](../../specs/domains/presentation.md)。
+- 取消读取后继续更新／重启同时涉及 [Updates](../../specs/domains/updates.md)；本轮只改重启等待，不改更新网络客户端或发布流程。
 - 菜单与配置：[FileTools.swift](../../CorePackage/Sources/FileMintCore/FileTools.swift)、[FileToolsSettingsView.swift](../../App/FileMint/FileToolsSettingsView.swift)、[FinderSync.swift](../../FinderSyncExtension/FileMintFinderSync/FinderSync.swift)。
 - 交付与生命周期：[FileOperationTicket.swift](../../CorePackage/Sources/FileMintCore/FileOperationTicket.swift)、[FileOperationCoordinator.swift](../../App/FileMint/FileOperationCoordinator.swift)。
 - 可参考的流式计算：[UpdateClient.swift](../../App/FileMint/UpdateClient.swift) 的 `sha256(of:)` 已用 CryptoKit、1 MiB 分块及取消检查；这是更新器私有方法，不代表已有文件信息功能。
@@ -78,7 +79,7 @@ MD5 / SHA-1 的选项带“兼容旧系统”标注，选中后显示浅琥珀�
 
 ### 数据与执行方案
 
-- 规划模块：Core 中的 `FileInfoPolicy` / `FileDigestService` 负责支持规则、摘要格式、比对和流式计算；App 中的 `FileInfoController` / `FileInfoView` 负责窗口、授权、进度和取消；Finder 仅捕获目标并交付。名称为拟定，不代表文件已存在。
+- 已实现模块：Core 中的 `FileInfoPolicy` / `FileDigestService` 负责支持规则、摘要格式、比对和流式计算；App 中的 `FileInfoController` / `FileInfoView` 负责窗口、授权、进度和取消；Finder 仅捕获目标并交付。
 - 复用私有一次性票据，保留现有 60 秒有效期及 1 MiB 载荷上限。显式点击后异步捕获资源／父目录身份；主 App 授权后再次核对当前开关、范围、真实父目录和目标身份。无法捕获身份则报错，不用授权后碰巧出现的新对象替代。
 - 内容从同一已验证句柄读取，每块只更新冻结选项中的算法，选“全部”才同时更新四个算法；初始块大小采用已有 1 MiB 经验值，性能探针后调整。默认一次只处理一个资源，进度更新节流，主线程只处理 UI。
 - 在协调回调中核对实际 URL，避免路径被替换；使用不跟随末端符号链接的打开及句柄身份验证。开始、结束比较身份、字节数、修改／属性变更时间，结合可用版本标识；发现变化即废弃全部摘要，提示“文件已变化，请重新计算”。
@@ -101,9 +102,9 @@ MD5 / SHA-1 的选项带“兼容旧系统”标注，选中后显示浅琥珀�
 
 建议性能验收：本地 SSD 的 1 GiB / 10 GiB 隔离文件，记录设备、算法吞吐、峰值额外内存、UI 响应和取消延迟；额外内存不随文件大小线性增长，目标 < 64 MiB，取消后本地读循环目标 500 ms 内响应。权限提示、系统协调或网络 I/O 等待不作硬时限承诺，显示等待并允许请求取消。性能数字是待验证目标，非既有测量。
 
-测试矩阵还需覆盖：初始 SHA-256 且零内容读取、五种选择、MD5／SHA-1 提示、切换后旧结果失效、计算中禁用切换、全部模式比对约束、只读文件可读、无读取权、非 ASCII 名称、零字节、稀疏文件逻辑字节、断开卷、同路径对象替换、读取中截断／增长／改写、混合或过量输入、链接指向范围外、剪贴板失败、与移动／删除并发、应用退出及更新重启。未来实现按 HARNESS 跑 `make verify`、未签名 App / Finder 构建及适用原生场景；本轮不运行这些产品检查。
+目标矩阵包含：初始 SHA-256 且零内容读取、五种选择、MD5／SHA-1 提示、切换后旧结果失效、计算中禁用切换、全部模式比对约束、只读文件可读、无读取权、非 ASCII 名称、零字节、稀疏文件逻辑字节、断开卷、同路径对象替换、读取中截断／增长／改写、混合或过量输入、链接指向范围外、剪贴板失败、与移动／删除并发、应用退出及更新重启。本轮已按 HARNESS 执行产品检查；实际覆盖与尚未验证项见实施证据，不将整个目标矩阵视为全部已验收。
 
-## Evidence
+## Planning evidence (historical)
 
 Reviewed revision: `0479ce1797e66a458b641d6e9b498c96c441e378`，FileMint 主 checkout，规划前工作区干净。
 Environment: 2026-10-19；源码、契约和 Apple 官方网页静态查阅。
@@ -115,9 +116,41 @@ Environment: 2026-10-19；源码、契约和 Apple 官方网页静态查阅。
 | 初稿文档／本地链接检查 | passed | `make verify-context`：22 文档、139 本地链接；另查本轮 3 份 Markdown、45 本地链接及任务结构／空白；`git diff --check` 通过。仅证明文档检查 |
 | 新功能 Core / App / Finder / 沙盒 / 性能测试 | not-run | 当前只规划，未实现 |
 
+## Implementation evidence — 2026-10-19
+
+Reviewed source: 主 checkout，基于 `e398fb5cea3d4ab2200715f6c70ad22db65c7727` 的未提交变更；本轮开始时工作区干净。环境：Apple M3 Max（Mac15,9）、arm64、macOS 27.2 / 26B5101f、Xcode 27.1 / 27A9275、Swift 6.4；编译目标 macOS 13。产品源码与测试哈希、摘要和性能记录见[实施证据快照](evidence/2026-10-19-file-info-checksums.json)。
+
+| 检查 | 状态 | 证据范围 |
+| --- | --- | --- |
+| P0 / 契约与 API | passed within environment | 五个领域契约已先于对应行为修改；真实 CryptoKit、只读 QA entitlement、只读 bookmark 选项及 macOS 13 目标编译成功，不等于 macOS 13 运行证据 |
+| `make verify` | passed | Core 336 tests / 34 suites，Images 22 tests / 2 suites；公共 JSON Harness、CLI、发布与权限等离线回归；[完整日志](../../build/file-info-evidence/verify-final.log) |
+| 四算法正确性 | passed | 空文件、`abc`、非 ASCII 名称、随机二进制及 1 MiB 边界与系统 `md5` / `shasum` 一致；1 GiB / 10 GiB 逻辑零字节的四项摘要均与独立 Python `hashlib` 一致 |
+| 元数据与失败安全 | passed | `make verify-file-info-capture` 在子沙盒中拒绝所有 fixture 内容／目录读取及写入，仍可查看自身元数据，计算返回权限错误；Core 覆盖包、替身、链接、FIFO、替换父目录／文件、截断、增长、改写及取消，不输出部分成功结果 |
+| 未签名 App / Finder 构建 | passed | `CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO make build`；[构建日志](../../build/file-info-evidence/build-final.log)；主程序及嵌入的 Finder 扩展可执行文件存在 |
+| `file-info` 原生沙盒 fixture | passed | 生产窗口／服务／协调器；初始不开算、五选项、冻结选择、结果失效、比对、命名测试剪贴板、只读文件、Return 单行／多行焦点、Cmd-W／Esc、阻塞读取期间关闭和等清理、忙碌票据立即消费、开关撤回；[最终报告](../../build/native-checks.noindex/run.tgdx2eq0/report.json) |
+| 受影响既有原生回归 | passed | 批量重命名与上述最终报告同轮通过；创建后交付、更新调度、Open with App、设置图标、设计／窗口检查的通过项见[组合报告](../../build/native-checks.noindex/run.a_fs_v7b/report.json)。该组合报告早期重命名焦点项曾失败，已在最终报告修复并复验，不将旧报告总状态称为通过 |
+| 更新重启回调 | passed | `make verify-sparkle-driver`：真实 Sparkle 回调，等待 checksum 清理后再次校验重启 guard；无下载、安装；[日志](../../build/file-info-evidence/sparkle-driver.log) |
+| 布局 | passed within render scope | 最小 520 × 480 pt 的[中文明亮全部结果](../../build/file-info-evidence/zh-light-all.png)和[英文深色兼容提示](../../build/file-info-evidence/en-dark-legacy.png)已目视检查；原生缓存渲染不代替实际滚动、VoiceOver 或降低透明度操作 |
+
+性能探针使用本地 APFS **稀疏逻辑字节**，每次进程只处理一个自有临时文件并清理；不代表物理 SSD 顺序读取吞吐或 provider 性能。四算法同一遍读取：1 GiB 用时 2.913 s、10 GiB 28.770 s；两者额外峰值 RSS 均为 3,031,040 B（约 2.89 MiB），进程峰值约 22.4 MiB。10 GiB SHA-256 取消探针在首次实际进度通知后请求取消，本地循环清理 0.088 ms；这是单次本地测量，不承诺系统协调、权限 UI 或网络等待的时限。UI 状态与取消使用另一项原生 fixture 检查，不由该 CLI 吞吐测量推断。
+
+原生重命名回归发现 fixture 在未取得焦点时检查按钮内部 `keyEquivalent` 并等待键盘输入；单独聚焦后真实 Return / Esc 取消通过。本轮仅使测试明确激活并等待确认窗焦点，以默认按钮归属和实际键盘结果验收；没有修改重命名产品行为。
+
 ## Handoff
 
-- 已完成：独立需求规划；按用户意见改为“先打开弹窗 → 选择算法 → 主动计算”，补充视觉规格、选择时提示和状态转换。
-- 后续：收到实施指令后从 P0 开始，先更新所属领域契约；不要由本规划自动启动实现、安装或发布。
-- 已知缺口：Finder 特殊目录回调、不同系统／文件系统／provider、持续外部写入时的一致性均无本轮运行证据。
-- 最小上下文：本任务、上述四个领域契约以及 HARNESS；密码加密保护任务独立排期；哈希信息功能不是加密。
+- 已完成：Core、原生信息窗口、Finder 单选票据入口、独立默认关闭开关／位置／图标、中英文文案、取消／互斥／重启清理、回归及证据记录。设置 → 扩展 → 文件（夹）工具同时启用模块和「文件信息」后，在单选资源右键菜单使用。
+- 未验证：安装版 Finder 冷／热启动及特殊目录回调、真实外部资源 picker 与跨进程授权、真实未下载云项／不同 provider、断开卷、macOS 13/14 运行、持续非合作写入的原子一致性、真实系统退出／Sparkle 安装、VoiceOver、降低透明度以及系统剪贴板拒写。已有相关失败分支与清理检查不替代这些运行证据。
+- 后续仅在需要对应原生验收环境时继续；不自动安装、发布、扩大授权或启用默认开关。密码加密保护任务仍独立，本任务不修改它。
+- 最小上下文：本任务、所属契约及 HARNESS；完整运行日志保留在链接的 `build/` 证据目录，不装入默认上下文。
+
+## Installed Debug preparation — 2026-10-19
+
+用户明确要求“构建并安装 Debug 版本，我测试一下 Finder 里的文件信息和校验功能”。已用 `Debug`、`ENABLE_DEBUG_DYLIB=NO` 从当前工作区构建，并沿用安装版 Developer ID 团队 `8S66M2ZLD5` 签名。版本为 0.7.0（28）；主 App CDHash 为 `85b87e2dc39b8cb29fc5ba7f2f80e932d6d6c5a9`，安装目标 `/Applications/FileMint.app`。
+
+当前应用正常退出后，先备份到 `.local/file-info-debug-install-20261019.3j1n8pfw/installed-before`，再原子替换。167 个 bundle 条目的内容／链接／权限与签名构建一致，安装副本通过 `verify_bundle.sh`；替换前后偏好文件 SHA-256 一致。仅注销已确认的旧开发副本注册并重新注册安装版，保留既有启用选择。最终仅安装版 Finder 注册一项，主 App / 扩展新进程均从 `/Applications` 运行（PID 58289 / 58290，先前为 6333 / 749）。
+
+已在真实设置页看到新增「文件信息」行；最后观察时模块与该项均开启。未代替用户执行 Finder 校验测试，没有把这次直接启动记为 Finder 冷／热启动、外部授权或真实文件摘要验收。安装记录与日志见[installation.json](../../build/file-info-debug-20261019.noindex/installation.json)、[构建](../../build/file-info-debug-20261019.noindex/build.log)、[安装副本校验](../../build/file-info-debug-20261019.noindex/verify-installed.log)。
+
+## User acceptance — 2026-10-19
+
+用户在上述安装的 Debug 版本测试后明确反馈：“文件信息和校验功能测试没问题”，并要求提交所有代码及推送。本机安装版 Finder 的文件信息与校验基本流程按用户反馈记为通过；该反馈不推断覆盖全部算法／文件类型组合、冷／热启动、外部目录授权、真实云占位或辅助功能矩阵，也不替代前述独立自动检查。

@@ -95,6 +95,19 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - An explicitly requested updater relaunch must wait until creation work and
   modal editing are finished. Preserve saved startup preferences and bookmarks.
 
+## File information lifecycle
+
+- Decode the File Info child switch independently, default off for missing or
+  malformed values; placement defaults to submenu. Preserve neighboring choices
+  and the child choice while its module is disabled. Algorithm selection is
+  window-local and always starts at SHA-256, never a persisted insecure default.
+- Finder opens only the information panel, preserving settings and existing
+  accessory/Dock behavior. Preparation, authorization and reading hold the shared
+  operation guard; idle result windows do not. Busy requests are consumed and
+  rejected immediately, not queued behind a long calculation. Recalculation
+  reclaims the same guard. Closing cancels; quit/updater restart cancels active
+  reading and waits for cleanup before proceeding, without an idle-window blocker.
+
 ## Batch rename lifecycle
 
 Implementation contract; phase evidence is tracked in the batch-rename task. [File tools](file-tools.md#batch-rename)

@@ -23,6 +23,14 @@ A Core test does not prove a visible menu, native authorization, Dock state or
 a successful installation. Record the tested build, environment, scenario and
 observed result; mark unavailable checks as not run.
 
+`make verify-file-info-capture` denies fixture content/directory reads and all
+writes in a headless child sandbox. Production capture/metadata inspection still
+reports file/folder/link metadata; a requested digest fails with read denial and
+produces no result. The signed `file-info` native fixture covers window state,
+five choices, cancellation, clipboard/comparison and coordinator ownership using
+isolated stores. Neither proves installed Finder delivery, external-folder picker
+grants, real cloud placeholders or macOS 13 runtime behavior.
+
 `make verify-batch-rename-capture` runs the production click-time capture and
 ticket path in a headless child sandbox that denies fixture directory/content
 reads and all fixture writes. It verifies complete metadata capture while normal

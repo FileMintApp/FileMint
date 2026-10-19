@@ -78,6 +78,10 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   draft, file operation or modal sheet is active. Preserve the draft and let the
   user choose Update and Restart after finishing it. Do not force-kill Finder,
   discard work, alter preferences/bookmarks or silently enable the Finder extension.
+- An explicit update/restart cancels a running File Info checksum read and waits
+  for its worker/access cleanup before rechecking the other restart guards. An
+  idle information window does not block restart; other active work keeps the
+  existing defer behavior.
 - Sparkle owns update staging, signature checks, replacement, cleanup and relaunch.
   Never hand a sandbox-created private-cache DMG from the legacy UpdateClient to
   the installer or strip quarantine to bypass a macOS execution block.
