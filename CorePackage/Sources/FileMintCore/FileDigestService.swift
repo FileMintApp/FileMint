@@ -119,6 +119,20 @@ public struct FileDigestProgress: Sendable {
 public enum FileDigestService {
     public static let chunkSize = 1_048_576
 
+    /// Bounded menu probe of the selected entry only. No content, parent identity,
+    /// provider status or directory reads; click-time capture remains authoritative.
+    public static func supportsMenuSelection(_ urls: [URL]) -> Bool {
+        guard FileInfoPolicy.canSelect(urls), let source = urls.first else { return false }
+        // Discard any type values cached in Finder's URL. lstat rejects links and
+        // nonregular nodes before Foundation can query their targets or contents.
+        let url = URL(fileURLWithPath: source.path, isDirectory: false)
+        guard let info = try? fileInfoStat(url), info.st_mode & UInt16(S_IFMT) == UInt16(S_IFREG),
+              let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey,
+                  .isPackageKey, .isAliasFileKey]) else { return false }
+        return values.isRegularFile == true && values.isSymbolicLink == false
+            && values.isPackage == false && values.isAliasFile == false
+    }
+
     /// Metadata only; never opens file contents or enumerates a directory.
     public static func inspect(_ selection: FileInfoSelection) throws -> FileInfoMetadata {
         try selection.validate()

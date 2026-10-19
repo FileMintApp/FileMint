@@ -48,17 +48,25 @@ Load for: Optional Finder file/folder actions, batch rename, selection snapshots
 
 - File Info… / 文件信息… has an independent child switch, default off for new,
   missing or malformed preferences, and the usual submenu/main placement. It is
-  offered only for one captured local item in scope, never a background, toolbar,
-  sidebar or multiple selection. Menu construction performs no metadata/content I/O.
+  offered only for one captured ordinary local file in scope, never a background,
+  toolbar, sidebar or multiple selection. Hide it for directories, packages,
+  symbolic links, Finder aliases, special items and unavailable type metadata.
+  Menu construction may probe only the selected item's type metadata; never
+  open content, follow a selected link, enumerate folders or query providers.
 - Opening the native panel reads metadata only: name, kind, logical file size,
   location, creation and modification dates. Unknown values say unavailable.
   Ordinary directories show their own metadata without content size, enumeration
   or item counts. Packages, symbolic links, Finder aliases and special items are
-  explained as unsupported; never read their content or follow their target.
+  explained as unsupported if reached through an older capture; never read their
+  content or follow their target. These defensive states do not make them eligible
+  for a new menu entry.
 - Each window starts with SHA-256 selected. SHA-512, SHA-1, MD5 and All Four
   Algorithms are available. Calculate is explicit; opening, changing selection
   and focusing never calculate. Freeze selection during a calculation. Changing
   algorithms or recalculating invalidates old results and disables copying.
+- Group Close and Calculate/Recalculate together at the footer's right edge,
+  with the primary calculation action last. During work, Cancel occupies that
+  same action position; Close remains beside it and retains cleanup semantics.
 - Use system CryptoKit and a bounded 1 MiB buffer off the UI thread. Update only
   selected algorithms from the same verified descriptor, in a single pass for
   All. Hash file data bytes only, including sparse logical zero bytes; exclude

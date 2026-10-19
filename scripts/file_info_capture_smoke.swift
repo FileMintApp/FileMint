@@ -13,6 +13,15 @@ import Foundation
                 fatalError("Sandbox regression must deny all content/directory reads")
             }
         }
+        var preferences = FileMintPreferences.default
+        preferences.monitoredFolderURLs = [root]
+        preferences.fileTools.isEnabled = true; preferences.fileTools.fileInfo = true
+        precondition(FileToolsPolicy.availableTools(selection: [root.appendingPathComponent("file.txt")],
+            isItemMenu: true, preferences: preferences).contains(.fileInfo))
+        for name in ["folder", "link", "missing"] {
+            precondition(!FileToolsPolicy.availableTools(selection: [root.appendingPathComponent(name, isDirectory: false)],
+                isItemMenu: true, preferences: preferences).contains(.fileInfo))
+        }
         let file = try FileInfoSelection.capture([root.appendingPathComponent("file.txt")])
         let metadata = try FileDigestService.inspect(file)
         precondition(metadata.kind == .file && metadata.logicalSize == 3)
@@ -24,6 +33,6 @@ import Foundation
             _ = try FileDigestService.calculate(file, choice: .all)
             fatalError("Denied content must not produce a digest")
         } catch FileInfoError.accessDenied {}
-        print("PASS file information metadata-only capture; content reads denied; no digest on permission failure")
+        print("PASS file information metadata-only menu/capture; unsupported menu items hidden; content reads denied; no digest on permission failure")
     }
 }

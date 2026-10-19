@@ -80,9 +80,10 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 
 ## File information authorization
 
-- Finder captures only the menu's single selected URL until explicit invocation,
-  then captures item/real-parent metadata identities off the UI thread. It reads
-  no content and cannot replace a failed capture with post-authorization identity.
+- Finder captures the menu's single selected URL and probes only that item's
+  type metadata to hide unsupported resources. It captures item/real-parent
+  identities off the UI thread only after explicit invocation. It reads no content
+  and cannot replace a failed capture with post-authorization identity.
 - The main app reuses configured security-scoped access when valid; otherwise
   request the exact selected resource or necessary parent with a native picker,
   using read-only bookmark options. No new persistent grant database, write
@@ -92,7 +93,8 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   after authorization and around coordinated reads; never follow a replaced item.
 - Metadata and digest work probes only the selected item and its real parent.
   No folder enumeration, automatic cloud-download API or provider discovery.
-  Unsupported links/aliases/packages are presented without reading their content.
+  Unsupported links/aliases/packages have no new menu entry; an older capture
+  still reports them without reading their content or following their target.
 
 ## Batch rename authorization
 

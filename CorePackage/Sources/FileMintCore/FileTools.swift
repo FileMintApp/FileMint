@@ -124,7 +124,7 @@ public enum FileToolsPolicy {
         else { return [] }
         return FileTool.allCases.filter {
             preferences.fileTools.allows($0) && ($0 != .batchRename || canBatchRename(selection))
-                && ($0 != .fileInfo || FileInfoPolicy.canSelect(selection))
+                && ($0 != .fileInfo || FileDigestService.supportsMenuSelection(selection))
         }
     }
 

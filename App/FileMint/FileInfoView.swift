@@ -36,8 +36,9 @@ struct FileInfoView: View {
                         .fixedSize(horizontal: false, vertical: true).accessibilityIdentifier("fileInfo.status")
                 }
                 HStack {
-                    Button(text(.close)) { model.requestClose() }
                     Spacer()
+                    Button(text(.close)) { model.requestClose() }
+                        .accessibilityIdentifier("fileInfo.close")
                     if model.isWorking {
                         Button(text(.cancel)) { model.cancel() }.disabled(model.isCancelling)
                             .accessibilityIdentifier("fileInfo.cancel")

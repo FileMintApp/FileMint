@@ -170,8 +170,9 @@ final class FileInfoController: NSObject, ObservableObject, NSWindowDelegate {
     private var preferences: FileMintPreferences { FileMintPreferencesStore(fileURL: preferencesFile).load() }
 
     private func validatePolicy(_ selection: FileInfoSelection) throws {
-        guard FileToolsPolicy.availableTools(selection: [selection.source], isItemMenu: true,
-            preferences: preferences).contains(.fileInfo) else { throw FileInfoError.disabled }
+        guard FileInfoPolicy.isEnabled(for: [selection.source], preferences: preferences) else {
+            throw FileInfoError.disabled
+        }
     }
 
     nonisolated private static func validate(_ selection: FileInfoSelection, roots: [URL]) throws {

@@ -3,6 +3,27 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## File information menu and footer follow-up — 2026-10-19
+
+Primary `ba4fd66` plus the uncommitted follow-up passed `make verify` (Core 337,
+Images 22), unsigned App/Finder compilation and the isolated `file-info` native
+fixture on arm64 macOS 27.2 / Xcode 27.1. Real fixtures cover ordinary files and
+hidden directory/package/link/alias/FIFO/missing targets in both menu placements;
+the restricted child sandbox confirms menu eligibility without content or directory
+reads. Minimum-size Chinese/light and English/dark renders show Close beside the
+calculation action at the right edge. The main app retains its independent
+pre-authorization switch/scope check. That implementation run did not install the
+follow-up. The user subsequently requested Debug installation: the direct Debug
+0.7.0 (28) payload was signed with the existing Developer ID team, backed up and
+atomically installed. Installed bytes/signatures and unchanged preferences passed;
+fresh main/extension processes run from `/Applications` with one enabled extension
+registration. After testing this Debug build, the user again confirmed the file
+information/checksum flow had no problems and requested commit/push. Record this
+follow-up's basic installed flow as user-accepted; broader resource combinations,
+external authorization and compatibility checks are not inferred. Earlier installed
+user acceptance below applies to the previous behavior only.
+See the [follow-up task and logs](tasks/2026-10-19-file-info-checksums.md#menu-eligibility-and-footer-follow-up--2026-10-19).
+
 ## File information and checksums — 2026-10-19
 
 On primary `e398fb5` plus the recorded uncommitted implementation, arm64 macOS

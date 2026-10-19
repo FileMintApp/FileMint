@@ -208,7 +208,7 @@ struct FileInfoTests {
         }
     }
 
-    @Test("new preferences fail closed independently and menus are single-selection only")
+    @Test("new preferences fail closed and metadata availability does not revoke read authorization")
     func menusAndPreferences() throws {
         for json in [#"{}"#, #"{"fileInfo":"invalid","copyNames":false,"move":true}"#] {
             let value = try JSONDecoder().decode(FileToolsPreferences.self, from: Data(json.utf8))
@@ -220,7 +220,10 @@ struct FileInfoTests {
         prefs.monitoredFolderURLs = [root]
         prefs.fileTools.isEnabled = true; prefs.fileTools.fileInfo = true
         let item = root.appendingPathComponent("item")
-        #expect(FileToolsPolicy.availableTools(selection: [item], isItemMenu: true, preferences: prefs).contains(.fileInfo))
+        #expect(!FileToolsPolicy.availableTools(selection: [item], isItemMenu: true, preferences: prefs).contains(.fileInfo))
+        #expect(FileInfoPolicy.isEnabled(for: [item], preferences: prefs))
+        #expect(!FileInfoPolicy.isEnabled(for: [item, item], preferences: prefs))
+        #expect(!FileInfoPolicy.isEnabled(for: [URL(fileURLWithPath: "/outside")], preferences: prefs))
         #expect(!FileToolsPolicy.availableTools(selection: [item, item], isItemMenu: true, preferences: prefs).contains(.fileInfo))
         #expect(!FileToolsPolicy.availableTools(selection: [item], isItemMenu: false, preferences: prefs).contains(.fileInfo))
         #expect(!FileToolsPolicy.availableTools(target: .directory(root), preferences: prefs).contains(.fileInfo))
@@ -231,8 +234,65 @@ struct FileInfoTests {
         let saved = try JSONDecoder().decode(FileMintPreferences.self, from: JSONEncoder().encode(prefs))
         #expect(saved.fileTools.fileInfo && saved.fileTools.mainMenuTools.contains(.fileInfo))
         #expect(!saved.fileTools.allows(.fileInfo))
+        #expect(!FileInfoPolicy.isEnabled(for: [item], preferences: saved))
         #expect(!FileInfoPolicy.canSelect([URL(string: "file://remote/item")!]))
         #expect(!FileInfoPolicy.canSelect([URL(fileURLWithPath: "/")]))
+    }
+
+    @Test("File Info menus offer only ordinary files and hide empty groups in either placement")
+    func menuResourceTypes() throws {
+        try fixture { root in
+            let file = root.appendingPathComponent("ordinary 🪴.unknown")
+            let empty = root.appendingPathComponent("no-extension")
+            try Data("abc".utf8).write(to: file)
+            try Data().write(to: empty)
+            // Give directories file-shaped URLs: a trailing slash is not type proof.
+            let folder = root.appendingPathComponent("folder.txt", isDirectory: false)
+            let package = root.appendingPathComponent("Example.app", isDirectory: false)
+            for item in [folder, package] {
+                try FileManager.default.createDirectory(at: item, withIntermediateDirectories: false)
+            }
+            let link = root.appendingPathComponent("file-link")
+            let folderLink = root.appendingPathComponent("folder-link")
+            let missing = root.appendingPathComponent("missing")
+            let broken = root.appendingPathComponent("broken-link")
+            for (source, target) in [(link, file), (folderLink, folder), (broken, missing)] {
+                try FileManager.default.createSymbolicLink(at: source, withDestinationURL: target)
+            }
+            let alias = root.appendingPathComponent("alias")
+            try URL.writeBookmarkData(file.bookmarkData(options: .suitableForBookmarkFile,
+                includingResourceValuesForKeys: nil, relativeTo: nil), to: alias)
+            let fifo = root.appendingPathComponent("fifo")
+            #expect(mkfifo(fifo.path, 0o600) == 0)
+            var prefs = FileMintPreferences.default
+            prefs.monitoredFolderURLs = [root]
+            prefs.fileTools.isEnabled = true
+            for tool in FileTool.allCases { prefs.fileTools.setEnabled(tool == .fileInfo, for: tool) }
+            for main in [false, true] {
+                prefs.fileTools.mainMenuTools = main ? [.fileInfo] : []
+                for item in [file, empty, folder, package, link, folderLink, broken, alias, fifo, missing] {
+                    let supported = item == file || item == empty
+                    let tools = FileToolsPolicy.availableTools(target: .selection([item]), preferences: prefs)
+                    #expect(tools == (supported ? [.fileInfo] : []))
+                    let layout = FileToolsMenuLayout(tools: tools, hasMoveDestination: false, preferences: prefs.fileTools)
+                    #expect(layout.main == (supported && main ? [.fileInfo] : []))
+                    #expect(layout.submenu == (supported && !main ? [.fileInfo] : []))
+                    #expect(layout.showsSubmenu == (supported && !main))
+                }
+            }
+            #expect(FileToolsPolicy.availableTools(selection: [file, empty], isItemMenu: true, preferences: prefs).isEmpty)
+            #expect(FileToolsPolicy.availableTools(selection: [file], isItemMenu: false, preferences: prefs).isEmpty)
+            #expect(FileToolsPolicy.availableTools(target: .directory(root), preferences: prefs).isEmpty)
+            // Reusing a URL with cached resource values must still notice a new kind.
+            let replaced = root.appendingPathComponent("replaced")
+            try Data().write(to: replaced)
+            _ = try replaced.resourceValues(forKeys: [.isRegularFileKey, .isDirectoryKey])
+            #expect(FileDigestService.supportsMenuSelection([replaced]))
+            try FileManager.default.removeItem(at: replaced)
+            try FileManager.default.createDirectory(at: replaced, withIntermediateDirectories: false)
+            #expect(!FileDigestService.supportsMenuSelection([replaced]))
+            #expect(try Data(contentsOf: file) == Data("abc".utf8))
+        }
     }
 
     @Test("private file-info tickets are single use, expiring and cannot cross routes")

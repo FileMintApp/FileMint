@@ -49,11 +49,18 @@ public enum FileDigestComparison: Equatable, Sendable {
 }
 
 public enum FileInfoPolicy {
-    /// Path-only: safe during Finder menu construction, even for inaccessible items.
+    /// Path-only request shape; menu eligibility additionally checks item type.
     public static func canSelect(_ selection: [URL]) -> Bool {
         guard selection.count == 1, let url = selection.first else { return false }
         return url.isFileURL && (url.host == nil || url.host == "" || url.host == "localhost")
             && url.standardizedFileURL.path != "/"
+    }
+
+    /// Authorization can still be requested when metadata is not yet accessible
+    /// to the main app. Type and identity validation follow read authorization.
+    public static func isEnabled(for selection: [URL], preferences: FileMintPreferences) -> Bool {
+        preferences.fileTools.allows(.fileInfo) && canSelect(selection)
+            && selection.allSatisfy { FolderScope.contains($0, in: preferences.monitoredFolderURLs) }
     }
 
     public static func compare(_ input: String, choice: FileDigestChoice,
