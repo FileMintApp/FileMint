@@ -107,8 +107,15 @@ struct FileInfoTests {
                 let hex = try #require(result.values.first?.hexadecimal)
                 #expect(FileInfoPolicy.compare(" \n\(hex.uppercased())\t", choice: choice, result: result) == .match)
                 #expect(FileInfoPolicy.compare(String(repeating: "0", count: hex.count), choice: choice, result: result) == .mismatch)
-                for bad in [hex + "0", String(hex.dropLast()), " " + hex + " 0", "z" + hex.dropFirst(), "０" + hex.dropFirst(),
-                            String(hex.prefix(8)) + "\n" + hex.dropFirst(8)] {
+                // Keep each operand concrete for Swift 6.1's type checker.
+                let tail = String(hex.dropFirst())
+                let prefix = String(hex.prefix(8))
+                let remainder = String(hex.dropFirst(8))
+                let invalidInputs: [String] = [
+                    hex + "0", String(hex.dropLast()), " " + hex + " 0",
+                    "z" + tail, "０" + tail, prefix + "\n" + remainder
+                ]
+                for bad in invalidInputs {
                     #expect(FileInfoPolicy.compare(bad, choice: choice, result: result) == .invalid)
                 }
                 #expect(FileInfoPolicy.compare(hex, choice: choice, result: nil) == .unavailable)
