@@ -166,6 +166,9 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   release evidence before pushing, then read back the remote commit and Cask.
   Identical verified retries are no-ops. Development and `release-local` never
   publish a tap.
+- The tap's read-only validation step passes its per-job GitHub token to
+  Homebrew API requests. Keep `contents: read` permissions and use the ephemeral
+  Actions identity; no personal access token or Apple/Sparkle key is required.
 - The Cask does not quit, kill or relaunch any process and contains no `zap`.
   Before brew replacement, adoption or removal, finish/save/cancel work, wait for
   active file or Sparkle operations, manually quit FileMint and confirm exit.

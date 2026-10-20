@@ -30,6 +30,8 @@ jobs:
         run: |
           brew tap --custom-remote filemintapp/tap "$GITHUB_WORKSPACE"
       - name: Validate syntax, metadata and upstream discovery
+        env:
+          HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
         run: |
           brew style Casks/filemint.rb
           brew readall --os=all --arch=all filemintapp/tap

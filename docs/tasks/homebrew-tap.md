@@ -111,6 +111,22 @@ Local audit uses `brew audit --cask --online --strict --except=download,signing,
 | Public command resolution and checksum fetch | passed (distribution only) | `brew install --cask --dry-run filemintapp/tap/filemint` resolved and planned one Cask; `brew fetch --cask filemintapp/tap/filemint` downloaded and verified 0.7.0. Logs: `build/homebrew-public-install-dry-run.log`, `build/homebrew-public-fetch.log`. No app was installed or replaced. |
 | Existing version synchronization | passed (no-op) | `python3 scripts/homebrew_tap.py publish --manifest build/FileMint-0.7.0.release.json` validated the public tap and returned `unchanged` with the current tap commit. Log: `build/homebrew-public-sync-noop.log`. The opt-in release hook remains disabled pending native acceptance. |
 
+## 0.8.0 synchronization — 2026-10-20
+
+The owner explicitly requested synchronizing the tap after FileMint 0.8.0/build 29 was public and its website deployment completed. This is a single manifest-based synchronization; the automatic release hook remains disabled pending separate native acceptance.
+
+- Reused the genuine `build/FileMint-0.8.0.release.json` and completed publication journal for source `ab25fb7bf42ac3806ca725cd107b912da47ba010`, Release ID `417913389`. The helper rechecked local DMG/ZIP signatures, tickets, hashes and feeds, six public asset identities and exact successful source/candidate/site/deployment runs.
+- Updated only Cask version and SHA-256 from 0.7.0 to 0.8.0 in [commit d0b8af0](https://github.com/FileMintApp/homebrew-tap/commit/d0b8af013ef1b3c6279846db5e5b3309fb5c7fca), with normal push and remote byte readback. DMG SHA-256: `c112cf39c36d14d225dd44ae8d487213f792db554d2c37262b18098b486f11dc`; Cask SHA-256: `802d482bb57252f6bc2a33f32f021215f8a29f93722c5e8a86d6ec0847fac6d3`.
+- Initial [run 39355724969](https://github.com/FileMintApp/homebrew-tap/actions/runs/39355724969) passed style but failed online audit because the runner's shared IP exhausted GitHub's unauthenticated 60-request quota. No Cask payload defect was reported. [Workflow fix c79c7dc](https://github.com/FileMintApp/homebrew-tap/commit/c79c7dce1a1f9653a921397b8f5f43c0bf503b89) gives only the validation step `HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}`, retaining `contents: read`. The main-repository template matches. No personal token or Apple/Sparkle key was added.
+
+| Check | Status | Evidence |
+| --- | --- | --- |
+| Manifest publication and Cask readback | passed | [Helper receipt](../../build/release-0.8.0.noindex/homebrew/sync-result.json), [log](../../build/release-0.8.0.noindex/homebrew/sync.log); remote 0.8.0 Cask bytes match the reviewed candidate. Application release assets were not rebuilt, re-signed or replaced. |
+| Local Homebrew tooling | passed | Style, all-OS/all-architecture `readall`, exact `info` metadata, documented local online metadata audit and livecheck; the uniquely named temporary metadata tap was removed and absence confirmed. |
+| CI authentication fix | passed | Both YAML files parse, have identical bytes, preserve read-only permissions and scope the token to the validation step. `make verify` passed: 337 Core tests, 22 image tests and all Harness/script checks. [Log](../../build/release-0.8.0.noindex/homebrew/verify-auth-fix.log). |
+| Public Cask workflow | passed | [Run 39356246267](https://github.com/FileMintApp/homebrew-tap/actions/runs/39356246267) at `c79c7dce1a1f9653a921397b8f5f43c0bf503b89` passed style, all-OS/all-architecture parsing, full strict online audit and livecheck. |
+| Native installation/upgrade/migration/removal | not-run | No app was installed, replaced or launched on the working Mac. Existing isolated-environment acceptance gaps remain. |
+
 ## Native acceptance and completion gates
 
 Use a disposable Apple-silicon macOS VM or dedicated test Mac with separate Homebrew prefix/Caskroom, Applications, home and Finder/LaunchServices state. A temporary account or `--appdir` on the working Mac is insufficient. Do not mount host app, brew or data directories. Transfer only reviewed artifacts and synthetic fixtures. Record resolved paths and bundle identities inside the isolated system before operations; stop on unexpected/shared state.

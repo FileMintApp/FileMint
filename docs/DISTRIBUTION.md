@@ -230,8 +230,9 @@ acceptance is run.
 ### 6. Optional Homebrew tap synchronization
 
 The [FileMint official tap](https://github.com/FileMintApp/homebrew-tap) is public
-with a 0.7.0 Cask. Its public Actions check passed; the qualified install command
-resolves in a Homebrew dry run and its DMG fetch passed SHA-256 verification.
+with a 0.8.0 Cask. This version passed local Homebrew checks and public Actions
+validation. Initial 0.7.0 publication also confirmed qualified install-command
+resolution in a Homebrew dry run and a DMG fetch with SHA-256 verification.
 The owner has no disposable VM/test Mac, so native installation, upgrade,
 migration, removal and Finder behavior remain unverified. Do not exercise those
 operations against their working app.

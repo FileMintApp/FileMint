@@ -22,10 +22,11 @@ Next action: None for standard publication. Installed-update and broader native 
 - Choose 0.8.0/build 29 for the added file-tool capabilities. Keep older tags/assets immutable and preserve the existing Sparkle key and signing/authorization configuration.
 - Both new child tools remain default off. Batch rename documents its local writable APFS scope; checksum guidance distinguishes integrity values from encryption or proof of origin.
 - Follow the current policy omitting local downloads/comparisons of uploaded release archives. Read the previous stable appcast only for version/build preflight.
-- Homebrew synchronization remains subject to the existing explicit opt-in; this task uses the standard publication command.
+- After application publication, the user explicitly requested Homebrew tap synchronization. Ran the manifest-based helper for this version; the automatic release hook remains disabled by default.
 - Committed release preparation as `ab25fb7bf42ac3806ca725cd107b912da47ba010` and created/pushed `v0.8.0` at that source. Both canonical commands completed successfully without rebuilding or replacing the candidate during publication.
 - Stable Latest became public at **2026-10-20 09:43:55 Asia/Shanghai**, Release ID `417913389`: [FileMint 0.8.0](https://github.com/FileMintApp/FileMint/releases/tag/v0.8.0).
 - All required remote checks passed before promotion. Website deployment then reused Pages artifact `12234434852`; HTTP readback of both homepages and both guides confirmed the shipped batch rename and checksum copy.
+- Homebrew Cask update `d0b8af013ef1b3c6279846db5e5b3309fb5c7fca` synchronized 0.8.0 and its verified DMG digest. Initial public audit hit unauthenticated GitHub API rate limiting; workflow-only fix `c79c7dce1a1f9653a921397b8f5f43c0bf503b89` passes the existing read-only job token to Homebrew. The subsequent public audit passed. See the [Homebrew follow-up](homebrew-tap.md).
 
 ## Evidence
 
@@ -46,7 +47,7 @@ Local logs and metadata: `build/release-0.8.0.noindex/`, `build/FileMint-0.8.0.r
 | Required website build | passed | [Run 39354990375](https://github.com/FileMintApp/FileMint/actions/runs/39354990375), request `697bc5256e704487a4e2bedf540360ae`; retained Pages artifact `12234434852`. |
 | Public stable Latest | passed | Release `417913389` is public, stable and Latest; six public asset names, IDs, sizes and final immutable tag URLs match the journal. [Metadata](../../build/release-0.8.0.noindex/published-release.json), [publication log](../../build/release-0.8.0.noindex/publish-local.log), [journal](../../build/FileMint-0.8.0.publication.json). |
 | Website deployment and live copy | passed | [Run 39355066196](https://github.com/FileMintApp/FileMint/actions/runs/39355066196), request `e5c874cfa772468ab53fb131df2762e3`; deployed the verified artifact after publication. Both live homepages and guides contain the new feature copy; HTML retained in the evidence directory. Current-release labels still use public Latest discovery. [Website](https://filemintapp.github.io/FileMint/). |
-| Homebrew synchronization | not-run | Explicit opt-in was not enabled; no tap update or native brew operation was performed. |
+| Homebrew synchronization | passed | `python3 scripts/homebrew_tap.py publish --manifest build/FileMint-0.8.0.release.json` validated retained local artifacts, completed publication evidence and Homebrew metadata, then pushed/read back the Cask. [Receipt](../../build/release-0.8.0.noindex/homebrew/sync-result.json), [log](../../build/release-0.8.0.noindex/homebrew/sync.log). Public [run 39356246267](https://github.com/FileMintApp/homebrew-tap/actions/runs/39356246267) passed complete online validation after the read-only API-token fix; template/workflow YAML checks and `make verify` passed. No native app installation or upgrade was performed. |
 | Installed release, minimum-OS and provider acceptance | not-run | Standard publication does not install/launch the production app or repeat exhaustive native QA. Existing feature acceptance does not prove the final release's full runtime matrix. |
 | Local remote-archive byte/hash comparison | not-run | Omitted by current policy; GitHub owns independent remote candidate validation. |
 
