@@ -32,13 +32,35 @@ class APIError(PublicationError):
         self.status = status
 
 
+def actions_wait_settings():
+    try:
+        timeout = int(os.environ.get("FILEMINT_ACTIONS_TIMEOUT_SECONDS", "2700"))
+        interval = int(os.environ.get("FILEMINT_ACTIONS_POLL_SECONDS", "15"))
+    except ValueError as error:
+        raise PublicationError("Invalid Actions wait duration") from error
+    if not 1 <= timeout <= 86400 or not 1 <= interval <= 300:
+        raise PublicationError("Invalid Actions wait duration")
+    return timeout, interval
+
+
 def synchronize_homebrew(manifest_path):
     """The helper verifies public evidence again; it never publishes an app release."""
     result = subprocess.run([sys.executable, str(ROOT / "scripts/homebrew_tap.py"),
                              "publish", "--manifest", str(manifest_path)],
-                            cwd=ROOT, timeout=1800)
+                            cwd=ROOT, timeout=1800 + actions_wait_settings()[0],
+                            text=True, stdout=subprocess.PIPE)
     if result.returncode:
         raise PublicationError("Homebrew synchronization failed")
+    try:
+        receipt = json.loads(result.stdout)
+        if (receipt.get("status") not in ("published", "unchanged")
+                or not re.fullmatch(r"[0-9a-f]{40}", receipt.get("tap_commit", ""))):
+            raise ValueError("Invalid tap identity")
+        return {"tap_commit": receipt["tap_commit"],
+                "ci_run_id": positive_id(receipt["tap_ci"]["id"]),
+                "ci_verified_attempt": positive_id(receipt["tap_ci"]["attempt"])}
+    except (ValueError, TypeError, KeyError, AttributeError, PublicationError) as error:
+        raise PublicationError("Homebrew helper did not return verified tap CI evidence") from error
 
 
 def command(args, **kwargs):
@@ -208,17 +230,14 @@ class Publication:
         self.homebrew_failed = False
         self.unknown = False
         self.observed = False
-        self.timeout = int(os.environ.get("FILEMINT_ACTIONS_TIMEOUT_SECONDS", "2700"))
-        self.interval = int(os.environ.get("FILEMINT_ACTIONS_POLL_SECONDS", "15"))
-        if not 1 <= self.timeout <= 86400 or not 1 <= self.interval <= 300:
-            raise PublicationError("Invalid Actions wait duration")
+        self.timeout, self.interval = actions_wait_settings()
         if self.path.is_symlink():
             raise PublicationError("Publication journal must not be a symlink")
         self.state = json.loads(self.path.read_text()) if self.path.exists() else {
             "schemaVersion": 1, "candidate": self.manifest, "phase": "preparing", "requests": {}}
         if self.state.get("schemaVersion") != 1 or self.state.get("candidate") != self.manifest:
             raise PublicationError("Publication journal does not match this local candidate")
-        homebrew = os.environ.get("FILEMINT_HOMEBREW_SYNC", "0")
+        homebrew = os.environ.get("FILEMINT_HOMEBREW_SYNC", "1")
         if homebrew not in ("0", "1"):
             raise PublicationError("FILEMINT_HOMEBREW_SYNC must be 0 or 1")
         if homebrew == "1":
@@ -337,10 +356,17 @@ class Publication:
     def homebrew(self):
         if not self.state.get("homebrew_requested"):
             return
+        previous = self.state.get("homebrew")
+        if (isinstance(previous, dict) and previous.get("status") == "succeeded"
+                and isinstance(previous.get("tap_commit"), str)
+                and re.fullmatch(r"[0-9a-f]{40}", previous["tap_commit"])
+                and type(previous.get("ci_run_id")) is int and previous["ci_run_id"] > 0
+                and type(previous.get("ci_verified_attempt")) is int and previous["ci_verified_attempt"] > 0):
+            return
         self.state["homebrew"] = {"status": "running"}
         self.save()
         try:
-            synchronize_homebrew(self.manifest_path)
+            verification = synchronize_homebrew(self.manifest_path)
         except (PublicationError, OSError, subprocess.SubprocessError, KeyboardInterrupt):
             self.homebrew_failed = True
             self.state["homebrew"] = {"status": "failed"}
@@ -349,7 +375,7 @@ class Publication:
                   "Retry with: python3 scripts/homebrew_tap.py publish --manifest "
                   f"build/FileMint-{self.version}.release.json", file=sys.stderr)
             raise
-        self.state["homebrew"] = {"status": "succeeded"}
+        self.state["homebrew"] = {"status": "succeeded", **verification}
         self.save()
 
     def run(self):

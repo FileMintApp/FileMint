@@ -103,7 +103,8 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   the verified DMG/ZIP, both checksums and both appcasts to a draft Release. Source CI, remote
   candidate verification and applicable website builds must succeed before the
   same draft is made public and Latest. Only then announce online-update
-  availability, deploy the verified website artifact and complete release records.
+  availability, deploy the verified website artifact, synchronize the official
+  Homebrew tap and complete release records after its exact commit passes CI.
   The owner
   confirmed public update acceptance across three recent small releases; routine
   releases therefore do not require a temporary app launch/UI review, website
@@ -155,11 +156,23 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   never dispatches workflows or downloads remote release archives. Reuse the
   existing local artifact verifier; GitHub Actions owns remote artifact checks.
 - Tap synchronization follows successful application publication and applicable
-  website deployment. It is opt-in until the initial tap has passed isolated
-  native acceptance and been explicitly published. A missing tap fails clearly;
+  website deployment and is enabled by default for standard `publish-local`
+  releases. The owner's 2026-10-20 standing instruction makes it part of
+  “构建发布”; separate native installation acceptance remains unverified and does
+  not disable this authorized distribution step. A missing tap fails clearly;
   the release hook never creates a repository. Preserve the public release and
   assets on tap failure, report partial success, and allow manifest-based retries
-  without rebuilding, re-signing, uploading or deploying again.
+  without rebuilding, re-signing, uploading or deploying again. Persist the
+  requirement before remote work, including when resuming older journals.
+- After Cask push/readback, require successful `validate.yml` push CI for the exact
+  tap commit on `main`, with its run ID and verified attempt in the receipt and
+  publication journal. Missing, failed, cancelled or timed-out CI cannot complete
+  the release workflow. Recheck tap identity around verification; never accept a
+  run for another commit/workflow/branch. Resume unfinished tap work without
+  repeating completed app/website stages or an already verified tap stage.
+  `FILEMINT_HOMEBREW_SYNC=0` is an explicit nonstandard app-only override; it cannot
+  clear a requirement already persisted in the journal. Local builds and
+  `release-local` do not synchronize a tap.
 - Tap writes use the existing local GitHub identity and a normal fast-forward
   update of `main`. Validate the declarative Cask and remote layout before writing;
   reject downgrades, same-version byte changes and concurrent updates. Revalidate

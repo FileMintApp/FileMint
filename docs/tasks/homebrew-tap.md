@@ -1,7 +1,7 @@
 # Task: Homebrew tap installation and release synchronization
 
 Status: official FileMint tap public and distribution checks passed — isolated native acceptance pending.
-Next action: Run installation, upgrade, migration, removal and Finder acceptance on a disposable Apple-silicon macOS VM or test Mac. Keep the owner’s installed FileMint untouched and enable automatic tap synchronization only after those checks.
+Next action: Use default tap synchronization for the next authorized standard release. Run installation, upgrade, migration, removal and Finder acceptance separately on a disposable Apple-silicon macOS VM or test Mac; keep the owner's installed FileMint untouched.
 
 ## Objective and current scope
 
@@ -73,11 +73,11 @@ Normal removal retains preferences, imported templates, folder bookmarks, legacy
 4. Validate the candidate with supported Homebrew tooling, recheck release/branch evidence, commit only the allowed Cask update and push normally to `main`. Never force-push or bypass protection.
 5. Read back the remote commit and Cask. Reconcile ambiguous pushes before retrying; concurrent updates stop. Report tap version/commit only after verified readback.
 
-The release hook is disabled by default. After initial native acceptance and explicit tap publication, opt in with `FILEMINT_HOMEBREW_SYNC=1 make publish-local`. The journal persists the request so an interrupted run cannot silently skip it. Application publication and applicable website deployment finish before tap synchronization; the journal saves their completion before entering the tap stage.
+The owner's 2026-10-20 standing instruction makes the release hook enabled by default. `make publish-local` persists the Homebrew requirement before remote work, then synchronizes after application publication and applicable website deployment. Completion also requires successful `validate.yml` push CI for the exact tap commit on `main`, with run ID and verified attempt recorded. An explicit `FILEMINT_HOMEBREW_SYNC=0` app-only override cannot cancel a requirement already saved in the journal.
 
 A tap failure reports `App release published and verified; Homebrew synchronization failed`, preserves all six public assets and records failure. Retry using the manifest-based helper or resume `publish-local`; completed application/website stages are not reuploaded, rebuilt, re-signed or redeployed. `release-local`, development builds and ordinary verification never publish a tap.
 
-Initial bootstrap used the latest stable release’s verified local manifest/files and matching publication journal. Future recoveries require genuine retained evidence; do not manufacture a journal, reuse unrelated workflows or rebuild/re-sign public bytes. The public tap now contains the reviewed Cask and bilingual instructions. The release hook cannot bootstrap a missing repository and remains opt-in until isolated native acceptance.
+Initial bootstrap used the latest stable release’s verified local manifest/files and matching publication journal. Future recoveries require genuine retained evidence; do not manufacture a journal, reuse unrelated workflows or rebuild/re-sign public bytes. The public tap contains the reviewed Cask and bilingual instructions. The default release hook cannot bootstrap a missing repository. Native acceptance remains separate and does not disable the authorized synchronization stage.
 
 ## Automated verification and evidence
 
@@ -91,7 +91,7 @@ Local audit uses `brew audit --cask --online --strict --except=download,signing,
 | Manifest/files | Exact ten-string schema, duplicate/type errors, both archives/feeds/certificate/checksum mismatches and missing artifacts |
 | Release evidence | Draft/prerelease/not-Latest, source/tag mismatch, missing/extra/changed assets, wrong or failed source/candidate run/attempt, website not complete |
 | Synchronization | Preparation, newer version, no-op, downgrade/same-version mutation, unknown layout, auth/network/audit failure, concurrent push and ambiguous readback/retry |
-| Release integration | Existing gate failures prevent sync; opt-in persists; successful website/app work survives tap failure and is not repeated |
+| Release integration | Default synchronization persists; existing gate failures prevent sync; exact tap CI is required; successful app/website/tap stages survive retries without repetition |
 | Homebrew | Temporary metadata-tap style/DSL/readall/livecheck and local online audit excluding `download,signing,rosetta,min_os`; existing local pair verification covers payload constraints. Actions retains full online payload audit. Network/tooling failures are recorded, never reported as success |
 | Documentation | Context/local links, public availability and matching bilingual upgrade/data-retention guidance |
 
@@ -109,11 +109,11 @@ Local audit uses `brew audit --cask --online --strict --except=download,signing,
 | Isolated native acceptance | blocked | Owner confirmed no disposable VM/test Mac, then explicitly requested public tap delivery; actual installation, upgrade, migration, removal and Finder behavior remain unverified |
 | Initial tap publication / remote tap CI | passed | [FileMintApp/homebrew-tap](https://github.com/FileMintApp/homebrew-tap) public `main` at `f40fb29a95f358ac0553b555cc1b6b531ff34263`; exactly Cask, two READMEs and pinned read-only workflow. [Run 38353161205](https://github.com/FileMintApp/homebrew-tap/actions/runs/38353161205) succeeded after fixing the `verified` field rejected by current Homebrew; first run 38352783862 failed on that field. No release assets were repackaged. |
 | Public command resolution and checksum fetch | passed (distribution only) | `brew install --cask --dry-run filemintapp/tap/filemint` resolved and planned one Cask; `brew fetch --cask filemintapp/tap/filemint` downloaded and verified 0.7.0. Logs: `build/homebrew-public-install-dry-run.log`, `build/homebrew-public-fetch.log`. No app was installed or replaced. |
-| Existing version synchronization | passed (no-op) | `python3 scripts/homebrew_tap.py publish --manifest build/FileMint-0.7.0.release.json` validated the public tap and returned `unchanged` with the current tap commit. Log: `build/homebrew-public-sync-noop.log`. The opt-in release hook remains disabled pending native acceptance. |
+| Existing version synchronization | passed (no-op) | `python3 scripts/homebrew_tap.py publish --manifest build/FileMint-0.7.0.release.json` validated the public tap and returned `unchanged` with the current tap commit. Log: `build/homebrew-public-sync-noop.log`. At this initial publication the release hook was still opt-in; the later standing instruction below supersedes that policy. |
 
 ## 0.8.0 synchronization — 2026-10-20
 
-The owner explicitly requested synchronizing the tap after FileMint 0.8.0/build 29 was public and its website deployment completed. This is a single manifest-based synchronization; the automatic release hook remains disabled pending separate native acceptance.
+The owner explicitly requested synchronizing the tap after FileMint 0.8.0/build 29 was public and its website deployment completed. This was a single manifest-based synchronization before the standing default policy below.
 
 - Reused the genuine `build/FileMint-0.8.0.release.json` and completed publication journal for source `ab25fb7bf42ac3806ca725cd107b912da47ba010`, Release ID `417913389`. The helper rechecked local DMG/ZIP signatures, tickets, hashes and feeds, six public asset identities and exact successful source/candidate/site/deployment runs.
 - Updated only Cask version and SHA-256 from 0.7.0 to 0.8.0 in [commit d0b8af0](https://github.com/FileMintApp/homebrew-tap/commit/d0b8af013ef1b3c6279846db5e5b3309fb5c7fca), with normal push and remote byte readback. DMG SHA-256: `c112cf39c36d14d225dd44ae8d487213f792db554d2c37262b18098b486f11dc`; Cask SHA-256: `802d482bb57252f6bc2a33f32f021215f8a29f93722c5e8a86d6ec0847fac6d3`.
@@ -126,6 +126,12 @@ The owner explicitly requested synchronizing the tap after FileMint 0.8.0/build 
 | CI authentication fix | passed | Both YAML files parse, have identical bytes, preserve read-only permissions and scope the token to the validation step. `make verify` passed: 337 Core tests, 22 image tests and all Harness/script checks. [Log](../../build/release-0.8.0.noindex/homebrew/verify-auth-fix.log). |
 | Public Cask workflow | passed | [Run 39356246267](https://github.com/FileMintApp/homebrew-tap/actions/runs/39356246267) at `c79c7dce1a1f9653a921397b8f5f43c0bf503b89` passed style, all-OS/all-architecture parsing, full strict online audit and livecheck. |
 | Native installation/upgrade/migration/removal | not-run | No app was installed, replaced or launched on the working Mac. Existing isolated-environment acceptance gaps remain. |
+
+## Standard release integration — 2026-10-20
+
+The owner then instructed: “以后构建发布新版本时，Homebrew tap 也一起同步，纳入标准发布流程”. `make publish-local` therefore defaults to synchronization and records that requirement before remote work. It completes only after application/website work, Cask push/readback and successful exact-commit tap CI. Failure preserves published assets and completed stages for a manifest-based retry; a verified tap stage is not repeated. Older success records without CI evidence must be verified again. Native acceptance remains a separate evidence gap.
+
+The implementation and current verification are recorded in the [standard release task](standard-release-flow.md). The earlier opt-in status above is historical, not the current release policy.
 
 ## Native acceptance and completion gates
 
@@ -146,7 +152,7 @@ Use a disposable Apple-silicon macOS VM or dedicated test Mac with separate Home
 - [x] Initial tap published with reviewed Cask and current bilingual availability text.
 - [ ] Public installation and tap workflow verified from the isolated environment.
 - [ ] README/install/website claims updated only after delivery; roadmap remains open until then.
-- [ ] Release opt-in and recovery exercised against the intended tap; no app-asset mutation.
+- [ ] Default release integration exercised by a subsequent complete live release; no app-asset mutation.
 
 Do not mark the overall task complete solely because local checks pass. Publication, native runtime acceptance and any issue message remain separate deliverables.
 

@@ -22,7 +22,7 @@ Next action: None for standard publication. Installed-update and broader native 
 - Choose 0.8.0/build 29 for the added file-tool capabilities. Keep older tags/assets immutable and preserve the existing Sparkle key and signing/authorization configuration.
 - Both new child tools remain default off. Batch rename documents its local writable APFS scope; checksum guidance distinguishes integrity values from encryption or proof of origin.
 - Follow the current policy omitting local downloads/comparisons of uploaded release archives. Read the previous stable appcast only for version/build preflight.
-- After application publication, the user explicitly requested Homebrew tap synchronization. Ran the manifest-based helper for this version; the automatic release hook remains disabled by default.
+- After application publication, the user explicitly requested Homebrew tap synchronization. Ran the manifest-based helper for this version while the release hook was still opt-in. A later standing instruction makes synchronization default for future releases; see the [standard release task](standard-release-flow.md).
 - Committed release preparation as `ab25fb7bf42ac3806ca725cd107b912da47ba010` and created/pushed `v0.8.0` at that source. Both canonical commands completed successfully without rebuilding or replacing the candidate during publication.
 - Stable Latest became public at **2026-10-20 09:43:55 Asia/Shanghai**, Release ID `417913389`: [FileMint 0.8.0](https://github.com/FileMintApp/FileMint/releases/tag/v0.8.0).
 - All required remote checks passed before promotion. Website deployment then reused Pages artifact `12234434852`; HTTP readback of both homepages and both guides confirmed the shipped batch rename and checksum copy.

@@ -14,7 +14,9 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 import uuid
+from urllib.parse import urlencode
 
 sys.dont_write_bytecode = True
 import release_publication as publication
@@ -440,6 +442,52 @@ def readback(api, commit, expected):
         raise TapError("Published Cask bytes differ; retain the tap and investigate")
 
 
+def verify_tap_ci(api, commit, *, clock=time.monotonic, sleep=time.sleep):
+    if not re.fullmatch(r"[0-9a-f]{40}", commit):
+        raise TapError("Invalid tap CI commit")
+    timeout, interval = publication.actions_wait_settings()
+    deadline, run_id, previous = clock() + timeout, None, None
+    while True:
+        if tap_head(api) != commit:
+            raise TapError("Tap main changed during CI verification; retry without force pushing")
+        if run_id is None:
+            query = urlencode({"event": "push", "branch": "main", "head_sha": commit, "per_page": 100})
+            runs = api.api(f"actions/workflows/validate.yml/runs?{query}")["workflow_runs"]
+            matches = [run for run in runs if publication.matching_run(run, "validate.yml", commit, "main")]
+            run = max(matches, key=lambda item: positive(item.get("id"), "tap CI run ID")) if matches else None
+            if run is not None:
+                run_id = positive(run.get("id"), "tap CI run ID")
+        else:
+            run = api.api(f"actions/runs/{run_id}")
+        if run is not None:
+            if (run.get("id") != run_id
+                    or not publication.matching_run(run, "validate.yml", commit, "main")):
+                raise TapError("Saved tap CI run no longer matches the synchronized commit")
+            status = (run_id, run.get("status"), run.get("conclusion"), run.get("run_attempt"))
+            if status != previous:
+                print(f"Homebrew CI: run {run_id}, {status[1]}, {status[2] or 'pending'}", file=sys.stderr, flush=True)
+                previous = status
+            if run.get("status") == "completed":
+                if run.get("conclusion") != "success":
+                    raise TapError(f"Homebrew CI did not succeed ({run.get('conclusion')}); "
+                                   f"rerun run {run_id} in GitHub, then retry the same manifest")
+                verified = verified_run(api, run_id, run.get("run_attempt"), "validate.yml", commit, "main")
+                if tap_head(api) != commit:
+                    raise TapError("Tap main changed after CI verification; retain it and retry")
+                return verified
+        remaining = deadline - clock()
+        if remaining <= 0:
+            raise TapError(f"Timed out waiting for Homebrew CI for {commit}; retry the same manifest")
+        sleep(min(interval, remaining))
+
+
+def verified_sync_receipt(api, receipt, commit, expected, status):
+    readback(api, commit, expected)
+    tap_ci = verify_tap_ci(api, commit)
+    readback(api, commit, expected)
+    return receipt | {"status": status, "tap_commit": commit, "tap_ci": tap_ci}
+
+
 def publish(manifest_path, gh=None):
     receipt = validate_release(manifest_path, gh=gh, require_complete=True)
     manifest = receipt["manifest"]
@@ -472,8 +520,7 @@ def publish(manifest_path, gh=None):
         if tap_head(api) != original or cask.read_text(encoding="utf-8") != expected:
             raise TapError("Tap or prepared Cask changed during validation")
         if existing == expected:
-            readback(api, original, expected)
-            return receipt | {"status": "unchanged", "tap_commit": original}
+            return verified_sync_receipt(api, receipt, original, expected, "unchanged")
         git(checkout, "add", "--", "Casks/filemint.rb")
         if git(checkout, "diff", "--cached", "--name-only") != "Casks/filemint.rb":
             raise TapError("Unexpected staged tap changes")
@@ -489,9 +536,7 @@ def publish(manifest_path, gh=None):
                 readback(api, commit, expected)
             except (TapError, OSError, subprocess.TimeoutExpired) as read_error:
                 raise TapError("Tap push outcome is unresolved or rejected; retain the remote and retry the same manifest without force pushing") from read_error
-            return receipt | {"status": "published", "tap_commit": commit}
-        readback(api, commit, expected)
-        return receipt | {"status": "published", "tap_commit": commit}
+        return verified_sync_receipt(api, receipt, commit, expected, "published")
 
 
 def main():

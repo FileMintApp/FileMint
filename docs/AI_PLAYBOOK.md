@@ -80,7 +80,8 @@ from the current task rather than replaying a transcript.
   delivery skills requiring post-push CI do not authorize routine Actions checks.
 - A request for “构建发布” or a release/publication workflow follows
   [Distribution](DISTRIBUTION.md), including its proactive remote source CI,
-  draft-candidate verification, publication and applicable website checks. The
+  draft-candidate verification, publication, applicable website checks and default
+  official Homebrew tap synchronization with its exact-commit CI. The
   ordinary-Git rule does not waive those gates or require another request to
   inspect Actions inside the authorized release workflow.
 - This distinction controls agent follow-up, not CI triggers. Preserve automatic

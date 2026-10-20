@@ -22,6 +22,7 @@ spec = importlib.util.spec_from_file_location("publication", ROOT / "scripts/rel
 publication = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(publication)
 VERSION, TAG, COMMIT = "9.9.9", "v9.9.9", "a" * 40
+TAP_VERIFICATION = {"tap_commit": "b" * 40, "ci_run_id": 801, "ci_verified_attempt": 1}
 NAMES = [f"FileMint-{VERSION}.dmg", f"FileMint-{VERSION}.dmg.sha256", "appcast.xml",
          f"FileMint-{VERSION}.zip", f"FileMint-{VERSION}.zip.sha256", "appcast-zip.xml"]
 
@@ -134,6 +135,27 @@ class FakeGitHub:
         raise AssertionError((endpoint, method, body))
 
 
+class HomebrewHelperTests(unittest.TestCase):
+    def test_helper_requires_structured_commit_and_ci_evidence(self):
+        manifest = Path("/fixture/FileMint.release.json")
+        receipt = {"status": "published", "tap_commit": "b" * 40, "tap_ci": {"id": 801, "attempt": 1}}
+        result = subprocess.CompletedProcess([], 0, stdout=json.dumps(receipt))
+        with patch.object(publication.subprocess, "run", return_value=result):
+            self.assertEqual(publication.synchronize_homebrew(manifest), TAP_VERIFICATION)
+        with patch.object(publication.subprocess, "run", return_value=subprocess.CompletedProcess([], 1, stdout=json.dumps(receipt))), \
+                self.assertRaisesRegex(publication.PublicationError, "Homebrew synchronization failed"):
+            publication.synchronize_homebrew(manifest)
+        with patch.object(publication.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, stdout="not JSON")), \
+                self.assertRaisesRegex(publication.PublicationError, "verified tap CI evidence"):
+            publication.synchronize_homebrew(manifest)
+        for invalid in ([], {}, {**receipt, "status": "pending"}, {**receipt, "tap_commit": "other"},
+                        {**receipt, "tap_ci": {}}, {**receipt, "tap_ci": {"id": True, "attempt": 1}}):
+            with self.subTest(receipt=invalid), patch.object(publication.subprocess, "run",
+                    return_value=subprocess.CompletedProcess([], 0, stdout=json.dumps(invalid))), \
+                    self.assertRaisesRegex(publication.PublicationError, "verified tap CI evidence"):
+                publication.synchronize_homebrew(manifest)
+
+
 class PublicationTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory(prefix="filemint-publication-")
@@ -161,7 +183,7 @@ class PublicationTests(unittest.TestCase):
         patch.object(publication, "command", side_effect=self.command).start()
         patch.dict(os.environ, {"FILEMINT_ACTIONS_TIMEOUT_SECONDS": "3", "FILEMINT_ACTIONS_POLL_SECONDS": "1"}).start()
         patch.dict(os.environ, {"FILEMINT_HOMEBREW_SYNC": "0"}).start()
-        self.tap_sync = patch.object(publication, "synchronize_homebrew").start()
+        self.tap_sync = patch.object(publication, "synchronize_homebrew", return_value=copy.deepcopy(TAP_VERIFICATION)).start()
 
     def command(self, args, **kwargs):
         self.commands.append(args)
@@ -212,7 +234,7 @@ class PublicationTests(unittest.TestCase):
         self.assertTrue(all(args[:3] != ["gh", "release", "download"] for args in self.commands))
         self.tap_sync.assert_not_called()
 
-    def test_homebrew_is_opt_in_and_follows_completed_website_deployment(self):
+    def test_homebrew_is_default_and_follows_completed_website_deployment(self):
         def sync(path):
             self.assertEqual(path, self.manifest)
             state = json.loads(self.manifest.with_name(f"FileMint-{VERSION}.publication.json").read_text())
@@ -220,12 +242,37 @@ class PublicationTests(unittest.TestCase):
             self.assertTrue(state["distribution_complete"])
             deploy = self.gh.runs[state["requests"]["deploy"]["run_id"]]
             self.assertEqual(deploy["conclusion"], "success")
+            return copy.deepcopy(TAP_VERIFICATION)
         self.tap_sync.side_effect = sync
-        with patch.dict(os.environ, {"FILEMINT_HOMEBREW_SYNC": "1"}):
+        with patch.dict(os.environ):
+            os.environ.pop("FILEMINT_HOMEBREW_SYNC", None)
             runner, _ = self.run_publication()
         self.tap_sync.assert_called_once_with(self.manifest)
-        self.assertEqual(runner.state["homebrew"]["status"], "succeeded")
+        self.assertEqual(runner.state["homebrew"], {"status": "succeeded", **TAP_VERIFICATION})
+        self.assertTrue(runner.state["homebrew_requested"])
         self.assertEqual(runner.state["phase"], "complete")
+
+    def test_verified_homebrew_stage_is_not_repeated_on_resume(self):
+        with patch.dict(os.environ):
+            os.environ.pop("FILEMINT_HOMEBREW_SYNC", None)
+            self.run_publication()
+        self.gh.events.clear()
+        runner, _ = self.run_publication()
+        self.tap_sync.assert_called_once_with(self.manifest)
+        self.assertEqual(self.stages(), [])
+        self.assertEqual(runner.state["homebrew"]["ci_run_id"], 801)
+
+    def test_legacy_homebrew_success_without_ci_evidence_is_verified_again(self):
+        runner, _ = self.run_publication()
+        runner.state["homebrew"] = {"status": "succeeded"}
+        runner.save()
+        self.gh.events.clear()
+        with patch.dict(os.environ):
+            os.environ.pop("FILEMINT_HOMEBREW_SYNC", None)
+            runner, _ = self.run_publication()
+        self.tap_sync.assert_called_once_with(self.manifest)
+        self.assertEqual(self.stages(), [])
+        self.assertEqual(runner.state["homebrew"], {"status": "succeeded", **TAP_VERIFICATION})
 
     def test_failure_before_publication_or_during_site_prevents_tap_sync(self):
         for kind in ("candidate", "site", "deploy"):
@@ -266,13 +313,14 @@ class PublicationTests(unittest.TestCase):
         self.run_publication()
         self.tap_sync.assert_not_called()
         self.gh.events.clear()
-        with patch.dict(os.environ, {"FILEMINT_HOMEBREW_SYNC": "1"}):
+        with patch.dict(os.environ):
+            os.environ.pop("FILEMINT_HOMEBREW_SYNC", None)
             runner, _ = self.run_publication()
         self.tap_sync.assert_called_once_with(self.manifest)
         self.assertEqual(self.stages(), [])
         self.assertEqual(runner.state["phase"], "complete")
 
-    def test_homebrew_opt_in_rejects_invalid_configuration(self):
+    def test_homebrew_rejects_invalid_configuration(self):
         with patch.dict(os.environ, {"FILEMINT_HOMEBREW_SYNC": "yes"}), \
                 self.assertRaisesRegex(publication.PublicationError, "must be 0 or 1"):
             self.instance()

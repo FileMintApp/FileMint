@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Offline Homebrew evidence and transaction regressions; never install an app."""
 import base64
+import contextlib
 import copy
 import hashlib
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
@@ -640,6 +642,90 @@ class BrewContractTests(ReleaseFixture):
         self.assertEqual(self.registered, {"fixture/existing", self.validation_tap})
 
 
+class TapCITests(unittest.TestCase):
+    def setUp(self):
+        self.head = COMMIT
+        self.run = workflow_run(901, "validate.yml")
+        self.unrelated = []
+        self.missing = False
+        self.refetched = None
+        self.calls = []
+        self.time = 0
+        self.on_sleep = None
+        settings = patch.dict(os.environ, {"FILEMINT_ACTIONS_TIMEOUT_SECONDS": "3", "FILEMINT_ACTIONS_POLL_SECONDS": "1"})
+        settings.start()
+        self.addCleanup(settings.stop)
+
+    def api(self, endpoint):
+        self.calls.append(endpoint)
+        path = urlsplit(endpoint).path
+        if path == "git/ref/heads/main":
+            return {"object": {"type": "commit", "sha": self.head}}
+        if path == "actions/workflows/validate.yml/runs":
+            return {"workflow_runs": copy.deepcopy(self.unrelated + ([] if self.missing else [self.run]))}
+        if path == "actions/runs/901":
+            return copy.deepcopy(self.refetched if self.refetched is not None else self.run)
+        raise AssertionError(endpoint)
+
+    def sleep(self, duration):
+        self.time += duration
+        if self.on_sleep:
+            self.on_sleep()
+
+    def verify(self):
+        with contextlib.redirect_stderr(io.StringIO()):
+            return tap.verify_tap_ci(self, COMMIT, clock=lambda: self.time, sleep=self.sleep)
+
+    def test_only_exact_main_push_workflow_can_supply_ci_evidence(self):
+        self.unrelated = [workflow_run(990, "validate.yml", commit="b" * 40),
+                          workflow_run(991, "validate.yml", branch="other"),
+                          workflow_run(992, "other.yml"),
+                          workflow_run(993, "validate.yml", request="manual")]
+        self.assertEqual(self.verify(), {"id": 901, "attempt": 1})
+        self.assertTrue(any("head_sha=" + COMMIT in endpoint for endpoint in self.calls))
+        self.assertFalse(any("dispatch" in endpoint for endpoint in self.calls))
+
+    def test_pending_ci_is_polled_until_the_same_run_succeeds(self):
+        self.run.update(status="in_progress", conclusion=None)
+        self.on_sleep = lambda: self.run.update(status="completed", conclusion="success")
+        self.assertEqual(self.verify(), {"id": 901, "attempt": 1})
+        self.assertEqual(self.time, 1)
+
+    def test_failed_cancelled_timed_out_and_skipped_ci_cannot_pass(self):
+        for conclusion in ("failure", "cancelled", "timed_out", "skipped"):
+            with self.subTest(conclusion=conclusion):
+                self.run["conclusion"] = conclusion
+                with self.assertRaisesRegex(tap.TapError, "rerun run 901"):
+                    self.verify()
+
+    def test_missing_ci_has_a_bounded_wait(self):
+        self.missing = True
+        with self.assertRaisesRegex(tap.TapError, "Timed out waiting for Homebrew CI"):
+            self.verify()
+        self.assertEqual(self.time, 3)
+
+    def test_run_attempt_change_invalidates_earlier_success(self):
+        self.refetched = self.run | {"run_attempt": 2}
+        with self.assertRaisesRegex(tap.TapError, "Exact validate.yml run/attempt"):
+            self.verify()
+
+    def test_changed_tap_head_or_polled_run_cannot_pass(self):
+        self.head = "b" * 40
+        with self.assertRaisesRegex(tap.TapError, "Tap main changed"):
+            self.verify()
+        self.head = COMMIT
+        self.run.update(status="in_progress", conclusion=None)
+        self.refetched = self.run | {"head_sha": "b" * 40}
+        with self.assertRaisesRegex(tap.TapError, "no longer matches"):
+            self.verify()
+
+    def test_invalid_wait_configuration_stops_before_api_requests(self):
+        with patch.dict(os.environ, {"FILEMINT_ACTIONS_TIMEOUT_SECONDS": "invalid"}), \
+                self.assertRaisesRegex(tap.publication.PublicationError, "Invalid Actions wait"):
+            self.verify()
+        self.assertEqual(self.calls, [])
+
+
 class GitTransportTests(EvidenceFixture):
     """Exercise real commits, fast-forward rules and uncertain local transport."""
     def setUp(self):
@@ -662,6 +748,7 @@ class GitTransportTests(EvidenceFixture):
         self.push_mode = None
         self.api_wrong_content = False
         self.api_calls = []
+        self.tap_ci_conclusion = "success"
         self.evidence = self.validate(require_complete=True)
 
     def git(self, *args, cwd=None):
@@ -698,6 +785,10 @@ class GitTransportTests(EvidenceFixture):
                     "clone_url": "https://github.com/FileMintApp/homebrew-tap.git"}
         if path in ("git/ref/heads/main", "git/refs/heads/main"):
             return {"object": {"type": "commit", "sha": self.remote_head()}}
+        if path in ("actions/workflows/validate.yml/runs", "actions/runs/901"):
+            run = workflow_run(901, "validate.yml", commit=self.remote_head())
+            run["conclusion"] = self.tap_ci_conclusion
+            return {"workflow_runs": [run]} if path.endswith("/runs") else run
         if path == "contents/Casks/filemint.rb":
             content = ("invalid readback\n" if self.api_wrong_content else self.remote_cask()).encode()
             return {"type": "file", "encoding": "base64", "content": base64.b64encode(content).decode(),
@@ -746,6 +837,7 @@ class GitTransportTests(EvidenceFixture):
         receipt, brew = self.publish()
         self.assertEqual(receipt["status"], "published")
         self.assertEqual(receipt["tap_commit"], self.remote_head())
+        self.assertEqual(receipt["tap_ci"], {"id": 901, "attempt": 1})
         self.assertEqual(self.remote_cask(), tap.render_cask(VERSION, self.manifest["dmgSHA256"]))
         changed = self.git("--git-dir", str(self.remote), "diff", "--name-only", self.base, self.remote_head())
         self.assertEqual(changed, "Casks/filemint.rb")
@@ -850,6 +942,21 @@ class GitTransportTests(EvidenceFixture):
             self.publish()
         self.assertNotEqual(self.remote_head(), self.base)
         self.assertEqual(self.remote_cask(), tap.render_cask(VERSION, self.manifest["dmgSHA256"]))
+
+    def test_failed_tap_ci_keeps_public_cask_and_retry_does_not_push_again(self):
+        self.tap_ci_conclusion = "failure"
+        with self.assertRaisesRegex(tap.TapError, "Homebrew CI did not succeed"):
+            self.publish()
+        head = self.remote_head()
+        self.assertNotEqual(head, self.base)
+        self.assertEqual(self.remote_cask(), tap.render_cask(VERSION, self.manifest["dmgSHA256"]))
+        self.commands.clear()
+        self.tap_ci_conclusion = "success"
+        receipt, _ = self.publish()
+        self.assertEqual(receipt["status"], "unchanged")
+        self.assertEqual(receipt["tap_commit"], head)
+        self.assertEqual(receipt["tap_ci"], {"id": 901, "attempt": 1})
+        self.assertFalse(any("push" in args for args in self.commands))
 
 
 if __name__ == "__main__":

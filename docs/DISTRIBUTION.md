@@ -199,9 +199,9 @@ downloads its retained Pages archive on the runner, and deploys it without rebui
 The archive is retained for seven days. A successfully rerun website build for the
 same source can supply a fresh artifact for unfinished deployment; published app
 assets stay untouched. All required Actions must finish successfully before
-distribution can finish. When Homebrew synchronization is explicitly enabled,
-it follows successful website completion (or its recorded not-applicable result),
-as described below. Only after all requested stages succeed does the command
+distribution can finish. Homebrew synchronization is a default required stage;
+it follows successful website completion (or its recorded not-applicable result)
+and waits for the exact tap commit's CI, as described below. Only after all stages succeed does the command
 report that the **release workflow is complete** and finalize evidence.
 
 Actions waits poll every 15 seconds and are bounded to 45 minutes per wait by
@@ -217,17 +217,19 @@ to updater, signing, packaging, installer permissions or appcast behavior, apply
 the relevant HARNESS and update-verification checks; investigate reported
 failures with tests targeted to the failure. UpgradeQA is not required for any
 of these cases. `make publish-local` remains mandatory for draft upload, pre-publication
-Actions, promotion, public update-discovery checks and applicable website deployment. Record local
+Actions, promotion, public update-discovery checks, applicable website deployment
+and official Homebrew synchronization/CI. Record local
 artifact results, the time online updates became available and the Actions results;
 record native update results when targeted acceptance is performed.
 
 Release evidence should include the local notarization result, both local archive checksums,
-published asset names, candidate verification and website run IDs. Do not claim that
+published asset names, candidate verification, website run IDs and the Homebrew
+tap commit/CI run and verified attempt. Do not claim that
 local/remote byte equality was checked. Earlier release records retain their
 historical readback results. Include native runtime results when that targeted
 acceptance is run.
 
-### 6. Optional Homebrew tap synchronization
+### 6. Synchronize and verify the Homebrew tap
 
 The [FileMint official tap](https://github.com/FileMintApp/homebrew-tap) is public
 with a 0.8.0 Cask. This version passed local Homebrew checks and public Actions
@@ -237,6 +239,12 @@ The owner has no disposable VM/test Mac, so native installation, upgrade,
 migration, removal and Finder behavior remain unverified. Do not exercise those
 operations against their working app.
 See the [Homebrew task and acceptance gates](tasks/homebrew-tap.md).
+
+On 2026-10-20 the owner made Homebrew synchronization part of every standard
+“构建发布”. A normal `make publish-local` now includes it automatically, after
+application publication and applicable website deployment. No extra environment
+flag or confirmation is needed. The separate native acceptance gaps above do
+not disable this authorized distribution stage.
 
 Prepare a reviewable local tap candidate from a genuine verified stable release:
 
@@ -265,13 +273,14 @@ manually quit FileMint and confirm exit. Homebrew does not enforce this conditio
 Keep preferences, templates, bookmarks and user files; native tests must check
 whether macOS permissions and Finder registration remain usable.
 
-After isolated native acceptance, opt in for a normal release with:
+Use the unchanged standard release command:
 
 ```sh
-FILEMINT_HOMEBREW_SYNC=1 make publish-local
+make publish-local
 ```
 
-The journal persists that request and the completed application/website stages.
+The journal persists the default Homebrew requirement before remote work and
+preserves completed application/website stages, including in older journals.
 Synchronization validates the canonical Cask through a uniquely named temporary
 Homebrew metadata tap backed by an owned local Git snapshot, then removes only
 that temporary registration. No app is installed and no existing tap is changed
@@ -289,9 +298,17 @@ the public Cask in the current format; they do not suppress the Actions audit.
 Synchronization uses the existing local GitHub identity, validates the intended
 tap and known Cask layout, rejects downgrades and same-version byte changes, and
 uses a normal fast-forward update of `main` followed by remote commit/Cask
-readback. It never creates a missing repository, bypasses protection or supplies
-Apple keys to CI. Identical verified retries are no-ops. Local builds and
-`release-local` never synchronize a tap, and the hook remains disabled by default.
+readback. It then requires successful `validate.yml` push CI on `main` for that
+exact tap commit. The receipt and publication journal save the tap commit, CI
+run ID and verified attempt; unrelated, failed, cancelled, missing or timed-out
+checks cannot complete the release workflow. It never creates a missing
+repository, dispatches tap workflows, bypasses protection or supplies Apple keys
+to CI. Identical retries do not push again, and a completed verified tap stage
+is not repeated on resume. Local builds and `release-local` never synchronize a tap.
+
+`FILEMINT_HOMEBREW_SYNC=1` remains compatible but is unnecessary. An explicit
+nonstandard app-only run may use `FILEMINT_HOMEBREW_SYNC=0`; that cannot clear a
+Homebrew requirement already saved in the journal.
 
 A failure reports **App release published and verified; Homebrew synchronization
 failed** and records that outcome without altering the six public assets. Retry
@@ -305,6 +322,10 @@ Publication recovery skips completed application and website stages; it does not
 rebuild, re-sign, re-upload or redeploy them to retry the tap. Readback resolves an
 ambiguous push, and a concurrent remote update stops rather than resetting it.
 Record the tap commit separately from app publication and website deployment.
+If public tap CI fails after push, the Cask stays published. Correct the workflow
+or rerun its exact failed run, then retry the same manifest; an unchanged Cask is
+verified without another push. Tap CI waits use the same Actions poll/timeout
+settings as the application workflow.
 Local Cask checks or a green read-only tap workflow do not prove native
 installation, upgrade, adoption, removal or Finder behavior.
 
