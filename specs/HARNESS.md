@@ -64,6 +64,13 @@ separate from the offline `make verify`; a green source CI does not imply it ran
 The existing `make verify` runs context and compression-artifact checks, Swift tests and the public JSON
 harness plus real CLI regression, fork-sync permission/merge/CI-dispatch regressions,
 appcast and signing-entitlement preparation tests.
+GitHub token regressions pass classic, approximately 520-character and longer
+stateless fixtures through production API adapters and Git's credential protocol;
+when GitHub CLI is installed, its real credential helper is also exercised offline.
+`make verify-github-token-live` separately performs authenticated read-only release
+and tap API requests plus a credential-helper round trip with the existing identity.
+Source CI runs that live check with its job `GITHUB_TOKEN`; local OAuth success does
+not prove installation-token compatibility. Token contents are never reported.
 It also checks native-runner selection, subprocess failures/timeouts and reporting
 without launching GUI fixtures or accessing signing credentials.
 It also runs restricted subprocess regressions for batch-rename metadata capture

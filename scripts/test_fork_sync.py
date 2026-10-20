@@ -132,10 +132,13 @@ class ForkSyncTests(unittest.TestCase):
 
     def test_checkout_uses_dedicated_token_or_builtin_token(self):
         value = re.search(r"^          token: (.+)$", WORKFLOW, re.M).group(1)
-        for token in ("", "fixture-sync-token"):
-            with self.subTest(token_configured=bool(token)):
-                self.assertEqual(expression(value, {"secrets.FORK_SYNC_TOKEN": token,
-                                                    "github.token": "built-in"}), token or "built-in")
+        tokens = ("ghs_" + "a" * 36, "ghs_123_" + "a_B-" * 62 + "." + "c_D-" * 62 + "." + "s" * 14,
+                  "ghs_123_" + "a_B-" * 200 + "." + "c_D-" * 200 + "." + "s_T-" * 200)
+        for builtin in tokens:
+            for token in ("", "fixture-sync-token", *tokens):
+                with self.subTest(builtin_length=len(builtin), dedicated_length=len(token)):
+                    self.assertEqual(expression(value, {"secrets.FORK_SYNC_TOKEN": token,
+                                                        "github.token": builtin}), token or builtin)
 
     def test_source_only_update_pushes_and_dispatches_with_builtin_token(self):
         self.upstream_changes({"source.txt": "updated\n"})

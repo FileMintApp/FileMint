@@ -6,7 +6,7 @@ DEVELOPER_DIR ?= /Applications/Xcode.app/Contents/Developer
 export DEVELOPER_DIR
 export DEVELOPMENT_TEAM
 
-verify: verify-context verify-fork-sync verify-image-compression test harness verify-harness-cli verify-appcast verify-release-metadata verify-release-notarization verify-release-publication verify-homebrew verify-signing-entitlements verify-native-qa verify-native-checks-runner verify-batch-rename-capture verify-batch-rename-access verify-file-info-capture
+verify: verify-context verify-fork-sync verify-github-token verify-image-compression test harness verify-harness-cli verify-appcast verify-release-metadata verify-release-notarization verify-release-publication verify-homebrew verify-signing-entitlements verify-native-qa verify-native-checks-runner verify-batch-rename-capture verify-batch-rename-access verify-file-info-capture
 
 .PHONY: verify-file-info-capture
 verify-file-info-capture:
@@ -47,6 +47,13 @@ homebrew-publish:
 .PHONY: verify-fork-sync
 verify-fork-sync:
 	python3 scripts/test_fork_sync.py
+
+.PHONY: verify-github-token verify-github-token-live
+verify-github-token:
+	python3 scripts/test_github_token.py
+
+verify-github-token-live:
+	python3 scripts/verify_github_token.py
 
 verify-native-qa:
 	python3 scripts/test_native_qa.py

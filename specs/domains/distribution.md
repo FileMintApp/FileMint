@@ -50,6 +50,18 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   enablement remains a separate system action.
 - CI and website-deployment workflows pin third-party GitHub Actions to reviewed
   commit IDs. Dependency lockfiles remain frozen during website builds.
+- GitHub credentials are opaque strings. Pass installation tokens, including
+  Actions `GITHUB_TOKEN`, intact to GitHub CLI, Git credential helpers and
+  Homebrew; do not enforce a fixed length, decode their JWT or store/log their
+  contents. Support the classic format and variable-length stateless tokens
+  around and above 520 characters. Offline regression checks cover both shapes
+  through the release/tap API adapters and Git credentials. Source CI also uses
+  its read-only job token for real API and credential-helper checks; report only
+  success and token-format metadata. Local OAuth checks are not installation-token
+  evidence. No workflow here mints installation tokens, so do not add the temporary
+  creation-endpoint override header to ordinary requests. See GitHub's
+  [format guidance](https://github.blog/changelog/2026-05-15-github-app-installation-tokens-per-request-override-header/)
+  and [completed rollout and header retirement](https://github.blog/changelog/2026-10-02-stateless-github-app-installation-tokens-rolled-out/).
 - Website-only deployments use an explicit manual `deploy-website.yml` dispatch,
   serialized with release website deployments. Validate current main, ancestry
   and an allowlisted website/documentation-only diff from the latest public
