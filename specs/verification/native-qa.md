@@ -22,9 +22,13 @@ not a successful native test.
 
 Automatic suites are `batch-rename`, `template-workflow`, `creation-opening`,
 `update-scheduling`, `open-with`, `file-tools-settings`, `file-info`, `resource-tools`,
-`design-ui`, and the headless `favorite-model`. Template scenarios share one
+`design-ui`, `update-summary`, and the headless `favorite-model`. Template scenarios share one
 fresh build in a run and each create their own runtime workspace. Design QA uses
 `--verify-automation`; ordinary interactive modes remain available.
+The focused `update-summary` suite reuses the design fixture with `--verify-updates`,
+injected release metadata and isolated preferences. It covers language switching,
+missing-summary fallback, install availability and minimum-size About/sidebar
+renders, without network, installation or production preference access.
 
 The plan reports affected manual boundaries: real Finder delivery, external
 folder grants, login-item registration, the interactive move/update fixtures,

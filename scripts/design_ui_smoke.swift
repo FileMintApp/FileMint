@@ -14,6 +14,8 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
     private var model: PreferencesModel!
     private var coordinator: FileOperationCoordinator!
     private var resourceController: ResourceToolsController!
+    private var updater: UpdateModel!
+    private var updateBody: String?
 
     static func main() {
         let app = NSApplication.shared
@@ -93,7 +95,18 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
             aliasAccessStore: DesktopAliasAccessStore(file: root.appendingPathComponent("aliases.json")),
             desktopDirectory: root, resourceController: resourceController)
         if let icon = NSImage(contentsOf: root.appendingPathComponent("AppIcon.png")) { NSApp.applicationIconImage = icon }
-        let updater = UpdateModel(preferencesModel: model, checkRelease: { _ in nil })
+        if CommandLine.arguments.contains("--verify-updates") || CommandLine.arguments.contains("--updates") {
+            guard let notesURL = Bundle.main.url(forResource: "UpdateReleaseNotes", withExtension: "md") else {
+                throw ResourceError.failed
+            }
+            updateBody = try String(contentsOf: notesURL, encoding: .utf8)
+            updater = UpdateModel(preferencesModel: model, checkRelease: { [weak self] current in
+                try Self.updateFixture(body: self?.updateBody, current: current)
+            })
+            model.selectedPane = .about
+        } else {
+            updater = UpdateModel(preferencesModel: model, checkRelease: { _ in nil })
+        }
         window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1040, height: 720),
             styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView], backing: .buffered, defer: false)
         window.title = "FileMint Design QA"
@@ -129,6 +142,23 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
         NSApp.mainMenu = bar
         NSApp.activate(ignoringOtherApps: true)
         print("READY isolated FileMint UI: \(root.path)")
+        if CommandLine.arguments.contains("--verify-updates") {
+            Task { @MainActor in
+                do {
+                    try await waitForSettingsReady()
+                    try await checkUpdateSummaries(root: root)
+                    print("PASS update summary QA: localized production views, missing-notes fallback, install availability and minimum-size captures")
+                    fflush(nil)
+                    NSApp.terminate(nil)
+                } catch {
+                    print("FAIL update summary QA: \(error)")
+                    fflush(nil)
+                    exit(1)
+                }
+            }
+            return
+        }
+        if CommandLine.arguments.contains("--updates") { updater.checkForUpdates() }
         if CommandLine.arguments.contains("--verify-automation") {
             Task { @MainActor in
                 do {
@@ -183,6 +213,68 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
             CustomFileSavePanelController.shared.present(in: root, preferences: model.preferences,
                 templateID: template.id, documentTemplates: model.documentTemplates)
         }
+    }
+
+    private static func updateFixture(body: String?, current: String) throws -> AppUpdate? {
+        let base = "https://github.com/FileMintApp/FileMint/releases"
+        let name = "FileMint-9.9.9.dmg"
+        var release: [String: Any] = [
+            "tag_name": "v9.9.9", "html_url": "\(base)/tag/v9.9.9", "draft": false, "prerelease": false,
+            "assets": [
+                ["name": name, "browser_download_url": "\(base)/download/v9.9.9/\(name)",
+                 "size": 512, "state": "uploaded"],
+                ["name": "\(name).sha256", "browser_download_url": "\(base)/download/v9.9.9/\(name).sha256",
+                 "size": 85, "state": "uploaded"]
+            ]
+        ]
+        if let body { release["body"] = body }
+        return try AppUpdatePolicy.availableUpdate(from: JSONSerialization.data(withJSONObject: release),
+                                                  currentVersion: current)
+    }
+
+    private func checkUpdateSummaries(root: URL) async throws {
+        func require(_ value: Bool, _ message: String) throws {
+            if !value { throw NSError(domain: "UpdateSummaryReview", code: 1, userInfo: [NSLocalizedDescriptionKey: message]) }
+        }
+        let output = root.appendingPathComponent("update-summary-review", isDirectory: true)
+        try FileManager.default.createDirectory(at: output, withIntermediateDirectories: false)
+        let notes = updateBody
+        let visibleWindows = NSApp.windows.filter(\.isVisible).count
+        for (name, body) in [("summary", notes), ("legacy", nil)] {
+            updateBody = body
+            updater.checkForUpdates()
+            for _ in 0..<100 where updater.isBusy { try await Task.sleep(for: .milliseconds(30)) }
+            try require(updater.state == .available && updater.canDownload && !updater.isInstalling,
+                        "Notes must not prevent an available update or start installation")
+            try require(NSApp.windows.filter(\.isVisible).count == visibleWindows,
+                        "An update result must not create a new window")
+            for (language, appearance) in [(AppLanguage.chinese, AppAppearance.light), (.english, .dark)] {
+                model.preferences.language = language
+                model.setAppearance(appearance)
+                let summary = updater.update?.releaseNotes?.summary(for: language)
+                if body != nil {
+                    let expected = language == .chinese ? "批量整理文件名，核对文件内容。" :
+                        "Organize file names and compare file contents."
+                    try require(summary?.headline == expected && summary?.highlights.count == 2,
+                                "Changing language must select the matching summary")
+                } else {
+                    try require(summary == nil, "Missing notes must use the unavailable-summary state")
+                }
+                for pane in [PreferencesModel.Pane.about, .general] {
+                    model.selectedPane = pane
+                    window.setContentSize(NSSize(width: 960, height: 680))
+                    try await Task.sleep(for: .milliseconds(250))
+                    guard let view = window.contentView,
+                          let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { throw ResourceError.failed }
+                    view.layoutSubtreeIfNeeded(); window.display(); view.cacheDisplay(in: view.bounds, to: bitmap)
+                    guard let png = bitmap.representation(using: .png, properties: [:]) else { throw ResourceError.failed }
+                    try png.write(to: output.appendingPathComponent("\(name)-\(language.rawValue)-\(pane.rawValue).png"))
+                    try require(abs(view.bounds.width - 960) < 1 && abs(view.bounds.height - 680) < 1,
+                                "Summary or help content must not grow the minimum-size window")
+                }
+            }
+        }
+        print("UPDATE_SUMMARY_CAPTURES \(output.path)")
     }
 
     @objc private func language() {

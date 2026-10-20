@@ -679,7 +679,8 @@ class LocalSourceGuardTests(unittest.TestCase):
         (self.repo / "scripts/release_publication.py").write_text("print('REMOTE_PUBLICATION_ENTERED')\n")
         (self.repo / "project.yml").write_text(f"settings:\n  base:\n    MARKETING_VERSION: {VERSION}\n    CURRENT_PROJECT_VERSION: 99\n")
         (self.repo / "docs").mkdir()
-        (self.repo / "docs/RELEASE_NOTES.md").write_text(f"# FileMint {VERSION}\nFixture release\n")
+        (self.repo / "docs/RELEASE_NOTES.md").write_text(
+            (ROOT / "CorePackage/Tests/FileMintCoreTests/Fixtures/update-release-notes.md").read_text())
         (self.repo / ".gitignore").write_text("build/\nConfig/Signing/\n")
         self.env = dict(os.environ, GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull)
         for args in (("init", "-q", "-b", "main"), ("config", "user.name", "Fixture"),

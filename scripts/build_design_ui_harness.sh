@@ -13,6 +13,8 @@ mkdir -p "$DESIGN_APP/Contents/MacOS" "$DESIGN_APP/Contents/Resources"
 cp -R "$DESIGN_BUILD/FileMintCore_FileMintCore.bundle" "$DESIGN_APP/Contents/Resources/"
 cp Resources/SFSymbolNames.txt Resources/SFSymbolRestrictedNames.txt \
   Resources/SFSymbolCatalog-LICENSE.txt "$DESIGN_APP/Contents/Resources/"
+cp CorePackage/Tests/FileMintCoreTests/Fixtures/update-release-notes.md \
+  "$DESIGN_APP/Contents/Resources/UpdateReleaseNotes.md"
 plutil -create xml1 "$DESIGN_APP/Contents/Info.plist"
 plutil -insert CFBundleIdentifier -string io.github.daigua.filemint.design-qa "$DESIGN_APP/Contents/Info.plist"
 plutil -insert CFBundleName -string 'FileMint Design QA' "$DESIGN_APP/Contents/Info.plist"

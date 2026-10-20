@@ -35,6 +35,12 @@ class SelectionTests(unittest.TestCase):
         self.assertEqual(plan['requiresReview'], [])
         self.assertEqual(checks.plan_checks(['Config/FileMint.entitlements'])['requiresReview'], ['Config/FileMint.entitlements'])
 
+    def test_summary_presentation_uses_the_existing_design_fixture_without_installer_checks(self):
+        plan = checks.plan_checks(["App/FileMint/AboutPane.swift", "App/FileMint/UserGuideLink.swift"])
+        self.assertEqual(plan["suites"], ["update-summary"])
+        self.assertEqual(plan["manualChecks"], [])
+        self.assertEqual(checks.SUITES["update-summary"].kind, "design-ui")
+
     def test_shared_model_has_a_conservative_explainable_plan(self):
         path = 'App/FileMint/PreferencesModel.swift'
         plan = checks.plan_checks([path, path])

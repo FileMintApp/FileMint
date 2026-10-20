@@ -158,6 +158,27 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   submission can be resumed without uploading again. Preparation requires a
   reviewed commit and tag; development commands must not publish implicitly.
 
+## User-facing release notes
+
+- `docs/RELEASE_NOTES.md` remains the sole authored release-note source. Keep the
+  current release first and publish only its matching `# FileMint VERSION` section.
+  Future releases after 0.8.0 use the bilingual
+  [release-note template](../../docs/RELEASE_NOTES_TEMPLATE.md); existing 0.8.0
+  and older records retain their original format and claims.
+- Order each language's content as summary, getting started, detailed changes,
+  and upgrade notes. Use the exact headings `更新摘要`, `开始使用`, `详细改进`,
+  `升级须知`, then `Highlights`, `Getting started`, `Details`, `Before you update`.
+  The summary follows the bounded plain-text format in [Updates](updates.md).
+  Start with concrete user outcomes. Getting started gives the actual entry
+  path and any opt-in requirement. Describe fixes by their trigger and visible
+  result; keep compatibility, supported scope and migration limits explicit.
+  Do not describe unimplemented or unverified work as shipped.
+- Release metadata checks reject future release notes with missing, duplicate,
+  empty, reordered or malformed required sections. The app and GitHub consume
+  the same authored summary; do not maintain separate hard-coded app copy or
+  introduce another release asset/feed. Formatting work does not choose a new
+  version, retag a release or modify public releases.
+
 ## Homebrew distribution
 
 - A FileMint-maintained `FileMintApp/homebrew-tap` Cask reuses the immutable,

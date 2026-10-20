@@ -4,6 +4,7 @@
 import argparse
 import re
 import sys
+import unicodedata
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -11,6 +12,9 @@ ROOT = Path(__file__).resolve().parent.parent
 VERSION = re.compile(r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\Z")
 BUILD = re.compile(r"[1-9][0-9]*\Z")
 SPARKLE = "http://www.andymatuschak.org/xml-namespaces/sparkle"
+LEGACY_NOTES_THROUGH = (0, 8, 0)
+NOTE_SECTIONS = ("更新摘要", "开始使用", "详细改进", "升级须知",
+                 "Highlights", "Getting started", "Details", "Before you update")
 
 
 def project_release(path: Path) -> tuple[str, str]:
@@ -36,7 +40,39 @@ def release_notes(path: Path, version: str) -> str:
     body = source[headings[0].end():end].strip()
     if not body:
         raise ValueError("Current release notes are empty")
-    return f"# FileMint {version}\n\n{body}\n"
+    notes = f"# FileMint {version}\n\n{body}\n"
+    if tuple(map(int, version.split("."))) > LEGACY_NOTES_THROUGH:
+        validate_summary_format(notes)
+    return notes
+
+
+def validate_summary_format(notes: str) -> None:
+    """Keep future GitHub notes compatible with the app's bounded text summaries."""
+    if len(notes.encode("utf-8")) > 65_536:
+        raise ValueError("Release notes must fit within 64 KiB for in-app summaries")
+    lines = [line.strip() for line in notes.splitlines()]
+    if sum(line.startswith("# ") for line in lines) != 1:
+        raise ValueError("Only the release title may use a level-one heading")
+    headings = [(index, line[3:]) for index, line in enumerate(lines) if line.startswith("## ")]
+    if tuple(title for _, title in headings) != NOTE_SECTIONS:
+        raise ValueError("Use the ordered bilingual sections in docs/RELEASE_NOTES_TEMPLATE.md")
+    for position, (start, title) in enumerate(headings):
+        end = headings[position + 1][0] if position + 1 < len(headings) else len(lines)
+        content = [line for line in lines[start + 1:end] if line]
+        if not content:
+            raise ValueError(f"Release-note section is empty: {title}")
+        if title not in ("更新摘要", "Highlights"):
+            continue
+        if not 2 <= len(content) <= 5 or content[0].startswith("- "):
+            raise ValueError(f"{title} needs one headline and one to four single-line highlights")
+        for index, line in enumerate(content):
+            if index and not line.startswith("- "):
+                raise ValueError(f"{title} highlights must start with '- '")
+            text = line[2:].strip() if index else line
+            limit = 240 if index else 120
+            if (not text or len(text) > limit or any(char in "<>[]`*#" for char in text)
+                    or any(unicodedata.category(char) in ("Cc", "Cf") for char in text)):
+                raise ValueError(f"{title} needs plain text within {limit} characters per line")
 
 
 def check_successor(version: str, build: str, previous_version: str, previous_feed: Path) -> None:

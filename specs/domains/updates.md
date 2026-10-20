@@ -47,7 +47,30 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   `appcast-zip.xml` points to the ZIP of the same signed application. Keep this
   compatibility set on each Latest release so users who skip intervening versions
   can still upgrade directly. Already published releases remain immutable.
-- Show the available version and release notes link before downloading. The user
+- Show the available version, a localized update summary and release notes link
+  before downloading. Read the summary from the same GitHub release metadata
+  response as the selected version; do not add requests or use another release's
+  text. The About update area shows one short headline and one to four highlights.
+  The existing settings-sidebar update entry also shows the headline when present.
+  Resolve the app's current language when presenting, including after a language
+  change. Only use that language's summary; missing translations do not display
+  the other language.
+- Summary parsing is optional and independent of installer validation. Accept
+  at most 64 KiB of release-body UTF-8, require a matching `# FileMint VERSION`
+  first version heading, and extract only the `## 更新摘要` / `## Highlights`
+  sections. Each has one plain-text headline (at most 120 Unicode scalars)
+  followed by one to four single-line `- ` highlights (at most 240 scalars each).
+  Blank lines are allowed; duplicate sections, unsupported markup, invalid
+  structure and oversized content make that language's summary unavailable.
+  Render literal native text, never remote HTML, images or executable links.
+  A missing, null, wrongly typed or unusable body must not reject an otherwise
+  valid update. About explains when a summary is unavailable and retains the
+  exact release-page link and install action. Asset/signature failures still fail.
+- Summary discovery preserves quiet background checks: no new window, focus
+  change, download, persistent read marker or post-upgrade announcement. The
+  first delivery adds summary display and online help entry points only;
+  first-run checklists, offline manuals and contextual tours are deferred.
+- The user
   chooses Update and Restart once; the app then downloads, verifies, installs and
   relaunches without a save panel, Finder drag-and-drop or a second restart prompt.
   System administrator authorization may still be necessary for protected installs.

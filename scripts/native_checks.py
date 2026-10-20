@@ -42,6 +42,7 @@ SUITES = {
     "file-info": Suite("file-info", "PASS file information:", environment=(("FILEMINT_FILE_INFO_EXPORT_ARTIFACTS", "1"),)),
     "resource-tools": Suite("resource-tools", "PASS original preserved; clipboard untouched; no owner preferences loaded;"),
     "design-ui": Suite("design-ui", "PASS automated design QA:", ("--verify-automation",)),
+    "update-summary": Suite("design-ui", "PASS update summary QA:", ("--verify-updates",)),
     "favorite-model": Suite("", "PASS favorite model"),
 }
 ALL = tuple(SUITES)
@@ -70,7 +71,8 @@ RULES = (
     (("scripts/open_with_smoke.swift", "scripts/build_open_with_harness.sh", "App/FileMint/OpenWithApplicationAccess.swift"), ("open-with", "creation-opening"), ()),
     (("scripts/file_tools_settings_smoke.swift", "scripts/build_file_tools_settings_harness.sh"), ("file-tools-settings",), ()),
     (("scripts/resource_tools_smoke.swift", "scripts/build_resource_tools_harness.sh", "App/FileMint/ResourceTools*.swift"), ("resource-tools",), ()),
-    (("scripts/design_ui_smoke.swift", "scripts/build_design_ui_harness.sh"), ("design-ui",), ()),
+    (("scripts/design_ui_smoke.swift", "scripts/build_design_ui_harness.sh"), ("design-ui", "update-summary"), ()),
+    (("App/FileMint/AboutPane.swift", "App/FileMint/UserGuideLink.swift"), ("update-summary",), ()),
     (("scripts/favorite_model_smoke.swift", "scripts/verify_favorite_model.sh", "App/FileMint/FavoriteLocationsModel.swift"), ("favorite-model", "design-ui"), ()),
     (("App/FileMint/PreferencesModel.swift",), ("template-workflow", "creation-opening", "update-scheduling", "design-ui"), ()),
     (("SharedUI/CustomFileSavePanelController.swift", "App/FileMint/PlainTextEditor.swift", "App/FileMint/CreationApplicationLabel.swift",

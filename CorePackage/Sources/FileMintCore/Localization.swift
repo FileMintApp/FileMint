@@ -169,6 +169,7 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case downloadUpdate
     case openInstaller
     case releaseNotes
+    case updateSummary, updateSummaryUnavailable, userGuide, onlineGuideHint
     case availableVersion
     case updateIdle
     case updateChecking
@@ -473,6 +474,10 @@ public enum FileMintStrings {
         .downloadUpdate: ("Update and Restart", "更新并重启"),
         .openInstaller: ("Reopen Installer", "重新打开安装包"),
         .releaseNotes: ("Release Notes", "查看发布说明"),
+        .updateSummary: ("What's in this update", "本次更新亮点"),
+        .updateSummaryUnavailable: ("A summary isn't available in this language. See the full release notes for details.", "此版本暂未提供当前语言的更新摘要，可查看完整发布说明。"),
+        .userGuide: ("User Guide", "使用指南"),
+        .onlineGuideHint: ("Opens the online guide in your browser, with setup steps, feature instructions and troubleshooting.", "在浏览器中打开在线指南，查看首次设置、功能用法和常见问题。"),
         .availableVersion: ("Available version", "可用版本"),
         .updateIdle: ("Check for a new version now, or manage automatic checks in General. Downloads always require your confirmation.", "可立即检查新版本，或在“通用”中管理自动检查。下载始终需要你的确认。"),
         .updateChecking: ("Checking for updates…", "正在检查更新…"),

@@ -50,6 +50,9 @@ private struct FileMintCommands: Commands {
                 updater.checkForUpdates()
             }.disabled(updater.isBusy)
         }
+        CommandGroup(replacing: .help) {
+            UserGuideLink(language: model.preferences.language)
+        }
     }
 
     private func showAbout() {
@@ -96,6 +99,7 @@ private struct FileMintMenu: View {
             SettingsWindowController.shared.show(pane: .about)
             updater.checkForUpdates()
         }.disabled(updater.isBusy)
+        UserGuideLink(language: model.preferences.language)
         Divider()
         Button(model.text(.quitFileMint)) { NSApp.terminate(nil) }.keyboardShortcut("q")
     }

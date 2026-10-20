@@ -88,6 +88,17 @@ diagnostic, not an automatic substitute for that evidence.
    earlier Intel installations cannot update to it; keep older release records
    accurate to their original universal artifacts.
    The publishing script extracts only this section for the GitHub Release body.
+   For versions after 0.8.0, copy [the release-note template](RELEASE_NOTES_TEMPLATE.md)
+   and replace its example text. Keep all eight bilingual headings in order.
+   Each summary contains one plain-text headline of at most 120 Unicode scalars
+   and one to four `- ` highlights of at most 240 scalars each, on individual
+   lines. Do not use HTML, links, images, emphasis or code in these summaries;
+   Markdown belongs in Details. The complete current-version notes must fit in
+   64 KiB UTF-8. Lead with user value, give the actual entry path and opt-in steps,
+   and retain supported scope and migration limits. Metadata checks enforce this
+   format before build/publication; older release records remain compatible.
+   The app reads the same summary from the GitHub body, so no second app-specific
+   copy or new asset is needed. Do not update public historical Release bodies.
 3. Finish applicable feature verification, commit the release preparation on
    `main`, and create `vVERSION` at that exact commit. The local release command
    rejects an unclean tree, mismatched tag, stale notes, or a version/build that

@@ -288,6 +288,12 @@ owns the rules, supported storage, counts, explicit actions and recovery behavio
   matching-language screenshots with text alternatives, keyboard guidance and
   remedies for missing Finder menus or folder access. Keep installation details
   linked rather than duplicating release-specific download instructions.
+- The app exposes User Guide / 使用指南 in its Help menu, menu-bar menu and
+  About page. Each explicit action opens the existing official online guide in
+  the default browser, selecting Chinese or English from the current app language.
+  Identify the destination as online help in About; opening help never requests
+  permissions, changes preferences, enables a module or starts an update check.
+  There is no new settings page, embedded browser or bundled manual in this phase.
 - README leads with the pain solved, actual features, screenshots, download and
   a brief install guide. Chinese first, English separate. Developer instructions
   live in docs. Optional donations link the supplied ReceivePayment images.
@@ -344,3 +350,13 @@ owns the rules, supported storage, counts, explicit actions and recovery behavio
   icon/name/version identity group, compact credits and adjacent update actions
   that wrap when necessary. Preserve all credits/links and existing update states,
   progress, cancellation and restart protections.
+- Available-update summaries use the existing About column: a clear localized
+  heading, literal headline and readable wrapping bullets above update actions.
+  When an update is available, put the update section immediately after the
+  app identity and before credits, so its summary and actions are easy to find.
+  With no offered update, retain the ordinary About ordering.
+  The whole page remains scrollable at minimum size. The sidebar update entry
+  remains one button with the version and a secondary headline, with a bounded
+  visual preview and full accessibility text. Missing summaries retain the
+  version-only sidebar entry. Preserve native keyboard access and light/dark
+  appearance in both languages.

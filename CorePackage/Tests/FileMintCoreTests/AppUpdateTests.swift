@@ -225,6 +225,35 @@ struct AppUpdateTests {
         }
     }
 
+    @Test("missing or malformed optional notes never prevent an otherwise valid update")
+    func optionalReleaseNotes() throws {
+        for body: Any in [NSNull(), 42, false, ["invalid"], ["invalid": "object"],
+                          "", "Legacy notes.", String(repeating: "x", count: 65_537)] {
+            let data = try release { $0["body"] = body }
+            let result = try AppUpdatePolicy.availableUpdate(from: data, currentVersion: "0.2.0")
+            let update = try #require(result)
+            #expect(update.version == ReleaseVersion("0.3.0"))
+            #expect(update.releaseNotes == nil)
+            #expect(update.size == 512 && update.digest == hash)
+        }
+    }
+
+    @Test("summary belongs to the selected release and cannot bypass asset validation")
+    func releaseSummaryBinding() throws {
+        let body = "# FileMint 0.3.0\n\n## Highlights\nRename with a preview.\n- Review names before applying changes.\n"
+        let data = try release { $0["body"] = body }
+        let result = try AppUpdatePolicy.availableUpdate(from: data, currentVersion: "0.2.0")
+        let update = try #require(result)
+        #expect(update.releaseNotes?.summary(for: .english)?.headline == "Rename with a preview.")
+        #expect(update.releaseNotes?.summary(for: .chinese) == nil)
+        let mismatch = try release { $0["body"] = body.replacingOccurrences(of: "0.3.0", with: "0.2.9") }
+        #expect(try AppUpdatePolicy.availableUpdate(from: mismatch, currentVersion: "0.2.0")?.releaseNotes == nil)
+        let missingAssets = try release { $0["body"] = body; $0["assets"] = [] }
+        #expect(throws: UpdateValidationError.missingAssets) {
+            try AppUpdatePolicy.availableUpdate(from: missingAssets, currentVersion: "0.2.0")
+        }
+    }
+
     @Test("About preserves the requested credits and all update copy is localized")
     func aboutAndLocalization() {
         #expect(FileMintAbout.copyright == "XiaoDaiGua-Ray")
@@ -235,6 +264,7 @@ struct AppUpdateTests {
         let keys: [FileMintTextKey] = [.about, .aboutFileMint, .version, .copyright, .developers, .specialThanks,
             .signingThanks, .projectPage,
             .privacyPolicy, .license, .updates, .checkForUpdates, .downloadUpdate, .openInstaller, .releaseNotes,
+            .updateSummary, .updateSummaryUnavailable, .userGuide, .onlineGuideHint,
             .availableVersion, .updateIdle, .updateChecking, .updateCurrent, .updateAvailable, .updateDownloading,
             .updateVerifying, .updateReady, .updateInstallHint, .updateSaveHint, .updateInstallerAuthorizationFailed,
             .updateNetworkFailed, .updateChecksumFailed,

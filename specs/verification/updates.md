@@ -29,6 +29,16 @@ About/update text, including the exact special-thanks nickname and GitHub link. 
 opening remain app responsibilities; record live checks, download/cancel/retry
 and installation handoff evidence in `docs/ACCEPTANCE.md`.
 
+`UpdateReleaseNotesTests` and `AppUpdateTests` cover language selection, matching
+release identity, bounded plain text, missing/wrongly typed bodies, malformed
+sections and unchanged installer validation. `test_release_metadata.py` validates
+the same bilingual fixture and future-release template, preserving historical
+notes. For summary/help presentation changes, run
+`NATIVE_QA_SUITES=update-summary make verify-native-affected`; inspect its
+minimum-size captures. Guide URL routing is covered in Core; a live browser/link
+check is separate from cached native renders. No signed replacement scenario is
+implied when discovery scheduling and installation are unchanged.
+
 ## Sparkle installation checks
 
 Routine releases do not repeat old-to-new installation acceptance. UpgradeQA is

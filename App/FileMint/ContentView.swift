@@ -100,9 +100,17 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 14) {
                 if let update = updater.update, model.selectedPane != .about {
                     Button { model.selectedPane = .about } label: {
-                        Label("\(model.text(.availableVersion)) \(update.version.description)", systemImage: "arrow.down.circle")
-                            .font(.caption).fixedSize(horizontal: false, vertical: true)
+                        VStack(alignment: .leading, spacing: 5) {
+                            Label("\(model.text(.availableVersion)) \(update.version.description)", systemImage: "arrow.down.circle")
+                                .font(.caption).fixedSize(horizontal: false, vertical: true)
+                            if let summary = update.releaseNotes?.summary(for: model.preferences.language) {
+                                Text(verbatim: summary.headline).font(.caption).foregroundStyle(Color.secondary)
+                                    .lineLimit(2).multilineTextAlignment(.leading)
+                            }
+                        }
                     }.buttonStyle(.plain).foregroundStyle(FileMintStyle.accent)
+                        .accessibilityIdentifier("update.openSummary")
+                        .accessibilityLabel("\(model.text(.availableVersion)) \(update.version.description). \(update.releaseNotes?.summary(for: model.preferences.language)?.headline ?? "")")
                 }
                 Divider()
                 Text(model.preferences.language.resolved() == .chinese ? "快捷操作" : "Quick Actions")

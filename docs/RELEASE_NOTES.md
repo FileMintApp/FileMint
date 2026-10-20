@@ -1,3 +1,6 @@
+<!-- Future releases after 0.8.0 use docs/RELEASE_NOTES_TEMPLATE.md.
+Keep released entries unchanged; add the next version only during release preparation. -->
+
 # FileMint 0.8.0
 
 ## 新功能与改进

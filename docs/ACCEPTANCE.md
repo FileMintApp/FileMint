@@ -3,6 +3,37 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Update summaries and online help — 2026-10-20
+
+On primary `164bb0c` plus the recorded uncommitted implementation, arm64 macOS
+27.2 / Xcode 27.1 passed `make verify` (Core 348, Images 22), unsigned Release
+App/Finder compilation and the focused `update-summary` native suite. The fresh
+signed design fixture uses simulated release metadata and isolated preferences;
+Chinese/light and English/dark minimum-size renders cover available and missing
+summaries. Native interaction confirmed sidebar navigation, language-dependent
+guide URLs and complete summary text in the accessibility tree. Clicking the
+Chinese guide link opened the official guide in Chrome.
+
+The production metadata client read public 0.8.0, selected ZIP and rejected an
+equal-version offer; old-format notes correctly use the summary fallback. Both
+guide URLs returned matching-language HTTP 200 pages. The initial implementation
+run performed no installation, version bump, public Release edit or publication.
+This does not establish installed upgrades, Finder delivery, older-macOS runtime or a full VoiceOver
+session. See the [task and evidence](tasks/update-summary-and-help.md).
+
+The user subsequently requested a Debug installation for visual review and closed
+their active rename preview themselves. Debug 0.8.0 (29), built with a direct
+executable and signed by the original Developer ID team, was atomically installed
+after normal quit, with a verified old-bundle backup. All 167 installed bundle
+entries match the signed source, bundle checks pass, shared preferences remain
+unchanged, and fresh main/extension processes run from `/Applications` with one
+enabled extension registration. The installed About and Help menu expose the new
+guide. A separate simulated-summary QA window was opened for visual review because
+the public latest version is also 0.8.0. The user then confirmed “我看过了，效果没问题”
+and requested ordinary commit/push without publication. Record the installed help
+and simulated-summary presentation as user-accepted; no Sparkle upgrade,
+publication or broader Finder/runtime coverage is inferred.
+
 ## File information menu and footer follow-up — 2026-10-19
 
 Primary `ba4fd66` plus the uncommitted follow-up passed `make verify` (Core 337,
