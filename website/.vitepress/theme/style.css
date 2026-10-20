@@ -63,6 +63,7 @@ body { -webkit-font-smoothing: antialiased; }
 .fm-button svg { width: 18px; height: 18px; }
 .fm-text-link { display: inline-flex; align-items: center; gap: 16px; font-size: 13px; line-height: 1.8; font-weight: 600; }
 .fm-text-link:hover { text-decoration: underline; text-underline-offset: 5px; }
+.fm-landing .fm-hero-tools { margin-top: 18px; color: var(--fm-accent); }
 .fm-release-line { display: flex; gap: 10px 16px; align-items: center; flex-wrap: wrap; margin-top: 20px; font-size: 11px; color: var(--fm-muted); min-height: 20px; }
 .latest-release { color: var(--vp-c-brand-1); text-underline-offset: 4px; }
 .fm-release-line > span { padding-left: 16px; border-left: 1px solid var(--vp-c-divider); }
@@ -96,6 +97,26 @@ body { -webkit-font-smoothing: antialiased; }
 .fm-landing h2 { font-size: clamp(30px, 3.2vw, 44px); line-height: 1.35; font-weight: 530; letter-spacing: -.04em; }
 .fm-section h2 { margin-top: 18px; }
 .fm-section-heading > p { color: var(--vp-c-text-2); font-size: 14px; line-height: 1.95; max-width: 340px; padding-bottom: 3px; }
+.fm-file-tools { padding-bottom: 0; }
+.fm-tool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.fm-tool { display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--vp-c-divider); border-radius: 14px; overflow: hidden; }
+.fm-tool-copy { padding: 30px 30px 0; }
+.fm-tool h3 { margin-top: 12px; font-size: 26px; font-weight: 550; line-height: 1.4; letter-spacing: -.03em; }
+.fm-tool-copy > p:last-child { margin-top: 14px; font-size: 13px; line-height: 1.9; color: var(--vp-c-text-2); }
+.fm-tool-figure { margin: 26px 0 0; padding: 24px 22px 16px; background: var(--fm-surface); }
+.fm-tool-capture { display: flex; width: 100%; height: 350px; align-items: center; justify-content: center; cursor: zoom-in; border-radius: 8px; }
+.fm-tool-capture img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; border-radius: 8px; box-shadow: 0 14px 28px -18px #193c3060; }
+.fm-tool-figure figcaption { margin-top: 16px; font-size: 10px; line-height: 1.7; color: var(--fm-muted); text-align: center; }
+.fm-landing .fm-tool-facts { list-style: none; padding: 26px 30px; }
+.fm-tool-facts li { position: relative; padding-left: 20px; font-size: 12px; line-height: 1.85; }
+.fm-tool-facts li + li { margin-top: 10px; }
+.fm-tool-facts li::before { content: '✓'; position: absolute; left: 0; color: var(--fm-accent); }
+.fm-tool-footer { margin-top: auto; padding: 0 30px 30px; }
+.fm-tool-footer > p { margin-bottom: 14px; font-size: 10px; line-height: 1.8; color: var(--fm-muted); }
+@supports (grid-template-rows: subgrid) {
+  .fm-tool-grid { row-gap: 0; }
+  .fm-tool { display: grid; grid-template-rows: subgrid; grid-row: span 4; }
+}
 .fm-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 52px; }
 .fm-steps article { border-top: 1px solid var(--vp-c-divider); padding-top: 22px; }
 .fm-steps article > span { font-family: var(--fm-serif); font-size: 30px; color: var(--fm-accent); }
@@ -162,6 +183,7 @@ body { -webkit-font-smoothing: antialiased; }
   .fm-product-stage { padding-inline: 18px; }
   .fm-showcase, .fm-faq, .fm-trust > div { gap: 48px; }
   .fm-feature { padding-inline: 24px; }
+  .fm-tool-capture { height: 290px; }
 }
 @media (max-width: 800px) {
   .fm-hero { grid-template-columns: 1fr; padding-block: 50px; gap: 40px; }
@@ -179,6 +201,10 @@ body { -webkit-font-smoothing: antialiased; }
   .fm-trust > div { gap: 36px; }
   .fm-trust h2 { font-size: 42px; }
   .fm-faq { grid-template-columns: 1fr; gap: 32px; }
+  .fm-tool-grid { grid-template-columns: 1fr; row-gap: 28px; }
+  .fm-tool { display: flex; grid-row: auto; }
+  .fm-tool-capture { height: auto; max-height: 420px; }
+  .fm-tool-capture img { max-height: 420px; }
 }
 @media (max-width: 540px) {
   .fm-wrap { width: calc(100% - 40px); }
@@ -197,6 +223,12 @@ body { -webkit-font-smoothing: antialiased; }
   .fm-principles { grid-template-columns: 1fr 1fr; gap: 20px 0; font-size: 11px; }
   .fm-principles span:nth-child(3) { border-left: 0; }
   .fm-section { padding-block: 58px; }
+  .fm-file-tools { padding-bottom: 0; }
+  .fm-tool-copy { padding: 24px 22px 0; }
+  .fm-tool h3 { font-size: 24px; }
+  .fm-tool-figure { padding: 20px 14px 14px; }
+  .fm-landing .fm-tool-facts { padding: 24px 22px; }
+  .fm-tool-footer { padding: 0 22px 24px; }
   .fm-section-heading { flex-direction: column; align-items: start; gap: 22px; margin-bottom: 32px; }
   .fm-section-heading > p { max-width: none; }
   .fm-steps { grid-template-columns: 1fr; gap: 26px; }

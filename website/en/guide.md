@@ -1,6 +1,6 @@
 ---
 title: FileMint User Guide
-description: Learn FileMint step by step, from Finder setup and file creation to templates, image tools and optional actions.
+description: Learn Finder file creation, Batch Rename, File Info and checksums, templates and image tools step by step.
 pageClass: guide-page
 ---
 
@@ -85,15 +85,35 @@ Open **Extensions → File & Folder Tools**, enable the master switch, then enab
 
 ### Batch Rename
 
-Enable **Batch Rename**, select 2–1,000 ordinary files or folders in one Finder directory, then choose **Batch Rename…**. Initial support is local, writable APFS. Add replacement, prefix/suffix, numbering or case rules, or switch to a name list and paste one new name per item. Extensions and hidden status are retained.
+Number a photo collection, organize project files, or apply a list of names you already have. Preview the changes first. This tool starts off.
 
-Review original names, results and errors before clicking **Rename N Items**. Conflicts and invalid names block execution without overwriting existing items. **Undo Last Batch Rename…** in the result panel or the app's **File** menu provides a reverse preview and explicit confirmation. Interrupted operations offer restoration of their pre-operation names. If manual handling is needed, export recovery evidence and explicitly unblock the tool. A batch is not atomic; recovery conflicts preserve files and records for further handling.
+1. In **Extensions → File & Folder Tools**, enable the master switch and **Batch Rename**.
+2. Select 2–1,000 ordinary files or folders **in one Finder directory**, then choose **Batch Rename…**. Current support is local, writable APFS, subject to system permissions and the actual state of the files.
+3. In **Rules**, combine replacement, deletion, prepended/appended text, numbering or case rules in order. Or choose **Name List** and paste one name **without its protected extension** per item, following the preview order.
+4. Compare original and new names, check the status, then click **Rename N Items**. Conflicts and invalid names block execution without overwriting existing items.
+
+![Batch Rename window with a unified name and numbering rule, original and new names, and per-item status](/images/batch-rename-en.jpg)
+
+<p class="guide-caption">Example numbering rule. Extensions and hidden status stay unchanged; the preview itself does not rename files.</p>
+
+Each name-list line contains only the name body; do not repeat the extension. Files without an extension cannot gain one through the new name. Return edits the focused field without renaming the batch. After reviewing the preview, use the button or ⌘↩ to execute.
+
+**To undo:** Choose **Undo Last Batch Rename…** in the result panel or the app's **File** menu, then review and confirm the reverse preview for the most recent successful operation. Interrupted operations offer restoration of their pre-operation names. If manual handling is needed, export recovery evidence and explicitly unblock the tool. A batch is not atomic; recovery conflicts preserve files and records for further handling. NAS, iCloud and third-party sync compatibility remain unverified.
 
 ### File Info and checksums
 
-Enable **File Info**, select one ordinary file in Finder, then choose **File Info…**. The panel initially shows the name, kind, size, location and dates without calculating. Choose SHA-256, SHA-512, SHA-1, MD5 or all four, then click **Calculate**. Cancel, copy results or choose one algorithm to compare a pasted expected value. Closing cancels the read and waits for cleanup.
+Check a download or a shared file against a checksum supplied by its publisher, starting right in Finder. This tool starts off.
 
-SHA-256 is the recommended default. MD5 and SHA-1 are for legacy compatibility; checksums are not encryption or proof of origin. Download known cloud placeholders in Finder first. Folders, packages, links, aliases and multiple selections do not show this entry. Detected changes, read failures and cancellation discard results.
+1. In **Extensions → File & Folder Tools**, enable the master switch and **File Info**.
+2. Select **one ordinary file** in Finder, then choose **File Info…**. Opening the panel shows its name, kind, size, location and dates without calculating.
+3. Keep the recommended SHA-256 default, or choose SHA-512, SHA-1, MD5 or all four, then click **Calculate**. All four are calculated in a single read. You can cancel while it runs.
+4. Use **Copy result**, or copy all results in All mode. To compare, first select and calculate one algorithm, expand **Compare checksum**, and paste an expected value for that algorithm. The panel distinguishes a match, a mismatch and invalid input.
+
+![File Info window with example text-file metadata, a calculated SHA-256 result and the Compare checksum control](/images/file-info-en.jpg)
+
+<p class="guide-caption">Example SHA-256 result. File contents are read only when calculation is requested. Changing the algorithm requires a new calculation.</p>
+
+Results describe **the file contents read this time**; later changes require recalculation. MD5 and SHA-1 are for legacy compatibility. Checksums are not encryption or proof of origin. Download known cloud placeholders in Finder first. Folders, packages, links, aliases and multiple selections do not show this entry. Detected changes, read failures and cancellation discard results. Closing cancels the read and waits for cleanup.
 
 ## Process images and extract text
 

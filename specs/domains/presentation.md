@@ -251,6 +251,13 @@ owns the rules, supported storage, counts, explicit actions and recovery behavio
   identity, readable mobile layouts, keyboard controls and reduced-motion support.
   Guides and privacy pages describe capabilities without stale release banners;
   historical compatibility and updater exceptions retain their actual versions.
+- Give Batch Rename and File Info/checksums a prominent bilingual homepage
+  showcase with real, matching-language captures and direct usage-guide links.
+  Explain preview-before-commit, protected extensions, conflict blocking and
+  explicit undo for rename; metadata-first opening, explicit calculation and
+  copy/comparison for checksums. Identify both tools as opt-in and retain their
+  actual selection/filesystem limits in the guide. Do not imply encryption,
+  proof of origin, atomic batches or universal cloud/NAS compatibility.
 - Current-release labels come from the public GitHub `releases/latest` endpoint
   for FileMintApp/FileMint at page load, never from project.yml, README release
   includes or a hard-coded version. Accept only published, non-draft,

@@ -7,7 +7,7 @@ const publicAsset = (path: string) => `${base.replace(/\/$/, '')}/${path}`
 export default defineConfig({
   base,
   title: 'FileMint',
-  description: 'Create files from text and Office templates, open your apps and process images locally from Finder.',
+  description: 'Create documents, batch rename files, calculate checksums and process images on your Mac, right from Finder.',
   markdown: {
     config(md) {
       // Render the same GitHub task lists used by the README includes.
@@ -47,7 +47,7 @@ export default defineConfig({
       label: '简体中文',
       lang: 'zh-Hans',
       title: 'FileMint',
-      description: '在 Finder 中创建文件、复用文本与 Office 模板、使用常用 App 打开项目，并在本机处理图片。',
+      description: '在 Finder 中创建文件、批量重命名、查看文件信息和计算校验值，复用模板并在本机处理图片。',
       themeConfig: {
         outline: { level: 'deep', label: '本页目录' },
         nav: [
@@ -68,7 +68,7 @@ export default defineConfig({
       lang: 'en-US',
       link: '/en/',
       title: 'FileMint',
-      description: 'Create files from text and Office templates, open your apps and process images locally from Finder.',
+      description: 'Create documents, batch rename files, calculate checksums and process images on your Mac, right from Finder.',
       themeConfig: {
         nav: [
           { text: 'Features', link: '/en/#features' },
