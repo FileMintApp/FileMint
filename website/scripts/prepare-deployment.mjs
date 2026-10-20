@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { appendFileSync, lstatSync, mkdtempSync, readdirSync } from 'node:fs'
+import { appendFileSync, lstatSync, mkdtempSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
@@ -9,22 +9,31 @@ const SHA = /^[0-9a-f]{40}$/
 const ID = /^[1-9]\d*$/
 const allowedFiles = new Set([
   'README.md', 'README.en.md', 'package.json', 'pnpm-lock.yaml',
-  'specs/domains/presentation.md', 'specs/domains/distribution.md',
-  '.github/workflows/build-pages.yml', '.github/workflows/deploy-website.yml',
+  'Makefile', 'AGENTS.md', '.gitignore',
 ])
+// These maintain the repository and its publication process, not the application
+// shipped in the stable release. Native source, resources, config and dependencies
+// are deliberately absent, as are unknown root paths and the bundled LICENSE.
+const maintenanceRoots = ['website/', 'docs/', 'specs/', 'scripts/', '.github/']
 
 function requireCondition(condition, message) {
   if (!condition) throw new Error(message)
 }
 
-export function validateInputs(env) {
+function validateContext(env) {
   requireCondition(env.GITHUB_ACTIONS === 'true', 'Deployment preparation requires GitHub Actions')
+  requireCondition(['workflow_dispatch', 'workflow_run'].includes(env.GITHUB_EVENT_NAME),
+    'Unsupported website deployment event')
+  for (const key of ['GITHUB_OUTPUT', 'RUNNER_TEMP']) {
+    requireCondition(typeof env[key] === 'string' && env[key].length > 0, `Missing ${key}`)
+  }
+}
+
+export function validateInputs(env) {
+  validateContext(env)
   requireCondition(SHA.test(env.SITE_COMMIT ?? ''), 'Invalid website commit')
   for (const key of ['SITE_BUILD_RUN_ID', 'SITE_ARTIFACT_ID', 'SITE_RELEASE_ID']) {
     requireCondition(ID.test(env[key] ?? ''), `Invalid ${key}`)
-  }
-  for (const key of ['GITHUB_OUTPUT', 'RUNNER_TEMP']) {
-    requireCondition(typeof env[key] === 'string' && env[key].length > 0, `Missing ${key}`)
   }
   return {
     commit: env.SITE_COMMIT,
@@ -32,6 +41,17 @@ export function validateInputs(env) {
     artifactId: env.SITE_ARTIFACT_ID,
     releaseId: env.SITE_RELEASE_ID,
   }
+}
+
+export function automaticBuildInputs(event) {
+  const run = event?.workflow_run
+  requireCondition(event?.action === 'completed' && event?.repository?.full_name === REPOSITORY
+    && run?.head_repository?.full_name === REPOSITORY && run?.head_branch === 'main'
+    && run?.event === 'push' && run?.status === 'completed' && run?.conclusion === 'success'
+    && run?.path === '.github/workflows/build-pages.yml'
+    && SHA.test(run?.head_sha ?? '') && ID.test(String(run?.id ?? '')),
+  'Automatic deployment requires the original repository successful main-push website build')
+  return { commit: run.head_sha, runId: String(run.id) }
 }
 
 export function validateMain(main, commit) {
@@ -72,8 +92,8 @@ export function validateArtifact(data, { artifactId, runId, commit }) {
 export function validateWebsitePaths(paths) {
   requireCondition(Array.isArray(paths) && paths.every(path => typeof path === 'string'
     && path.length > 0 && !path.split('/').includes('..') && !path.startsWith('/')
-    && (path.startsWith('website/') || path.startsWith('docs/') || allowedFiles.has(path))),
-  'Website-only deployment includes changes outside the permitted website and documentation paths')
+    && (maintenanceRoots.some(root => path.startsWith(root)) || allowedFiles.has(path))),
+  'Application source, resources or project configuration differs from the published release, or an unknown root path changed')
 }
 
 export function validateArchive(directory) {
@@ -89,20 +109,51 @@ export function validateArchive(directory) {
 export function prepareDeployment({ env = process.env, run = (command, args) => execFileSync(command, args, {
   encoding: 'utf8', timeout: 120_000, maxBuffer: 8 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'],
 }) } = {}) {
-  const inputs = validateInputs(env)
+  validateContext(env)
+  const automatic = env.GITHUB_EVENT_NAME === 'workflow_run'
+  if (automatic) requireCondition(env.GITHUB_REPOSITORY === REPOSITORY,
+    'Automatic deployment must run in the original repository')
+  let inputs = automatic
+    ? automaticBuildInputs(JSON.parse(readFileSync(env.GITHUB_EVENT_PATH, 'utf8')))
+    : validateInputs(env)
   const api = endpoint => JSON.parse(run('gh', ['api', `repos/${REPOSITORY}/${endpoint}`]))
-  requireCondition(run('git', ['rev-parse', 'HEAD']).trim() === inputs.commit,
-    'Workflow checkout differs from the requested website commit')
-  validateMain(api('git/ref/heads/main'), inputs.commit)
-  const tag = validateRelease(api('releases/latest'), inputs.releaseId)
-  // Main must descend from the fully fetched stable tag, with no unpublished app delta.
+  const skip = reason => {
+    const message = `Website deployment skipped: ${reason}`
+    appendFileSync(env.GITHUB_OUTPUT, 'ready=false\n')
+    if (env.GITHUB_STEP_SUMMARY) appendFileSync(env.GITHUB_STEP_SUMMARY, `${message}\n`)
+    console.log(message)
+    return null
+  }
+  const checkout = run('git', ['rev-parse', 'HEAD']).trim()
+  const main = api('git/ref/heads/main')
+  if (automatic && (checkout !== inputs.commit || main?.object?.sha !== inputs.commit)) {
+    return skip('a newer main commit superseded this build')
+  }
+  requireCondition(checkout === inputs.commit, 'Workflow checkout differs from the requested website commit')
+  validateMain(main, inputs.commit)
+  validateBuildRun(api(`actions/runs/${inputs.runId}`), inputs)
+  const release = api('releases/latest')
+  const releaseId = automatic ? String(release?.id) : inputs.releaseId
+  const tag = validateRelease(release, releaseId)
+  // Main must descend from the stable tag. Repository maintenance may advance,
+  // but application code, resources, dependencies and project settings may not.
   run('git', ['merge-base', '--is-ancestor', `refs/tags/${tag}`, 'HEAD'])
   const paths = run('git', ['diff', '--name-only', '--no-renames', '-z', `refs/tags/${tag}`, 'HEAD', '--'])
     .split('\0').filter(Boolean)
-  validateWebsitePaths(paths)
-  validateBuildRun(api(`actions/runs/${inputs.runId}`), inputs)
+  if (automatic) {
+    try { validateWebsitePaths(paths) } catch {
+      return skip('application or unsupported source changes await a published release')
+    }
+  } else validateWebsitePaths(paths)
   const artifactsEndpoint = `actions/runs/${inputs.runId}/artifacts?per_page=100`
-  validateArtifact(api(artifactsEndpoint), inputs)
+  const artifacts = api(artifactsEndpoint)
+  if (automatic) {
+    const candidates = artifacts?.artifacts?.filter(item => item.name === 'github-pages' && item.expired === false) ?? []
+    requireCondition(candidates.length === 1, 'Automatic deployment needs one unexpired github-pages artifact')
+    inputs = validateInputs({ ...env, SITE_COMMIT: inputs.commit, SITE_BUILD_RUN_ID: inputs.runId,
+      SITE_ARTIFACT_ID: String(candidates[0].id), SITE_RELEASE_ID: releaseId })
+  }
+  validateArtifact(artifacts, inputs)
   const directory = mkdtempSync(join(env.RUNNER_TEMP, 'filemint-website-'))
   run('gh', ['run', 'download', inputs.runId, '--repo', REPOSITORY,
     '--name', 'github-pages', '--dir', directory])
@@ -113,7 +164,7 @@ export function prepareDeployment({ env = process.env, run = (command, args) => 
   validateMain(api('git/ref/heads/main'), inputs.commit)
   requireCondition(validateRelease(api('releases/latest'), inputs.releaseId) === tag,
     'Latest release tag changed during deployment preparation')
-  appendFileSync(env.GITHUB_OUTPUT, `archive=${archive}\n`)
+  appendFileSync(env.GITHUB_OUTPUT, `archive=${archive}\nready=true\n`)
   return archive
 }
 

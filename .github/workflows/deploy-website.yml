@@ -1,6 +1,10 @@
 name: Deploy website-only update
-run-name: FileMint website deploy ${{ inputs.commit }}
+run-name: FileMint website deploy ${{ github.event.workflow_run.head_sha || inputs.commit }}
 on:
+  workflow_run:
+    workflows: [Build FileMint website]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
     inputs:
       commit:
@@ -29,7 +33,13 @@ concurrency:
   cancel-in-progress: false
 jobs:
   deploy:
-    if: github.ref == 'refs/heads/main'
+    if: >-
+      github.repository == 'FileMintApp/FileMint' && github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        github.event.workflow_run.head_repository.full_name == github.repository))
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment:
@@ -44,7 +54,7 @@ jobs:
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
-      - name: Verify website-only source and fetch the successful build
+      - name: Verify published application source and fetch the successful website build
         id: candidate
         env:
           GH_TOKEN: ${{ github.token }}
@@ -54,13 +64,16 @@ jobs:
           SITE_RELEASE_ID: ${{ inputs.release_id }}
         run: node website/scripts/prepare-deployment.mjs
       - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+        if: steps.candidate.outputs.ready == 'true'
         with:
           enablement: true
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: steps.candidate.outputs.ready == 'true'
         with:
           name: github-pages
           path: ${{ steps.candidate.outputs.archive }}
           if-no-files-found: error
       - name: Deploy the verified website without rebuilding
+        if: steps.candidate.outputs.ready == 'true'
         id: deployment
         uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4

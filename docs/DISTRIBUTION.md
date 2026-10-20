@@ -173,8 +173,10 @@ release-write and Actions-dispatch/read access; missing permissions stop the dra
 When website inputs differ from the previous stable tag, a website build for this
 release commit must also succeed and produce a retained Pages artifact. No matching
 run does not mean the build is optional. Unchanged website inputs are explicitly
-marked not applicable. Ordinary website pushes now build only; they do not deploy
-new release copy before the application is public.
+marked not applicable. Main-push website builds automatically deploy only when the
+application source, resources and project configuration still match the latest
+public stable release. Release-dispatched builds never auto-deploy new release
+copy before the application is public.
 
 ### 4. Promote the verified candidate and confirm online updates
 
@@ -454,24 +456,29 @@ administrator authorization. A readonly mounted DMG cannot update in place.
 
 ## Website-only updates
 
-For an explicitly requested website redesign or documentation update after the
-application is already public, use `deploy-website.yml`. This is independent of
-`publish-local` and does not create an application release or move any tag.
+Main-push website updates build and deploy automatically, independently of
+`publish-local`, without creating an application release or moving any tag.
 
 1. Commit and push the reviewed website changes to `main`.
-2. Wait for **Build FileMint website** for that exact push to succeed. Its build
-   runs the website's release-data and deployment-policy regression tests.
-3. Read the current public stable Release ID, the successful build run ID and
-   its unique, unexpired `github-pages` artifact ID from GitHub.
-4. Dispatch **Deploy website-only update** on `main` with `commit`,
-   `build_run_id`, `artifact_id` and `release_id` set to those exact identities.
-5. Wait for deployment success, then inspect both live homepages and live
+2. **Build FileMint website** runs the website tests and retains its Pages archive.
+3. Its successful completion automatically starts **Deploy website-only update**.
+   The deployer accepts only original-repository main-push builds and discovers
+   the exact build, unique unexpired artifact and current public stable Release IDs.
+4. Wait for deployment success, then inspect both live homepages and live
    latest-release discovery. Record the commit, build and deployment run URLs.
 
-The workflow checks current main, ancestry and a website/documentation-only diff
-from the public stable tag. App/Core/Finder/build configuration changes are
-rejected. It checks the exact successful main-push build and artifact before and
-after fetching the archive, then deploys that retained archive without rebuilding.
+The source must remain current main and descend from the public stable tag.
+Application source, dependencies, resources, configuration, project.yml and the
+bundled LICENSE must match that tag. Website, docs/specs, scripts, CI and repository
+maintenance may advance independently; unknown root paths remain rejected.
+Superseded builds and unpublished application changes are skipped with a reason
+before downloading. API failures, invalid metadata and changed identities during
+download fail closed. Release-dispatched builds and failed/cancelled builds never
+auto-deploy. The exact successful archive is deployed without rebuilding.
+
+For an explicit retry, manually dispatch **Deploy website-only update** on `main`
+with `commit`, `build_run_id`, `artifact_id` and `release_id` pinned to the exact
+current main, successful push build, retained artifact and public stable Release.
 Both website deployment paths share the `pages` concurrency group. An expired
 artifact requires a successful rerun of the exact build; a moved main or latest
 Release requires a new identity review. Application publication still follows the

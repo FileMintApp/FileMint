@@ -9,6 +9,9 @@ on:
       - website/**
       - package.json
       - pnpm-lock.yaml
+      - specs/domains/presentation.md
+      - specs/domains/distribution.md
+      - docs/DISTRIBUTION.md
       - .github/workflows/build-pages.yml
       - .github/workflows/deploy-pages.yml
       - .github/workflows/deploy-website.yml

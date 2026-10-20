@@ -62,13 +62,18 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   creation-endpoint override header to ordinary requests. See GitHub's
   [format guidance](https://github.blog/changelog/2026-05-15-github-app-installation-tokens-per-request-override-header/)
   and [completed rollout and header retirement](https://github.blog/changelog/2026-10-02-stateless-github-app-installation-tokens-rolled-out/).
-- Website-only deployments use an explicit manual `deploy-website.yml` dispatch,
-  serialized with release website deployments. Validate current main, ancestry
-  and an allowlisted website/documentation-only diff from the latest public
-  stable release, plus the exact successful main-push website run and unexpired
-  artifact ID. The published release identity is checked independently of the
-  newer website commit. Deploy the retained artifact without rebuilding or
-  modifying releases. The existing release-bound deployment gates are unchanged.
+- Successful main-push website builds automatically trigger `deploy-website.yml`.
+  Serialize with release website deployments and retain manual dispatch for retries.
+  Validate the originating repository, push event, workflow, current main, stable
+  release ancestry and the exact successful build and unexpired artifact IDs.
+  App, CorePackage, FinderSyncExtension, SharedUI, Config, Resources, ThirdParty,
+  project.yml and bundled license changes since the stable tag prevent independent
+  deployment. Website, docs/specs, tests, CI and publication tooling may advance
+  independently; reject unknown root paths. Skip superseded builds and unpublished
+  application changes with an explicit reason, before downloading any artifact.
+  Recheck identities after downloading and deploy the retained archive without
+  rebuilding or modifying releases. Release-dispatched builds never auto-deploy;
+  the existing application-publication and release-bound website gates remain.
 - Source CI runs the complete offline `make verify` suite and
   `CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO make build` on the standard
   arm64 `macos-15` and `macos-26` runners. The build uses the existing Release

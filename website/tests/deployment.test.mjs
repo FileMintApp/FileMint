@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import {
   REPOSITORY, prepareDeployment, validateArchive, validateArtifact, validateBuildRun,
-  validateInputs, validateMain, validateRelease, validateWebsitePaths,
+  automaticBuildInputs, validateInputs, validateMain, validateRelease, validateWebsitePaths,
 } from '../scripts/prepare-deployment.mjs'
 
 const commit = 'a'.repeat(40)
@@ -26,14 +26,15 @@ const artifact = {
 }
 const main = { object: { type: 'commit', sha: commit } }
 const environment = {
-  GITHUB_ACTIONS: 'true', SITE_COMMIT: commit, SITE_BUILD_RUN_ID: '12', SITE_ARTIFACT_ID: '34',
+  GITHUB_ACTIONS: 'true', GITHUB_EVENT_NAME: 'workflow_dispatch', SITE_COMMIT: commit, SITE_BUILD_RUN_ID: '12', SITE_ARTIFACT_ID: '34',
   SITE_RELEASE_ID: '56', GITHUB_OUTPUT: '/tmp/output', RUNNER_TEMP: '/tmp',
 }
 
 test('requires Actions and explicit valid commit and resource IDs', () => {
   assert.deepEqual(validateInputs(environment), inputs)
   for (const [key, value] of [
-    ['GITHUB_ACTIONS', 'false'], ['SITE_COMMIT', 'main'], ['SITE_COMMIT', 'A'.repeat(40)],
+    ['GITHUB_ACTIONS', 'false'], ['GITHUB_EVENT_NAME', 'pull_request'],
+    ['SITE_COMMIT', 'main'], ['SITE_COMMIT', 'A'.repeat(40)],
     ['SITE_BUILD_RUN_ID', '0'], ['SITE_ARTIFACT_ID', '-1'], ['SITE_RELEASE_ID', '1;echo'],
     ['GITHUB_OUTPUT', ''], ['RUNNER_TEMP', ''],
   ]) assert.throws(() => validateInputs({ ...environment, [key]: value }), key)
@@ -77,17 +78,20 @@ test('requires one retained artifact from the exact run and source', () => {
   ]) assert.throws(() => validateArtifact({ artifacts }, inputs), JSON.stringify(artifacts))
 })
 
-test('website-only deployment refuses app or existing release-pipeline changes', () => {
+test('repository maintenance is independent of the published native application', () => {
   validateWebsitePaths([
     'website/index.md', 'website/scripts/prepare-deployment.mjs', 'README.en.md',
     'package.json', 'pnpm-lock.yaml', 'docs/tasks/deployment.md',
     'specs/domains/presentation.md', 'specs/domains/distribution.md',
     '.github/workflows/build-pages.yml', '.github/workflows/deploy-website.yml',
+    'scripts/release_publication.py', 'scripts/test_publish_release.py',
+    'scripts/homebrew_tap.py', '.github/workflows/ci.yml', 'Makefile',
   ])
   for (const path of [
     'project.yml', 'CorePackage/Sources/Foo.swift', 'App/FileMint/App.swift',
-    'scripts/release_publication.py', '.github/workflows/deploy-pages.yml',
-    '.github/workflows/release.yml', 'specs/domains/updates.md',
+    'Config/FileMint.entitlements', 'FinderSyncExtension/FileMintFinderSync/FinderSync.swift',
+    'SharedUI/FolderAccess.swift', 'Resources/AppIcon.icns', 'ThirdParty/runtime.a',
+    'CorePackage/Package.swift', 'LICENSE', 'UnknownRuntime/main.swift',
     'website/../App/main.swift', '/website/index.md', '',
   ]) assert.throws(() => validateWebsitePaths([path]), path)
 })
@@ -110,12 +114,21 @@ test('download must contain only a nonempty regular artifact.tar', t => {
 })
 
 function fixture(t, { afterDownload = () => {}, paths = ['website/index.md'], checkout = commit,
-  ancestor = true } = {}) {
+  ancestor = true, automatic = false } = {}) {
   const directory = mkdtempSync(join(tmpdir(), 'filemint-deploy-test-'))
   t.after(() => rmSync(directory, { recursive: true, force: true }))
   const env = { ...environment, RUNNER_TEMP: directory, GITHUB_OUTPUT: join(directory, 'outputs') }
   const state = { build: structuredClone(buildRun), artifacts: [structuredClone(artifact)],
     main: structuredClone(main), release: structuredClone(published) }
+  if (automatic) {
+    env.GITHUB_EVENT_NAME = 'workflow_run'
+    env.GITHUB_REPOSITORY = REPOSITORY
+    env.GITHUB_EVENT_PATH = join(directory, 'event.json')
+    env.GITHUB_STEP_SUMMARY = join(directory, 'summary.md')
+    writeFileSync(env.GITHUB_EVENT_PATH, JSON.stringify({ action: 'completed',
+      repository: { full_name: REPOSITORY }, workflow_run: buildRun }))
+    for (const key of ['SITE_COMMIT', 'SITE_BUILD_RUN_ID', 'SITE_ARTIFACT_ID', 'SITE_RELEASE_ID']) delete env[key]
+  }
   const calls = []
   const run = (command, args) => {
     calls.push([command, ...args])
@@ -144,14 +157,14 @@ function fixture(t, { afterDownload = () => {}, paths = ['website/index.md'], ch
     }
     assert.fail(`Unexpected command: ${command} ${args.join(' ')}`)
   }
-  return { env, run, calls }
+  return { env, run, calls, state }
 }
 
 test('reuses the successful archive with read-only commands and no rebuild or app release', t => {
   const options = fixture(t)
   const archive = prepareDeployment(options)
   assert.equal(readFileSync(archive, 'utf8'), 'verified website bytes')
-  assert.equal(readFileSync(options.env.GITHUB_OUTPUT, 'utf8'), `archive=${archive}\n`)
+  assert.equal(readFileSync(options.env.GITHUB_OUTPUT, 'utf8'), `archive=${archive}\nready=true\n`)
   assert.equal(options.calls.filter(call => call[0] === 'gh' && call[1] === 'run').length, 1)
 })
 
@@ -172,6 +185,88 @@ test('reruns, artifact replacement, newer main or newer latest release block dep
     state => { state.release.draft = true },
   ]) {
     const options = fixture(t, { afterDownload: change })
+    assert.throws(() => prepareDeployment(options))
+    assert.throws(() => readFileSync(options.env.GITHUB_OUTPUT), { code: 'ENOENT' })
+  }
+})
+
+test('automatic trigger accepts only successful original-repository main push builds', () => {
+  const event = { action: 'completed', repository: { full_name: REPOSITORY }, workflow_run: buildRun }
+  assert.deepEqual(automaticBuildInputs(event), { commit, runId: '12' })
+  for (const change of [
+    { event: 'pull_request' }, { event: 'workflow_dispatch' }, { conclusion: 'failure' },
+    { conclusion: 'cancelled' }, { status: 'in_progress' }, { head_branch: 'feature' },
+    { head_repository: { full_name: 'fork/FileMint' } }, { path: '.github/workflows/ci.yml' },
+    { id: '../12' }, { head_sha: 'main' },
+  ]) assert.throws(() => automaticBuildInputs({ ...event, workflow_run: { ...buildRun, ...change } }))
+  assert.throws(() => automaticBuildInputs({ ...event, action: 'requested' }))
+  assert.throws(() => automaticBuildInputs({ ...event, repository: { full_name: 'fork/FileMint' } }))
+})
+
+test('automatic deployment discovers and pins the exact build, artifact and stable release', t => {
+  const options = fixture(t, { automatic: true, paths: [
+    'website/index.md', 'scripts/homebrew_tap.py', 'scripts/test_github_token.py',
+    '.github/workflows/ci.yml', 'Makefile', 'specs/HARNESS.md',
+  ] })
+  const archive = prepareDeployment(options)
+  assert.equal(readFileSync(archive, 'utf8'), 'verified website bytes')
+  assert.equal(readFileSync(options.env.GITHUB_OUTPUT, 'utf8'), `archive=${archive}\nready=true\n`)
+  assert.equal(options.calls.filter(call => call[0] === 'gh' && call[1] === 'run').length, 1)
+})
+
+test('automatic deployment skips superseded builds and unpublished application changes', t => {
+  for (const changes of [
+    { checkout: 'b'.repeat(40) }, { paths: ['App/FileMint/FileMintApp.swift'] },
+    { paths: ['CorePackage/Package.swift'] }, { paths: ['Config/AppInfo.plist'] },
+    { paths: ['project.yml'] }, { paths: ['Resources/AppIcon.icns'] },
+    { paths: ['SharedUI/FolderAccess.swift'] }, { paths: ['ThirdParty/runtime.a'] },
+    { paths: ['FinderSyncExtension/FinderSync.swift'] }, { paths: ['LICENSE'] },
+    { paths: ['UnknownRuntime/main.swift'] },
+  ]) {
+    const options = fixture(t, { automatic: true, ...changes })
+    assert.equal(prepareDeployment(options), null)
+    assert.equal(readFileSync(options.env.GITHUB_OUTPUT, 'utf8'), 'ready=false\n')
+    assert.match(readFileSync(options.env.GITHUB_STEP_SUMMARY, 'utf8'), /Website deployment skipped:/)
+    assert.ok(options.calls.every(call => !(call[0] === 'gh' && call[1] === 'run')))
+  }
+  const options = fixture(t, { automatic: true })
+  options.state.main.object.sha = 'b'.repeat(40)
+  assert.equal(prepareDeployment(options), null)
+  assert.equal(readFileSync(options.env.GITHUB_OUTPUT, 'utf8'), 'ready=false\n')
+})
+
+test('automatic deployment revalidates API metadata before trusting a trigger or downloading bytes', t => {
+  for (const mutate of [
+    state => { state.build.event = 'pull_request' },
+    state => { state.build.repository.full_name = 'fork/FileMint' },
+    state => { state.build.head_sha = 'b'.repeat(40) },
+    state => { state.build.conclusion = 'failure' },
+    state => { state.artifacts = [] },
+    state => { state.artifacts.push(structuredClone(artifact)) },
+    state => { state.artifacts[0].expired = true },
+    state => { state.artifacts[0].workflow_run.head_sha = 'b'.repeat(40) },
+    state => { state.release.draft = true },
+  ]) {
+    const options = fixture(t, { automatic: true })
+    mutate(options.state)
+    assert.throws(() => prepareDeployment(options))
+    assert.ok(options.calls.every(call => !(call[0] === 'gh' && call[1] === 'run')))
+    assert.throws(() => readFileSync(options.env.GITHUB_OUTPUT), { code: 'ENOENT' })
+  }
+  const options = fixture(t, { automatic: true })
+  options.env.GITHUB_REPOSITORY = 'fork/FileMint'
+  assert.throws(() => prepareDeployment(options))
+  assert.equal(options.calls.length, 0)
+})
+
+test('automatic deployment refuses identities that change while the retained archive downloads', t => {
+  for (const afterDownload of [
+    state => { state.artifacts[0].id = 35 },
+    state => { state.build.status = 'in_progress' },
+    state => { state.main.object.sha = 'b'.repeat(40) },
+    state => { state.release.id = 57 },
+  ]) {
+    const options = fixture(t, { automatic: true, afterDownload })
     assert.throws(() => prepareDeployment(options))
     assert.throws(() => readFileSync(options.env.GITHUB_OUTPUT), { code: 'ENOENT' })
   }

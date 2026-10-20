@@ -271,12 +271,13 @@ owns the rules, supported storage, counts, explicit actions and recovery behavio
   and deployed afterward from that exact successful build artifact. A push can
   build the website but must not automatically deploy unpublished release copy.
   Website failures have a separate status from application publication.
-- An explicitly requested website-only update can deploy independently of an
-  App release, using the manual website deployment workflow. Its source must
-  be current main, descend from the latest public stable release and contain
-  only website/documentation changes since that release. Reuse the exact
-  successful main-push Pages artifact, with validated run and artifact IDs.
-  This path never creates or changes application releases, tags or assets.
+- Website updates on main automatically deploy after a successful push build,
+  independently of an App release when application source, resources and project
+  configuration still match the latest public stable tag. Docs, CI and publication
+  tooling maintenance does not by itself block the website. Superseded builds and
+  unpublished App changes remain undeployed with a clear reason. Reuse the exact
+  successful Pages artifact, with validated run and artifact IDs; manual retry is
+  available. This path never creates or changes application releases, tags or assets.
 - Website homepages present the current creation, text/Office templates,
   clipboard-image creation, Open with App, file tools, image tools and appearance
   choices in both languages. Use real app captures with matching-language captions;
