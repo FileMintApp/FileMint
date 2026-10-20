@@ -1,3 +1,31 @@
+# FileMint 0.8.0
+
+## 新功能与改进
+
+- **批量重命名**：在 Finder 中选择同一文件夹内的 2–1,000 个文件或普通文件夹，按规则替换、添加文字、编号、转换大小写，或粘贴逐行名称。执行前预览全部结果，保留扩展名与隐藏状态；冲突会阻止执行，不覆盖已有项目。首版支持本地可写 APFS。
+- **撤销与中断恢复**：保留最近一次成功批量重命名的撤销入口，撤销前核对项目与目标名称。中断后可恢复操作前名称；无法自动恢复时保留文件与恢复记录，并提供导出证据及手动解除阻塞入口。
+- **文件信息与校验值**：选中一个普通文件，查看名称、类型、大小、位置和日期。点击“计算”后生成 SHA-256、SHA-512、SHA-1、MD5 或全部四种校验值，支持取消、拷贝和粘贴比对。打开面板不会自动读取内容计算；检测到文件变化、取消或读取失败时不保留成功结果。校验值不是加密，也不能单独证明来源可信，MD5 / SHA-1 仅用于兼容旧校验值。
+- **更稳妥的操作交接**：批量重命名可复用有效的文件夹授权；文件校验期间退出或更新重启会先取消读取并等待清理。Finder 会隐藏不支持文件信息操作的项目入口。
+
+## 启用与升级
+
+在“扩展功能 → 文件（夹）工具”开启总开关，再分别开启“批量重命名”和“文件信息”；两个新工具默认关闭，可独立设置菜单位置。批量重命名仅从 Finder 多选入口启动；“撤销上次批量重命名”位于结果面板及主应用“文件”菜单。
+
+正式安装包支持 macOS 13 或更新版本的 M 系列 Mac，不含 Intel 代码。可通过“关于 → 检查更新 → 更新并重启”升级，也可下载 DMG 手动安装。继续提供 DMG、ZIP、校验文件和两种签名更新源。已有模板、应用选择、文件夹授权和开关设置保留。0.5.7/0.5.8 用户仍需手动安装 0.5.9 或更新版本一次。
+
+## New features and improvements
+
+- **Batch Rename**: Select 2–1,000 files or ordinary folders in one Finder directory. Replace or add text, number names, change case, or paste a list of names. Preview every result before renaming, retaining extensions and hidden status. Conflicts block execution without overwriting existing items. Initial support is local, writable APFS.
+- **Undo and interrupted-operation recovery**: Undo the most recent successful batch rename after checking current items and destination names. Interrupted operations offer restoration of their pre-operation names. When automatic recovery is unavailable, files and recovery records remain available, with evidence export and an explicit manual-unblock action.
+- **File Info and checksums**: Inspect one ordinary file's name, kind, size, location and dates. Choose SHA-256, SHA-512, SHA-1, MD5 or all four, then explicitly calculate, cancel, copy or compare a pasted value. Opening the panel does not calculate checksums. Detected changes, cancellation and read failures discard results. Checksums are not encryption or proof of origin; MD5 and SHA-1 are for legacy compatibility.
+- **Safer operation handoff**: Reuse valid batch-rename folder grants. Quit and update-restart requests cancel active checksum reads and wait for cleanup. Finder hides File Info for unsupported selections.
+
+## Enable and upgrade
+
+Under **Extensions → File & Folder Tools**, enable the module, then enable **Batch Rename** and **File Info** separately. Both new tools start off and have independent menu placement. Start batch renaming from Finder's multiple selection; **Undo Last Batch Rename** is available in the result panel and the app's **File** menu.
+
+The stable installer supports M-series Macs running macOS 13 or later and contains no Intel code. Upgrade through **About → Check for Updates → Update and Restart**, or install the DMG manually. DMG, ZIP, checksums and both signed update feeds remain available. Existing templates, application choices, folder grants and feature settings are retained. Versions 0.5.7/0.5.8 still require one manual installation of 0.5.9 or later.
+
 # FileMint 0.7.0
 
 ## 新功能与改进

@@ -11,15 +11,17 @@ FileMint puts the action back in Finder: **right-click, choose a type and your f
 When you need a name, starter content, image processing or selected-item tools, the same native workflow continues.
 
 <!-- #region release -->
-## What's new in 0.7.0
+## What's new in 0.8.0
 
-Choose the Finder main menu, submenu or Hidden separately for creation actions and each template. Finder settings and bottom spacing are consistent across modules, and double-clicking a template opens its editor. Image compression adds local MozJPEG, PNG and TIFF encoding while preserving originals and showing actual output sizes. New clients use a ZIP update archive; the DMG feed remains available for older clients. Existing templates, folder grants and feature settings are retained. The stable installer supports M-series Macs on macOS 13+.
+Batch Rename previews rules or pasted names before execution and supports undoing the most recent successful operation. File Info adds SHA-256, SHA-512, SHA-1 and MD5 calculation, copying and comparison. Both tools start off; enable them under File & Folder Tools when needed. Existing templates, grants and settings are retained, with both DMG and ZIP update archives available. The stable installer supports M-series Macs on macOS 13+.
 
-[0.7.0 release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.7.0)
+[0.8.0 release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.8.0)
 <!-- #endregion release -->
 
 ## Recent features
 
+- **Batch Rename**: Preview and rename 2–1,000 items in one directory on local, writable APFS, with undo, interrupted-operation recovery and no overwriting of existing items.
+- **File Info and checksums**: Inspect one ordinary file, explicitly calculate four supported digests, and copy or compare results.
 - **Copy and preview templates**: Start with a copy of an existing template and optionally inspect text output or an Office preview supported by the system.
 - **Import and export templates**: Back up, move or share templates in `.filemint-templates` packages, reviewing conflicts before import.
 - **Create and Open**: Continue in an app chosen for the template or this creation; opening failures preserve the saved file.
@@ -30,7 +32,7 @@ Choose the Finder main menu, submenu or Hidden separately for creation actions a
 - **Word / Excel templates**: Create blank `.docx` and `.xlsx` files from built-in templates, or import your own documents and create independent copies with their formatting and content intact.
 - **Themes and settings**: General now offers Follow System, Light and Dark, with consistent control alignment and interaction styles.
 
-[Full release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.7.0)
+[Full release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.8.0)
 
 ## Why FileMint
 
@@ -137,7 +139,7 @@ Read the complete [privacy policy](PRIVACY.md).
 
 ## Install
 
-The 0.7.0 stable installer supports **M-series Macs on macOS 13+** only. Intel Macs cannot install or update to this version. Published installers through 0.5.10 keep their original compatibility.
+The 0.8.0 stable installer supports **M-series Macs on macOS 13+** only. Intel Macs cannot install or update to this version. Published installers through 0.5.10 keep their original compatibility.
 
 **Stable installers from 0.5.9 onward are Developer ID signed, Apple notarized and stapled.** First use still follows macOS prompts for Finder enablement and folder authorization.
 

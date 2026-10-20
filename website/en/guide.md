@@ -83,6 +83,18 @@ Open **Extensions → File & Folder Tools**, enable the master switch, then enab
 - **Delete Permanently:** Bypasses Trash and asks for confirmation by default. It cannot be undone. Enable it only when you need it.
 - **AirDrop / Send Alias to Desktop:** AirDrop opens the native macOS chooser so you select a recipient. An alias points to the original item without moving it.
 
+### Batch Rename
+
+Enable **Batch Rename**, select 2–1,000 ordinary files or folders in one Finder directory, then choose **Batch Rename…**. Initial support is local, writable APFS. Add replacement, prefix/suffix, numbering or case rules, or switch to a name list and paste one new name per item. Extensions and hidden status are retained.
+
+Review original names, results and errors before clicking **Rename N Items**. Conflicts and invalid names block execution without overwriting existing items. **Undo Last Batch Rename…** in the result panel or the app's **File** menu provides a reverse preview and explicit confirmation. Interrupted operations offer restoration of their pre-operation names. If manual handling is needed, export recovery evidence and explicitly unblock the tool. A batch is not atomic; recovery conflicts preserve files and records for further handling.
+
+### File Info and checksums
+
+Enable **File Info**, select one ordinary file in Finder, then choose **File Info…**. The panel initially shows the name, kind, size, location and dates without calculating. Choose SHA-256, SHA-512, SHA-1, MD5 or all four, then click **Calculate**. Cancel, copy results or choose one algorithm to compare a pasted expected value. Closing cancels the read and waits for cleanup.
+
+SHA-256 is the recommended default. MD5 and SHA-1 are for legacy compatibility; checksums are not encryption or proof of origin. Download known cloud placeholders in Finder first. Folders, packages, links, aliases and multiple selections do not show this entry. Detected changes, read failures and cancellation discard results.
+
 ## Process images and extract text
 
 In the app, open **Extensions → Resource Tools → Use Tools** and choose local images. Finder menu integration is not required. To start from Finder, enable the default-off Resource Tools master switch and the actions you need under **Finder Menu Settings**, then select images and right-click.
