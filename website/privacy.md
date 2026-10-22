@@ -1,6 +1,6 @@
 ---
 title: 隐私
-description: FileMint 的本地优先隐私承诺。
+description: 了解 FileMint 的本机文件与图片处理、主动剪贴板读取、Finder 文件夹授权和更新检查边界，无账号与使用分析数据收集。
 ---
 
 # 隐私，应该不需要猜

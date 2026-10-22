@@ -1,6 +1,6 @@
 ---
 title: FileMint 使用指南
-description: 按步骤上手 Finder 文件创建、批量重命名、文件信息与校验值、模板和图片工具。
+description: 学习如何在 Mac Finder 右键新建文件、使用文本与 Office 模板、批量重命名、计算文件校验值、压缩图片及识别文字，并排查菜单与授权问题。
 pageClass: guide-page
 ---
 

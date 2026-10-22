@@ -1,13 +1,49 @@
-import { defineConfig } from 'vitepress'
+import { existsSync } from 'node:fs'
+import { defineConfig, type HeadConfig } from 'vitepress'
 
 const repository = 'https://github.com/FileMintApp/FileMint'
+const siteUrl = 'https://filemintapp.github.io/FileMint/'
 const base = process.env.SITE_BASE ?? '/'
 const publicAsset = (path: string) => `${base.replace(/\/$/, '')}/${path}`
+const pageUrl = (path: string) => new URL(path.replace(/(^|\/)index\.md$/, '$1').replace(/\.md$/, '.html'), siteUrl).href
 
 export default defineConfig({
   base,
   title: 'FileMint',
-  description: 'Create documents, batch rename files, calculate checksums and process images on your Mac, right from Finder.',
+  description: 'Native macOS Finder extension for right-click file creation, reusable templates, batch rename, SHA-256 checksums, image compression and OCR.',
+  sitemap: {
+    hostname: siteUrl,
+    transformItems: (items) => items.filter((item) => !/(^|\/)404\.html$/.test(item.url))
+  },
+  transformHead({ pageData, title, description }) {
+    if (/(^|\/)404\.md$/.test(pageData.relativePath)) {
+      return [['meta', { name: 'robots', content: 'noindex' }]]
+    }
+    const english = pageData.relativePath.startsWith('en/')
+    const chineseSource = pageData.relativePath.replace(/^en\//, '')
+    const englishSource = `en/${chineseSource}`
+    const translatedSource = english ? chineseSource : englishSource
+    const canonical = pageUrl(pageData.relativePath)
+    const head: HeadConfig[] = [
+      ['link', { rel: 'canonical', href: canonical }],
+      ['meta', { property: 'og:type', content: 'website' }],
+      ['meta', { property: 'og:site_name', content: 'FileMint' }],
+      ['meta', { property: 'og:title', content: title }],
+      ['meta', { property: 'og:description', content: description }],
+      ['meta', { property: 'og:url', content: canonical }],
+      ['meta', { property: 'og:locale', content: english ? 'en_US' : 'zh_CN' }],
+      ['meta', { name: 'twitter:title', content: title }],
+      ['meta', { name: 'twitter:description', content: description }]
+    ]
+    if (existsSync(new URL(`../${translatedSource}`, import.meta.url))) {
+      head.push(
+        ['link', { rel: 'alternate', hreflang: 'zh-Hans', href: pageUrl(chineseSource) }],
+        ['link', { rel: 'alternate', hreflang: 'en-US', href: pageUrl(englishSource) }],
+        ['meta', { property: 'og:locale:alternate', content: english ? 'zh_CN' : 'en_US' }]
+      )
+    }
+    return head
+  },
   markdown: {
     config(md) {
       // Render the same GitHub task lists used by the README includes.
@@ -31,10 +67,12 @@ export default defineConfig({
   },
   head: [
     ['meta', { name: 'theme-color', content: '#0b9b7b' }],
-    ['meta', { property: 'og:image', content: publicAsset('filemint-icon.png') }],
+    ['meta', { property: 'og:image', content: new URL('filemint-icon.png', siteUrl).href }],
     ['meta', { property: 'og:image:type', content: 'image/png' }],
     ['meta', { property: 'og:image:width', content: '1024' }],
     ['meta', { property: 'og:image:height', content: '1024' }],
+    ['meta', { name: 'twitter:card', content: 'summary' }],
+    ['meta', { name: 'twitter:image', content: new URL('filemint-icon.png', siteUrl).href }],
     ['meta', { name: 'apple-mobile-web-app-title', content: 'FileMint' }],
     ['link', { rel: 'icon', href: publicAsset('favicon.ico'), sizes: 'any' }],
     ['link', { rel: 'icon', type: 'image/png', href: publicAsset('favicon-16x16.png'), sizes: '16x16' }],
@@ -47,7 +85,7 @@ export default defineConfig({
       label: '简体中文',
       lang: 'zh-Hans',
       title: 'FileMint',
-      description: '在 Finder 中创建文件、批量重命名、查看文件信息和计算校验值，复用模板并在本机处理图片。',
+      description: '原生 macOS Finder 扩展：右键新建文件、复用模板、批量重命名、SHA-256 文件校验、图片压缩与 OCR 文字识别。',
       themeConfig: {
         outline: { level: 'deep', label: '本页目录' },
         nav: [
@@ -68,7 +106,7 @@ export default defineConfig({
       lang: 'en-US',
       link: '/en/',
       title: 'FileMint',
-      description: 'Create documents, batch rename files, calculate checksums and process images on your Mac, right from Finder.',
+      description: 'Native macOS Finder extension for right-click file creation, reusable templates, batch rename, SHA-256 checksums, image compression and OCR.',
       themeConfig: {
         nav: [
           { text: 'Features', link: '/en/#features' },

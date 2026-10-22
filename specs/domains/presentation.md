@@ -299,6 +299,13 @@ owns the rules, supported storage, counts, explicit actions and recovery behavio
   a brief install guide. English is the default `README.md`; Simplified Chinese
   lives in `README.zh-CN.md`, with reciprocal language links at the top. Developer
   instructions live in docs. Optional donations link the supplied ReceivePayment images.
+- Repository description, Topics and bilingual introductory copy describe the
+  implemented macOS Finder extension and its actual file/image tasks. Use natural
+  search phrases and at most 20 relevant Topics. Website pages provide distinct
+  titles/descriptions, absolute canonical and sharing URLs at the official Pages
+  address, and reciprocal language links only for existing translations. Generate
+  a sitemap with the production base path; exclude 404 pages and mark them noindex.
+  Search metadata adds no tracking or build-time network requests.
 - Both README languages and website homepages show a future roadmap as grouped
   TODO checklists. Describe concrete user outcomes without priorities, release
   assignments or delivery dates, and distinguish planned work from available

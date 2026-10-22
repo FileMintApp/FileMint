@@ -1,6 +1,6 @@
 ---
 title: Privacy
-description: FileMint's local-first privacy promise.
+description: Read how FileMint handles local files, images, explicit clipboard access, Finder folder permissions and update checks, without accounts or usage analytics.
 ---
 
 # Privacy should not be a guess

@@ -85,7 +85,7 @@ const faqs = computed(() => [
         <div class="fm-eyebrow"><span class="fm-dot" /> {{ t('为 macOS 而生', 'MADE FOR macOS') }} <span class="fm-eyebrow-rule" /></div>
         <h1 id="hero-title">{{ t('顺手的工具，', 'Small actions.') }}<br><em>{{ t('就在右键。', 'A better flow.') }}</em></h1>
         <p class="fm-hero-lead">{{ t('把文件工具，放回 Finder。', 'Your file tools. Right where you work.') }}</p>
-        <p class="fm-hero-description">{{ t('新建文档，批量整理名称，核对文件校验值，处理图片。留在手边的工作里，让每一步都顺手。', 'Create documents, rename a batch, verify a checksum, and work with images. Keep everyday file tasks close at hand.') }}</p>
+        <p class="fm-hero-description">{{ t('在 macOS Finder 右键新建文件，批量重命名，计算 SHA-256 校验值，压缩图片或识别文字。常用文件工具，都在手边。', 'Create new files from the macOS Finder context menu. Batch rename, calculate SHA-256 checksums, compress images and extract text with OCR.') }}</p>
         <a class="fm-hero-tools fm-text-link" href="#file-tools">{{ t('认识批量重命名与文件校验', 'Meet Batch Rename & file checksums') }} <span aria-hidden="true">↗</span></a>
         <div class="fm-actions"><a class="fm-button fm-button-primary" :href="release"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v4h16v-4"/></svg>{{ t('下载 macOS 版', 'Download for macOS') }}</a><a class="fm-text-link" href="#workflows">{{ t('看看怎么用', 'See it in action') }} <span aria-hidden="true">↗</span></a></div>
         <div class="fm-release-line"><LatestRelease :lang="lang" /><span>macOS 13+ · Apple M-series</span></div>

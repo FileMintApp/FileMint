@@ -1,6 +1,6 @@
 ---
 title: 安装 FileMint
-description: 在 macOS 上安装并启用 FileMint。
+description: 在 macOS 上安装 FileMint，启用 Finder 扩展并授权文件夹。了解 DMG、Homebrew 安装方式、自动更新及 Apple 芯片兼容要求。
 ---
 
 # 安装 FileMint

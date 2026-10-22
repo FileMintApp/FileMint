@@ -1,6 +1,6 @@
 ---
 title: Install FileMint
-description: Install and enable FileMint on macOS.
+description: Install FileMint on macOS with a DMG or Homebrew, enable the Finder extension and authorize folders. Check automatic update guidance and Apple silicon requirements.
 ---
 
 # Install FileMint

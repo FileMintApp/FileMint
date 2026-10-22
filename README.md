@@ -2,13 +2,13 @@
 <h1 align="center">FileMint</h1>
 <p align="center"><strong>Put file tools back in Finder.</strong><br>A small native macOS app for creating, processing and organizing files and images.</p>
 <p align="center"><strong>English</strong> ｜ <a href="README.zh-CN.md"><strong>简体中文 →</strong></a></p>
-<p align="center"><a href="https://github.com/FileMintApp/FileMint/releases/latest">Download for macOS</a> · <a href="website/">Website source</a> · <a href="docs/INSTALL.md">Installation help</a> · <a href="https://github.com/FileMintApp/FileMint/issues">Report an issue</a></p>
+<p align="center"><a href="https://github.com/FileMintApp/FileMint/releases/latest">Download for macOS</a> · <a href="https://filemintapp.github.io/FileMint/en/">Website</a> · <a href="website/">Website source</a> · <a href="docs/INSTALL.md">Installation help</a> · <a href="https://github.com/FileMintApp/FileMint/issues">Report an issue</a></p>
 <p align="center"><sub>Swift + AppKit + SwiftUI · Offline file creation</sub></p>
 
 Creating a file should not require opening an editor, choosing Save As and finding your folder again.
 
 FileMint puts the action back in Finder: **right-click, choose a type and your file is there.**
-When you need a name, starter content, image processing or selected-item tools, the same native workflow continues.
+Use this native **macOS Finder extension** for right-click file creation, reusable templates, batch rename, SHA-256 checksums, image compression and OCR.
 
 <!-- #region release -->
 ## What's new in 0.8.0

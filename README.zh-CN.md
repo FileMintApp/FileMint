@@ -2,13 +2,13 @@
 <h1 align="center">FileMint</h1>
 <p align="center"><strong>把文件工具，放回 Finder。</strong><br>一个小体积的原生 macOS app：创建、处理、整理文件与图片。</p>
 <p align="center"><a href="README.md"><strong>← English</strong></a> ｜ <strong>简体中文</strong></p>
-<p align="center"><a href="https://github.com/FileMintApp/FileMint/releases/latest">下载 macOS 版</a> · <a href="website/">官网源码</a> · <a href="docs/INSTALL.md">安装帮助</a> · <a href="https://github.com/FileMintApp/FileMint/issues">反馈问题</a></p>
+<p align="center"><a href="https://github.com/FileMintApp/FileMint/releases/latest">下载 macOS 版</a> · <a href="https://filemintapp.github.io/FileMint/">官网</a> · <a href="website/">官网源码</a> · <a href="docs/INSTALL.md">安装帮助</a> · <a href="https://github.com/FileMintApp/FileMint/issues">反馈问题</a></p>
 <p align="center"><sub>Swift + AppKit + SwiftUI · 文件创建离线完成</sub></p>
 
 想建一个文件，却要先打开编辑器、另存为、再找回刚才的文件夹？
 
 FileMint 把这件事放回 Finder：**右键，选一种类型，文件就在这里。**
-需要自己起名字、粘贴内容、处理图片或整理已选项目时，仍然从同一个原生工作流继续。
+这个原生 **macOS Finder 扩展**支持右键新建文件、复用模板、批量重命名、SHA-256 文件校验、图片压缩和 OCR 文字识别。
 
 <!-- #region release -->
 ## 0.8.0 更新

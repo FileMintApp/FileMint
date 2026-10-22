@@ -1,6 +1,6 @@
 ---
 title: FileMint User Guide
-description: Learn Finder file creation, Batch Rename, File Info and checksums, templates and image tools step by step.
+description: Learn to create files in Finder, reuse templates, batch rename, calculate checksums, compress images and run OCR. Includes menu and folder access troubleshooting.
 pageClass: guide-page
 ---
 
