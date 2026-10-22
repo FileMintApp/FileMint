@@ -64,19 +64,48 @@ Load for: Optional Finder file/folder actions, batch rename, selection snapshots
   change detection and complete cleanup. No content in tickets, logs or caches.
 - Bound both source bytes and decoded UTF-8 text to 8 MiB. Read to completion
   within the bound; never truncate. Decode plain text as UTF-8 (optional BOM) or BOM-declared
-  UTF-16 LE/BE strictly, excluding the encoding BOM from the text. Preserve all
+  UTF-16 LE/BE strictly, excluding exactly one encoding BOM from the text. A
+  subsequent leading U+FEFF belongs to the content and must be preserved. Preserve all
   remaining characters, whitespace, indentation and line endings. Reject invalid
   encodings, NUL, binary control characters and empty content; whitespace-only
   text is valid. Do not guess legacy encodings or replace malformed sequences.
+  When clipboard text starts with U+FEFF, its UTF-8 representation needs a separate
+  encoding BOM so native pasteboard readers do not consume the content character.
 - RTF is conditional on production-path integrity and native paste compatibility
   checks. When admitted, publish the original validated RTF bytes together with
   complete plain text in one clipboard item. Do not flatten/re-encode the rich
   representation. Malformed, attachment/object-bearing or unsupported RTF must
   fail without publishing a partial text extraction. Receiving apps choose the
   representations they support; arbitrary cross-app layout fidelity is not promised.
-  Text-and-style RTF is admitted with native rich/plain-text receiver checks for
-  complete Unicode text, original bytes, fonts, colors and paragraph alignment.
-  RTF uses its declared character encoding through the native importer.
+  Admit a deliberately bounded RTF 1 subset: a single body of text with font and
+  color tables, character styles (font, size, bold, italic, underline, strike,
+  foreground/background color and baseline), and paragraph alignment, spacing,
+  indentation and tab stops. Allow only explicitly recognized formatting and
+  document-metadata controls; unknown controls and destinations fail closed.
+  Headers/footers, footnotes, annotations, fields/links, lists, tables, hidden text,
+  discretionary-hyphen and quarter-em-space controls, Unicode alternate
+  destinations (`upr`/`ud`), embedded objects and attachments
+  are outside this subset, even if a native importer could partially read them.
+- Accepted RTF text uses ASCII, ANSI Windows-1252 (implicit or explicit code page
+  1252), and/or UTF-16 Unicode `u` escapes, with group-scoped `uc0` or `uc1`
+  fallback. Accept signed 16-bit values and Cocoa's unsigned 16-bit spelling
+  (the numeric range is -32768 through 65535). Other positive code-page
+  declarations are accepted only for ASCII/Unicode-escape text; reject encoded
+  high-bit text bytes that would depend on those code pages. Font tables may use
+  ANSI charset 0, never a font-specific or system-default text encoding.
+  Recognized Cocoa version/platform/text-scaling metadata and expanded color
+  tables are allowed; they must not introduce another text destination. Native
+  newline escapes and `par` produce LF; `line` produces U+2028; literal tabs and
+  `tab` produce TAB. Font, color and expanded-color tables belong only to the document header, before
+  body text; header declarations cannot be introduced inside the body.
+  Validate control parameters, fallback consumption and paired UTF-16 surrogates
+  strictly; never repair malformed text. Independently extract the complete body
+  in Core, then require the native importer's UTF-8 text bytes to match exactly
+  before publishing either representation. Keep both source and extracted output
+  within 8 MiB. Native rich/plain-text checks must cover accepted Unicode, original
+  bytes, fonts, colors and paragraph attributes, plus rejection of unsupported or
+  malformed RTF without changing the clipboard. Extend this subset only with
+  explicit SPEC changes and corresponding integrity/native-receiver evidence.
 - Reuse configured access or request the exact file with a native read-only
   picker. Do not expand Finder scope, add persistent grant stores or request Full
   Disk Access. Known undownloaded placeholders require downloading in Finder first;

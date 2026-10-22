@@ -67,8 +67,12 @@ public enum FileContentCopyPolicy {
         } else {
             bytes = data; encoding = .utf8
         }
-        // The exact encoding round trip rejects repaired surrogate sequences.
-        guard let text = String(data: bytes, encoding: encoding),
+        // The standard UTF-8 decoder preserves a content FEFF after our BOM
+        // removal. Exact byte round trips reject every repaired sequence, while
+        // remaining available on the minimum supported macOS version.
+        let decoded = encoding == .utf8 ? String(decoding: bytes, as: UTF8.self)
+            : String(data: bytes, encoding: encoding)
+        guard let text = decoded,
               text.data(using: encoding, allowLossyConversion: false) == bytes else {
             throw FileContentCopyError.invalidEncoding
         }
@@ -85,56 +89,10 @@ public enum FileContentCopyPolicy {
         }) else { throw FileContentCopyError.invalidEncoding }
     }
 
-    /// Validate bounded RTF framing before invoking the platform importer. This
-    /// is not an RTF renderer; original bytes remain the rich representation.
-    public static func validateRTFStructure(_ data: Data) throws {
-        guard data.count <= maximumBytes else { throw FileContentCopyError.tooLarge }
-        let bytes = Array(data)
-        guard bytes.starts(with: Array("{\\rtf1".utf8)), bytes.count > 6,
-              !(48...57).contains(bytes[6]) else { throw FileContentCopyError.invalidRTF }
-        let unsupported: Set<String> = ["pict", "object", "objdata", "bin", "shp", "shpinst", "shppict",
-                                        "nonshppict", "nextgraphic", "filetbl", "datastore", "datafield"]
-        func letter(_ value: UInt8) -> Bool { (65...90).contains(value) || (97...122).contains(value) }
-        func hex(_ value: UInt8) -> Bool {
-            (48...57).contains(value) || (65...70).contains(value) || (97...102).contains(value)
-        }
-        var depth = 0, index = 0
-        while index < bytes.count {
-            let byte = bytes[index]
-            guard byte != 0 else { throw FileContentCopyError.invalidRTF }
-            if byte == 123 {
-                depth += 1
-                guard depth <= 128 else { throw FileContentCopyError.invalidRTF }
-            } else if byte == 125 {
-                depth -= 1
-                guard depth >= 0 else { throw FileContentCopyError.invalidRTF }
-                if depth == 0 {
-                    guard bytes[(index + 1)...].allSatisfy({ [9, 10, 13, 32].contains($0) }) else {
-                        throw FileContentCopyError.invalidRTF
-                    }
-                    return
-                }
-            } else if byte == 92 {
-                index += 1
-                guard index < bytes.count else { throw FileContentCopyError.invalidRTF }
-                if bytes[index] == 39 {
-                    guard index + 2 < bytes.count, hex(bytes[index + 1]), hex(bytes[index + 2]) else {
-                        throw FileContentCopyError.invalidRTF
-                    }
-                    index += 2
-                } else if letter(bytes[index]) {
-                    let start = index
-                    while index < bytes.count, letter(bytes[index]) { index += 1 }
-                    guard index - start <= 32 else { throw FileContentCopyError.invalidRTF }
-                    let word = String(decoding: bytes[start..<index], as: UTF8.self).lowercased()
-                    guard !unsupported.contains(word) else { throw FileContentCopyError.invalidRTF }
-                    // Revisit the delimiter (which may be a structural brace).
-                    continue
-                }
-            }
-            index += 1
-        }
-        throw FileContentCopyError.invalidRTF
+    /// Independently extract only the supported RTF subset. The app must compare
+    /// this text with its native import before publishing the original bytes.
+    public static func validatedRTFText(_ data: Data) throws -> String {
+        try RTFContentValidator.text(in: data)
     }
 }
 

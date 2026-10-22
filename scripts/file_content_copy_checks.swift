@@ -73,6 +73,39 @@ func runFileContentCopyChecks(in root: URL) async throws {
     try contentCheck(board.string(forType: .string) == "newer clipboard", "Newer clipboard preserved")
     print("PASS RTF native paste: original bytes; complete Unicode text; rich/plain NSTextView; bold/italic/color/paragraph attributes")
 
+    // Independent expectations cover the admitted subset, including Cocoa's
+    // unsigned UTF-16 spelling and non-1252 headers with Unicode-only body text.
+    let cocoaRTF = #"""
+    {\rtf1\ansi\ansicpg936\cocoartf2908
+    \cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 HelveticaNeue;}
+    {\colortbl;\red255\green255\blue255;}{\*\expandedcolortbl;;}
+    \pard\tx560\pardirnatural\partightenfactor0
+    \f0\fs26\cf0\uc0\u27979 \u35797  \u55358 \u57012 \
+    line\tab 2}
+    """#
+    let admittedRTF: [(String, String)] = [
+        (cocoaRTF, "测试 🪴\nline\t2"),
+        (#"{\rtf1\ansi\ansicpg1252 Caf\'e9 e\u769? \u-10178?\u-8524?}"#, "Café e\u{301} 🪴"),
+        (#"{\rtf1\ansi\uc1\u20013?{\uc0\u25991}\u20013?}"#, "中文中"),
+        (#"{\rtf1\ansi\uc1\u20013\{\u25991\'3f}"#, "中文"),
+        (#"{\rtf1\ansi A\line B\par C}"#, "A\u{2028}B\nC"),
+        (#"{\rtf1\ansi\uc0\u65279\u65279 A}"#, "\u{FEFF}\u{FEFF}A")
+    ]
+    for (source, expectedText) in admittedRTF {
+        let bytes = Data(source.utf8)
+        let payload = try FileContentClipboard.prepareRTF(bytes)
+        try contentCheck(payload.text.utf8.elementsEqual(expectedText.utf8), "Independent RTF body is byte-exact")
+        seed()
+        try FileContentClipboard.write(payload, to: board, expectedChangeCount: board.changeCount)
+        try contentCheck(board.data(forType: .rtf) == bytes, "Admitted RTF keeps its original bytes")
+        for isRich in [true, false] {
+            let receiver = NSTextView(frame: NSRect(x: 0, y: 0, width: 500, height: 180))
+            receiver.isRichText = isRich
+            try contentCheck(receiver.readSelection(from: board), "Admitted RTF pastes into native receiver")
+            try contentCheck(receiver.string.utf8.elementsEqual(expectedText.utf8), "Native paste preserves complete Unicode bytes")
+        }
+    }
+
     let directory = root.appendingPathComponent("contents", isDirectory: true)
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)
     let prefsURL = directory.appendingPathComponent("preferences.json")
@@ -104,6 +137,19 @@ func runFileContentCopyChecks(in root: URL) async throws {
 
     let controller = FileContentCopyController(preferencesFile: prefsURL, pasteboard: board)
     defer { controller.requestClose(); coordinator.contentCopyController.requestClose() }
+    let bomFile = directory.appendingPathComponent("leading-feff.txt")
+    try Data([0xEF, 0xBB, 0xBF, 0xEF, 0xBB, 0xBF, 0x41]).write(to: bomFile)
+    seed()
+    await controller.copy(try FileInfoSelection.capture([bomFile]), expectedChangeCount: board.changeCount)
+    try contentCheck(controller.didCopy && board.string(forType: .string).map { Data($0.utf8) } == Data("\u{FEFF}A".utf8),
+                     "Production text copy removes only the encoding BOM")
+    for isRich in [true, false] {
+        let receiver = NSTextView(frame: NSRect(x: 0, y: 0, width: 500, height: 180))
+        receiver.isRichText = isRich
+        try contentCheck(receiver.readSelection(from: board), "Leading-FEFF text pastes into native receiver")
+        try contentCheck(receiver.string.utf8.elementsEqual("\u{FEFF}A".utf8), "Native receiver preserves leading content FEFF")
+    }
+    controller.requestClose()
     for (name, bytes) in [("empty.txt", Data()), ("binary.txt", Data([65, 0, 66])), ("legacy.txt", Data([0xD6, 0xD0]))] {
         let file = directory.appendingPathComponent(name); try bytes.write(to: file)
         seed(); let counter = board.changeCount
@@ -118,14 +164,34 @@ func runFileContentCopyChecks(in root: URL) async throws {
     await controller.copy(try FileInfoSelection.capture([richFile]), expectedChangeCount: board.changeCount)
     try contentCheck(controller.didCopy && board.data(forType: .rtf) == rtf, "Admitted RTF traverses production reader/controller")
     controller.requestClose()
-    for (name, bytes) in [("truncated.rtf", Data(#"{\rtf1 lost"#.utf8)),
-                          ("attachment.rtf", Data(#"{\rtf1 text {\pict bad}}"#.utf8))] {
+    let rejectedRTF: [(String, String)] = [
+        ("truncated", #"{\rtf1 lost"#),
+        ("attachment", #"{\rtf1 text {\pict bad}}"#),
+        ("footnote", #"{\rtf1\ansi Main{\footnote missing} end}"#),
+        ("header", #"{\rtf1\ansi {\header missing}Main}"#),
+        ("unicode-alternative", #"{\rtf1\ansi A{\upr{?}{\*\ud\u20013?}}B}"#),
+        ("unicode-missing", #"{\rtf1\ansi begin\u? end}"#),
+        ("unicode-range", #"{\rtf1\ansi begin\u99999999? end}"#),
+        ("unicode-surrogate", #"{\rtf1\ansi begin\u-10179? end}"#),
+        ("discretionary-hyphen", #"{\rtf1\ansi A\-B}"#),
+        ("quarter-em-space", #"{\rtf1\ansi A\qmspace B}"#),
+        ("unknown-destination", #"{\rtf1\ansi A{\*\unknown missing}B}"#),
+        ("late-font-table", #"{\rtf1\ansi A{\fonttbl\f0 missing;}B}"#),
+        ("legacy-high-byte", #"{\rtf1\ansi\ansicpg936 A\'e9B}"#),
+        ("field", #"{\rtf1\ansi A{\field{\*\fldinst DATE}{\fldrslt date}}B}"#),
+        ("table", #"{\rtf1\ansi\trowd\intbl Cell\cell\row}"#)
+    ]
+    for (name, sourceRTF) in rejectedRTF {
+        let name = name + ".rtf", bytes = Data(sourceRTF.utf8)
         let file = directory.appendingPathComponent(name); try bytes.write(to: file)
         seed(); let counter = board.changeCount
         await controller.copy(try FileInfoSelection.capture([file]), expectedChangeCount: counter)
         try contentCheck(!controller.didCopy && board.changeCount == counter, "Unsupported RTF preserves board")
+        try contentCheck(board.string(forType: .string) == "keep previous clipboard", "Rejected RTF preserves previous text")
+        try contentCheck(try Data(contentsOf: file) == bytes, "Rejected RTF leaves source intact")
         controller.requestClose()
     }
+    print("PASS strict RTF subset: Cocoa Unicode; exact decomposed text; original bytes; rich/plain paste; unsupported/malformed inputs preserve clipboard; leading FEFF retained")
 
     for scenario in ["clipboard", "file", "policy", "cancel"] {
         try original.write(to: source); try store.save(prefs)

@@ -3,6 +3,24 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Copy file contents review corrections — 2026-10-22
+
+On primary `1047205` plus the corrections, arm64 macOS 27.2 / Xcode 27.1 /
+Swift 6.4 passed `make verify` (Core 361, Images 22), unsigned App/Finder
+compilation and the fresh signed `file-info` fixture `run.LSferH`. Core now
+independently extracts a fail-closed RTF subset; publication requires exact
+UTF-8 agreement with native import while keeping original RTF bytes.
+Native rich/plain receivers preserve Chinese, emoji, decomposed text, U+2028
+and leading U+FEFF. Unsupported/malformed RTF leaves the previous clipboard and
+source bytes unchanged. The explicit group stack accepts 128 levels and rejects
+129 without recursive stack exhaustion.
+
+Initial validation caught an unavailable decoding API, recursive-parser stack
+exhaustion and native pasteboard BOM consumption; all were fixed before these
+final passes. These checks do not establish installed Finder delivery, external
+folder authorization, arbitrary third-party editor behavior, provider volumes or
+older macOS runtime. See the [correction evidence](tasks/2026-10-21-copy-file-contents.md#correction-verification).
+
 ## Copy file contents — 2026-10-21
 
 On primary `1475da6` plus the uncommitted implementation, arm64 macOS 27.2 /

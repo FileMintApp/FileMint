@@ -359,7 +359,7 @@ public enum FileMintStrings {
         .moveHereMenuPosition: ("“Move Here” menu location", "「移到此处」菜单位置"),
         .copyNamesSettingsHint: ("Includes extensions, one item per line.", "包含文件后缀，多选时每项一行。"),
         .copyPathsSettingsHint: ("Copies full paths, one item per line; on empty space, copies the current folder path.", "拷贝完整路径，多选时每项一行；空白处右键则拷贝当前文件夹路径。"),
-        .copyContentsSettingsHint: ("Copies one code, text or text-only RTF file without opening it. Preserves RTF styles. Up to 8 MiB.", "无需打开文件，完整拷贝单个代码、文本或纯文字 RTF 文件；保留 RTF 样式，上限 8 MiB。"),
+        .copyContentsSettingsHint: ("Copies one code/text file or RTF with basic text and styles. Advanced RTF content is unsupported. Up to 8 MiB.", "无需打开文件，完整拷贝单个代码、文本或含基础文字和样式的 RTF；不支持复杂 RTF 内容，上限 8 MiB。"),
         .moveSettingsHint: ("Select items, then right-click their destination to move them.", "先选择项目，再到目标文件夹右键完成移动。"),
         .deleteSettingsHint: ("Bypasses Trash. Deletion cannot be undone.", "不经过废纸篓，删除后无法撤销。"),
         .showInMainMenu: ("Show in main menu", "显示在一级菜单"),

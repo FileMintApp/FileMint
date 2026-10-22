@@ -196,9 +196,12 @@ final class FileContentCopyController: NSObject, ObservableObject, NSWindowDeleg
             return text("This file has no text content. The clipboard was kept.", "文件没有文本内容，已保留原剪贴板。")
         case FileContentCopyError.invalidEncoding:
             return text("This is not supported text. Use UTF-8 or UTF-16 with a BOM.", "内容不是支持的文本，请使用 UTF-8 或带 BOM 的 UTF-16 编码。")
-        case FileContentCopyError.unsupported, FileContentCopyError.invalidRTF, FileInfoError.unsupported:
-            return text("This file cannot be copied completely. Supported RTF must contain text and styles only.",
-                        "无法完整拷贝此文件。支持的 RTF 只能包含文字和样式。")
+        case FileContentCopyError.invalidRTF:
+            return text("This RTF uses unsupported formatting or invalid text. Export as UTF-8 text and try again.",
+                        "RTF 含不支持的格式或无效文字。请导出为 UTF-8 文本后重试。")
+        case FileContentCopyError.unsupported, FileInfoError.unsupported:
+            return text("Only code/text files and RTF with basic text and styles are supported.",
+                        "仅支持代码、文本及含基础文字和样式的 RTF 文件。")
         case FileContentCopyError.clipboardChanged:
             return text("The clipboard changed while reading. Its newer content was kept; copy this file again if needed.",
                         "读取期间剪贴板已变化，已保留较新的内容；如需拷贝此文件，请重新操作。")

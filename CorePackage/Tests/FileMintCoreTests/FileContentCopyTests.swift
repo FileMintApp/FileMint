@@ -79,6 +79,11 @@ struct FileContentCopyTests {
         }
         #expect(try FileContentCopyPolicy.decodeText(Data(" \t\r\n".utf8)) == " \t\r\n")
         #expect(try FileContentCopyPolicy.decodeText(Data("x\u{FEFF}y".utf8)) == "x\u{FEFF}y")
+        let leadingFEFF = "\u{FEFF}A"
+        for (bom, encoding) in encodings.dropFirst() {
+            let input = bom + (try #require(leadingFEFF.data(using: encoding)))
+            #expect(Array(try FileContentCopyPolicy.decodeText(input).utf8) == Array(leadingFEFF.utf8))
+        }
     }
 
     @Test("invalid encodings, binary controls and empty files never yield repaired text")
@@ -154,15 +159,120 @@ struct FileContentCopyTests {
         }
     }
 
-    @Test("RTF framing rejects truncation, attachments, excessive nesting and trailing documents")
-    func richTextFraming() throws {
+    @Test("RTF extracts the complete supported body independently of rich rendering")
+    func richTextBody() throws {
         let valid = #"{\rtf1\ansi Text \{literal\} \\ \'e9 {\b bold}\par}"#
-        try FileContentCopyPolicy.validateRTFStructure(Data(valid.utf8))
+        #expect(try FileContentCopyPolicy.validatedRTFText(Data(valid.utf8)) == "Text {literal} \\ é bold\n")
+        let styled = #"{\rtf1\ansi\ansicpg1252\deff0\uc1{\fonttbl{\f0\fnil\fcharset0 Helvetica;}}{\colortbl;\red255\green0\blue0;}{\*\expandedcolortbl;\cssrgb\c100000\c0\c0;}\f0\fs24\qc\b\cf1 Bold \u20013?\u25991?\b0\cf0\par\ql\i Italic\i0\tab last}"#
+        #expect(try FileContentCopyPolicy.validatedRTFText(Data(styled.utf8)) == "Bold 中文\nItalic\tlast")
+        let groups = #"{\rtf1\ansi\uc1 A{\uc0\u20013}\u25991?\u-10178?\u-8524?\u101?\u769?\u123\{\u125\}\u92\\}"#
+        #expect(Array(try FileContentCopyPolicy.validatedRTFText(Data(groups.utf8)).utf8)
+            == Array("A中文🪴e\u{301}{}\\".utf8))
+        let cp1252 = #"{\rtf1\ansi \'80\'82\'9f\'a0\'e9\~\_\emdash\line\tab}"#
+        #expect(try FileContentCopyPolicy.validatedRTFText(Data(cp1252.utf8)) == "€‚Ÿ é ‑—\u{2028}\t")
+        for fonts in [#"\f0\fnil Helvetica;\f1\fmodern Courier;"#,
+                      #"{\f0\fnil Helvetica;}{\f1\fmodern Courier;}"#,
+                      #"{\f0\fnil\uc0\u20013\u25991;}"#] {
+            let source = "{\\rtf1{\\fonttbl" + fonts + "}\\f0 Font body}"
+            #expect(try FileContentCopyPolicy.validatedRTFText(Data(source.utf8)) == "Font body")
+        }
+    }
+
+    @Test("Cocoa Unicode RTF has exact text without guessing its declared code page")
+    func cocoaRichText() throws {
+        let source = """
+        {\\rtf1\\ansi\\ansicpg936\\cocoartf2908
+        \\cocoatextscaling0\\cocoaplatform0{\\fonttbl\\f0\\fnil\\fcharset0 HelveticaNeue;}
+        {\\colortbl;\\red255\\green255\\blue255;}
+        {\\*\\expandedcolortbl;;}
+        \\pard\\tx560\\tx1120\\pardirnatural\\partightenfactor0
+        \\f0\\fs26 \\cf0 \\uc0\\u27979 \\u35797  \\u55358 \\u57012  \\u233\\
+        line\t2}
+        """
+        #expect(try FileContentCopyPolicy.validatedRTFText(Data(source.utf8)) == "测试 🪴 é\nline\t2")
+        #expect(throws: FileContentCopyError.invalidRTF) {
+            try FileContentCopyPolicy.validatedRTFText(Data(source.replacingOccurrences(of: "\\u233", with: "\\'e9").utf8))
+        }
+        #expect(try FileContentCopyPolicy.validatedRTFText(Data("{\\rtf1\\uc0\\u65\\\r\nB\tC}".utf8)) == "A\nB\tC")
+    }
+
+    @Test("RTF rejects malformed syntax, lossy text and unsupported destinations")
+    func rejectedRichText() throws {
         for invalid in [#"{\rtf1 missing"#, #"{\rtf1 done}extra"#, #"{\rtf1 one}{\rtf1 two}"#,
                         #"{\rtf1 {\pict image}}"#, #"{\rtf1 {\object x}}"#, #"{\rtf1 \bin4 aaaa}"#,
                         #"{\rtf1 \'xz}"#, #"{\rtf12 x}"#,
+                        #"{\rtf1 \u2147483647?}"#, #"{\rtf1 \u65536?}"#, #"{\rtf1 \u-32769?}"#,
+                        #"{\rtf1 \u99999999999999999999?}"#, #"{\rtf1 \u-?}"#, #"{\rtf1 \uc2\u65??}"#,
+                        #"{\rtf1 \u65}"#, #"{\rtf1 \u65\par}"#, #"{\rtf1 \u-10178?x}"#,
+                        #"{\rtf1 \uc0\u57012}"#, #"{\rtf1 \uc0\u55358\b\u57012}"#,
+                        #"{\rtf1 \uc0\u55358{\u57012}}"#, #"{\rtf1 \uc0\u0}"#,
+                        #"{\rtf1 \v hidden\v0 visible}"#, #"{\rtf1 {\header missing}body}"#,
+                        #"{\rtf1 {\footnote missing}body}"#, #"{\rtf1 {\annotation missing}body}"#,
+                        #"{\rtf1 {\field{\*\fldinst HYPERLINK x}{\fldrslt label}}}"#,
+                        #"{\rtf1 {\upr{old}{\*\ud new}}}"#, #"{\rtf1 \trowd a\cell b\row}"#,
+                        #"{\rtf1 {\listtext missing}body}"#, #"{\rtf1 {\*\unknown missing}body}"#,
+                        #"{\rtf1 \unknown missing}"#, #"{\rtf1 \b2 bad}"#, #"{\rtf1 \par1 bad}"#,
+                        #"{\rtf1 A\-B}"#, #"{\rtf1 A\qmspace B}"#,
+                        #"{\rtf1\deff32768 bad}"#, #"{\rtf1\deflang65536 bad}"#,
+                        #"{\rtf1\deflangfe65536 bad}"#, #"{\rtf1\paperw0 bad}"#,
+                        #"{\rtf1\paperh0 bad}"#,
+                        #"{\rtf1 \ansicpg0 bad}"#, #"{\rtf1 \ansicpg936 \'e9}"#,
+                        #"{\rtf1 \'81}"#, #"{\rtf1 \'8d}"#, #"{\rtf1 \'8f}"#,
+                        #"{\rtf1 \'90}"#, #"{\rtf1 \'9d}"#,
+                        #"{\rtf1{\fonttbl\f0\fcharset1 Arial;}text}"#,
+                        #"{\rtf1{\fonttbl\f0\fcharset2 Symbol;}text}"#,
+                        #"{\rtf1{\fonttbl\f0\cpg1252 Arial;}text}"#,
+                        #"{\rtf1{\fonttbl Arial;}text}"#, #"{\rtf1{\fonttbl\f0 Arial}text}"#,
+                        #"{\rtf1{\fonttbl\f0 ;}text}"#, #"{\rtf1{\fonttbl}text}"#,
+                        #"{\rtf1{\fonttbl\f0 Arial;extra}text}"#,
+                        #"{\rtf1{\fonttbl{\f0 Arial;extra}}text}"#,
+                        #"{\rtf1{\fonttbl{{\f0 Arial;}}}text}"#,
+                        #"{\rtf1{\fonttbl{\f0 Arial;\f1 Courier;}}text}"#,
+                        #"{\rtf1{\fonttbl{\f0 Arial;}\f1 Courier;}text}"#,
+                        #"{\rtf1{\fonttbl\f0 Arial;{\f1 Courier;}}text}"#,
+                        #"{\rtf1{\fonttbl\f0 Arial;\f0 Courier;}text}"#,
+                        #"{\rtf1{\fonttbl\f0 Arial\fcharset0;}text}"#,
+                        #"{\rtf1{\fonttbl\f0\par Arial;}text}"#,
+                        #"{\rtf1{\fonttbl\f0 Arial\'3b}text}"#,
+                        #"{\rtf1 text{\fonttbl\f0 Arial;}}"#, #"{\rtf1 text\ansicpg1252 more}"#,
+                        #"{\rtf1{\b{\colortbl;}}text}"#, #"{\rtf1{\*\b missing}body}"#,
+                        #"{\rtf1{\*\fonttbl\f0 Arial;}text}"#,
+                        #"{\rtf1{\colortbl;\red256;}text}"#, #"{\rtf1{\colortbl;\red1}text}"#,
+                        #"{\rtf1{\*\expandedcolortbl;\cssrgb\c1;}text}"#,
+                        #"{\rtf1{\*\expandedcolortbl;\csgray\c100001;}text}"#,
                         "{\\rtf1 " + String(repeating: "{", count: 129) + String(repeating: "}", count: 130)] {
-            #expect(throws: FileContentCopyError.invalidRTF) { try FileContentCopyPolicy.validateRTFStructure(Data(invalid.utf8)) }
+            #expect(throws: FileContentCopyError.invalidRTF, Comment(rawValue: invalid)) {
+                try FileContentCopyPolicy.validatedRTFText(Data(invalid.utf8))
+            }
+        }
+        for value in ["{\\rtf1}", "{\\rtf1{\\fonttbl\\f0 Arial;}}"] {
+            #expect(throws: FileContentCopyError.empty) { try FileContentCopyPolicy.validatedRTFText(Data(value.utf8)) }
+        }
+    }
+
+    @Test("RTF bounds source and expanded UTF-8 without truncation")
+    func richTextLimits() throws {
+        let maximum = FileContentCopyPolicy.maximumBytes
+        #expect(throws: FileContentCopyError.tooLarge) {
+            try FileContentCopyPolicy.validatedRTFText(Data(repeating: 65, count: maximum + 1))
+        }
+        let text = Data(repeating: 0x80, count: maximum / 3 + 1)
+        let source = Data("{\\rtf1\\ansi ".utf8) + text + Data("}".utf8)
+        #expect(source.count < maximum)
+        #expect(throws: FileContentCopyError.tooLarge) {
+            try FileContentCopyPolicy.validatedRTFText(source)
+        }
+    }
+
+    @Test("RTF traverses 128 groups without recursion and rejects the 129th")
+    func richTextNestingLimit() throws {
+        let accepted = "{\\rtf1\\uc1 " + String(repeating: "{\\uc0", count: 127)
+            + "\\u20013" + String(repeating: "}", count: 127) + "\\u25991?}"
+        #expect(try FileContentCopyPolicy.validatedRTFText(Data(accepted.utf8)) == "中文")
+        let rejected = "{\\rtf1 " + String(repeating: "{", count: 128)
+            + "text" + String(repeating: "}", count: 129)
+        #expect(throws: FileContentCopyError.invalidRTF) {
+            try FileContentCopyPolicy.validatedRTFText(Data(rejected.utf8))
         }
     }
 }

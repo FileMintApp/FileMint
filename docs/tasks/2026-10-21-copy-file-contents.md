@@ -1,7 +1,8 @@
 # Task: Copy file contents
 
-Status: complete
-Next action: None for the requested implementation; installed Finder acceptance remains a separately recorded runtime boundary.
+Status: complete — 2026-10-22 review fixes verified
+Next action: None for the requested corrections. Installed Finder acceptance
+remains a separately recorded runtime boundary.
 
 ## Objective and scope
 
@@ -54,6 +55,9 @@ Environment: arm64 macOS 27.2 (26B5101f), Xcode 27.1 (27A9275), Swift 6.4.
 
 ## Handoff
 
+The following records the original implementation; the corrections and their
+current verification are recorded below.
+
 - Remaining implementation work: none. Local commit authorized on 2026-10-22;
   installation, push and release remain outside this delivery.
 - Settings: File & Folder Tools → Copy File Contents; independent default-off switch
@@ -63,3 +67,45 @@ Environment: arm64 macOS 27.2 (26B5101f), Xcode 27.1 (27A9275), Swift 6.4.
   every third-party paste target, provider-volume behavior or older macOS versions.
 - RTF tests cover native AppKit rich/plain receivers and font/color/paragraph
   attributes, not arbitrary editor layout. Attachments/objects and RTFD are rejected.
+
+## Review corrections — 2026-10-22
+
+- The review reproduced accepted RTF with missing footnote/header text, an ANSI
+  fallback replacing a Unicode alternative, and repaired malformed Unicode.
+  The previous native sample did not establish complete RTF text extraction.
+- Updated the owning SPEC before implementation: a fail-closed RTF subset with
+  independent Core text extraction and exact UTF-8 agreement with native import.
+  Preserve original rich bytes; unsupported destinations, encoding-dependent
+  legacy text and malformed Unicode must fail without touching the clipboard.
+  Explicit Cocoa Unicode/metadata compatibility remains covered by native tests.
+- The UTF-8 decoder must strip exactly one encoding BOM and preserve a subsequent
+  leading U+FEFF. Add Core and production-controller regressions for that case.
+- Fixed UTF-8 decoding without using APIs newer than the macOS 13 deployment
+  target. Native checks also revealed that NSPasteboard strips a leading UTF-8
+  BOM: content beginning with U+FEFF now gets a separate transport BOM, preserving
+  the actual character in both rich/plain native receivers.
+- The nesting rejection test exposed recursive-parser stack exhaustion. Replaced
+  recursion with bounded explicit frames; 128 groups succeed and 129 fail safely.
+  Soft line breaks preserve U+2028. Native-discarded discretionary-hyphen and
+  quarter-em-space controls are explicitly outside the supported subset.
+
+### Correction verification
+
+Tested primary `10472057e9b7f7d1577f66ecb49335a632d2b13c` plus these corrections,
+on arm64 macOS 27.2 / Xcode 27.1 / Swift 6.4. The native report records the source
+diff and untracked parser hash. Only documentation/evidence changed afterwards.
+
+| Check | Status | Evidence |
+| --- | --- | --- |
+| Focused `FileContentCopyTests` | passed | 13 tests including BOM, supported/rejected RTF, nested Unicode state, 128/129 groups and size bounds; [log](../../build/copy-contents-review.noindex/focused.log) |
+| `make verify` | passed | 361 Core and 22 image tests, plus required CLI/offline/restricted checks; [final log](../../build/copy-contents-review.noindex/verify.log) |
+| `CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO make build` | passed | Main app and embedded Finder extension executables verified as arm64; [log](../../build/copy-contents-review.noindex/build.log) |
+| `NATIVE_QA_SUITES=file-info make verify-native-affected` | passed | Fresh signed fixture `run.LSferH`; original RTF bytes and styles, exact Unicode rich/plain paste, FEFF, rejected-input preservation, existing cancellation/change/busy checks; [report](../../build/native-checks.noindex/run.95se64pm/report.json) |
+
+Initial checks failed on a macOS 15-only decoding API and recursive parsing; both
+were corrected before the final passes. The first native run caught leading-FEFF
+loss at the pasteboard boundary; the [initial report](../../build/native-checks.noindex/run.7l9qz7ik/report.json)
+is retained separately from the final pass. The native scope is `file-info`
+because decoding/publication changed while Finder delivery, authorization and
+operation coordination did not. Installed Finder/external grants, third-party
+editors, provider volumes and older macOS runtime remain unverified.

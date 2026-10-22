@@ -17,9 +17,9 @@ enum FileContentClipboard {
     }
 
     /// Keep the original RTF, not a lossy attributed-string re-export. The
-    /// importer supplies only the companion plain-text representation.
+    /// independent Core extraction must agree byte-for-byte with native import.
     static func prepareRTF(_ data: Data) throws -> FileContentClipboardPayload {
-        try FileContentCopyPolicy.validateRTFStructure(data)
+        let text = try FileContentCopyPolicy.validatedRTFText(data)
         let attributed: NSAttributedString
         do {
             attributed = try NSAttributedString(data: data, options: [.documentType: NSAttributedString.DocumentType.rtf],
@@ -29,9 +29,10 @@ enum FileContentClipboard {
         attributed.enumerateAttribute(.attachment, in: NSRange(location: 0, length: attributed.length)) { value, _, _ in
             if value != nil { hasAttachment = true }
         }
-        guard !hasAttachment else { throw FileContentCopyError.invalidRTF }
-        try FileContentCopyPolicy.validateText(attributed.string)
-        return FileContentClipboardPayload(text: attributed.string, rtf: data)
+        guard !hasAttachment, attributed.string.utf8.elementsEqual(text.utf8) else {
+            throw FileContentCopyError.invalidRTF
+        }
+        return FileContentClipboardPayload(text: text, rtf: data)
     }
 
     @MainActor
@@ -39,7 +40,15 @@ enum FileContentClipboard {
                       expectedChangeCount: Int) throws {
         // Build all representations before claiming ownership of the real board.
         let item = NSPasteboardItem()
-        guard item.setString(payload.text, forType: .string),
+        let textWasSet: Bool
+        if payload.text.unicodeScalars.first?.value == 0xFEFF {
+            // NSPasteboard's UTF-8 reader consumes one encoding BOM. Keep a
+            // separate transport BOM when FEFF is the first content character.
+            textWasSet = item.setData(Data([0xEF, 0xBB, 0xBF]) + Data(payload.text.utf8), forType: .string)
+        } else {
+            textWasSet = item.setString(payload.text, forType: .string)
+        }
+        guard textWasSet,
               payload.rtf.map({ item.setData($0, forType: .rtf) }) ?? true else {
             throw FileContentCopyError.clipboardWriteFailed
         }
