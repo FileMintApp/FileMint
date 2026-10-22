@@ -107,6 +107,7 @@ struct FileToolsSettingsView: View {
         switch tool {
         case .copyNames: .copyNamesSettingsHint
         case .copyPaths: .copyPathsSettingsHint
+        case .copyContents: .copyContentsSettingsHint
         case .move: .moveSettingsHint
         case .permanentDelete: .deleteSettingsHint
         case .airDrop: .airDropHint

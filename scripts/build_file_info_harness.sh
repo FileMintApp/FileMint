@@ -41,7 +41,8 @@ swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.0 \
   App/FileMint/BatchRenameView.swift App/FileMint/BatchRenameText.swift App/FileMint/BatchRenameAccess.swift \
   App/FileMint/BatchRenameOperations.swift App/FileMint/FileOperationCoordinator.swift \
   App/FileMint/FileInfoController.swift App/FileMint/FileInfoView.swift \
-  scripts/file_info_smoke.swift "${FILE_INFO_LINK[@]}" -o "$FILE_INFO_APP/Contents/MacOS/FileInfoSmoke"
+  App/FileMint/FileContentCopyController.swift App/FileMint/FileContentClipboard.swift \
+  scripts/file_info_smoke.swift scripts/file_content_copy_checks.swift "${FILE_INFO_LINK[@]}" -o "$FILE_INFO_APP/Contents/MacOS/FileInfoSmoke"
 codesign --force --sign - --timestamp=none --options runtime \
   --entitlements "$FILE_INFO_RUN/entitlements.plist" "$FILE_INFO_APP"
 python3 scripts/native_qa.py publish file-info "$FILE_INFO_APP" "$FILE_INFO_RUN"

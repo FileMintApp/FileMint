@@ -43,6 +43,7 @@ swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.0 \
   App/FileMint/BatchRenameView.swift App/FileMint/BatchRenameText.swift \
   App/FileMint/BatchRenameAccess.swift App/FileMint/BatchRenameOperations.swift App/FileMint/FileOperationCoordinator.swift \
   App/FileMint/FileInfoController.swift App/FileMint/FileInfoView.swift \
+  App/FileMint/FileContentCopyController.swift App/FileMint/FileContentClipboard.swift \
   scripts/batch_rename_smoke.swift "${BATCH_RENAME_LINK[@]}" \
   -o "$BATCH_RENAME_APP/Contents/MacOS/BatchRenameSmoke"
 codesign --force --sign - --timestamp=none --options runtime \

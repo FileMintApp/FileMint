@@ -174,6 +174,7 @@ final class FileInfoSmoke: NSObject, NSApplicationDelegate {
         try check(model.panel!.performKeyEquivalent(with: escape) && model.panel == nil, "Escape closes and clears the panel")
         try check(try Data(contentsOf: source) == original, "Read-only source is preserved")
         try check(NSApp.windows.allSatisfy { !$0.isVisible }, "No settings window opened")
+        try await runFileContentCopyChecks(in: root)
     }
 
     private func render(_ model: FileInfoController, name: String, dark: Bool = false) throws {

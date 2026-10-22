@@ -66,6 +66,7 @@ RULES = (
       "scripts/native_qa_running.swift", "scripts/native_qa_preferences.swift", "scripts/image_compression_link.sh", "Makefile"), ALL, ()),
     (("scripts/batch_rename_smoke.swift", "scripts/build_batch_rename_harness.sh", "App/FileMint/BatchRename*.swift"), ("batch-rename",), ()),
     (("scripts/file_info_smoke.swift", "scripts/build_file_info_harness.sh", "App/FileMint/FileInfo*.swift"), ("file-info",), ("folder-grants",)),
+    (("scripts/file_content_copy_checks.swift", "App/FileMint/FileContent*.swift"), ("file-info",), ("folder-grants",)),
     (("scripts/template_workflow_smoke.swift", "scripts/build_template_workflow_harness.sh"), ("template-workflow", "creation-opening", "update-scheduling"), ()),
     (("scripts/creation_opening_checks.swift", "scripts/run_creation_opening_checks.sh"), ("creation-opening",), ()),
     (("scripts/open_with_smoke.swift", "scripts/build_open_with_harness.sh", "App/FileMint/OpenWithApplicationAccess.swift"), ("open-with", "creation-opening"), ()),

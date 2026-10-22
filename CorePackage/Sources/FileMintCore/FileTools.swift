@@ -1,12 +1,13 @@
 import Foundation
 
 public enum FileTool: String, Codable, CaseIterable, Sendable {
-    case copyNames, copyPaths, move, permanentDelete, airDrop, desktopAlias, batchRename, fileInfo
+    case copyNames, copyPaths, copyContents, move, permanentDelete, airDrop, desktopAlias, batchRename, fileInfo
 
     public var title: FileMintTextKey {
         switch self {
         case .copyNames: .copyItemNames
         case .copyPaths: .copyItemPaths
+        case .copyContents: .copyFileContents
         case .move: .moveItems
         case .permanentDelete: .permanentDelete
         case .airDrop: .airDrop
@@ -29,6 +30,7 @@ public struct FileToolsPreferences: Codable, Equatable, Sendable {
     public var isEnabled = false
     public var copyNames = true
     public var copyPaths = true
+    public var copyContents = false
     public var move = true
     public var permanentDelete = false
     public var airDrop = false
@@ -42,7 +44,7 @@ public struct FileToolsPreferences: Codable, Equatable, Sendable {
     public init() {}
 
     private enum CodingKeys: String, CodingKey {
-        case isEnabled, copyNames, copyPaths, move, permanentDelete, airDrop, desktopAlias, batchRename, fileInfo
+        case isEnabled, copyNames, copyPaths, copyContents, move, permanentDelete, airDrop, desktopAlias, batchRename, fileInfo
         case mainMenuTools, moveHereInMainMenu, deleteConfirmation
     }
 
@@ -51,6 +53,7 @@ public struct FileToolsPreferences: Codable, Equatable, Sendable {
         isEnabled = (try? values.decode(Bool.self, forKey: .isEnabled)) ?? false
         copyNames = (try? values.decode(Bool.self, forKey: .copyNames)) ?? true
         copyPaths = (try? values.decode(Bool.self, forKey: .copyPaths)) ?? true
+        copyContents = (try? values.decode(Bool.self, forKey: .copyContents)) ?? false
         move = (try? values.decode(Bool.self, forKey: .move)) ?? true
         permanentDelete = (try? values.decode(Bool.self, forKey: .permanentDelete)) ?? false
         airDrop = (try? values.decode(Bool.self, forKey: .airDrop)) ?? false
@@ -68,6 +71,7 @@ public struct FileToolsPreferences: Codable, Equatable, Sendable {
         switch tool {
         case .copyNames: copyNames = enabled
         case .copyPaths: copyPaths = enabled
+        case .copyContents: copyContents = enabled
         case .move: move = enabled
         case .permanentDelete: permanentDelete = enabled
         case .airDrop: airDrop = enabled
@@ -81,6 +85,7 @@ public struct FileToolsPreferences: Codable, Equatable, Sendable {
         switch tool {
         case .copyNames: return copyNames
         case .copyPaths: return copyPaths
+        case .copyContents: return copyContents
         case .move: return move
         case .permanentDelete: return permanentDelete
         case .airDrop: return airDrop
@@ -125,6 +130,7 @@ public enum FileToolsPolicy {
         return FileTool.allCases.filter {
             preferences.fileTools.allows($0) && ($0 != .batchRename || canBatchRename(selection))
                 && ($0 != .fileInfo || FileDigestService.supportsMenuSelection(selection))
+                && ($0 != .copyContents || FileContentCopyPolicy.supportsMenuSelection(selection))
         }
     }
 

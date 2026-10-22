@@ -3,6 +3,27 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Copy file contents — 2026-10-21
+
+On primary `1475da6` plus the uncommitted implementation, arm64 macOS 27.2 /
+Xcode 27.1 / Swift 6.4 passed `make verify` (Core 357, Images 22), unsigned
+App/Finder compilation and the affected file-info/content-copy, file-tools-settings,
+update-scheduling and open-with native fixtures. RTF admission followed exact
+original-byte/plain-text assertions and actual rich/plain NSTextView paste with
+font, color and paragraph checks on an isolated named pasteboard. The production
+reader/controller path then passed with RTF enabled. Source/clipboard changes,
+revoked policy, cancellation cleanup and rejected busy tickets preserve the
+clipboard before publication; source bytes and preferences remain unchanged.
+
+The additional batch-rename fixture initially timed out on its existing
+Return-to-cancel sheet check; an unchanged standalone fresh-fixture recheck passed
+155 assertions. The initial timeout cause remains unconfirmed. All changed native
+builders compile, including the interactive move fixture (build only). This run
+does not establish installed Finder callbacks, external-folder picker persistence,
+provider-volume behavior, every third-party paste target or older-macOS runtime.
+No production installation, commit, push or release was performed.
+See the [task and exact reports](tasks/2026-10-21-copy-file-contents.md#evidence).
+
 ## Update summaries and online help — 2026-10-20
 
 On primary `164bb0c` plus the recorded uncommitted implementation, arm64 macOS

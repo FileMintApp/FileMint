@@ -159,21 +159,44 @@ public enum FileDigestService {
     public static func calculate(_ selection: FileInfoSelection, choice: FileDigestChoice,
                                  cancellation: FileDigestCancellation = FileDigestCancellation(),
                                  progress: @Sendable (FileDigestProgress) -> Void = { _ in }) throws -> FileDigestResult {
+        var hashes = FileDigestAccumulator(choice)
+        let metadata = try coordinatedRead(selection, maximumBytes: nil, cancellation: cancellation,
+            progress: progress) { hashes.update($0) }
+        return FileDigestResult(choice: choice, bytesRead: metadata.stamp.size,
+                                values: hashes.finalize(), metadata: metadata)
+    }
+
+    /// Content consumers share the descriptor/identity checks with checksums.
+    /// The limit is enforced before allocation and again on every read.
+    static func readContents(_ selection: FileInfoSelection, maximumBytes: Int,
+                             cancellation: FileDigestCancellation) throws -> (Data, FileInfoMetadata) {
+        var data = Data()
+        let metadata = try coordinatedRead(selection, maximumBytes: maximumBytes, cancellation: cancellation,
+            progress: { _ in }) { data.append(contentsOf: $0) }
+        return (data, metadata)
+    }
+
+    private static func coordinatedRead(_ selection: FileInfoSelection, maximumBytes: Int?,
+                                        cancellation: FileDigestCancellation,
+                                        progress: @Sendable (FileDigestProgress) -> Void,
+                                        consume: (UnsafeRawBufferPointer) -> Void) throws -> FileInfoMetadata {
         try cancellation.check()
         let initial = try inspect(selection)
         guard initial.kind == .file else { throw FileInfoError.unsupported }
         guard !initial.isPlaceholder else { throw FileInfoError.placeholder }
+        if let maximumBytes, initial.stamp.size > maximumBytes { throw FileContentCopyError.tooLarge }
         let coordinator = NSFileCoordinator(filePresenter: nil)
         cancellation.register(coordinator)
         defer { cancellation.register(nil) }
         try cancellation.check()
         var coordinationError: NSError?
-        var result: Result<FileDigestResult, Error>?
+        var result: Result<FileInfoMetadata, Error>?
         coordinator.coordinate(readingItemAt: selection.resolvedSource, options: [.withoutChanges], error: &coordinationError) { url in
             result = Result {
                 try cancellation.check()
                 guard url.standardizedFileURL == selection.resolvedSource.standardizedFileURL else { throw FileInfoError.changed }
-                return try read(selection, initial: initial, choice: choice, cancellation: cancellation, progress: progress)
+                return try read(selection, initial: initial, maximumBytes: maximumBytes,
+                                cancellation: cancellation, progress: progress, consume: consume)
             }
         }
         try cancellation.check()
@@ -182,9 +205,10 @@ public enum FileDigestService {
         throw FileInfoError.unavailable
     }
 
-    private static func read(_ selection: FileInfoSelection, initial: FileInfoMetadata, choice: FileDigestChoice,
+    private static func read(_ selection: FileInfoSelection, initial: FileInfoMetadata, maximumBytes: Int?,
                              cancellation: FileDigestCancellation,
-                             progress: @Sendable (FileDigestProgress) -> Void) throws -> FileDigestResult {
+                             progress: @Sendable (FileDigestProgress) -> Void,
+                             consume: (UnsafeRawBufferPointer) -> Void) throws -> FileInfoMetadata {
         let fresh = try inspect(selection)
         guard fresh.canCalculate, fresh.stamp == initial.stamp else { throw FileInfoError.changed }
         let version = generation(of: selection.resolvedSource)
@@ -202,7 +226,6 @@ public enum FileDigestService {
         guard fstat(fd, &before) == 0, FileInfoStamp(before) == fresh.stamp,
               before.st_mode & UInt16(S_IFMT) == UInt16(S_IFREG), before.st_size >= 0 else { throw FileInfoError.changed }
         try selection.validate()
-        var hashes = FileDigestAccumulator(choice)
         var buffer = [UInt8](repeating: 0, count: chunkSize)
         var count: Int64 = 0
         var lastProgress = ProcessInfo.processInfo.systemUptime
@@ -217,7 +240,8 @@ public enum FileDigestService {
             if length == 0 { break }
             count += Int64(length)
             guard count <= before.st_size else { throw FileInfoError.changed }
-            buffer.withUnsafeBytes { hashes.update(UnsafeRawBufferPointer(rebasing: $0[..<length])) }
+            if let maximumBytes, count > maximumBytes { throw FileContentCopyError.tooLarge }
+            buffer.withUnsafeBytes { consume(UnsafeRawBufferPointer(rebasing: $0[..<length])) }
             let now = ProcessInfo.processInfo.systemUptime
             if now - lastProgress >= 0.08 {
                 progress(FileDigestProgress(bytesRead: count, totalBytes: before.st_size)); lastProgress = now
@@ -230,7 +254,7 @@ public enum FileDigestService {
               generation(of: selection.resolvedSource) == version else { throw FileInfoError.changed }
         progress(FileDigestProgress(bytesRead: count, totalBytes: count))
         try cancellation.check()
-        return FileDigestResult(choice: choice, bytesRead: count, values: hashes.finalize(), metadata: fresh)
+        return fresh
     }
 
     private static func generation(of url: URL) -> Data? {

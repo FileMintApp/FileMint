@@ -26,6 +26,12 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             self?.consumeQueue()
         }, reader: fileInfoReader)
     private let fileInfoReader: FileInfoController.Reader
+    private(set) lazy var contentCopyController = FileContentCopyController(preferencesFile: preferencesFile,
+        pasteboard: contentPasteboard, reader: contentReader)
+    private let contentReader: FileContentCopyController.Reader
+    private let contentPasteboard: NSPasteboard
+    private var contentCopyTask: Task<Void, Never>?
+    var isReadingFiles: Bool { contentCopyTask != nil || fileInfoController.isWorking }
     private var access: [URL] = []
     private let store: PendingFileMoveStore
     private let tickets: FileOperationTicketStore
@@ -48,7 +54,8 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
          renameOperations: BatchRenameOperations = .shared,
          fileInfoReader: @escaping FileInfoController.Reader = {
              try FileDigestService.calculate($0, choice: $1, cancellation: $2, progress: $3)
-         }) {
+         }, contentPasteboard: NSPasteboard = .general,
+         contentReader: @escaping FileContentCopyController.Reader = { try FileContentRead.read($0, cancellation: $1) }) {
         self.store = store
         self.tickets = tickets
         self.preferencesFile = preferencesFile
@@ -58,10 +65,35 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
         self.resourceController = resourceController
         self.renameOperations = renameOperations
         self.fileInfoReader = fileInfoReader
+        self.contentPasteboard = contentPasteboard; self.contentReader = contentReader
         super.init()
     }
 
     func enqueue(_ url: URL) {
+        if FileOperationTicketStore.isCopyContentsURL(url) || contentCopyTask != nil {
+            let accepted = FileOperationTicketStore.isCopyContentsURL(url) && !isBusy && queue.isEmpty
+            if accepted { operationIsBusy = true }
+            immediateIntakes += 1
+            let tickets = self.tickets
+            let intake = Task {
+                defer {
+                    immediateIntakes -= 1
+                    if accepted { operationIsBusy = false; contentCopyTask = nil }
+                    consumeQueue()
+                }
+                do {
+                    let request = try await Task.detached(priority: .userInitiated) { try tickets.consume(url) }.value
+                    guard accepted else { contentCopyController.showBusy(); return }
+                    guard !Task.isCancelled else { return }
+                    guard case .copyContents(let selection, let changeCount) = request else {
+                        contentCopyController.showInvalidRequest(); return
+                    }
+                    await contentCopyController.copy(selection, expectedChangeCount: changeCount)
+                } catch { contentCopyController.showInvalidRequest() }
+            }
+            if accepted { contentCopyTask = intake }
+            return
+        }
         if FileOperationTicketStore.isFileInfoURL(url) || fileInfoController.isWorking {
             // Consume immediately even when busy; a 60-second ticket must never
             // silently expire behind a long checksum calculation.
@@ -122,6 +154,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
     /// Recovery and undo share ownership with moves, native authorization and
     /// other panels. Passive discovery never reserves this guard.
     func batchRenameAction(_ action: BatchRenamePanelAction) {
+        if contentCopyTask != nil { contentCopyController.showBusy(); return }
         if fileInfoController.isWorking { fileInfoController.showBusy(); return }
         guard !isBusy && queue.isEmpty else {
             renameOperations.showBusy()
@@ -138,6 +171,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
     /// This app-local entry cannot be constructed from a URL or ticket. The
     /// system picker provides the authority; Finder preferences are unchanged.
     func chooseImages(for tool: ResourceTool) {
+        if contentCopyTask != nil { contentCopyController.showBusy(); return }
         if fileInfoController.isWorking { fileInfoController.showBusy(); return }
         guard !isBusy else {
             if !resourceController.focusExistingPanel() {
@@ -166,6 +200,14 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
         queue.append(.selectedImages(tool, picker.urls, grants: grants))
     }
 
+    func cancelActiveReadsAndWait() async {
+        let intake = contentCopyTask
+        intake?.cancel()
+        await contentCopyController.cancelAndWait()
+        await intake?.value
+        await fileInfoController.cancelAndWait()
+    }
+
     private func consumeQueue() {
         guard !isBusy, !queue.isEmpty else { return }
         operationIsBusy = true
@@ -191,6 +233,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
                         case .prepare, .perform: operationTitle = .moveFailed
                         case .batchRename: operationTitle = .batchRename
                         case .fileInfo: operationTitle = .fileInfo
+                        case .copyContents: operationTitle = .copyFileContents
                         case .permanentDelete: operationTitle = .permanentDelete
                         case .airDrop: operationTitle = .airDrop
                         case .desktopAlias: operationTitle = .sendAliasToDesktop
@@ -208,7 +251,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
 
     private func handle(_ request: FileOperationRequest) async throws {
         switch request {
-        case .batchRename, .fileInfo:
+        case .batchRename, .fileInfo, .copyContents:
             // Rename payloads are valid only on the immediate-intake route.
             throw FileMoveError.staleRequest
         case .favoriteAdd(let selection):

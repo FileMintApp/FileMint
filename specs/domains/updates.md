@@ -101,7 +101,8 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   draft, file operation or modal sheet is active. Preserve the draft and let the
   user choose Update and Restart after finishing it. Do not force-kill Finder,
   discard work, alter preferences/bookmarks or silently enable the Finder extension.
-- An explicit update/restart cancels a running File Info checksum read and waits
+- An explicit update/restart cancels a running File Info checksum or Copy File
+  Contents read and waits
   for its worker/access cleanup before rechecking the other restart guards. An
   idle information window does not block restart; other active work keeps the
   existing defer behavior.

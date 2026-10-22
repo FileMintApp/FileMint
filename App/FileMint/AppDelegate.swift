@@ -17,9 +17,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        if FileOperationCoordinator.shared.fileInfoController.isWorking {
+        if FileOperationCoordinator.shared.isReadingFiles {
             Task {
-                await FileOperationCoordinator.shared.fileInfoController.cancelAndWait()
+                await FileOperationCoordinator.shared.cancelActiveReadsAndWait()
                 sender.reply(toApplicationShouldTerminate: self.mayTerminate)
             }
             return .terminateLater

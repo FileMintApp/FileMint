@@ -87,7 +87,8 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   palette-colored images that keep their theme colors in the native menu and
   remain readable with menu selection. Each file-tool action has a matching
   colored SF Symbol in settings and Finder, at both main-menu and submenu levels:
-  names use blue `doc.on.doc`, paths indigo `link`, move teal `folder`, permanent
+  names use blue `doc.on.doc`, paths indigo `link`, file contents blue/teal
+  `doc.text`, move teal `folder`, permanent
   deletion orange `trash`, AirDrop purple `airplayaudio`, and desktop aliases blue
   `arrowshape.turn.up.right`. The temporary move
   destination retains its mint/teal icon in either location. Default icons use

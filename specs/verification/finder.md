@@ -31,6 +31,14 @@ five choices, cancellation, clipboard/comparison and coordinator ownership using
 isolated stores. Neither proves installed Finder delivery, external-folder picker
 grants, real cloud placeholders or macOS 13 runtime behavior.
 
+The same restricted fixture verifies that Copy File Contents can build a menu
+candidate without opening content and fails when a content read is denied. The
+signed `file-info` fixture also runs `file_content_copy_checks.swift`: real private
+pasteboard writes, exact Unicode/whitespace text, unchanged RTF bytes, rich/plain
+`NSTextView` paste and font/color/paragraph attributes, source changes, clipboard
+changes, revoked policy, cancellation cleanup and busy request consumption.
+These receivers do not establish compatibility with every third-party editor.
+
 `make verify-batch-rename-capture` runs the production click-time capture and
 ticket path in a headless child sandbox that denies fixture directory/content
 reads and all fixture writes. It verifies complete metadata capture while normal

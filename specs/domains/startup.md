@@ -97,6 +97,11 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 
 ## File information lifecycle
 
+- Copy File Contents also defaults off independently on new/malformed/old settings,
+  preserves its submenu/main placement and holds the shared operation guard until
+  reading and clipboard publication or cancellation cleanup finish. Its compact
+  feedback panel does not open settings. Quit/update restart cancels and waits.
+
 - Decode the File Info child switch independently, default off for missing or
   malformed values; placement defaults to submenu. Preserve neighboring choices
   and the child choice while its module is disabled. Algorithm selection is

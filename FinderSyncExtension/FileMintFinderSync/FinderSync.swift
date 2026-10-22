@@ -299,6 +299,10 @@ final class FinderSync: FIFinderSync {
                 FinderActions.shared.fileInfo(selection)
                 return
             }
+            if tool == .copyContents {
+                FinderActions.shared.copyContents(selection)
+                return
+            }
             if tool == .airDrop {
                 FinderActions.shared.perform(.airDrop(selection))
                 return
@@ -487,6 +491,20 @@ private final class FinderActions {
                 }.value
                 open(url, activate: true)
             } catch { showError(error, title: .fileInfo) }
+        }
+    }
+
+    func copyContents(_ selection: [URL]) {
+        let changeCount = NSPasteboard.general.changeCount
+        Task {
+            do {
+                let url = try await Task.detached(priority: .userInitiated) {
+                    let captured = try FileInfoSelection.capture(selection)
+                    return try FileOperationTicketStore().enqueue(.copyContents(
+                        selection: captured, pasteboardChangeCount: changeCount))
+                }.value
+                open(url, activate: false)
+            } catch { showError(error, title: .copyFileContents) }
         }
     }
 

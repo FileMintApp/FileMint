@@ -28,6 +28,7 @@ class SelectionTests(unittest.TestCase):
         plan = checks.plan_checks(['App/FileMint/FileInfoController.swift'])
         self.assertEqual(plan['suites'], ['file-info'])
         self.assertEqual([value['id'] for value in plan['manualChecks']], ['folder-grants'])
+        self.assertEqual(checks.plan_checks(['App/FileMint/FileContentCopyController.swift'])['suites'], ['file-info'])
 
     def test_build_configuration_and_ci_edits_use_other_harness_checks(self):
         plan = checks.plan_checks(['project.yml', 'CorePackage/Package.swift', '.github/workflows/ci.yml'])

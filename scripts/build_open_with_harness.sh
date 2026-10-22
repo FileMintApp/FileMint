@@ -52,6 +52,7 @@ swiftc -swift-version 6 -parse-as-library -target "arm64-apple-macos13.0" \
   App/FileMint/TerminalDirectoryLauncher.swift App/FileMint/BatchRenameText.swift App/FileMint/BatchRenameController.swift App/FileMint/BatchRenameView.swift \
   App/FileMint/BatchRenameAccess.swift App/FileMint/BatchRenameOperations.swift App/FileMint/FileOperationCoordinator.swift \
   App/FileMint/FileInfoController.swift App/FileMint/FileInfoView.swift \
+  App/FileMint/FileContentCopyController.swift App/FileMint/FileContentClipboard.swift \
   scripts/open_with_smoke.swift "${OPEN_WITH_LINK[@]}" \
   -o "$OPEN_WITH_APP/Contents/MacOS/OpenWithSmoke"
 codesign --force --sign - --timestamp=none --entitlements "$OPEN_WITH_FIXTURE/entitlements.plist" "$OPEN_WITH_APP"

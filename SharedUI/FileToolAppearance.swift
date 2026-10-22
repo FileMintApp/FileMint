@@ -76,6 +76,7 @@ enum FileToolAppearance {
         case .move: (.systemTeal, .systemMint)
         case .copyNames: (.systemBlue, .systemCyan)
         case .copyPaths: (.systemIndigo, .systemBlue)
+        case .copyContents: (.systemBlue, .systemTeal)
         case .permanentDelete: (.systemOrange, .systemRed)
         case .airDrop: (.systemPurple, .systemIndigo)
         case .desktopAlias: (.systemBlue, .systemTeal)

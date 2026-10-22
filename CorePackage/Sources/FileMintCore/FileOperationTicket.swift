@@ -7,6 +7,7 @@ public enum FileOperationRequest: Codable, Equatable, Sendable {
     case desktopAlias([FileMoveItem])
     case batchRename(selection: BatchRenameSelection)
     case fileInfo(FileInfoSelection)
+    case copyContents(selection: FileInfoSelection, pasteboardChangeCount: Int)
     case resource(tool: ResourceTool, selection: [URL])
     case openWith(application: OpenWithApplicationReference, selection: [URL])
     case openDirectory(application: OpenWithApplicationReference, directory: URL, mode: TerminalOpenMode)
@@ -60,7 +61,8 @@ public struct FileOperationTicketStore: Sendable {
         try data.write(to: file, options: .withoutOverwriting)
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.path)
         let route: String
-        if case .fileInfo = request { route = "file-info" }
+        if case .copyContents = request { route = "copy-contents" }
+        else if case .fileInfo = request { route = "file-info" }
         else { route = isBatchRename ? "rename" : "move" }
         return URL(string: "filemint://\(route)?id=\(id.uuidString)")!
     }
@@ -75,10 +77,15 @@ public struct FileOperationTicketStore: Sendable {
         ticketID(url, expectedHost: "file-info") != nil
     }
 
+    public static func isCopyContentsURL(_ url: URL) -> Bool {
+        ticketID(url, expectedHost: "copy-contents") != nil
+    }
+
     public func consume(_ url: URL, now: Date = Date()) throws -> FileOperationRequest? {
         let isBatchRename = Self.isBatchRenameURL(url)
         let isFileInfo = Self.isFileInfoURL(url)
-        let host = isBatchRename ? "rename" : isFileInfo ? "file-info" : "move"
+        let isCopyContents = Self.isCopyContentsURL(url)
+        let host = isBatchRename ? "rename" : isFileInfo ? "file-info" : isCopyContents ? "copy-contents" : "move"
         guard let id = Self.ticketID(url, expectedHost: host) else { return nil }
         let source = directory.appendingPathComponent("\(id.uuidString).json")
         let claimed = directory.appendingPathComponent("\(id.uuidString).consumed")
@@ -94,7 +101,9 @@ public struct FileOperationTicketStore: Sendable {
             guard isBatchRename else { return nil }
         } else if case .fileInfo = ticket.request {
             guard isFileInfo else { return nil }
-        } else if isBatchRename || isFileInfo { return nil }
+        } else if case .copyContents = ticket.request {
+            guard isCopyContents else { return nil }
+        } else if isBatchRename || isFileInfo || isCopyContents { return nil }
         return ticket.request
     }
 

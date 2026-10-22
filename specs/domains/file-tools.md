@@ -38,11 +38,59 @@ Load for: Optional Finder file/folder actions, batch rename, selection snapshots
 - Copy Names writes each last path component including its extension; Copy Paths
   writes each full filesystem path. Multiple values are joined by one newline,
   with no trailing newline. Preserve Unicode, spaces and literal characters.
-- Only an explicit menu action writes the clipboard. Do not read file contents,
-  crawl folders, monitor the clipboard, or log paths. Copy actions do not
+- Only an explicit menu action writes the clipboard. Copy Names and Copy Paths
+  never read file contents. Do not crawl folders, monitor the clipboard or log paths. Copy actions do not
   create, rename or delete files. Report clipboard-write failure.
 - Chinese product copy uses 拷贝 consistently, including 文件（夹）名称 and
   文件（夹）路径; English uses Copy.
+
+## Copy file contents
+
+- Copy File Contents / 拷贝文件内容 has an independent child switch, default off
+  for new, missing or malformed preferences, and the usual submenu/main placement.
+  It replaces opening a text file and copying its entire content. Offer it only
+  for one captured ordinary local file in scope, never a directory, package,
+  alias, symbolic link, special file, background or multiple selection.
+- Menu construction probes bounded name/type metadata only. Common code, script,
+  configuration, markup and plain-text names, system-declared text types and
+  extensionless files are candidates; eligibility is not proof of valid content.
+  Images (including SVG), PDF, Office and RTFD are excluded. HTML, Markdown,
+  XML and code copy their source text, never rendered content or highlighting.
+- Read only after the explicit click, in the main app via a private single-use
+  60-second ticket containing the captured item/real-parent identities. Recheck
+  current switches, resolved folder scope and identities after read authorization
+  and before clipboard publication. Use the file-information read guarantees:
+  coordinated background I/O, pinned parent/descriptor, no following links,
+  change detection and complete cleanup. No content in tickets, logs or caches.
+- Bound both source bytes and decoded UTF-8 text to 8 MiB. Read to completion
+  within the bound; never truncate. Decode plain text as UTF-8 (optional BOM) or BOM-declared
+  UTF-16 LE/BE strictly, excluding the encoding BOM from the text. Preserve all
+  remaining characters, whitespace, indentation and line endings. Reject invalid
+  encodings, NUL, binary control characters and empty content; whitespace-only
+  text is valid. Do not guess legacy encodings or replace malformed sequences.
+- RTF is conditional on production-path integrity and native paste compatibility
+  checks. When admitted, publish the original validated RTF bytes together with
+  complete plain text in one clipboard item. Do not flatten/re-encode the rich
+  representation. Malformed, attachment/object-bearing or unsupported RTF must
+  fail without publishing a partial text extraction. Receiving apps choose the
+  representations they support; arbitrary cross-app layout fidelity is not promised.
+  Text-and-style RTF is admitted with native rich/plain-text receiver checks for
+  complete Unicode text, original bytes, fonts, colors and paragraph alignment.
+  RTF uses its declared character encoding through the native importer.
+- Reuse configured access or request the exact file with a native read-only
+  picker. Do not expand Finder scope, add persistent grant stores or request Full
+  Disk Access. Known undownloaded placeholders require downloading in Finder first;
+  unknown providers may materialize during ordinary reads. Report actual errors.
+- Capture only the clipboard change counter on the click and check it again on
+  publication; no polling or content inspection. If another copy has occurred,
+  discard the old request instead of overwriting it. Prepare every representation
+  before replacing the clipboard. Read/decode/cancel/policy failures leave it
+  untouched; report a final pasteboard-write failure without claiming restoration.
+- Serialize active work with other file operations. Consume/reject busy tickets
+  promptly. Cancel/close and quit/update restart cancel and wait for worker cleanup
+  before releasing grants or the busy guard. Show a compact cancellable progress
+  panel only for slower work, concise success feedback and actionable failures;
+  never open settings or require an additional Run/Copy step after the menu click.
 
 ## File information and checksums
 

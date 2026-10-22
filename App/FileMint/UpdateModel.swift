@@ -198,12 +198,12 @@ final class UpdateModel: ObservableObject {
         afterFileInfoReadStops { [weak self] in self?.beginDownloadUpdate() }
     }
 
-    /// Restart requests may stop a read-only checksum operation; existing
+    /// Restart requests may stop a read-only file operation; existing
     /// creation/editing/mutation guards remain authoritative afterwards.
     func afterFileInfoReadStops(_ action: @escaping @MainActor () -> Void) {
-        let controller = FileOperationCoordinator.shared.fileInfoController
-        guard controller.isWorking else { action(); return }
-        Task { await controller.cancelAndWait(); action() }
+        let coordinator = FileOperationCoordinator.shared
+        guard coordinator.isReadingFiles else { action(); return }
+        Task { await coordinator.cancelActiveReadsAndWait(); action() }
     }
 
     private func beginDownloadUpdate() {

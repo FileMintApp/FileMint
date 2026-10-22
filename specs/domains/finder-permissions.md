@@ -80,6 +80,10 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 
 ## File information authorization
 
+Copy File Contents follows the same captured identity and read-only authorization
+boundary below. Its explicit menu click authorizes the bounded content read and
+clipboard publication described in [file tools](file-tools.md#copy-file-contents).
+
 - Finder captures the menu's single selected URL and probes only that item's
   type metadata to hide unsupported resources. It captures item/real-parent
   identities off the UI thread only after explicit invocation. It reads no content

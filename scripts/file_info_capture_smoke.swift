@@ -16,6 +16,7 @@ import Foundation
         var preferences = FileMintPreferences.default
         preferences.monitoredFolderURLs = [root]
         preferences.fileTools.isEnabled = true; preferences.fileTools.fileInfo = true
+        preferences.fileTools.copyContents = true
         precondition(FileToolsPolicy.availableTools(selection: [root.appendingPathComponent("file.txt")],
             isItemMenu: true, preferences: preferences).contains(.fileInfo))
         for name in ["folder", "link", "missing"] {
@@ -23,6 +24,11 @@ import Foundation
                 isItemMenu: true, preferences: preferences).contains(.fileInfo))
         }
         let file = try FileInfoSelection.capture([root.appendingPathComponent("file.txt")])
+        precondition(FileContentCopyPolicy.supportsMenuSelection([file.source]))
+        do {
+            _ = try FileContentRead.read(file)
+            fatalError("Denied content must not produce clipboard data")
+        } catch FileInfoError.accessDenied {}
         let metadata = try FileDigestService.inspect(file)
         precondition(metadata.kind == .file && metadata.logicalSize == 3)
         let folder = try FileDigestService.inspect(FileInfoSelection.capture([root.appendingPathComponent("folder")]))
