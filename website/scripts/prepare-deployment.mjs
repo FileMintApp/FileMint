@@ -8,7 +8,9 @@ const STABLE_TAG = /^v(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/
 const SHA = /^[0-9a-f]{40}$/
 const ID = /^[1-9]\d*$/
 const allowedFiles = new Set([
-  'README.md', 'README.en.md', 'package.json', 'pnpm-lock.yaml',
+  'README.md', 'README.zh-CN.md', 'package.json', 'pnpm-lock.yaml',
+  // Stable tags may still include this former English README in rename/deletion diffs.
+  'README.en.md',
   'Makefile', 'AGENTS.md', '.gitignore',
 ])
 // These maintain the repository and its publication process, not the application

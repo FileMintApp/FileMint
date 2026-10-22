@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parent.parent
 REPO = "FileMintApp/FileMint"
 API = f"repos/{REPO}"
 PUBLIC = f"https://github.com/{REPO}"
-SITE_INPUTS = ("README.md", "README.en.md", "website", "package.json", "pnpm-lock.yaml",
+SITE_INPUTS = ("README.md", "README.zh-CN.md", "website", "package.json", "pnpm-lock.yaml",
                ".github/workflows/build-pages.yml", ".github/workflows/deploy-pages.yml")
 WORKFLOWS = {"candidate": "release.yml", "site": "build-pages.yml", "deploy": "deploy-pages.yml"}
 

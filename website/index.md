@@ -9,7 +9,7 @@ description: 在 Finder 中新建文档、批量重命名、查看文件信息�
 
 <div class="roadmap-todos">
 
-<!--@include: ../README.md#roadmap-->
+<!--@include: ../README.zh-CN.md#roadmap-->
 
 </div>
 

@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         Use this form if you need help with a feature or are unsure whether something is a bug.
-        You can also check the [usage and installation overview](https://github.com/FileMintApp/FileMint/blob/main/README.en.md).
+        You can also check the [usage and installation overview](https://github.com/FileMintApp/FileMint/blob/main/README.md).
         Issues and attachments are public. Remove personal information, real file paths and private content.
 
   - type: checkboxes

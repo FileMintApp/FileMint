@@ -296,8 +296,9 @@ owns the rules, supported storage, counts, explicit actions and recovery behavio
   permissions, changes preferences, enables a module or starts an update check.
   There is no new settings page, embedded browser or bundled manual in this phase.
 - README leads with the pain solved, actual features, screenshots, download and
-  a brief install guide. Chinese first, English separate. Developer instructions
-  live in docs. Optional donations link the supplied ReceivePayment images.
+  a brief install guide. English is the default `README.md`; Simplified Chinese
+  lives in `README.zh-CN.md`, with reciprocal language links at the top. Developer
+  instructions live in docs. Optional donations link the supplied ReceivePayment images.
 - Both README languages and website homepages show a future roadmap as grouped
   TODO checklists. Describe concrete user outcomes without priorities, release
   assignments or delivery dates, and distinguish planned work from available
@@ -332,7 +333,7 @@ owns the rules, supported storage, counts, explicit actions and recovery behavio
 
 ## Working context
 
-- Implementation entry points: `Resources/`, `scripts/generate_app_icon.swift`, `website/`, `.github/ISSUE_TEMPLATE/`, `README.md`, `README.en.md`, `PRIVACY.md`, `LICENSE`; visible controls in `App/FileMint/` and `SharedUI/`.
+- Implementation entry points: `Resources/`, `scripts/generate_app_icon.swift`, `website/`, `.github/ISSUE_TEMPLATE/`, `README.md`, `README.zh-CN.md`, `PRIVACY.md`, `LICENSE`; visible controls in `App/FileMint/` and `SharedUI/`.
 - Verification: [Verification matrix](../HARNESS.md#choose-checks-by-change), using the documentation, website or appearance row.
 - Expand context only when needed: For feature claims, load only the domain being described. Load [updates](updates.md) for About credits; [distribution](distribution.md) for installation/release claims. Read [future roadmap](../../docs/ROADMAP.md) only for planned work, never as evidence of shipped behavior.
 

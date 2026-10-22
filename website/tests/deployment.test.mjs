@@ -80,7 +80,8 @@ test('requires one retained artifact from the exact run and source', () => {
 
 test('repository maintenance is independent of the published native application', () => {
   validateWebsitePaths([
-    'website/index.md', 'website/scripts/prepare-deployment.mjs', 'README.en.md',
+    'website/index.md', 'website/scripts/prepare-deployment.mjs',
+    'README.md', 'README.zh-CN.md', 'README.en.md',
     'package.json', 'pnpm-lock.yaml', 'docs/tasks/deployment.md',
     'specs/domains/presentation.md', 'specs/domains/distribution.md',
     '.github/workflows/build-pages.yml', '.github/workflows/deploy-website.yml',

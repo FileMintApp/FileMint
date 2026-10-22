@@ -1,6 +1,6 @@
 # FileMint 实施路线
 
-公开 TODO 见[中文主页](../README.md#未来规划)和 [English roadmap](../README.en.md#roadmap)。本文补充每项的实现思路与完成条件，方便开始一项工作时直接找到切入点。它描述未来工作，当前产品行为仍以 [SPEC](../specs/SPEC.md) 为准。
+公开 TODO 见[中文主页](../README.zh-CN.md#未来规划)和 [English roadmap](../README.md#roadmap)。本文补充每项的实现思路与完成条件，方便开始一项工作时直接找到切入点。它描述未来工作，当前产品行为仍以 [SPEC](../specs/SPEC.md) 为准。
 
 ## 怎么使用这份路线
 
