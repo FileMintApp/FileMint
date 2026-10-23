@@ -570,18 +570,28 @@ def prepare_site_deployment():
     snapshot = json.loads(inputs["assets"])
     check_public(gh, positive_id(inputs["release_id"]), inputs["tag"], inputs["commit"], snapshot)
     run_id = positive_id(inputs["build_run_id"])
-    run = gh.api(f"actions/runs/{run_id}")
-    if (not matching_run(run, WORKFLOWS["site"], inputs["commit"], inputs["tag"], f"FileMint site {inputs['build_request_id']}")
-            or run.get("status") != "completed" or run.get("conclusion") != "success"):
-        raise PublicationError("Website build is not the verified release build")
-    if site_artifact(gh, run_id)["id"] != positive_id(inputs["artifact_id"]):
-        raise PublicationError("Website artifact identity changed")
+
+    def verify_build():
+        run = gh.api(f"actions/runs/{run_id}")
+        if (not matching_run(run, WORKFLOWS["site"], inputs["commit"], inputs["tag"], f"FileMint site {inputs['build_request_id']}")
+                or run.get("status") != "completed" or run.get("conclusion") != "success"):
+            raise PublicationError("Website build is not the verified release build")
+        if site_artifact(gh, run_id)["id"] != positive_id(inputs["artifact_id"]):
+            raise PublicationError("Website artifact identity changed")
+        return positive_id(run.get("run_attempt", 1))
+
+    attempt = verify_build()
     directory = Path(os.environ["RUNNER_TEMP"]) / f"filemint-pages-{uuid.uuid4().hex}"
     directory.mkdir()
     command(["gh", "run", "download", str(run_id), "--repo", REPO, "--name", "github-pages", "--dir", str(directory)])
     archive = directory / "artifact.tar"
     if list(directory.iterdir()) != [archive] or archive.is_symlink() or not archive.is_file() or archive.stat().st_size <= 0:
         raise PublicationError("Unexpected website artifact archive")
+    # Downloading by name can race a rerun that replaces the artifact. Nothing
+    # becomes deployable until the run, artifact and public release are rechecked.
+    if verify_build() != attempt:
+        raise PublicationError("Website build attempt changed during download")
+    check_public(gh, positive_id(inputs["release_id"]), inputs["tag"], inputs["commit"], snapshot)
     with open(os.environ["GITHUB_OUTPUT"], "a") as out:
         out.write(f"archive={archive}\n")
 

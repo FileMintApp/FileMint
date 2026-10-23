@@ -194,6 +194,11 @@ Load for: Optional Finder file/folder actions, batch rename, selection snapshots
   latest switches, folder scope and batch ID. An old menu cannot move a newer
   batch. A bare URL cannot prepare or execute a move: use private single-use
   expiring transport tickets; their expiry does not expire a prepared batch.
+- Consume ordinary operation tickets when the main app receives them, using
+  receipt time for the existing 60-second validity check. Preserve FIFO execution
+  behind an active operation or panel, but do not let that waiting time expire an
+  already accepted request. Recheck current scope, preferences and identities
+  when executing; expired or replayed inbound tickets remain invalid.
 - Selection parents and destination require sandbox access. Use existing access
   when available, otherwise ask for the exact folder via the main app's native
   directory picker. Cancelling authorization leaves pending state intact; this
@@ -446,7 +451,7 @@ The following rules apply only to batch rename, not to the existing tools above.
   owns the coordinator, preserving the current 60-second/single-use validation.
   Busy requests are consumed and explicitly rejected, focusing an existing rename
   panel when present; never replace its inputs or queue a rename behind a long
-  preview. Leave other operation types' existing queue behavior unchanged.
+  preview. Other operation types retain FIFO execution after prompt ticket intake.
   An accepted panel has no ticket-age expiry; it is revalidated on submission.
 - Submission freezes batch/parent identities, complete original/final components,
   row order, parameters and revision. Recheck preferences, resolved scope, grants,

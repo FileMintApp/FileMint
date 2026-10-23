@@ -107,13 +107,26 @@ struct FocusedCreationTests {
         return url
     }
 
-    @Test("placeholder-looking filenames stay literal during template expansion")
+    @Test("template expansion preserves Unicode and never expands substituted filenames")
     func templateExpansionIsSinglePass() {
         var template = TemplateCatalog.builtInTemplates[0]
-        template.content = "{{fileName}} / {{year}} / {{unknown}}"
+        template.content = "\u{FEFF}中文 👩🏽‍💻 e\u{301}\r\n{{fileName}}{{year}} / {{date}} / {{isoDate}} / {{unknown}} / {{year}\n尾 🌱"
         let value = TemplateRenderer.render(template, context: .init(
-            fileName: "{{year}}.md", createdAt: Date(timeIntervalSince1970: 1_704_067_200)))
-        #expect(value == "{{year}}.md / 2024 / {{unknown}}")
+            fileName: "资料-{{year}}-{{fileName}}.md", createdAt: Date(timeIntervalSince1970: 1_704_067_200)))
+        let expected = "\u{FEFF}中文 👩🏽‍💻 e\u{301}\r\n资料-{{year}}-{{fileName}}.md2024 / 2024-01-01 / 2024-01-01T00:00:00Z / {{unknown}} / {{year}\n尾 🌱"
+        #expect(Data(value.utf8) == Data(expected.utf8))
+    }
+
+    @Test("large templates preserve every growing replacement and surrounding text")
+    func largeRepeatedTemplateTokens() {
+        let count = 160_000
+        let fileName = "A much longer file name to exercise string growth.txt"
+        var template = TemplateCatalog.builtInTemplates[0]
+        template.content = "开始\n" + String(repeating: "{{fileName}} ", count: count) + "\n结束"
+        let value = TemplateRenderer.render(template, context: .init(
+            fileName: fileName, createdAt: Date(timeIntervalSince1970: 1_704_067_200)))
+        let expected = "开始\n" + String(repeating: fileName + " ", count: count) + "\n结束"
+        #expect(value == expected)
     }
 
     @Test("pasted text is byte-for-byte literal, including placeholders and CRLF")

@@ -46,8 +46,12 @@ Load for: Resource Tools menus, image processing, icon generation, stitching and
   opening settings or building a Finder menu; no model is prewarmed.
 - Maximum 100 inputs, each at most 64 MiB encoded and 64 million source pixels.
   Decode/render at most 16 million pixels and at most 16,384 pixels per dimension;
-  OCR downsamples to longest edge 4096, icons to 1024. Validate dimensions and
-  arithmetic before allocation. These are input/working limits, not an OS RSS guarantee.
+  OCR automatically downsamples without enlargement to both a longest edge of
+  at most 4096 and the 16 million working-pixel limit, including near-square
+  images and decoder rounding at the boundary. Icons downsample to 1024.
+  Explicit Resize targets retain their existing validation rather than silently
+  shrinking further. Validate dimensions and arithmetic before allocation.
+  These are input/working limits, not an OS RSS guarantee.
 - Preview uses at most 512-pixel thumbnails, built serially and on explicit panel
   demand; retain at most 20. A new selected item can replace an older cached preview.
   Original dimensions are captured in the same source read. Image data and decoded

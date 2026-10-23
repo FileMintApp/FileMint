@@ -9,7 +9,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
     // Pass actor-isolated defaults explicitly for Swift 6.1 global initialization.
     static let shared = FileOperationCoordinator(resourceController: .shared, renameOperations: .shared)
     private enum QueuedRequest {
-        case ticket(URL)
+        case ticket(Task<FileOperationRequest?, Error>)
         case selectedImages(ResourceTool, [URL], grants: [URL])
     }
     private var queue: [QueuedRequest] = []
@@ -35,6 +35,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
     private var access: [URL] = []
     private let store: PendingFileMoveStore
     private let tickets: FileOperationTicketStore
+    private let ticketClock: @Sendable () -> Date
     private let preferencesFile: URL?
     private let aliasAccessStore: DesktopAliasAccessStore
     private let openWithAccessStore: OpenWithFolderAccessStore
@@ -52,12 +53,14 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
          desktopDirectory: URL = DesktopAliasService.desktopDirectory,
          resourceController: ResourceToolsController = .shared,
          renameOperations: BatchRenameOperations = .shared,
+         ticketClock: @escaping @Sendable () -> Date = { Date() },
          fileInfoReader: @escaping FileInfoController.Reader = {
              try FileDigestService.calculate($0, choice: $1, cancellation: $2, progress: $3)
          }, contentPasteboard: NSPasteboard = .general,
          contentReader: @escaping FileContentCopyController.Reader = { try FileContentRead.read($0, cancellation: $1) }) {
         self.store = store
         self.tickets = tickets
+        self.ticketClock = ticketClock
         self.preferencesFile = preferencesFile
         self.aliasAccessStore = aliasAccessStore
         self.openWithAccessStore = openWithAccessStore
@@ -74,7 +77,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             let accepted = FileOperationTicketStore.isCopyContentsURL(url) && !isBusy && queue.isEmpty
             if accepted { operationIsBusy = true }
             immediateIntakes += 1
-            let tickets = self.tickets
+            let requestIntake = consumeTicket(url)
             let intake = Task {
                 defer {
                     immediateIntakes -= 1
@@ -82,7 +85,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
                     consumeQueue()
                 }
                 do {
-                    let request = try await Task.detached(priority: .userInitiated) { try tickets.consume(url) }.value
+                    let request = try await requestIntake.value
                     guard accepted else { contentCopyController.showBusy(); return }
                     guard !Task.isCancelled else { return }
                     guard case .copyContents(let selection, let changeCount) = request else {
@@ -100,7 +103,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             let accepted = !isBusy && queue.isEmpty && FileOperationTicketStore.isFileInfoURL(url)
             if accepted { operationIsBusy = true }
             immediateIntakes += 1
-            let tickets = self.tickets
+            let requestIntake = consumeTicket(url)
             Task {
                 defer {
                     immediateIntakes -= 1
@@ -108,7 +111,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
                     consumeQueue()
                 }
                 do {
-                    let request = try await Task.detached(priority: .userInitiated) { try tickets.consume(url) }.value
+                    let request = try await requestIntake.value
                     guard accepted else { fileInfoController.showBusy(); return }
                     guard case .fileInfo(let selection) = request else { fileInfoController.showInvalidRequest(); return }
                     try await fileInfoController.present(selection)
@@ -122,7 +125,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             let accepted = !isBusy && queue.isEmpty
             if accepted { operationIsBusy = true }
             immediateIntakes += 1
-            let tickets = self.tickets
+            let requestIntake = consumeTicket(url)
             Task {
                 defer {
                     immediateIntakes -= 1
@@ -130,9 +133,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
                     consumeQueue()
                 }
                 do {
-                    let request = try await Task.detached(priority: .userInitiated) {
-                        try tickets.consume(url)
-                    }.value
+                    let request = try await requestIntake.value
                     guard accepted else {
                         renameOperations.showBusy()
                         return
@@ -147,8 +148,20 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             }
             return
         }
-        queue.append(.ticket(url))
+        // Claim the one-use transport now, even while another panel owns the
+        // coordinator. Queue positions retain arrival order until execution.
+        queue.append(.ticket(consumeTicket(url)))
         consumeQueue()
+    }
+
+    private func consumeTicket(_ url: URL) -> Task<FileOperationRequest?, Error> {
+        let tickets = self.tickets
+        // Task scheduling and an earlier operation must not age an inbound
+        // request. Already-expired or future-dated tickets still fail at intake.
+        let receivedAt = ticketClock()
+        return Task.detached(priority: .userInitiated) {
+            try tickets.consume(url, now: receivedAt)
+        }
     }
 
     /// Recovery and undo share ownership with moves, native authorization and
@@ -215,7 +228,6 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             defer { operationIsBusy = false }
             while !queue.isEmpty {
                 let entry = queue.removeFirst()
-                let tickets = self.tickets
                 do {
                     if case .selectedImages(let tool, let selection, let grants) = entry {
                         operationTitle = .resourceTools
@@ -224,10 +236,8 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
                         releaseAccess()
                         continue
                     }
-                    guard case .ticket(let url) = entry else { continue }
-                    let request = try await Task.detached(priority: .userInitiated) {
-                        try tickets.consume(url)
-                    }.value
+                    guard case .ticket(let intake) = entry else { continue }
+                    let request = try await intake.value
                     if let request {
                         switch request {
                         case .prepare, .perform: operationTitle = .moveFailed

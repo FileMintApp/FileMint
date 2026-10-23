@@ -82,10 +82,13 @@ final class UpdateModel: ObservableObject {
                 $0.automaticallyChecksForUpdates == $1.automaticallyChecksForUpdates &&
                     $0.lastUpdateCheckAttempt == $1.lastUpdateCheckAttempt
             }
-            .sink { [weak self] preferences in
-                // @Published emits before assigning the new preferences.
-                let enabled = preferences.automaticallyChecksForUpdates
-                Task { @MainActor in self?.automaticSettingsChanged(enabled: enabled) }
+            .sink { [weak self] _ in
+                // @Published emits before assignment, including tentative edits
+                // that a failed save rolls back in the same main-actor turn.
+                Task { @MainActor in
+                    guard let self else { return }
+                    self.automaticSettingsChanged(enabled: self.preferencesModel.preferences.automaticallyChecksForUpdates)
+                }
             }
     }
 

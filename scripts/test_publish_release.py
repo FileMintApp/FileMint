@@ -38,7 +38,8 @@ def release(draft=True):
 def workflow_run(run_id, workflow, request=None, branch="main", commit=COMMIT):
     return {"id": run_id, "path": f".github/workflows/{workflow}", "head_sha": commit,
             "head_branch": branch, "event": "workflow_dispatch" if request else "push",
-            "display_title": request or "Source CI", "status": "completed", "conclusion": "success"}
+            "display_title": request or "Source CI", "status": "completed", "conclusion": "success",
+            "run_attempt": 1}
 
 
 class FakeGitHub:
@@ -633,6 +634,46 @@ class PublicationTests(unittest.TestCase):
             with self.assertRaisesRegex(publication.PublicationError, "artifact identity changed"):
                 publication.prepare_site_deployment()
             self.assertEqual(len(downloaded), 1)
+
+    def test_site_deployment_rechecks_downloaded_candidate_before_emitting_output(self):
+        for change in ("artifact", "expired", "running", "failed", "source", "attempt", "release", "tag", "latest"):
+            with self.subTest(change=change):
+                gh = FakeGitHub()
+                gh.release = release(False)
+                gh.runs[11] = workflow_run(11, "build-pages.yml", "FileMint site review", TAG)
+                inputs = {"release_id": "7", "tag": TAG, "commit": COMMIT, "build": "99",
+                          "assets": json.dumps(publication.asset_snapshot(gh.release, TAG)),
+                          "build_run_id": "11", "build_request_id": "review", "artifact_id": "501"}
+                output = self.work / f"outputs-{change}"
+                downloaded = []
+
+                def fetch(args, **kwargs):
+                    if args[:3] != ["gh", "run", "download"]:
+                        return self.command(args)
+                    downloaded.append(args)
+                    (Path(args[-1]) / "artifact.tar").write_bytes(b"downloaded website tar")
+                    if change == "artifact": gh.artifact_id = 502
+                    elif change == "expired": gh.expired = True
+                    elif change == "running": gh.runs[11].update(status="in_progress", conclusion=None)
+                    elif change == "failed": gh.runs[11]["conclusion"] = "failure"
+                    elif change == "source": gh.runs[11]["head_sha"] = "b" * 40
+                    elif change == "attempt": gh.runs[11]["run_attempt"] = 2
+                    elif change == "release": gh.release["assets"][0]["id"] += 1000
+                    elif change == "tag": gh.tag_commit = "b" * 40
+                    elif change == "latest":
+                        original = gh.api
+                        gh.api = lambda endpoint, *args, **kwargs: (
+                            gh.previous if endpoint == "releases/latest" else original(endpoint, *args, **kwargs))
+                    return ""
+
+                with patch.dict(os.environ, {"GITHUB_ACTIONS": "true", "FILEMINT_PUBLICATION_INPUTS": json.dumps(inputs),
+                                             "RUNNER_TEMP": str(self.work), "GITHUB_OUTPUT": str(output)}), \
+                        patch.object(publication, "GitHub", return_value=gh), \
+                        patch.object(publication, "command", side_effect=fetch):
+                    with self.assertRaises(publication.PublicationError):
+                        publication.prepare_site_deployment()
+                self.assertEqual(len(downloaded), 1)
+                self.assertFalse(output.exists(), "An invalidated candidate must not be offered to the deploy step")
 
     def test_site_deployment_rejects_unpublished_release_before_downloading(self):
         self.gh.release = release()

@@ -18,9 +18,14 @@ public enum TemplateRenderer {
         let source = template.content as NSString
         let matches = tokenPattern.matches(in: template.content, range: NSRange(location: 0, length: source.length))
         guard !matches.isEmpty else { return template.content }
-        let output = NSMutableString(string: template.content)
+        let output = NSMutableString(capacity: source.length)
+        var consumedLength = 0
         var replacements: [String: String] = [:]
-        for match in matches.reversed() {
+        // Append from the original source so replacement text stays literal and
+        // growing substitutions never repeatedly shift the rendered suffix.
+        for match in matches {
+            output.append(source.substring(with: NSRange(location: consumedLength,
+                length: match.range.location - consumedLength)))
             let token = source.substring(with: match.range(at: 1))
             let replacement: String
             if let cached = replacements[token] { replacement = cached }
@@ -33,8 +38,10 @@ public enum TemplateRenderer {
                 }
                 replacements[token] = replacement
             }
-            output.replaceCharacters(in: match.range, with: replacement)
+            output.append(replacement)
+            consumedLength = NSMaxRange(match.range)
         }
+        output.append(source.substring(from: consumedLength))
         return output as String
     }
 

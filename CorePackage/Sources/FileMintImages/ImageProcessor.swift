@@ -187,7 +187,9 @@ public enum ImageProcessor {
     }
 
     private static func recognize(_ input: ImageInput) throws -> String {
-        let image = try input.decode(longestEdge: 4096)
+        let source = try input.source()
+        let size = try ImageInput.dimensions(source).fittingForOCR()
+        let image = try ImageInput.decode(source, longestEdge: max(size.width, size.height))
         let request = VNRecognizeTextRequest()
         request.recognitionLevel = .accurate
         request.preferBackgroundProcessing = true

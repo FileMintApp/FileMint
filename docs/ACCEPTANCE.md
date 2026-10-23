@@ -3,6 +3,28 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Full-review corrections — 2026-10-23
+
+On primary `30c9267` plus the uncommitted corrections, arm64 macOS 27.2 /
+Xcode 27.1 / Swift 6.4 passed `make verify` (363 Core, 23 Images) and unsigned
+Release App/Finder compilation. New production-path regressions cover large
+square-image OCR, exact large-template expansion and deployment identity changes
+during download; deployment APIs are offline adapters.
+
+Fresh signed native fixtures passed batch rename, template workflow, creation
+opening, update scheduling, Open with App and file information. A resource panel
+held the queue while the fixture clock advanced 61 seconds: accepted requests
+remained FIFO, expired inbound tickets and replay stayed rejected, and busy
+ownership remained active. The initial design fixture failed to compile because
+its new assertion helper was in the wrong local scope; after fixing it, a fresh
+design fixture passed folder/menu-bar/update setting rollback and preservation of
+an already-running automatic update check when persistence fails.
+
+No installed app or production preferences were changed. These checks do not
+establish installed Finder callbacks, external-folder grants across restarts,
+provider volumes, older macOS or online deployment. See the
+[task and exact reports](tasks/2026-10-23-review-corrections.md#evidence).
+
 ## Copy file contents review corrections — 2026-10-22
 
 On primary `1047205` plus the corrections, arm64 macOS 27.2 / Xcode 27.1 /

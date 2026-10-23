@@ -82,6 +82,32 @@ struct ResourceToolsTests {
         #expect(throws: ResourceError.invalidOptions) { try ImageDimensions(width: 40, height: 20).fitting(longestEdge: 0) }
     }
 
+    @Test("OCR automatically fits edge and pixel budgets without changing explicit resize targets")
+    func ocrDimensions() throws {
+        let cases = [
+            (4000, 4000, 4000, 4000), // Exactly the working-pixel limit.
+            (4096, 4096, 4000, 4000),
+            (5000, 5000, 4000, 4000),
+            (8000, 8000, 4000, 4000), // Exactly the source-pixel limit.
+            (8000, 1000, 4096, 512),
+            (1000, 8000, 512, 4096),
+            (64_000_000, 1, 4096, 1),
+            (80, 40, 80, 40),
+            (4096, 3906, 4096, 3906),
+            (4096, 3907, 4095, 3906) // A rounded-up short edge must still fit.
+        ]
+        for (width, height, expectedWidth, expectedHeight) in cases {
+            let result = try ImageDimensions(width: width, height: height).fittingForOCR()
+            #expect(result == ImageDimensions(width: expectedWidth, height: expectedHeight))
+        }
+        #expect(throws: ResourceError.dimensionsTooLarge) {
+            try ImageDimensions(width: 8000, height: 8001).fittingForOCR()
+        }
+        #expect(throws: ResourceError.dimensionsTooLarge) {
+            try ImageDimensions(width: 5000, height: 5000).fitting(longestEdge: 4096)
+        }
+    }
+
     @Test("stitch layout follows orientation and rejects oversized combined canvas")
     func layout() throws {
         let inputs = [ImageDimensions(width: 400, height: 200), ImageDimensions(width: 100, height: 200)]

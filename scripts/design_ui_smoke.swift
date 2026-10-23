@@ -338,6 +338,7 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
     }
 
     private func checkSettings(store: FileMintPreferencesStore, root: URL) async throws {
+        try await checkPreferenceFailureRollback(root: root)
         func require(_ value: Bool, _ message: String) throws {
             if !value { throw NSError(domain: "SettingsReview", code: 1, userInfo: [NSLocalizedDescriptionKey: message]) }
         }
@@ -408,6 +409,72 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
         }
         model.selectedPane = .fileTypes
         print("SETTINGS_REVIEW_CAPTURES \(output.path)")
+    }
+
+    private func checkPreferenceFailureRollback(root: URL) async throws {
+        func require(_ value: Bool, _ message: String) throws {
+            if !value { throw NSError(domain: "SettingsRollback", code: 1, userInfo: [NSLocalizedDescriptionKey: message]) }
+        }
+        let directory = root.appendingPathComponent("settings-rollback-" + UUID().uuidString, isDirectory: true)
+        let retained = directory.appendingPathComponent("retained", isDirectory: true)
+        let added = directory.appendingPathComponent("added", isDirectory: true)
+        let second = directory.appendingPathComponent("second", isDirectory: true)
+        for folder in [retained, added, second] {
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        }
+        let store = FileMintPreferencesStore(fileURL: directory.appendingPathComponent("preferences.json"))
+        var initial = FileMintPreferences.default
+        initial.monitoredFolderURLs = [retained]
+        initial.launchAtLogin = false
+        initial.automaticallyChecksForUpdates = true
+        try FolderAccess.remember(retained, in: &initial)
+        try store.save(initial)
+        let settings = PreferencesModel(store: store,
+            documentTemplates: DocumentTemplateStore(directory: directory.appendingPathComponent("assets")))
+        for _ in 0..<100 where settings.templateRecoveryError != nil || settings.isMutatingTemplates {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        try require(settings.templateRecoveryError == nil && !settings.isMutatingTemplates,
+                    "Rollback fixture did not finish startup recovery")
+        try require(settings.rememberMonitoredFolders([added, second]), "Folder additions did not save")
+        try require(store.load() == settings.preferences && settings.preferences.monitoredFolderURLs == [retained, added, second],
+                    "Successful folder additions lost the complete selection")
+        settings.removeFolder(added)
+        settings.removeFolder(second)
+        try require(store.load() == settings.preferences && settings.preferences.monitoredFolderURLs == [retained],
+                    "Successful folder removal did not persist")
+
+        var started = false
+        var cancelled = false
+        let automatic = UpdateModel(preferencesModel: settings, automaticCheckStartupDelay: 0.01) { _ in
+            started = true
+            do { try await Task.sleep(for: .seconds(30)) }
+            catch { cancelled = true; throw error }
+            return nil
+        }
+        automatic.startAutomaticChecks()
+        defer { automatic.cancel() }
+        for _ in 0..<100 where !started { try await Task.sleep(for: .milliseconds(20)) }
+        try require(started && automatic.state == .checking, "Automatic rollback fixture did not start")
+        let previous = settings.preferences
+        // Simulate a settings file becoming damaged while the app is running.
+        // The production store rejects every mutation without replacing bytes.
+        let damaged = Data("{damaged".utf8)
+        try damaged.write(to: store.location!)
+        settings.removeFolder(retained)
+        try require(settings.preferences == previous && settings.committedPreferences == previous,
+                    "Failed folder removal changed settings or saved authority")
+        try require(!settings.rememberMonitoredFolders([added, second]) && settings.preferences == previous,
+                    "Failed folder additions retained a partial or unsaved selection")
+        settings.setShowMenuBar(!previous.showMenuBar)
+        settings.setAutomaticallyChecksForUpdates(false)
+        try require(settings.preferences == previous, "Failed startup choices did not roll back")
+        try await Task.sleep(for: .milliseconds(100))
+        try require(automatic.state == .checking && !cancelled,
+                    "A rejected automatic-update choice cancelled the active check")
+        try require(settings.lastError != nil && (try Data(contentsOf: store.location!)) == damaged,
+                    "Failed preference saves hid the error or changed damaged bytes")
+        print("PASS settings rollback: complete folder edits, menu bar, update choice and active-check preservation")
     }
 
     private func checkAppearance(store: FileMintPreferencesStore, root: URL) throws {

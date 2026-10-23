@@ -170,6 +170,18 @@ public struct ImageDimensions: Equatable, Sendable {
         try size.validate()
         return size
     }
+
+    /// OCR chooses its own resolution; explicit Resize targets must not silently
+    /// shrink to this budget. Reserve a rounded-up short edge for Image I/O.
+    public func fittingForOCR() throws -> Self {
+        try validate(source: true)
+        let longest = max(width, height), shortest = min(width, height)
+        var edge = min(4096, longest)
+        while edge * ((shortest * edge + longest - 1) / longest) > ResourceToolsPolicy.maximumWorkingPixels {
+            edge -= 1
+        }
+        return try fitting(longestEdge: edge)
+    }
 }
 
 public struct ImageStitchLayout: Sendable {

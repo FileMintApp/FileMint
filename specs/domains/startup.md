@@ -23,6 +23,9 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - Hiding the menu bar item takes effect immediately and persists. Opening the app
   from Applications or Spotlight keeps settings reachable. Finder URL actions continue to work when the
   settings window is closed or the menu bar item is hidden.
+- Failed preference saves restore the previous menu-bar and automatic-update
+  choices. A rejected update-setting change must not cancel an active automatic
+  check or start a new one; the successfully saved choice remains authoritative.
 - New preferences follow the system's supported language; explicit saved English
   or Chinese choices remain authoritative. Users can also select Follow System.
 - General offers Follow System, Light and Dark appearance choices. Follow System

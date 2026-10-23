@@ -293,8 +293,76 @@ final class OpenWithSmoke: NSObject, NSApplicationDelegate {
               NSPasteboard.general.changeCount == clipboardChangeCount else {
             throw SmokeFailure("Directory target, ticket or clipboard assertion failed")
         }
+        try await checkQueuedTicketIntake(root: root, first: document, second: folder)
+    }
+
+    private func checkQueuedTicketIntake(root: URL, first: URL, second: URL) async throws {
+        let preferencesFile = root.appendingPathComponent("queue-preferences.json")
+        var preferences = FileMintPreferences.default
+        preferences.monitoredFolderURLs = [root]
+        preferences.fileTools.isEnabled = true
+        preferences.resourceTools.isEnabled = true
+        try FileMintPreferencesStore(fileURL: preferencesFile).save(preferences)
+        let image = root.appendingPathComponent("queue-blocker.png")
+        guard let bitmap = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 2, pixelsHigh: 2,
+            bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+            colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0),
+              let bytes = bitmap.representation(using: .png, properties: [:]) else {
+            throw SmokeFailure("Could not create queue image fixture")
+        }
+        try bytes.write(to: image)
+        let ticketDirectory = root.appendingPathComponent("queue-tickets")
+        let tickets = FileOperationTicketStore(directory: ticketDirectory)
+        let pending = PendingFileMoveStore(file: root.appendingPathComponent("queue-pending.json"))
+        let resources = ResourceToolsController(preferencesFile: preferencesFile)
+        let clock = TicketClock()
+        let coordinator = FileOperationCoordinator(store: pending, tickets: tickets, preferencesFile: preferencesFile,
+            resourceController: resources, ticketClock: { clock.read() })
+        self.coordinator = coordinator
+        coordinator.enqueue(try tickets.enqueue(.resource(tool: .convert, selection: [image]), now: clock.read()))
+        var resourceWindow: NSWindow?
+        for _ in 0..<100 {
+            resourceWindow = NSApp.windows.first { $0.title == ResourceTool.convert.title(preferences.language) && $0.isVisible }
+            if resourceWindow != nil && !resources.isPreparing { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        guard let resourceWindow, coordinator.isBusy else { throw SmokeFailure("Resource panel did not hold queue ownership") }
+        defer { if resourceWindow.isVisible { resourceWindow.close() } }
+        let issuedAt = clock.read()
+        let firstTicket = try tickets.enqueue(.prepare([first]), now: issuedAt)
+        let secondTicket = try tickets.enqueue(.prepare([second]), now: issuedAt)
+        coordinator.enqueue(firstTicket)
+        coordinator.enqueue(secondTicket)
+        // Advance before detached work is guaranteed to run: eligibility is
+        // captured at receipt, while execution remains behind the resource panel.
+        clock.advance(by: 61)
+        coordinator.enqueue(try tickets.enqueue(.prepare([first]), now: issuedAt))
+        for _ in 0..<100 {
+            if try FileManager.default.contentsOfDirectory(at: ticketDirectory, includingPropertiesForKeys: nil).isEmpty { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        guard try FileManager.default.contentsOfDirectory(at: ticketDirectory, includingPropertiesForKeys: nil).isEmpty,
+              coordinator.isBusy, try pending.load() == nil else {
+            throw SmokeFailure("Queued tickets were not claimed promptly or executed before the active panel closed")
+        }
+        resourceWindow.close()
+        for _ in 0..<100 where coordinator.isBusy { try await Task.sleep(for: .milliseconds(20)) }
+        guard !coordinator.isBusy, let saved = try pending.load(), saved.items.map(\.source) == [second] else {
+            throw SmokeFailure("Queued requests expired, lost FIFO order, or accepted an expired inbound ticket")
+        }
+        coordinator.enqueue(firstTicket)
+        for _ in 0..<100 where coordinator.isBusy { try await Task.sleep(for: .milliseconds(20)) }
+        guard !coordinator.isBusy, try pending.load() == saved else { throw SmokeFailure("Consumed queue ticket replayed") }
+        print("PASS queued ticket intake: receipt-time TTL, resource-panel wait, FIFO, expired inbound rejection, replay and busy guard")
     }
     #endif
+}
+
+private final class TicketClock: @unchecked Sendable {
+    private let lock = NSLock()
+    private var date = Date()
+    func read() -> Date { lock.lock(); defer { lock.unlock() }; return date }
+    func advance(by interval: TimeInterval) { lock.lock(); defer { lock.unlock() }; date.addTimeInterval(interval) }
 }
 
 private struct SmokeFailure: Error, CustomStringConvertible {

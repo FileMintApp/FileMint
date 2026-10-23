@@ -315,6 +315,35 @@ struct ImageProcessorTests {
         }
     }
 
+    @Test("OCR processes large square inputs within its automatic working-pixel budget")
+    func largeSquareOCR() throws {
+        try workspace { root in
+            for edge in [4096, 5000] {
+                try autoreleasepool {
+                    let file = root.appendingPathComponent("square-\(edge).png")
+                    // Source images may exceed the 16 MP output/working budget;
+                    // construct them independently of ImageOutput.context.
+                    let context = try #require(CGContext(data: nil, width: edge, height: edge,
+                        bitsPerComponent: 8, bytesPerRow: edge * 4, space: CGColorSpaceCreateDeviceRGB(),
+                        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+                    context.setFillColor(CGColor(gray: 1, alpha: 1))
+                    context.fill(CGRect(x: 0, y: 0, width: edge, height: edge))
+                    let destination = try #require(CGImageDestinationCreateWithURL(file as CFURL,
+                        "public.png" as CFString, 1, nil))
+                    CGImageDestinationAddImage(destination, try #require(context.makeImage()), nil)
+                    try #require(CGImageDestinationFinalize(destination))
+                    let original = try Data(contentsOf: file)
+                    let inputs = try ImageProcessor.capture([file])
+                    let result = ImageProcessor.run(tool: .ocr, inputs: inputs,
+                        options: ImageJobOptions(), destination: nil)
+                    #expect(result.failure == nil && !result.cancelled && result.completed == 1)
+                    #expect(result.texts == [""] && result.outputs.isEmpty)
+                    #expect(try Data(contentsOf: file) == original)
+                }
+            }
+        }
+    }
+
     @Test("cancellation before processing creates no output")
     func cancellation() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)

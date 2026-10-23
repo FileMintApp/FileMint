@@ -30,6 +30,9 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   the captured target.
 - Folder selection uses NSOpenPanel. Persist security-scoped bookmarks alongside
   paths, restore access on launch, and release access when folders are removed.
+  Apply additions/removals to active grants only after saving succeeds. Failed
+  bookmark capture or persistence restores the previous complete folder settings
+  and leaves existing grants active; never retain a partially added selection.
 - Preferences are an atomically replaced private JSON file in
   `~/Library/Application Support/FileMint`. Both sandboxed targets have an
   exception scoped only to this application-owned directory. No App Group or

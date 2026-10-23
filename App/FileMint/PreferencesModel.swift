@@ -212,8 +212,9 @@ final class PreferencesModel: ObservableObject {
 
     func setShowMenuBar(_ visible: Bool) {
         guard preferences.showMenuBar != visible else { return }
+        let previous = preferences
         preferences.showMenuBar = visible
-        save()
+        if !save() { preferences = previous }
     }
 
     func setAppearance(_ appearance: AppAppearance) {
@@ -235,8 +236,9 @@ final class PreferencesModel: ObservableObject {
 
     func setAutomaticallyChecksForUpdates(_ enabled: Bool) {
         guard preferences.automaticallyChecksForUpdates != enabled else { return }
+        let previous = preferences
         preferences.automaticallyChecksForUpdates = enabled
-        save()
+        if !save() { preferences = previous }
     }
 
     @discardableResult
@@ -491,17 +493,29 @@ final class PreferencesModel: ObservableObject {
         picker.message = text(.authorizeFolderHint)
         picker.prompt = text(.allowFolder)
         guard picker.runModal() == .OK else { return }
+        rememberMonitoredFolders(picker.urls)
+    }
+
+    /// Capture the whole picker selection before publishing it. Active grants
+    /// follow saved settings, including when disk writes or a bookmark fail.
+    @discardableResult
+    func rememberMonitoredFolders(_ urls: [URL]) -> Bool {
+        let previous = preferences
         do {
-            for url in picker.urls { try FolderAccess.remember(url, in: &preferences) }
-            save()
+            var candidate = previous
+            for url in urls { try FolderAccess.remember(url, in: &candidate) }
+            preferences = candidate
+            guard save() else { preferences = previous; return false }
             folderAccess.restore(preferences)
-        } catch { lastError = error.localizedDescription }
+            return true
+        } catch { lastError = error.localizedDescription; return false }
     }
 
     func removeFolder(_ url: URL) {
+        let previous = preferences
         preferences.monitoredFolderURLs.removeAll { $0 == url }
         preferences.monitoredFolderBookmarks.removeValue(forKey: url.path)
-        save()
+        guard save() else { preferences = previous; return }
         folderAccess.restore(preferences)
     }
 
@@ -520,12 +534,8 @@ final class PreferencesModel: ObservableObject {
         picker.directoryURL = preferences.monitoredFolderURLs.first
         NSApp.activate(ignoringOtherApps: true)
         guard picker.runModal() == .OK, let url = picker.url else { return }
-        do {
-            try FolderAccess.remember(url, in: &preferences)
-            save()
-            folderAccess.restore(preferences)
-            CustomFileSavePanelController.shared.present(in: url, preferences: preferences, documentTemplates: documentTemplates)
-        } catch { lastError = error.localizedDescription }
+        guard rememberMonitoredFolders([url]) else { return }
+        CustomFileSavePanelController.shared.present(in: url, preferences: preferences, documentTemplates: documentTemplates)
     }
 
     func importSettings() {
@@ -586,9 +596,7 @@ final class PreferencesModel: ObservableObject {
                 picker.directoryURL = preferences.monitoredFolderURLs.first
                 NSApp.activate(ignoringOtherApps: true)
                 guard picker.runModal() == .OK, let selected = picker.url else { return }
-                try FolderAccess.remember(selected, in: &preferences)
-                save()
-                folderAccess.restore(preferences)
+                guard rememberMonitoredFolders([selected]) else { return }
                 destination = selected
             }
             guard let destination, !CustomFileSavePanelController.shared.focusExistingPanel() else { return }
