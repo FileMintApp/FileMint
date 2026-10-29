@@ -97,6 +97,14 @@ body { -webkit-font-smoothing: antialiased; }
 .fm-landing h2 { font-size: clamp(30px, 3.2vw, 44px); line-height: 1.35; font-weight: 530; letter-spacing: -.04em; }
 .fm-section h2 { margin-top: 18px; }
 .fm-section-heading > p { color: var(--vp-c-text-2); font-size: 14px; line-height: 1.95; max-width: 340px; padding-bottom: 3px; }
+.fm-everyday { padding-bottom: 0; }
+.fm-everyday-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: 22px; }
+.fm-everyday-card { display: flex; flex-direction: column; min-width: 0; padding: 28px; border: 1px solid var(--vp-c-divider); border-radius: 12px; background: var(--vp-c-bg-soft); }
+.fm-everyday-card h3 { font-size: 21px; font-weight: 570; line-height: 1.55; }
+.fm-everyday-card > div { margin-block: 18px 26px; font-size: 13px; line-height: 1.9; color: var(--vp-c-text-2); }
+.fm-everyday-card .fm-everyday-hint { margin-block: 22px 12px; color: var(--fm-accent); font-size: 11px; font-weight: 600; }
+.fm-everyday-card .fm-everyday-note { font-size: 12px; }
+.fm-everyday-card footer { margin-block-start: auto; }
 .fm-file-tools { padding-bottom: 0; }
 .fm-tool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
 .fm-tool { display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--vp-c-divider); border-radius: 14px; overflow: hidden; }

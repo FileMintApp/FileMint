@@ -22,6 +22,12 @@ Sparkle executables, adds ad-hoc bundle signatures, checks arm64-only contents
 and creates the DMG.
 Outputs are under build/ and ignored by Git.
 
+Website development and CI use Node 26.x. CI resolves the newest stable patch
+with `check-latest: true`; keep local development on the same major series.
+Use the pnpm version declared in `package.json`, independently of Node's version
+or a globally installed package-manager launcher. Website CI installs with the
+frozen lockfile and prints both resolved tool versions.
+
 For routine acceptance, select checks from
 [HARNESS](../specs/HARNESS.md#default-acceptance). Covered Core behavior uses
 automated results; app/extension changes also need unsigned compilation, with

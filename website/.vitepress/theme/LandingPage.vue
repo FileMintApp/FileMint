@@ -33,6 +33,29 @@ function onTabKey(event: KeyboardEvent, index: number) {
   event.preventDefault(); choose(next)
   document.getElementById(`scene-tab-${next}`)?.focus()
 }
+const everydayActions = computed(() => [
+  {
+    id: 'search', title: t('一个入口，找到常用操作。', 'One place for everyday actions.'),
+    body: t('搜索新建操作、启用的模板、常用文件与设置。上下键选择，Return 执行，不必来回找入口。', 'Find creation actions, enabled templates, favorites and settings. Choose with arrow keys and press Return to continue.'),
+    hint: t('应用内 ⌘⇧K · 可选全局 ⌃⌥K', 'In app: ⌘⇧K · Optional global: ⌃⌥K'),
+    note: t('在「通用 → 快捷搜索」启用全局快捷键，可录制其他组合；默认关闭。', 'Enable the global shortcut in General → Quick Search or record another combination. It starts off.'),
+    link: t('使用快捷搜索', 'Use Quick Search'), anchor: t('用快捷搜索找到操作、模板和设置', 'find-actions-templates-and-settings-with-quick-search')
+  },
+  {
+    id: 'copy', title: t('拷贝内容，省去一次打开。', 'Copy the contents. Keep your flow.'),
+    body: t('右键一个文本文件，把完整内容放入剪贴板。代码、Markdown 和配置文件保留原有空白与换行。', 'Right-click a text file to copy its complete contents. Keep whitespace and line endings in code, Markdown and configuration files.'),
+    hint: t('完整读取 · 本机处理', 'COMPLETE CONTENTS · ON YOUR MAC'),
+    note: t('在「文件（夹）工具」中按需开启。源文件与解码文本各限 8 MiB，受支持的文本与有限 RTF 格式适用。', 'Enable it in File & Folder Tools. Source and decoded text are each limited to 8 MiB; supported text and a limited RTF subset are accepted.'),
+    link: t('了解拷贝文件内容', 'Explore Copy File Contents'), anchor: t('拷贝文件内容', 'copy-file-contents')
+  },
+  {
+    id: 'creation', title: t('直接新建，顺畅切换。', 'Create directly. Move smoothly.'),
+    body: t('新建操作直接打开创建面板，在「保存位置」里换目录。图片预览窗口更紧凑，设置侧栏连续上下键切换更顺畅。', 'Open creation drafts directly and change the destination in Save Location. Image previews fit their content, and rapid arrow keys keep settings selection in step.'),
+    hint: t('Tab 切换 · ⌘↩ 创建 · Esc 取消', 'Tab to navigate · ⌘↩ to create · Esc to cancel'),
+    note: t('只有「创建」才写入文件；实际缺少写入权限时，仍按 macOS 提示授权。', 'Only Create writes a file. macOS still requests authorization when write access is missing.'),
+    link: t('查看创建流程', 'Explore the creation flow'), anchor: t('自己填写名称与内容', 'choose-the-name-and-starter-content')
+  }
+])
 const fileTools = computed(() => [
   {
     id: 'rename', label: t('批量重命名', 'Batch Rename'),
@@ -103,6 +126,20 @@ const faqs = computed(() => [
     </section>
 
     <div class="fm-principles fm-wrap"><span>{{ t('原生 macOS 体验', 'Native to macOS') }}</span><span>{{ t('文件在本机处理', 'Files stay on your Mac') }}</span><span>{{ t('无需账号', 'No account needed') }}</span><span>{{ t('菜单按你所需', 'Your menu, your way') }}</span></div>
+
+    <section id="quick-actions" class="fm-section fm-wrap fm-everyday" aria-labelledby="quick-actions-title">
+      <div class="fm-section-heading">
+        <div><p class="fm-eyebrow">{{ t('常用操作，更顺手', 'LESS FRICTION, EVERY DAY') }}</p><h2 id="quick-actions-title">{{ t('少一次往返。', 'Fewer detours.') }}<br><em>{{ t('多一点专注。', 'More focus.') }}</em></h2></div>
+        <p>{{ t('从呼出操作到保存文件，让常用步骤更直接。已有模板与设置继续保留，新能力按需开启。', 'From finding an action to saving a file, keep everyday steps direct. Retain your templates and settings, and enable new tools as needed.') }}</p>
+      </div>
+      <div class="fm-everyday-grid">
+        <article v-for="action in everydayActions" :key="action.id" class="fm-everyday-card" :aria-labelledby="`everyday-${action.id}`">
+          <h3 :id="`everyday-${action.id}`">{{ action.title }}</h3>
+          <div><p>{{ action.body }}</p><p class="fm-everyday-hint">{{ action.hint }}</p><p class="fm-everyday-note">{{ action.note }}</p></div>
+          <footer><a class="fm-text-link" :href="`${page('guide')}#${action.anchor}`">{{ action.link }} <span aria-hidden="true">↗</span></a></footer>
+        </article>
+      </div>
+    </section>
 
     <section id="file-tools" class="fm-section fm-wrap fm-file-tools" aria-labelledby="file-tools-title">
       <div class="fm-section-heading">

@@ -21,6 +21,11 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0 (Node 24)
         with:
           persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '26.x'
+          check-latest: true
+          package-manager-cache: false
       - name: Show runner and toolchain
         run: |
           sw_vers
@@ -28,6 +33,7 @@ jobs:
           test "$(uname -m)" = arm64
           xcodebuild -version
           swift --version
+          node --version
       - name: Verify deterministic behavior
         run: make verify
       - name: Verify GitHub token authentication

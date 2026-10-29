@@ -74,6 +74,11 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   Recheck identities after downloading and deploy the retained archive without
   rebuilding or modifying releases. Release-dispatched builds never auto-deploy;
   the existing application-publication and release-bound website gates remain.
+- CI jobs running project scripts use the latest stable Node 26.x, selected by
+  `actions/setup-node` with `check-latest: true`; record the resolved Node version
+  in job logs. Website builds retain the package-manager version from
+  `package.json` and frozen-lockfile installation. A pinned Action's own bundled
+  JavaScript runtime is separate from the Node used for project commands.
 - Source CI runs the complete offline `make verify` suite and
   `CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO make build` on the standard
   arm64 `macos-15` and `macos-26` runners. The build uses the existing Release

@@ -44,9 +44,14 @@ jobs:
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
-          node-version: 24
+          node-version: '26.x'
+          check-latest: true
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
+      - name: Show website toolchain
+        run: |
+          node --version
+          pnpm --version
       - run: pnpm install --frozen-lockfile
       - name: Build website
         env:

@@ -271,6 +271,11 @@ owns the rules, supported storage, counts, explicit actions and recovery behavio
   copy/comparison for checksums. Identify both tools as opt-in and retain their
   actual selection/filesystem limits in the guide. Do not imply encryption,
   proof of origin, atomic batches or universal cloud/NAS compatibility.
+- The homepage also introduces Quick Search and its optional global shortcut,
+  Copy File Contents, direct creation drafts and compact/keyboard-friendly
+  native interactions. Give each workflow a clear bilingual guide link and
+  state its actual defaults and limits. Keep the current-release label dynamic;
+  do not turn the homepage into a hard-coded release banner or simulated app UI.
 - Current-release labels come from the public GitHub `releases/latest` endpoint
   for FileMintApp/FileMint at page load, never from project.yml, README release
   includes or a hard-coded version. Accept only published, non-draft,

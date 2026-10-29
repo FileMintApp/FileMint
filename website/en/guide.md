@@ -87,10 +87,15 @@ Open **Extensions → File & Folder Tools**, enable the master switch, then enab
 <p class="guide-caption">This is an example with tools enabled. Check the Permanent Delete setting before using it.</p>
 
 - **Copy Names / Paths:** Select one or more items, then use the context menu. Multiple items are copied one per line. With Copy Paths enabled, you can also right-click an in-scope folder background to copy that folder's full path.
-- **Copy File Contents:** Enable this child tool, then right-click one supported ordinary local text file to copy its complete contents. Accept UTF-8, BOM-declared UTF-16 and a limited validated RTF subset, with source and decoded text each limited to 8 MiB. Preserve whitespace and line endings without truncation; failure or cancellation leaves the clipboard untouched. Images, PDF, Office documents, RTF attachments and tables are unsupported.
 - **Move File / Folder:** Select the source items and choose this action. Then right-click the **background of the destination folder** and choose **Move Selected Items Here**. The first step only remembers the sources; existing names are never overwritten or merged.
 - **Delete Permanently:** Bypasses Trash and asks for confirmation by default. It cannot be undone. Enable it only when you need it.
 - **AirDrop / Send Alias to Desktop:** AirDrop opens the native macOS chooser so you select a recipient. An alias points to the original item without moving it.
+
+### Copy File Contents
+
+Enable the module and Copy File Contents in File & Folder Tools, then right-click one supported ordinary local text file in Finder. Clipboard publication follows a complete read; if you copy something else while it runs, the older request does not overwrite your newer clipboard.
+
+Enable this child tool, then right-click one supported ordinary local text file to copy its complete contents. Accept UTF-8, BOM-declared UTF-16 and a limited validated RTF subset, with source and decoded text each limited to 8 MiB. Preserve whitespace and line endings without truncation; failure or cancellation leaves the clipboard untouched. Images, PDF, Office documents, RTF attachments and tables are unsupported.
 
 ### Batch Rename
 
