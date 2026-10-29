@@ -69,13 +69,15 @@ class NativeQATests(unittest.TestCase):
         return qa.publish(self.kind, source, root)
 
     def test_each_kind_has_a_distinct_stable_non_production_identity_and_path(self):
-        self.assertEqual(len(qa.KINDS), 11)
+        self.assertEqual(len(qa.KINDS), 12)
         identifiers = [value[1] for value in qa.KINDS.values()]
-        self.assertEqual(len(set(identifiers)), 11)
+        self.assertEqual(len(set(identifiers)), 12)
         self.assertNotIn("io.github.daigua.filemint", identifiers)
         self.assertEqual(qa.KINDS["design-ui"][1], "io.github.daigua.filemint.design-qa")
         self.assertEqual(qa.KINDS["sparkle-installation"][1], "io.github.daigua.filemint.upgrade-qa")
         self.assertEqual(qa.KINDS["batch-rename"][1], "io.github.daigua.filemint.batch-rename-smoke")
+        self.assertEqual(qa.KINDS["hotkey-sandbox"][1], "io.github.daigua.filemint.hotkey-qa")
+        self.assertEqual(qa.KINDS["hotkey-sandbox"][2], ("io.github.daigua.filemint.hotkey-peer",))
         for kind, (name, identifier, _) in qa.KINDS.items():
             self.assertEqual(qa.app_path(kind), self.root / "build/native-qa.noindex" / kind / name)
             self.assertFalse(identifier.endswith("run.first"))

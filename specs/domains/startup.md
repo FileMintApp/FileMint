@@ -98,6 +98,53 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - An explicitly requested updater relaunch must wait until creation work and
   modal editing are finished. Preserve saved startup preferences and bookmarks.
 
+## Quick Search and its global shortcut
+
+- General contains a Quick Search section with an independent Enable Global
+  Shortcut switch and a combination recorder. New, missing and malformed switch
+  values default off. Suggest Control-Option-K; explicitly enabling with no saved
+  combination fills this default in the same atomic update. An existing custom
+  combination remains authoritative. A conflicting default leaves the switch off
+  and displays guidance to choose another. Turning off releases registration but
+  preserves the combination. Recording or restoring the default never enables the
+  switch. Malformed/imported enabled settings without a key display setup guidance.
+- Store physical key code and Command/Control/Option/Shift modifiers in the
+  existing preferences document, decoding each field independently. Require
+  Command or Control and a supported ordinary key; reject modifier-only/media
+  combinations. Display the key using the active keyboard layout. No key logging,
+  Accessibility, Input Monitoring, Automation or additional package is required.
+- Record only inside the focused recorder. Pause the app's hotkey during recording;
+  Escape, loss of focus, closing settings or quitting cancels recording and restores
+  the committed registration. Reject known system/app-menu conflicts and surface
+  OS registration failures. Prepare a changed registration, save atomically, then
+  release the previous registration; a failed save/change keeps the prior settings.
+  A failed startup/import/external reload releases obsolete registrations and
+  shows the saved choice as inactive with an explicit retry, never as effective.
+- Only the main app owns the global key while running. Closing settings or hiding
+  the menu bar does not disable it; quitting releases it. A hotkey release opens
+  or focuses one accessory Quick Search panel. Existing app-owned modal windows
+  or sheets take priority. The panel neither creates a Dock icon nor opens settings
+  until an explicit settings result is chosen. No Finder selection is inferred.
+- Quick Search is also available in the menu bar and app File menu (Command-Shift-K)
+  independently of the global switch. Existing Command-K retains Favorite Locations.
+  Results cover the three app creation actions, enabled templates, saved favorites
+  and settings destinations. Match bilingual action/settings aliases, template
+  names/suffixes/aliases and saved favorite names/groups/path text. Group results by
+  kind, preserve existing within-kind match ordering and stable IDs. Empty search
+  shows creation actions and bounded pinned/recent favorites.
+- Search operates on cached value snapshots without clipboard reads, filesystem
+  discovery, template-content indexing or search-history persistence. Refresh after
+  successful preference/catalog changes; revalidate an ID before execution.
+  Arrow keys select, Return activates, Escape closes, and IME composition consumes
+  its own navigation/confirmation first. Query/result updates never make Return
+  execute a different stale row. Use a lazy result list with native accessibility.
+- Commands call their existing app flows. Favorite activation retains its bookmark,
+  identity, error and operation guards. Template results open the one creation
+  draft with the exact template ID after directory choice; only Create writes.
+  Settings results navigate the existing settings window without changing a setting.
+  No Finder-only file operation or automatic use of a previous Finder target joins
+  this version. Existing operation, quit and update guards remain authoritative.
+
 ## File information lifecycle
 
 - Copy File Contents also defaults off independently on new/malformed/old settings,
@@ -162,6 +209,6 @@ owns the operation behavior and private-state format/limits.
 
 ## Working context
 
-- Implementation entry points: `App/FileMint/FileMintApp.swift`, `AppDelegate.swift`, `SettingsWindowController.swift`, `LoginItemService.swift`, `PreferencesModel.swift`; `Preferences.swift`, `LoginItemPolicy.swift`, `Localization.swift`.
+- Implementation entry points: `App/FileMint/FileMintApp.swift`, `AppDelegate.swift`, `SettingsWindowController.swift`, `LoginItemService.swift`, `PreferencesModel.swift`, `GlobalShortcut*`, `QuickSearch*`; `Preferences.swift`, `LoginItemPolicy.swift`, `Localization.swift`.
 - Verification: [Core checks](../verification/core.md); [window isolation](../../docs/FINDER_QA.md#creation-window-isolation) and [settings](../../docs/FINDER_QA.md#types-and-preferences) for native changes.
 - Expand context only when needed: Load the owning domain for each preference being changed: [templates](templates.md), [Finder/permissions](finder-permissions.md) or [updates](updates.md). Load [creation](creation.md) for URL launch and draft-window behavior.

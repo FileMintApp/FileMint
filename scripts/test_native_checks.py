@@ -16,6 +16,13 @@ import native_checks as checks
 
 
 class SelectionTests(unittest.TestCase):
+    def test_hotkey_prototype_keeps_interactive_keyboard_boundary_explicit(self):
+        plan = checks.plan_checks(['scripts/hotkey_sandbox/HotKeyService.swift',
+                                  'scripts/build_hotkey_sandbox_harness.sh'])
+        self.assertEqual(plan['suites'], ['hotkey-sandbox'])
+        self.assertEqual([item['id'] for item in plan['manualChecks']], ['global-hotkey'])
+        self.assertEqual(checks.SUITES['hotkey-sandbox'].arguments, ('--verify-automation',))
+
     def test_docs_and_pure_core_rules_do_not_start_native_checks(self):
         plan = checks.plan_checks(['docs/FINDER_QA.md', 'specs/domains/creation.md',
                                    'CorePackage/Sources/FileMintCore/FilenamePolicy.swift'])
@@ -45,7 +52,7 @@ class SelectionTests(unittest.TestCase):
     def test_shared_model_has_a_conservative_explainable_plan(self):
         path = 'App/FileMint/PreferencesModel.swift'
         plan = checks.plan_checks([path, path])
-        self.assertEqual(plan['suites'], ['template-workflow', 'creation-opening', 'update-scheduling', 'design-ui'])
+        self.assertEqual(plan['suites'], ['template-workflow', 'creation-opening', 'update-scheduling', 'design-ui', 'quick-search'])
         self.assertTrue(all(reason == [path] for reason in plan['reasons'].values()))
 
     def test_manual_boundaries_and_unknown_app_code_are_never_silent_passes(self):

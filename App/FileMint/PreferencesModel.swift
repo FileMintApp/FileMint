@@ -35,7 +35,8 @@ final class PreferencesModel: ObservableObject {
     private var preferenceObserver: NSObjectProtocol?
     private var isImportingSettings = false
     private(set) var openingGate = CreationOpeningGate(enabled: false)
-    private(set) var committedPreferences: FileMintPreferences = .default
+    @Published private(set) var committedPreferences: FileMintPreferences = .default
+    let globalShortcuts = GlobalShortcutController()
     lazy var postCreationExecutor = PostCreationActionExecutor(gate: { [weak self] in self?.openingGate ?? .init(enabled: false) })
     var hasTemplateModalWork = false
     @Published var packageReview: TemplatePackageReview?
@@ -71,6 +72,7 @@ final class PreferencesModel: ObservableObject {
     }
     private func commitFeatureState() {
         committedPreferences = preferences
+        globalShortcuts.reloadSavedConfiguration(preferences.globalShortcut)
         openingGate.commit(enabled: preferences.creationOpeningEnabled)
         CustomFileSavePanelController.shared.updateFeatures(preferences)
     }
@@ -103,6 +105,7 @@ final class PreferencesModel: ObservableObject {
         let loaded = store.loadWithStatus()
         preferences = loaded.preferences
         committedPreferences = loaded.preferences
+        globalShortcuts.reloadSavedConfiguration(loaded.preferences.globalShortcut)
         openingGate = .init(enabled: loaded.preferences.creationOpeningEnabled)
         configureCreationPanel()
         if loaded.requiresRecovery {
@@ -258,7 +261,8 @@ final class PreferencesModel: ObservableObject {
     }
 
     @discardableResult
-    func save(recoveringInvalidFile: Bool = false, allowingTemplateMutation: Bool = false) -> Bool {
+    func save(recoveringInvalidFile: Bool = false, allowingTemplateMutation: Bool = false,
+              acceptingUnavailableShortcut: Bool = false) -> Bool {
         if isMutatingTemplates && !allowingTemplateMutation {
             preferences = committedPreferences
             lastError = workflowText(.settingsBusy)
@@ -270,8 +274,12 @@ final class PreferencesModel: ObservableObject {
         do {
             preferences.normalizeCreationMenuPlacements()
             preferences.defaultTemplateIDs = TemplateCatalog.validDefaults(preferences.defaultTemplateIDs, in: preferences.templates)
-            try store.save(preferences, recoveringInvalidFile: recoveringInvalidFile,
-                           ifUnchangedFrom: recoveringInvalidFile ? nil : committedPreferences)
+            let write = {
+                try self.store.save(self.preferences, recoveringInvalidFile: recoveringInvalidFile,
+                                    ifUnchangedFrom: recoveringInvalidFile ? nil : self.committedPreferences)
+            }
+            if acceptingUnavailableShortcut { try write() }
+            else { try globalShortcuts.commit(preferences.globalShortcut, persist: write) }
             DistributedNotificationCenter.default().post(
                 name: Notification.Name(FileMintAppGroup.preferencesDidChangeNotification), object: nil
             )
@@ -290,9 +298,34 @@ final class PreferencesModel: ObservableObject {
                     folderAccess.restore(preferences)
                 }
             }
-            lastError = error.localizedDescription
+            lastError = (error as? GlobalShortcutFailure)?.message(preferences.language) ?? error.localizedDescription
             return false
         }
+    }
+
+    func startGlobalShortcut(searchController: QuickSearchPanelController = .shared, favorites: FavoriteLocationsModel? = nil) {
+        globalShortcuts.onTrigger = { [weak self] in
+            guard let self else { return }
+            searchController.show(settings: self, favorites: favorites ?? .shared)
+        }
+        globalShortcuts.start(committedPreferences.globalShortcut)
+    }
+
+    func setGlobalShortcutEnabled(_ enabled: Bool) {
+        globalShortcuts.endRecording()
+        let previous = preferences
+        preferences.globalShortcut.isEnabled = enabled
+        if enabled, preferences.globalShortcut.combination == nil {
+            preferences.globalShortcut.combination = .suggested
+        }
+        if !save() { preferences = previous }
+    }
+
+    func setGlobalShortcutCombination(_ combination: GlobalShortcut?) {
+        globalShortcuts.endRecording()
+        let previous = preferences
+        preferences.globalShortcut.combination = combination
+        if !save() { preferences = previous }
     }
 
     func preferenceBinding<Value>(_ keyPath: WritableKeyPath<FileMintPreferences, Value>) -> Binding<Value> {
@@ -519,8 +552,9 @@ final class PreferencesModel: ObservableObject {
         folderAccess.restore(preferences)
     }
 
-    func newFile() {
+    func newFile(templateID: String? = nil) {
         if CustomFileSavePanelController.shared.focusExistingPanel() || isPreparingCreation { return }
+        guard validateCreationTemplate(templateID) else { return }
         isPreparingCreation = true
         pendingCreationWork += 1
         defer { isPreparingCreation = false; pendingCreationWork -= 1 }
@@ -534,8 +568,22 @@ final class PreferencesModel: ObservableObject {
         picker.directoryURL = preferences.monitoredFolderURLs.first
         NSApp.activate(ignoringOtherApps: true)
         guard picker.runModal() == .OK, let url = picker.url else { return }
+        guard validateCreationTemplate(templateID) else { return }
         guard rememberMonitoredFolders([url]) else { return }
-        CustomFileSavePanelController.shared.present(in: url, preferences: preferences, documentTemplates: documentTemplates)
+        CustomFileSavePanelController.shared.present(in: url, preferences: committedPreferences,
+            templateID: templateID, documentTemplates: documentTemplates)
+    }
+
+    private func validateCreationTemplate(_ id: String?) -> Bool {
+        guard let id else { return true }
+        guard !committedPreferences.templates.contains(where: { $0.id == id && $0.isEnabled }) else { return true }
+        let message = QuickSearchText.unavailable.text(preferences.language)
+        lastError = message
+        let alert = NSAlert()
+        alert.messageText = QuickSearchText.title.text(preferences.language)
+        alert.informativeText = message
+        NSApp.activate(ignoringOtherApps: true); alert.runModal()
+        return false
     }
 
     func importSettings() {
@@ -562,7 +610,8 @@ final class PreferencesModel: ObservableObject {
             preferences = imported
             preferences.hasAttemptedLoginItemSetup = attemptedHere
             let launchAtLogin = preferences.launchAtLogin
-            guard save(recoveringInvalidFile: true, allowingTemplateMutation: true) else { preferences = previous; return }
+            guard save(recoveringInvalidFile: true, allowingTemplateMutation: true,
+                       acceptingUnavailableShortcut: true) else { preferences = previous; return }
             folderAccess.restore(preferences)
             Task { await setLaunchAtLogin(launchAtLogin) }
             Task { await recoverTemplateTransactions() }

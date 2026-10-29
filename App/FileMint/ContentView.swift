@@ -5,6 +5,7 @@ import SwiftUI
 struct ContentView: View {
     var launchResourceTool: (ResourceTool) -> Void = { FileOperationCoordinator.shared.chooseImages(for: $0) }
     var favoriteLocations: FavoriteLocationsModel = .shared
+    var quickSearch: QuickSearchPanelController = .shared
     @EnvironmentObject private var model: PreferencesModel
     @EnvironmentObject private var updater: UpdateModel
     @FocusState private var focusedPane: PreferencesModel.Pane?
@@ -151,7 +152,7 @@ struct ContentView: View {
 
     @ViewBuilder private var page: some View {
         switch model.selectedPane {
-        case .general: GeneralPane()
+        case .general: GeneralPane(favorites: favoriteLocations, searchController: quickSearch)
         case .creation: CreationSettingsPane()
         case .fileTypes: TypesPane()
         case .folders: FoldersPane()

@@ -2,6 +2,8 @@ import FileMintCore
 import SwiftUI
 
 struct GeneralPane: View {
+    let favorites: FavoriteLocationsModel
+    let searchController: QuickSearchPanelController
     @EnvironmentObject private var model: PreferencesModel
 
     var body: some View {
@@ -106,6 +108,8 @@ struct GeneralPane: View {
                         )).labelsHidden()
                     }
                 }
+                GlobalShortcutSettingsSection(controller: model.globalShortcuts, favorites: favorites,
+                                              searchController: searchController)
                 SettingsSection(title: model.text(.updates)) {
                     PreferenceRow(title: model.text(.automaticallyCheckForUpdates), detail: model.text(.automaticUpdateHint)) {
                         Toggle(model.text(.automaticallyCheckForUpdates), isOn: Binding(

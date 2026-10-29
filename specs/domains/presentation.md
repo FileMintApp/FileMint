@@ -42,7 +42,8 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   functional sections; list actions stay next to their list. No decorative cards
   or disabled placeholders for future roadmap features. Follow system language
   by default; English and Chinese can be selected explicitly.
-- General owns appearance, language, startup/menu bar and automatic-check preferences.
+- General owns appearance, language, startup/menu bar, Quick Search's global
+  shortcut switch/recorder and automatic-check preferences.
   Its Appearance group contains Theme (Follow System, Light, Dark), interface
   language and Finder Menu Icons (Colored, System Monochrome). Settings pickers
   use native small menu controls with adaptive primary

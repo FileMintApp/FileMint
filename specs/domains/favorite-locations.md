@@ -10,6 +10,9 @@ Load for: saved file/folder shortcuts, quick lookup, Finder add and locate menus
 - A right-click add captures the complete selection in reported order and transfers it through a private one-use ticket. The main app rechecks folder scope, local URLs, identities and authorization before storing anything. Never silently add a valid subset of an invalid selection. Already saved targets are skipped and reported separately. Normal adds go to Ungrouped without a modal form.
 - The app can add multiple files/folders via NSOpenPanel or a user drop on the management page, including locations outside Finder menu scope. The user-selected items must be local, available files or directories, not symlinks; resolve packages as files. No folder crawl or content read is needed.
 - Locating a saved folder opens that folder in Finder. Locating a file or package opens its parent and selects it. Direct file opening is an explicitly labeled secondary action. A saved path is never executed simply by activating a favorite.
+- Unified Quick Search reuses this catalog and activation policy. Its global key
+  is configured independently in General; the existing favorite-only menu and
+  Command-K entry remain available. Search never resolves bookmarks per keystroke.
 
 ## Large-list interaction and persistence
 

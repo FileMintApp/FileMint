@@ -60,7 +60,7 @@ private struct FavoriteQuickView: View {
                     .accessibilityLabel(FavoriteText.cancel.text(language))
             }
             ScrollViewReader { proxy in
-                FavoriteSearchField(text: $query, placeholder: FavoriteText.searchPlaceholder.text(language),
+                QuickSearchInputField(text: $query, placeholder: FavoriteText.searchPlaceholder.text(language),
                     move: { offset in
                         guard !visibleItems.isEmpty else { return }
                         selectedIndex = max(0, min(visibleItems.count - 1, selectedIndex + offset))
@@ -142,22 +142,27 @@ private struct FavoriteQuickView: View {
     }
 }
 
-private struct FavoriteSearchField: NSViewRepresentable {
+struct QuickSearchInputField: NSViewRepresentable {
     @Binding var text: String
     let placeholder: String
     let move: (Int) -> Void
     let submit: () -> Void
     let cancel: () -> Void
+    var onCreate: ((NSSearchField) -> Void)? = nil
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
-    func makeNSView(context: Context) -> KeySearchField {
-        let field = KeySearchField()
+    func makeNSView(context: Context) -> NSSearchField {
+        let field = NSSearchField()
         field.placeholderString = placeholder
         field.delegate = context.coordinator
-        field.move = move
-        field.submit = submit
-        field.cancelSearch = cancel
+        // Let AppKit's input context consume composition first. The shared action
+        // also fires on clear, so its target accepts only a Return key event.
+        field.target = context.coordinator
+        field.action = #selector(Coordinator.submitFromReturn(_:))
+        field.sendsWholeSearchString = true
+        field.maximumRecents = 0
+        onCreate?(field)
         Task { @MainActor [weak field] in
             await Task.yield()
             guard let field else { return }
@@ -166,24 +171,32 @@ private struct FavoriteSearchField: NSViewRepresentable {
         return field
     }
 
-    func updateNSView(_ field: KeySearchField, context: Context) {
-        if field.stringValue != text { field.stringValue = text }
+    func updateNSView(_ field: NSSearchField, context: Context) {
+        if (field.currentEditor() as? NSTextView)?.hasMarkedText() != true, field.stringValue != text {
+            field.stringValue = text
+        }
         field.placeholderString = placeholder
-        field.move = move
-        field.submit = submit
-        field.cancelSearch = cancel
         context.coordinator.parent = self
     }
 
     final class Coordinator: NSObject, NSSearchFieldDelegate {
-        var parent: FavoriteSearchField
-        init(_ parent: FavoriteSearchField) { self.parent = parent }
+        var parent: QuickSearchInputField
+        init(_ parent: QuickSearchInputField) { self.parent = parent }
+        @objc func submitFromReturn(_ field: NSSearchField) {
+            guard let event = NSApp.currentEvent,
+                  event.type == .keyDown || event.type == .keyUp,
+                  event.keyCode == 36 || event.keyCode == 76,
+                  (field.currentEditor() as? NSTextView)?.hasMarkedText() != true else { return }
+            parent.submit()
+        }
         func controlTextDidChange(_ notification: Notification) {
-            guard let field = notification.object as? NSSearchField else { return }
+            guard let field = notification.object as? NSSearchField,
+                  (field.currentEditor() as? NSTextView)?.hasMarkedText() != true else { return }
             parent.text = field.stringValue
         }
         func control(_ control: NSControl, textView: NSTextView,
                      doCommandBy commandSelector: Selector) -> Bool {
+            guard !textView.hasMarkedText() else { return false }
             switch commandSelector {
             case #selector(NSResponder.moveDown(_:)):
                 parent.move(1)
@@ -197,22 +210,6 @@ private struct FavoriteSearchField: NSViewRepresentable {
                 return false
             }
             return true
-        }
-    }
-}
-
-private final class KeySearchField: NSSearchField {
-    var move: ((Int) -> Void)?
-    var submit: (() -> Void)?
-    var cancelSearch: (() -> Void)?
-
-    override func keyDown(with event: NSEvent) {
-        switch event.keyCode {
-        case 125: move?(1)
-        case 126: move?(-1)
-        case 36: submit?()
-        case 53: cancelSearch?()
-        default: super.keyDown(with: event)
         }
     }
 }

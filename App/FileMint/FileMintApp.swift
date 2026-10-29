@@ -28,6 +28,9 @@ private struct FileMintCommands: Commands {
 
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
+            Button(QuickSearchText.menu.text(model.preferences.language)) {
+                QuickSearchPanelController.shared.show(settings: model)
+            }.keyboardShortcut("k", modifiers: [.command, .shift])
             Button(model.text(.customNewFile)) { model.newFile() }.keyboardShortcut("n")
             Button(model.text(.newFileFromClipboard)) { model.newFileFromClipboard() }
             Button(model.text(.pasteImageFile)) { model.pasteImageFile() }
@@ -66,6 +69,9 @@ private struct FileMintMenu: View {
     @ObservedObject private var favorites = FavoriteLocationsModel.shared
 
     var body: some View {
+        Button(QuickSearchText.menu.text(model.preferences.language)) {
+            QuickSearchPanelController.shared.show(settings: model)
+        }
         Button(model.text(.customNewFile)) { model.newFile() }.keyboardShortcut("n")
         Button(model.text(.newFileFromClipboard)) { model.newFileFromClipboard() }
         Button(model.text(.pasteImageFile)) { model.pasteImageFile() }

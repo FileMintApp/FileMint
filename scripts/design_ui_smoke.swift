@@ -16,6 +16,7 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
     private var resourceController: ResourceToolsController!
     private var updater: UpdateModel!
     private var updateBody: String?
+    private var quickSearch: QuickSearchPanelController?
 
     static func main() {
         let app = NSApplication.shared
@@ -116,8 +117,14 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
         window.contentMinSize = NSSize(width: 960, height: 680)
         window.isReleasedWhenClosed = false
         let coordinator = coordinator!
+        let quickSearch = QuickSearchPanelController { [weak self] pane in
+            self?.model.selectedPane = pane
+            self?.window.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+        }
+        self.quickSearch = quickSearch
         let hostingView = NSHostingView(rootView: ContentView(launchResourceTool: { coordinator.chooseImages(for: $0) },
-            favoriteLocations: favoriteModel)
+            favoriteLocations: favoriteModel, quickSearch: quickSearch)
             .environmentObject(model).environmentObject(updater))
         hostingView.sizingOptions = []
         window.contentView = hostingView

@@ -22,7 +22,7 @@ not a successful native test.
 
 Automatic suites are `batch-rename`, `template-workflow`, `creation-opening`,
 `update-scheduling`, `open-with`, `file-tools-settings`, `file-info`, `resource-tools`,
-`design-ui`, `update-summary`, and the headless `favorite-model`. Template scenarios share one
+`design-ui`, `update-summary`, `hotkey-sandbox`, `quick-search`, and the headless `favorite-model`. Template scenarios share one
 fresh build in a run and each create their own runtime workspace. Design QA uses
 `--verify-automation`; ordinary interactive modes remain available.
 The focused `update-summary` suite reuses the design fixture with `--verify-updates`,
@@ -71,6 +71,7 @@ All paths below are relative to that stable root.
 | resource-tools | FileMintResourceQA.app | io.github.daigua.filemint.resource-qa |
 | sparkle-installation | UpgradeQA.app | io.github.daigua.filemint.upgrade-qa |
 | access-migration | FileMintAccessQA.app | io.github.daigua.filemint.access-qa |
+| hotkey-sandbox | FileMintHotKeyQA.app | io.github.daigua.filemint.hotkey-qa |
 
 The template/opening receivers retain their own stable identifiers and sit inside
 their host's Resources. The update fixture's inert extension remains separate from
@@ -124,6 +125,50 @@ checks that both cancellations preserve the blocker and original bytes, and that
 successful retirement preserves its separate synthetic remaining original. The
 Save panel grants only the chosen evidence destination; no production or broad
 home-folder grant is required.
+
+## Global hotkey sandbox prototype
+
+The `hotkey-sandbox` fixture validates the P0 proposal in the
+[shortcut task](../../docs/tasks/2026-10-28-shortcuts-and-search.md). It does not
+enable a shortcut or change preferences in the production app. Its embedded
+`FileMintHotKeyPeer.app` has the separate fixed identifier
+`io.github.daigua.filemint.hotkey-peer`; both use only the App Sandbox entitlement.
+The peer supplies a separate-process exclusive registration and an isolated
+foreground text window for keyboard, input-method and fullscreen checks.
+
+Build with `bash scripts/build_hotkey_sandbox_harness.sh`. The automatic
+`hotkey-sandbox` suite uses `scripts/hotkey_sandbox/run_checks.py` to launch the
+host and peer as sibling processes with separate sandbox initialization. Its
+bounded pipe protocol verifies actual Carbon registration, separate-process
+conflicts, persistence rollback, suspension/resume and removal. Preferences live
+inside the host's own container under the build run ID and a fresh invocation ID.
+Logs contain state/counts and error codes, never entered text or unrelated keys.
+
+Launch the stable host without arguments for interactive checks. Register the
+displayed combination explicitly, then use the peer's text window to test
+system delivery while another process is frontmost. Verify release-only firing,
+repeat invocation, closed settings, hidden status item, recording suspension,
+modal priority and IME composition. Fullscreen/Spaces, additional displays,
+non-US layouts and macOS 13 require their actual environments. Automatic API
+checks, synthesized composition and direct callback invocation are not evidence
+of those keyboard/window boundaries; report each source of input separately.
+The prototype never asks for Accessibility, Input Monitoring or Automation.
+
+The hotkey fixture now compiles the production `GlobalShortcutService` and
+`GlobalShortcutController`; its separate-process checks also cover the independent
+enable switch, disabled-key retention, failed local edits, unavailable loaded
+configurations and explicit retry. `quick-search` reuses the sandboxed template
+fixture with isolated production settings, catalogs and window routing. It checks
+failed persistence, stable/stale result dispatch, existing-draft preservation and
+modal priority without accessing production stores. Batched AppKit key events
+cover immediate Return after a matching or empty-result query. A controlled
+favorite activation suspension covers locate and explicit file-open completion:
+an old operation cannot close a reopened panel, success closes its own panel,
+and failure keeps it open. The suspension does not exercise real Finder opening
+or slow-volume bookmark I/O. For live General/Quick Search
+interaction, launch that same stable executable with
+`FILEMINT_TEMPLATE_QA_MODE=quick-search-ui`; its injected catalog and settings
+window stay isolated. Existing P0 evidence remains tied to its original run.
 
 ## Build and data ownership
 

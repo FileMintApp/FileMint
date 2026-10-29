@@ -4,6 +4,7 @@ import FileMintCore
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
+        PreferencesModel.shared.startGlobalShortcut()
         UpdateModel.shared.startAutomaticChecks()
         BatchRenameOperations.shared.refreshStatus()
         if notification.userInfo?[NSApplication.launchIsDefaultUserInfoKey] as? Bool == true {
@@ -40,6 +41,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
+
+    func applicationWillTerminate(_ notification: Notification) { PreferencesModel.shared.globalShortcuts.shutdown() }
 
     func applicationShouldOpenUntitledFile(_ sender: NSApplication) -> Bool { false }
 

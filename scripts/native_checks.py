@@ -44,6 +44,8 @@ SUITES = {
     "design-ui": Suite("design-ui", "PASS automated design QA:", ("--verify-automation",)),
     "update-summary": Suite("design-ui", "PASS update summary QA:", ("--verify-updates",)),
     "favorite-model": Suite("", "PASS favorite model"),
+    "hotkey-sandbox": Suite("hotkey-sandbox", "PASS hotkey sandbox:", ("--verify-automation",)),
+    "quick-search": Suite("template-workflow", "PASS quick search:", environment=(("FILEMINT_TEMPLATE_QA_MODE", "quick-search"),)),
 }
 ALL = tuple(SUITES)
 BUILDERS = {kind: f"scripts/build_{kind.replace('-', '_')}_harness.sh"
@@ -58,10 +60,14 @@ MANUAL = {
     "login-items": "System login-item registration needs its affected native system scenario.",
     "terminal-apps": "Real terminal tab/window/cwd delivery needs its selected application scenario.",
     "favorite-search": "Quick-search keyboard/selection behavior needs the affected native interaction check.",
+    "global-hotkey": "Real cross-application keys, IME, modal focus and fullscreen/display behavior need the isolated hotkey fixture.",
 }
 
 # Shared-file rules are conservative; --suite is the reviewed behavior-based override.
 RULES = (
+    (("App/FileMint/GlobalShortcut*.swift", "CorePackage/Sources/FileMintCore/GlobalShortcut.swift"), ("hotkey-sandbox", "quick-search", "design-ui"), ("global-hotkey",)),
+    (("App/FileMint/QuickSearch*.swift", "scripts/quick_search_checks.swift", "CorePackage/Sources/FileMintCore/QuickSearch.swift"), ("quick-search",), ("favorite-search",)),
+    (("scripts/hotkey_sandbox/*", "scripts/build_hotkey_sandbox_harness.sh"), ("hotkey-sandbox",), ("global-hotkey",)),
     (("scripts/native_checks.py", "scripts/test_native_checks.py", "scripts/native_qa.py", "scripts/test_native_qa.py",
       "scripts/native_qa_running.swift", "scripts/native_qa_preferences.swift", "scripts/image_compression_link.sh", "Makefile"), ALL, ()),
     (("scripts/batch_rename_smoke.swift", "scripts/build_batch_rename_harness.sh", "App/FileMint/BatchRename*.swift"), ("batch-rename",), ()),
@@ -75,11 +81,11 @@ RULES = (
     (("scripts/design_ui_smoke.swift", "scripts/build_design_ui_harness.sh"), ("design-ui", "update-summary"), ()),
     (("App/FileMint/AboutPane.swift", "App/FileMint/UserGuideLink.swift"), ("update-summary",), ()),
     (("scripts/favorite_model_smoke.swift", "scripts/verify_favorite_model.sh", "App/FileMint/FavoriteLocationsModel.swift"), ("favorite-model", "design-ui"), ()),
-    (("App/FileMint/PreferencesModel.swift",), ("template-workflow", "creation-opening", "update-scheduling", "design-ui"), ()),
+    (("App/FileMint/PreferencesModel.swift",), ("template-workflow", "creation-opening", "update-scheduling", "design-ui", "quick-search"), ()),
     (("SharedUI/CustomFileSavePanelController.swift", "App/FileMint/PlainTextEditor.swift", "App/FileMint/CreationApplicationLabel.swift",
       "App/FileMint/PostCreationActionExecutor.swift", "App/FileMint/Template*.swift", "App/FileMint/TypesPane.swift"), ("template-workflow", "creation-opening", "design-ui"), ()),
     (("App/FileMint/UpdateModel.swift",), ("update-scheduling", "design-ui"), ()),
-    (("App/FileMint/ContentView.swift", "App/FileMint/Settings*.swift", "App/FileMint/FoldersPane.swift", "App/FileMint/FavoriteLocationsView.swift"), ("design-ui",), ()),
+    (("App/FileMint/ContentView.swift", "App/FileMint/Settings*.swift", "App/FileMint/FoldersPane.swift", "App/FileMint/FavoriteLocationsView.swift"), ("design-ui", "quick-search"), ()),
     (("App/FileMint/FileToolsSettingsView.swift", "App/FileMint/OpenWithSettingsView.swift"), ("file-tools-settings", "design-ui"), ()),
     (("SharedUI/FileToolAppearance.swift", "App/FileMint/DesignSystem.swift", "App/FileMint/MenuIconControl.swift",
       "App/FileMint/SystemSymbolCatalog.swift", "Resources/Assets.xcassets/*", "Resources/SFSymbol*"), ("file-tools-settings", "template-workflow", "resource-tools", "design-ui"), ()),
@@ -88,9 +94,10 @@ RULES = (
     (("App/FileMint/OpenWithFolderAccess.swift", "CorePackage/Sources/FileMintCore/OpenWithFolderAccessStore.swift"), ("open-with",), ("folder-grants",)),
     (("SharedUI/FolderAccess.swift",), ("batch-rename", "open-with", "creation-opening"), ("folder-grants",)),
     (("App/FileMint/TerminalDirectoryLauncher.swift",), ("open-with",), ("terminal-apps",)),
-    (("App/FileMint/FavoriteQuickPanelController.swift", "App/FileMint/FavoriteFeedbackController.swift"), ("design-ui", "favorite-model"), ("favorite-search",)),
+    (("App/FileMint/FavoriteQuickPanelController.swift", "App/FileMint/FavoriteFeedbackController.swift"), ("design-ui", "favorite-model", "quick-search"), ("favorite-search",)),
     (("FinderSyncExtension/*",), ("file-tools-settings", "batch-rename", "open-with", "creation-opening", "file-info"), ("finder",)),
     (("App/FileMint/AppDelegate.swift", "App/FileMint/FileMintApp.swift", "App/FileMint/FinderHiddenItemsService.swift"), ("design-ui", "creation-opening", "update-scheduling"), ("finder",)),
+    (("App/FileMint/AppDelegate.swift", "App/FileMint/FileMintApp.swift"), ("quick-search",), ("global-hotkey",)),
     (("App/FileMint/LoginItemService.swift",), ("design-ui",), ("login-items",)),
     (("App/FileMint/UpdateClient.swift", "scripts/update_sandbox_smoke.swift", "scripts/build_update_sandbox_harness.sh"), (), ("update-sandbox",)),
     (("App/FileMint/SparkleInstaller.swift", "scripts/*sparkle*", "scripts/sign_update_fixture.swift"), (), ("sparkle-installation",)),
@@ -357,6 +364,8 @@ def run_plan(plan, timeout=180, build_timeout=600):
                         command = [fixture["executable"], *suite.arguments]
                         if name == "creation-opening":
                             command = ["bash", "scripts/run_creation_opening_checks.sh", fixture["app"]]
+                        elif name == "hotkey-sandbox":
+                            command = [sys.executable, "scripts/hotkey_sandbox/run_checks.py", fixture["app"]]
                         result = execute(command, output / f"{name}.log", timeout, (suite.marker,), child_environment(suite))
                         report["checks"].append(dict(suite=name, fixture=fixture, **result))
                 print(f"{result['status'].upper()} native {name}", flush=True)

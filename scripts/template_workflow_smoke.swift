@@ -31,6 +31,14 @@ final class TemplateWorkflowSmoke: NSObject, NSApplicationDelegate {
         Task {
             do {
                 try await run()
+                if ProcessInfo.processInfo.environment["FILEMINT_TEMPLATE_QA_MODE"] == "quick-search" {
+                    print("PASS quick search: production settings, registration, stale results, modal priority and draft preservation")
+                    fflush(nil); cleanup(); exit(0)
+                }
+                if ProcessInfo.processInfo.environment["FILEMINT_TEMPLATE_QA_MODE"] == "quick-search-ui" {
+                    print("READY quick search UI: isolated production settings and search")
+                    fflush(nil); return
+                }
                 if ProcessInfo.processInfo.environment["FILEMINT_TEMPLATE_QA_MODE"] == "review-fixes" {
                     print("PASS pre-release fixes: copied compound suffix and native automatic-update deferral")
                     fflush(nil); cleanup(); exit(0)
@@ -68,6 +76,11 @@ final class TemplateWorkflowSmoke: NSObject, NSApplicationDelegate {
         let root=FileManager.default.temporaryDirectory.appendingPathComponent("FileMint-template-qa-"+UUID().uuidString,isDirectory:true)
         try FileManager.default.createDirectory(at:root,withIntermediateDirectories:false)
         fixture=root
+        if ["quick-search", "quick-search-ui"].contains(ProcessInfo.processInfo.environment["FILEMINT_TEMPLATE_QA_MODE"] ?? "") {
+            try await QuickSearchChecks.run(root: root,
+                interactive: ProcessInfo.processInfo.environment["FILEMINT_TEMPLATE_QA_MODE"] == "quick-search-ui")
+            return
+        }
         if ProcessInfo.processInfo.environment["FILEMINT_TEMPLATE_QA_MODE"] == "opening-apps" {
             try await CreationOpeningChecks.runInstalledApplications(root: root)
             return
@@ -380,6 +393,7 @@ final class TemplateWorkflowSmoke: NSObject, NSApplicationDelegate {
         window.center(); window.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps:true); self.window=window
     }
     private func cleanup() {
+        QuickSearchChecks.cleanup()
         if !["screenshots", "opening-apps"].contains(ProcessInfo.processInfo.environment["FILEMINT_TEMPLATE_QA_MODE"] ?? ""), let fixture { try? FileManager.default.removeItem(at:fixture) }
     }
     private func renderSnapshots() async throws {

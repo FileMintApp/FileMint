@@ -46,6 +46,7 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
     public var appearance: AppAppearance
     public var launchAtLogin: Bool
     public var showMenuBar: Bool
+    public var globalShortcut = GlobalShortcutPreferences()
     public var automaticallyChecksForUpdates: Bool
     public var lastUpdateCheckAttempt: Date?
     public var hasAttemptedLoginItemSetup: Bool
@@ -107,6 +108,7 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         case appearance
         case launchAtLogin
         case showMenuBar
+        case globalShortcut
         case automaticallyChecksForUpdates
         case lastUpdateCheckAttempt
         case hasAttemptedLoginItemSetup
@@ -176,6 +178,7 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         appearance = (try? container.decode(AppAppearance.self, forKey: .appearance)) ?? .system
         launchAtLogin = (try? container.decode(Bool.self, forKey: .launchAtLogin)) ?? true
         showMenuBar = (try? container.decode(Bool.self, forKey: .showMenuBar)) ?? true
+        globalShortcut = (try? container.decode(GlobalShortcutPreferences.self, forKey: .globalShortcut)) ?? .init()
         automaticallyChecksForUpdates = (try? container.decode(Bool.self, forKey: .automaticallyChecksForUpdates)) ?? true
         lastUpdateCheckAttempt = try? container.decode(Date.self, forKey: .lastUpdateCheckAttempt)
         hasAttemptedLoginItemSetup = (try? container.decode(Bool.self, forKey: .hasAttemptedLoginItemSetup)) ?? false

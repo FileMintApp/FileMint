@@ -20,10 +20,10 @@ not instructions to recursively read everything.
 | Presets/custom types, order, restoration, text/Office templates; `FileTemplate`, `DocumentTemplate*`, type editing in `ContentView` / `PreferencesModel` | [Templates](domains/templates.md) |
 | Finder menus, targets, folder scope/bookmarks, permission guidance, extension cleanup; `FinderSyncExtension/`, `SharedUI/FolderAccess`, `FolderScope`, `FileMenuAction` | [Finder and permissions](domains/finder-permissions.md) |
 | File info/checksums, batch rename, moves and clipboard; `FileTools`, `FileMove*`, `BatchRename*`, `PendingFileMove`, `FinderSync` / settings | [File tools](domains/file-tools.md) |
-| Favorites, quick search, Finder add/locate; `FavoriteLocation*` | [Favorite locations](domains/favorite-locations.md) |
+| Favorites, favorite search, Finder add/locate; `FavoriteLocation*` | [Favorite locations](domains/favorite-locations.md) |
 | Configured apps, opening selections and app menu placement; `OpenWith*` | [Open with App](domains/open-with.md) |
 | Image actions and private metadata removal; `ResourceTools*`, `FileMintImages` | [Resource tools](domains/resource-tools.md) |
-| Launch, windows, login items, menu bar, language, persistent defaults; `FileMintApp`, `AppDelegate`, `SettingsWindowController`, `LoginItemService`, `LoginItemPolicy` | [Startup and preferences](domains/startup.md) |
+| Launch, windows, login, menu bar, preferences, global shortcuts/unified search; `FileMintApp`, `AppDelegate`, `GlobalShortcut*`, `QuickSearch*` | [Startup and preferences](domains/startup.md) |
 | About, checks, download, quarantine, update scheduling; `AboutPane`, `UpdateModel`, `UpdateClient`, `AppUpdate`, `AutomaticUpdatePolicy`, `InstallerQuarantinePolicy`, update smoke scripts | [Updates](domains/updates.md) |
 | Website, README, issue forms, privacy/license, appearance/icons; `website/`, `.github/ISSUE_TEMPLATE/`, `Resources/`, icon scripts, site packages and `*pages.yml` | [Presentation](domains/presentation.md) |
 | Build, entitlements, packaging, signing, publication; `project.yml`, `Config/`, `CorePackage/Package.swift`, build/release scripts, `ci.yml`, `release.yml` | [Distribution](domains/distribution.md) |

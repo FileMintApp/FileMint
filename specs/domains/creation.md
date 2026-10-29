@@ -28,6 +28,10 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   template and a configured folder; a bare deep link cannot create a file.
 - The app and its menu bar also offer New File… with a native folder picker,
   so creation remains useful without Finder integration.
+- Quick Search can select an enabled template by stable ID through that same
+  app-side folder-picker flow. Recheck enablement/existence after the picker and
+  preselect the exact template. An existing draft is focused unchanged before
+  choosing a directory; cancelling or a stale template creates nothing.
 - Creation requests open or focus only the single creation panel. A Finder URL
   must not open or restore settings, including a cold launch or a request after
   settings was closed. Closing/cancelling the panel leaves settings closed.
