@@ -179,6 +179,7 @@ struct QuickSearchInputField: NSViewRepresentable {
         context.coordinator.parent = self
     }
 
+    @MainActor
     final class Coordinator: NSObject, NSSearchFieldDelegate {
         var parent: QuickSearchInputField
         init(_ parent: QuickSearchInputField) { self.parent = parent }
