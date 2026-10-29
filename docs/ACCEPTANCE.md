@@ -3,6 +3,18 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## FileMint 0.8.1 release — 2026-10-29
+
+Source `052e35cb25efa61236083189f0769f4f9976de16` / `v0.8.1`, build 30,
+includes the user-accepted creation and navigation fixes. The canonical local
+release and publication commands passed: offline tests, Release compilation,
+Developer ID signing, accepted Apple notarization/stapling, both archives/feeds,
+exact source and candidate CI, website build/deployment and Homebrew tap CI.
+Latest became public at 14:13:40 Asia/Shanghai; bilingual live guides include the
+new search and file-content actions. See the [release evidence](tasks/release-0.8.1.md#evidence).
+This standard release did not repeat installed-update, older-macOS or Homebrew
+native lifecycle acceptance.
+
 ## Debug acceptance corrections — 2026-10-29
 
 Primary `34372a3ab617` plus the uncommitted fixes passed offline verification,
