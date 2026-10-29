@@ -98,4 +98,88 @@ struct QuickSearchTests {
             settings: [.init(id: a.id, title: "通用", detail: "", symbol: "gear", keywords: ["appearance", "外观"])])
         #expect(matches.map(\.id) == [a.id])
     }
+
+    @Test("empty categories browse enabled snapshots while All keeps bounded suggestions")
+    func emptyScopes() {
+        var preferences = FileMintPreferences.default
+        preferences.templates = [
+            FileTemplate(id: "later", displayName: "Notes B", suggestedFileName: "B.md",
+                         group: "QA", content: "", rank: 20),
+            FileTemplate(id: "disabled", displayName: "Disabled", suggestedFileName: "Disabled.md",
+                         group: "QA", content: "", isEnabled: false, rank: 0),
+            FileTemplate(id: "first", displayName: "Notes A", suggestedFileName: "A.md",
+                         group: "QA", content: "", rank: 10)
+        ]
+        preferences.templateMenuPlacements["first"] = .hidden
+        let items = (0..<12).map { index in
+            FavoriteLocation(url: URL(fileURLWithPath: "/never-access-this-quick-search-fixture/\(index)"),
+                bookmark: Data([1]), device: 1, inode: UInt64(index + 1), kind: .folder,
+                name: "Folder \(index)", isPinned: index < 6,
+                addedAt: Date(timeIntervalSince1970: Double(index)))
+        }
+        let favorites = FavoriteLocationsCatalog(items: items)
+        let settings = [
+            QuickSearchResult(id: .settings("general"), title: "General", detail: "", symbol: "gear"),
+            QuickSearchResult(id: .settings("about"), title: "About", detail: "", symbol: "info.circle")
+        ]
+        func search(_ scope: QuickSearchGroup? = nil) -> [QuickSearchResult] {
+            QuickSearchCatalog.search(" \n ", preferences: preferences, favorites: favorites,
+                                      settings: settings, scope: scope)
+        }
+
+        #expect(search().map(\.id) == [.command(.newFile), .command(.clipboardText), .command(.clipboardImage)]
+            + [0, 1, 2, 3, 4, 5, 11, 10, 9, 8].map { .favorite(items[$0].id) })
+        #expect(search(.actions).map(\.id) == [.command(.newFile), .command(.clipboardText), .command(.clipboardImage)])
+        #expect(search(.templates).map(\.id) == [.template("first"), .template("later")])
+        #expect(search(.favorites).map(\.id) == items.map { .favorite($0.id) })
+        #expect(search(.settings) == settings)
+        #expect(QuickSearchCatalog.search("", preferences: preferences, favorites: .init(), scope: .favorites).isEmpty)
+        #expect(QuickSearchCatalog.search("", preferences: preferences, favorites: favorites, scope: .settings).isEmpty)
+    }
+
+    @Test("scopes retain query ranking and stable identities across categories")
+    func scopedMatches() {
+        var preferences = FileMintPreferences.default
+        preferences.language = .english
+        preferences.templates = [
+            FileTemplate(id: "prefix", displayName: "Clipboard Notes", suggestedFileName: "A.md",
+                         group: "QA", content: "", rank: 0),
+            FileTemplate(id: "exact", displayName: "Clipboard", suggestedFileName: "B.md",
+                         group: "QA", content: "", rank: 1)
+        ]
+        let favorite = FavoriteLocation(url: URL(fileURLWithPath: "/never-access-this-quick-search-fixture/clipboard"),
+            bookmark: Data([1]), device: 1, inode: 1, kind: .folder, name: "Clipboard")
+        let favorites = FavoriteLocationsCatalog(items: [favorite])
+        let settings = [QuickSearchResult(id: .settings("creation"), title: "Creation", detail: "", symbol: "gear",
+                                          keywords: ["clipboard"])]
+        let query = " CLIPBOARD "
+        let all = QuickSearchCatalog.search(query, preferences: preferences, favorites: favorites, settings: settings)
+        #expect(all.map(\.id) == [.command(.clipboardText),
+                                 .template("exact"), .template("prefix"), .favorite(favorite.id), .settings("creation")])
+        for scope in QuickSearchGroup.allCases {
+            let scoped = QuickSearchCatalog.search(query, preferences: preferences, favorites: favorites,
+                                                    settings: settings, scope: scope)
+            #expect(scoped == all.filter { $0.group == scope })
+        }
+        #expect(QuickSearchCatalog.search(".md", preferences: preferences, favorites: favorites,
+                                         settings: settings, scope: .templates).map(\.id)
+            == [.template("prefix"), .template("exact")])
+        #expect(QuickSearchCatalog.search(".md", preferences: preferences, favorites: favorites,
+                                         settings: settings, scope: .settings).isEmpty)
+
+        var selection = QuickSearchSelection()
+        selection.reconcile(all, reset: true)
+        selection.select(.favorite(favorite.id))
+        let templates = QuickSearchCatalog.search(query, preferences: preferences, favorites: favorites,
+                                                  settings: settings, scope: .templates)
+        selection.reconcile(templates, reset: true)
+        #expect(selection.id == .template("exact"))
+        preferences.templates.removeAll { $0.id == "exact" }
+        let refreshed = QuickSearchCatalog.search(query, preferences: preferences, favorites: favorites,
+                                                  settings: settings, scope: .templates)
+        selection.reconcile(refreshed, reset: false)
+        #expect(selection.id == nil)
+        selection.move(1, in: refreshed)
+        #expect(selection.id == .template("prefix"))
+    }
 }

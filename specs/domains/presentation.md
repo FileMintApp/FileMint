@@ -34,6 +34,17 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - No looping animation, eager model loading, remote assets or extra UI library.
   Use a single sidebar material at most, with native reduce-transparency behavior;
   the remaining surfaces are inexpensive adaptive colors.
+- Quick Search uses a quiet command-palette layout: a large borderless native
+  search field, a compact category strip, grouped results and a fixed keyboard
+  action footer. A restrained mint search mark, tinted symbol tiles and a fine
+  selected-row border provide FileMint identity on porcelain/graphite surfaces.
+  Hide redundant title-bar controls while retaining a named, movable, resizable
+  native panel and a visible accessible Close button. Start at 680 × 500 points,
+  with a 520 × 360 minimum, clamped to the available screen. Keep results scrollable,
+  hints readable, hover distinct from selection, and errors visible above the
+  footer. Keep a fixed 12-point gap outside the results scroll view above the
+  footer separator, including while the list is scrolled. Preserve native text
+  editing, IME, accessibility and both languages.
 
 - Native controls and adaptive system colors. Settings switches use the native
   small control size, preserving readable labels and keyboard/accessibility support. Settings use a persistent leading

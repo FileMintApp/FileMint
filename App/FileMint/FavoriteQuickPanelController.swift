@@ -149,11 +149,15 @@ struct QuickSearchInputField: NSViewRepresentable {
     let submit: () -> Void
     let cancel: () -> Void
     var onCreate: ((NSSearchField) -> Void)? = nil
+    // Opt in only for the command palette; the favorite picker retains its
+    // compact native field and the same editing/IME delegate.
+    var paletteStyle = false
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
     func makeNSView(context: Context) -> NSSearchField {
-        let field = NSSearchField()
+        let field = QuickSearchNativeField()
+        field.stringValue = text
         field.placeholderString = placeholder
         field.delegate = context.coordinator
         // Let AppKit's input context consume composition first. The shared action
@@ -162,11 +166,25 @@ struct QuickSearchInputField: NSViewRepresentable {
         field.action = #selector(Coordinator.submitFromReturn(_:))
         field.sendsWholeSearchString = true
         field.maximumRecents = 0
-        onCreate?(field)
-        Task { @MainActor [weak field] in
-            await Task.yield()
-            guard let field else { return }
-            field.window?.makeFirstResponder(field)
+        if paletteStyle {
+            field.isBezeled = false
+            field.drawsBackground = false
+            field.focusRingType = .none
+            field.font = .systemFont(ofSize: 22, weight: .regular)
+            (field.cell as? NSSearchFieldCell)?.searchButtonCell = nil
+            field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        }
+        if paletteStyle {
+            // Hosted views can mount after the panel becomes key. Notify the
+            // owner when the field actually belongs to its native window.
+            field.didAttach = onCreate
+        } else {
+            onCreate?(field)
+            Task { @MainActor [weak field] in
+                await Task.yield()
+                guard let field else { return }
+                field.window?.makeFirstResponder(field)
+            }
         }
         return field
     }
@@ -212,5 +230,13 @@ struct QuickSearchInputField: NSViewRepresentable {
             }
             return true
         }
+    }
+}
+
+private final class QuickSearchNativeField: NSSearchField {
+    var didAttach: ((NSSearchField) -> Void)?
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        if window != nil { didAttach?(self) }
     }
 }

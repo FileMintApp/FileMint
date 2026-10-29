@@ -29,7 +29,7 @@ private struct FileMintCommands: Commands {
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
             Button(QuickSearchText.menu.text(model.preferences.language)) {
-                QuickSearchPanelController.shared.show(settings: model)
+                QuickSearchPanelController.shared.toggle(settings: model)
             }.keyboardShortcut("k", modifiers: [.command, .shift])
             Button(model.text(.customNewFile)) { model.newFile() }.keyboardShortcut("n")
             Button(model.text(.newFileFromClipboard)) { model.newFileFromClipboard() }

@@ -306,7 +306,7 @@ final class PreferencesModel: ObservableObject {
     func startGlobalShortcut(searchController: QuickSearchPanelController = .shared, favorites: FavoriteLocationsModel? = nil) {
         globalShortcuts.onTrigger = { [weak self] in
             guard let self else { return }
-            searchController.show(settings: self, favorites: favorites ?? .shared)
+            searchController.toggle(settings: self, favorites: favorites ?? .shared)
         }
         globalShortcuts.start(committedPreferences.globalShortcut)
     }

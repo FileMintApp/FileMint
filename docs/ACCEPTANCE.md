@@ -3,6 +3,40 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Quick Search redesign — 2026-10-29
+
+On primary `1f9a031` plus the uncommitted redesign, arm64 macOS 27.2 /
+Xcode 27.1 / Swift 6.4 passed `make verify` (370 Core, 23 Images), unsigned
+App/Finder compilation, and the fresh `quick-search` native fixture
+`build/native-checks.noindex/run.qm9zn8nu/report.json`.
+
+The native checks now observe natural key-window/input focus instead of repairing
+it in the test helper. They cover initial/repeated opening, immediate scope and
+query edits followed by Return, hardware-style arrow modifiers, Escape reset,
+and the existing IME/stale-result/modal/draft/favorite-session guards. User preview
+feedback led to visible category shortcuts, full footer action labels and focus
+after actual input mounting with panel ownership checks.
+
+Live CUA checks observed Chinese/light and English/dark layouts, template browsing
+and empty states. The final preview confirmed initial Down, mouse-category then
+Down, Command-5 and Escape, with complete action text. Minimum-size live rendering,
+older systems, actual IME candidate windows, non-US layouts and multiple displays
+remain unverified. No production preferences or installed application changed.
+See the [task and evidence](tasks/2026-10-29-quick-search-redesign.md#evidence).
+
+The subsequent dismissal/restoration follow-up passed the same offline suite and
+unsigned build, plus `quick-search` and `favorite-model` in
+`build/native-checks.noindex/run.xxu5mbhq/report.json`. Native checks cover memory-only
+query/scope/selection restoration, select-all replacement, successful reset,
+global-shortcut callback toggling, outside-click delivery, modal cancellation,
+menu/marked-text protection and asynchronous operation ownership across new and
+reused windows. A real CUA relink picker cancellation exposed a focus handoff gap;
+the final build returned to the original search with its query/category preserved.
+The final template-list capture confirmed a fixed 12-point gap above the footer.
+Real IME candidates and Space/fullscreen/multi-display behavior remain unverified;
+simulated notifications are not evidence for those boundaries. See the task's
+[follow-up evidence](tasks/2026-10-29-quick-search-redesign.md#退出恢复与底部留白验收).
+
 ## Full-review corrections — 2026-10-23
 
 On primary `30c9267` plus the uncommitted corrections, arm64 macOS 27.2 /

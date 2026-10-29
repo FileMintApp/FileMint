@@ -265,7 +265,7 @@ final class FavoriteLocationsModel: ObservableObject {
         }
     }
 
-    func relink(_ id: UUID, language: AppLanguage) async {
+    func relink(_ id: UUID, language: AppLanguage, pickerDidClose: (() -> Void)? = nil) async {
         await waitUntilLoaded()
         guard let item = catalog.items.first(where: { $0.id == id }) else { return }
         let panel = NSOpenPanel()
@@ -276,7 +276,9 @@ final class FavoriteLocationsModel: ObservableObject {
         panel.title = FavoriteText.relink.text(language)
         panel.directoryURL = item.url.deletingLastPathComponent()
         NSApp.activate(ignoringOtherApps: true)
-        guard panel.runModal() == .OK, let url = panel.url else { return }
+        let response = panel.runModal()
+        pickerDidClose?()
+        guard response == .OK, let url = panel.url else { return }
         pendingOperations += 1
         defer { pendingOperations -= 1 }
         do {

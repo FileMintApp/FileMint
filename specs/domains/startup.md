@@ -122,7 +122,8 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   shows the saved choice as inactive with an explicit retry, never as effective.
 - Only the main app owns the global key while running. Closing settings or hiding
   the menu bar does not disable it; quitting releases it. A hotkey release opens
-  or focuses one accessory Quick Search panel. Existing app-owned modal windows
+  or focuses one accessory Quick Search panel; pressing it again while that panel
+  has keyboard focus dismisses it. Existing app-owned modal windows
   or sheets take priority. The panel neither creates a Dock icon nor opens settings
   until an explicit settings result is chosen. No Finder selection is inferred.
 - Quick Search is also available in the menu bar and app File menu (Command-Shift-K)
@@ -132,6 +133,39 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   names/suffixes/aliases and saved favorite names/groups/path text. Group results by
   kind, preserve existing within-kind match ordering and stable IDs. Empty search
   shows creation actions and bounded pinned/recent favorites.
+- The panel starts in All and offers Actions, Templates, Favorites and Settings
+  scopes. Switching scope retains the query and selects the first current match;
+  Command-1 through Command-5 select those scopes in order. Empty scoped searches
+  browse that category's available snapshot (enabled templates, all saved
+  favorites, or settings); All keeps its bounded default suggestions. Clearing a
+  query keeps its scope. Left/Right retain native text editing and IME behavior;
+  category switching remains Command-1 through Command-5.
+  Category controls remain keyboard accessible and restore input focus when used.
+  Show each category's Command-number shortcut in its label. Opening or refocusing
+  the panel makes it the key window and focuses its search field without another
+  click; Arrow/Return/Escape work immediately, respecting IME composition.
+  Pointer hover is distinct from keyboard selection and never redirects Return.
+  The footer names the selected action (create, locate in Finder, or open settings)
+  and gives navigation/close keys; no-result states offer clearing the query or
+  returning to All. Only a currently selected result enables the footer action.
+  Keep the full action label visible; shorten secondary keyboard hints first
+  when space is constrained, never the action itself.
+- Dismiss when the user clicks outside, switches applications/Spaces, presses
+  Escape or closes the panel. Mouse movement alone never dismisses; the external
+  click must reach its original target normally. A context menu, IME composition
+  or a search-owned relink/authorization interaction must not be mistaken for
+  leaving. Menu cancellation and IME confirmation/cancellation take precedence
+  over dismissing the enclosing search. Observe native window/workspace events,
+  without adding keyboard monitoring or permissions.
+- Unfinished search state (query, category and stable selected ID) survives all
+  dismissals in controller memory only. Reopening refreshes current snapshots,
+  preserves a still-valid selection and selects all query text so typing replaces
+  it. An invalidated selection cannot silently execute another row. Successful
+  handoff to creation/settings, or successful favorite activation, clears this
+  state; creation's own picker/draft lifecycle remains independent. Relaunch starts
+  fresh. A pending operation may clear its dismissed session on success, but never
+  a session reopened since it started. Failures keep the current search available
+  without reopening a dismissed panel or stealing focus from another app.
 - Search operates on cached value snapshots without clipboard reads, filesystem
   discovery, template-content indexing or search-history persistence. Refresh after
   successful preference/catalog changes; revalidate an ID before execution.

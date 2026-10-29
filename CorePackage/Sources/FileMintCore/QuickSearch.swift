@@ -59,7 +59,8 @@ public enum QuickSearchCatalog {
     /// shared suffixes and names are not identities and must never merge rows.
     public static func search(_ query: String, preferences: FileMintPreferences,
                               favorites: FavoriteLocationsCatalog,
-                              settings: [QuickSearchResult] = []) -> [QuickSearchResult] {
+                              settings: [QuickSearchResult] = [],
+                              scope: QuickSearchGroup? = nil) -> [QuickSearchResult] {
         let language = preferences.language
         let term = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let actions = QuickSearchCommand.allCases.map { command in
@@ -68,12 +69,14 @@ public enum QuickSearchCatalog {
                 keywords: [FileMintStrings.text(command.title, language: .english),
                            FileMintStrings.text(command.title, language: .chinese)])
         }
-        let favoriteItems = term.isEmpty ? favorites.quickItems() : favorites.search(term)
+        let favoriteItems = term.isEmpty && scope == nil ? favorites.quickItems() : favorites.search(term)
         let locations = favoriteItems.map { item in
             QuickSearchResult(id: .favorite(item.id), title: item.name, detail: item.url.path,
                               symbol: item.kind == .folder ? "folder" : "doc")
         }
-        guard !term.isEmpty else { return actions + locations }
+        // All starts with bounded suggestions. An explicit category lets the user
+        // browse its full snapshot without inventing a search term.
+        if term.isEmpty && scope == nil { return actions + locations }
         let byID = Dictionary(preferences.templates.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         let options = FileFormatCatalog.options(from: preferences.templates).map { option in
             let names = byID[option.templateID].map { template in
@@ -89,11 +92,14 @@ public enum QuickSearchCatalog {
                 title: FileMintStrings.templateDisplayName(for: template, language: language),
                 detail: "." + option.fileExtension, symbol: "doc.badge.plus")
         }
-        return matching(actions, term: term) + templates + locations + matching(settings, term: term)
+        let matches = matching(actions, term: term) + templates + locations + matching(settings, term: term)
+        guard let scope else { return matches }
+        return matches.filter { $0.group == scope }
     }
 
     private static func matching(_ items: [QuickSearchResult], term: String) -> [QuickSearchResult] {
-        items.enumerated().compactMap { index, item -> (Int, Int, QuickSearchResult)? in
+        guard !term.isEmpty else { return items }
+        return items.enumerated().compactMap { index, item -> (Int, Int, QuickSearchResult)? in
             let ranks = ([item.title] + item.keywords).compactMap { value -> Int? in
                 let text = value.lowercased()
                 if text == term { return 0 }
