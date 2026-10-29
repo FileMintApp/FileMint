@@ -128,12 +128,43 @@ func runFileContentCopyChecks(in root: URL) async throws {
     try contentCheck(coordinator.isBusy, "Copy intake reserves the operation guard synchronously")
     try await wait("copy completion") { !coordinator.isBusy }
     try contentCheck(coordinator.contentCopyController.didCopy, "Production ticket/controller copied")
+    try contentCheck(coordinator.contentCopyController.panel == nil, "Successful copy leaves no feedback panel")
     try contentCheck(board.string(forType: .string).map { Data($0.utf8) } == original, "Exact source content including CRLF and combining mark")
     try contentCheck(board.data(forType: .fileURL) == nil && board.data(forType: .rtf) == nil, "Plain text has no file or rich representation")
     try contentCheck(try tickets.consume(ticket) == nil, "Copy ticket cannot replay")
     try contentCheck(try Data(contentsOf: source) == original, "Source bytes unchanged")
     try contentCheck(try Data(contentsOf: prefsURL) == prefsData, "Preferences not changed by copy")
+    try await Task.sleep(for: .milliseconds(400))
+    try contentCheck(coordinator.contentCopyController.panel == nil, "Completed copy cannot show a delayed progress panel")
     coordinator.contentCopyController.requestClose()
+
+    let successGate = ContentReadGate()
+    let slowCopy = FileContentCopyController(preferencesFile: prefsURL, pasteboard: board, reader: { selection, token in
+        let contents = try FileContentRead.read(selection, cancellation: token)
+        successGate.block()
+        try token.check()
+        return contents
+    })
+    seed(); let slowCounter = board.changeCount
+    let slowSelection = try FileInfoSelection.capture([source])
+    let slowTask = Task { await slowCopy.copy(slowSelection, expectedChangeCount: slowCounter) }
+    do {
+        try await wait("slow copy progress") { successGate.hasStarted && slowCopy.panel?.isVisible == true }
+        let progressPanel = slowCopy.panel
+        try contentCheck(slowCopy.isWorking && !slowCopy.didCopy && board.changeCount == slowCounter,
+                         "Slow work shows progress before publishing the clipboard")
+        successGate.allow()
+        await slowTask.value
+        try contentCheck(slowCopy.didCopy && !slowCopy.isWorking, "Slow copy completes successfully")
+        try contentCheck(slowCopy.panel == nil && progressPanel?.isVisible == false,
+                         "Success closes the existing progress panel immediately")
+        try contentCheck(board.string(forType: .string).map { Data($0.utf8) } == original,
+                         "Silent slow success copies the complete original text")
+    } catch {
+        successGate.allow(); await slowCopy.cancelAndWait(); await slowTask.value
+        slowCopy.requestClose()
+        throw error
+    }
 
     let controller = FileContentCopyController(preferencesFile: prefsURL, pasteboard: board)
     defer { controller.requestClose(); coordinator.contentCopyController.requestClose() }
@@ -143,6 +174,7 @@ func runFileContentCopyChecks(in root: URL) async throws {
     await controller.copy(try FileInfoSelection.capture([bomFile]), expectedChangeCount: board.changeCount)
     try contentCheck(controller.didCopy && board.string(forType: .string).map { Data($0.utf8) } == Data("\u{FEFF}A".utf8),
                      "Production text copy removes only the encoding BOM")
+    try contentCheck(controller.panel == nil, "Plain-text success stays silent")
     for isRich in [true, false] {
         let receiver = NSTextView(frame: NSRect(x: 0, y: 0, width: 500, height: 180))
         receiver.isRichText = isRich
@@ -155,7 +187,9 @@ func runFileContentCopyChecks(in root: URL) async throws {
         seed(); let counter = board.changeCount
         await controller.copy(try FileInfoSelection.capture([file]), expectedChangeCount: counter)
         try contentCheck(!controller.didCopy && board.changeCount == counter, "Invalid input preserves board: \(name)")
+        try contentCheck(controller.panel?.isVisible == true, "Copy failures retain a visible explanation: \(name)")
         controller.requestClose()
+        try contentCheck(controller.panel == nil, "Failure feedback can be dismissed")
     }
     let richFile = directory.appendingPathComponent("sample.rtf")
     try rtf.write(to: richFile)
@@ -163,6 +197,7 @@ func runFileContentCopyChecks(in root: URL) async throws {
     seed()
     await controller.copy(try FileInfoSelection.capture([richFile]), expectedChangeCount: board.changeCount)
     try contentCheck(controller.didCopy && board.data(forType: .rtf) == rtf, "Admitted RTF traverses production reader/controller")
+    try contentCheck(controller.panel == nil, "RTF success stays silent after an earlier failure")
     controller.requestClose()
     let rejectedRTF: [(String, String)] = [
         ("truncated", #"{\rtf1 lost"#),
@@ -232,8 +267,14 @@ func runFileContentCopyChecks(in root: URL) async throws {
             try contentCheck(!gated.contentCopyController.didCopy, "No publication after \(scenario) change")
             try contentCheck(board.string(forType: .string) == (scenario == "clipboard" ? "newer content during read" : "keep previous clipboard"), "Clipboard preserved after \(scenario)")
             try contentCheck(!FileManager.default.fileExists(atPath: pending.path), "Busy move was never prepared")
+            if scenario == "cancel" {
+                try contentCheck(gated.contentCopyController.panel == nil, "Cancellation closes progress without feedback")
+            } else {
+                try contentCheck(gated.contentCopyController.panel?.isVisible == true, "Read failures keep their explanation visible")
+            }
             gated.contentCopyController.requestClose()
         } catch { gate.allow(); await gated.cancelActiveReadsAndWait(); throw error }
     }
+    print("PASS file contents feedback: silent text/RTF success; no delayed panel; slow progress closes immediately; failures stay visible; cancellation stays silent")
     print("PASS file contents: exact production text copy; failures preserve clipboard; change detection; revoked policy; cancellation cleanup; busy tickets consumed")
 }

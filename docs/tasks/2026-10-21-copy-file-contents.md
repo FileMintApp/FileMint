@@ -1,7 +1,7 @@
 # Task: Copy file contents
 
-Status: complete — 2026-10-22 review fixes verified
-Next action: None for the requested corrections. Installed Finder acceptance
+Status: complete — 2026-10-29 silent success feedback verified
+Next action: None for the requested changes. Installed Finder acceptance
 remains a separately recorded runtime boundary.
 
 ## Objective and scope
@@ -109,3 +109,34 @@ is retained separately from the final pass. The native scope is `file-info`
 because decoding/publication changed while Finder delivery, authorization and
 operation coordination did not. Installed Finder/external grants, third-party
 editors, provider volumes and older macOS runtime remain unverified.
+
+## Silent success feedback
+
+2026-10-29: the user accepted silent success, actionable failures and progress
+only for slower work. Updated the owning SPEC before changing the controller.
+Removed the success panel and its two-second dismissal task. A successful copy
+now immediately closes any existing progress panel. The 350 ms progress delay,
+failure messages, cancellation cleanup, authorization and clipboard rules remain
+unchanged. Cancellation closes the panel after the worker finishes cleanup.
+
+Extended the existing production-controller native checks with silent text/RTF
+success, no delayed panel after completion, a gated slow read whose visible
+progress panel closes immediately on success, dismissible failures and silent
+cancellation. Tests use isolated files/preferences and a private pasteboard.
+
+Tested primary worktree `2a8831ba8a9b4bfa50e2251b71e00f24929ac85f` plus these
+uncommitted changes, on arm64 macOS 27.2 (26B123), Xcode 27.1 (27A9275), Swift 6.4.
+The website commit made during verification did not change App/Core/build inputs.
+Only evidence and verification documentation changed after the native run.
+
+| Check / command | Status | Observed result / evidence |
+| --- | --- | --- |
+| `make verify` | passed | 370 Core and 23 image tests, JSON/CLI and required offline/restricted checks; [log](../../build/copy-contents-feedback.noindex/verify.log) |
+| `CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO make build` | passed | Main app and embedded Finder extension executables exist as arm64; [log](../../build/copy-contents-feedback.noindex/build.log) |
+| `NATIVE_QA_SUITES=file-info make verify-native-affected` | passed | Fresh signed fixture `run.p1WKjx` covers the feedback changes and existing content/cleanup regressions; [report](../../build/native-checks.noindex/run.coyutvc9/report.json), [native log](../../build/native-checks.noindex/run.coyutvc9/file-info.log) |
+| Installed Finder / older macOS runtime | not-run | The changed controller behavior is covered by the isolated native fixture; installation and release were not performed. |
+
+The native scope is `file-info` because only copy feedback changed. Finder
+delivery and external-folder authorization did not change. On 2026-10-29 the user
+authorized committing and pushing this change to `origin/main`. Installation and
+release are outside this Git delivery.

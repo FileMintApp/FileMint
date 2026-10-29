@@ -83,13 +83,7 @@ final class FileContentCopyController: NSObject, ObservableObject, NSWindowDeleg
             try token.check(); try validatePolicy(selection)
             try FileContentClipboard.write(payload, to: pasteboard, expectedChangeCount: expectedChangeCount)
             didCopy = true
-            message = text("File contents copied", "已拷贝文件内容")
-            showPanel()
-            Task {
-                try? await Task.sleep(for: .seconds(2))
-                guard generation == current, !isWorking else { return }
-                panel?.close(); panel = nil
-            }
+            panel?.close(); panel = nil
         } catch {
             if error is CancellationError || (error as? FileInfoError) == .cancelled {
                 closeRequested = true

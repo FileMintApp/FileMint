@@ -3,6 +3,18 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Silent file-content copy success — 2026-10-29
+
+Primary `2a8831b` plus the uncommitted feedback change passed `make verify`
+(370 Core, 23 image tests), unsigned App/Finder Release compilation and the fresh
+signed `file-info` native fixture `run.p1WKjx` on arm64 macOS 27.2 / Xcode 27.1 /
+Swift 6.4. Successful text/RTF copies have no feedback panel; delayed progress
+cannot appear after completion, visible progress closes immediately on success,
+failures remain dismissible and cancellation waits for cleanup without a result
+prompt. Existing clipboard, source-preservation and RTF receiver checks passed.
+Installed Finder and older-macOS runtime were not re-tested; the installed app
+was not replaced. See the [follow-up evidence](tasks/2026-10-21-copy-file-contents.md#silent-success-feedback).
+
 ## FileMint 0.8.1 release — 2026-10-29
 
 Source `052e35cb25efa61236083189f0769f4f9976de16` / `v0.8.1`, build 30,

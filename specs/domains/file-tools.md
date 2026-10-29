@@ -117,9 +117,11 @@ Load for: Optional Finder file/folder actions, batch rename, selection snapshots
   untouched; report a final pasteboard-write failure without claiming restoration.
 - Serialize active work with other file operations. Consume/reject busy tickets
   promptly. Cancel/close and quit/update restart cancel and wait for worker cleanup
-  before releasing grants or the busy guard. Show a compact cancellable progress
-  panel only for slower work, concise success feedback and actionable failures;
-  never open settings or require an additional Run/Copy step after the menu click.
+  before releasing grants or the busy guard. Successful copies are silent: do not
+  show a success panel or notification. Show a compact cancellable progress panel
+  only for slower work and close it as soon as the operation succeeds or finishes
+  cancelling. Keep actionable failures visible until dismissed; never open settings
+  or require an additional Run/Copy step after the menu click.
 
 ## File information and checksums
 

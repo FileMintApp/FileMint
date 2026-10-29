@@ -37,6 +37,9 @@ signed `file-info` fixture also runs `file_content_copy_checks.swift`: real priv
 pasteboard writes, exact Unicode/whitespace text, unchanged RTF bytes, rich/plain
 `NSTextView` paste and font/color/paragraph attributes, source changes, clipboard
 changes, revoked policy, cancellation cleanup and busy request consumption.
+It also verifies silent text/RTF success, no delayed panel after completion,
+immediate progress-panel closure on success, dismissible failure feedback and
+silent cancellation after worker cleanup.
 These receivers do not establish compatibility with every third-party editor.
 
 `make verify-batch-rename-capture` runs the production click-time capture and
