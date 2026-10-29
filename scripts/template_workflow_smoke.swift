@@ -31,6 +31,9 @@ final class TemplateWorkflowSmoke: NSObject, NSApplicationDelegate {
         Task {
             do {
                 try await run()
+                if ProcessInfo.processInfo.environment["FILEMINT_TEMPLATE_QA_MODE"] == "file-visibility" {
+                    fflush(nil); cleanup(); exit(0)
+                }
                 if ProcessInfo.processInfo.environment["FILEMINT_TEMPLATE_QA_MODE"] == "quick-search" {
                     print("PASS quick search: production settings, registration, stale results, modal priority and draft preservation")
                     fflush(nil); cleanup(); exit(0)
@@ -76,6 +79,10 @@ final class TemplateWorkflowSmoke: NSObject, NSApplicationDelegate {
         let root=FileManager.default.temporaryDirectory.appendingPathComponent("FileMint-template-qa-"+UUID().uuidString,isDirectory:true)
         try FileManager.default.createDirectory(at:root,withIntermediateDirectories:false)
         fixture=root
+        if ProcessInfo.processInfo.environment["FILEMINT_TEMPLATE_QA_MODE"] == "file-visibility" {
+            try await FileVisibilityChecks.run(root: root)
+            return
+        }
         if ["quick-search", "quick-search-ui"].contains(ProcessInfo.processInfo.environment["FILEMINT_TEMPLATE_QA_MODE"] ?? "") {
             try await QuickSearchChecks.run(root: root,
                 interactive: ProcessInfo.processInfo.environment["FILEMINT_TEMPLATE_QA_MODE"] == "quick-search-ui")

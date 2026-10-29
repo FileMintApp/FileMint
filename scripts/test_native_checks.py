@@ -16,6 +16,11 @@ import native_checks as checks
 
 
 class SelectionTests(unittest.TestCase):
+    def test_visibility_uses_existing_sandbox_identity_and_keeps_finder_boundary(self):
+        plan = checks.plan_checks(['CorePackage/Sources/FileMintCore/FileVisibility.swift'])
+        self.assertCountEqual(plan['suites'], ['file-visibility', 'file-tools-settings'])
+        self.assertEqual([item['id'] for item in plan['manualChecks']], ['finder'])
+        self.assertEqual(checks.SUITES['file-visibility'].kind, 'template-workflow')
     def test_hotkey_prototype_keeps_interactive_keyboard_boundary_explicit(self):
         plan = checks.plan_checks(['scripts/hotkey_sandbox/HotKeyService.swift',
                                   'scripts/build_hotkey_sandbox_harness.sh'])

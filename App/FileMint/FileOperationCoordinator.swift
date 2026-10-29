@@ -244,6 +244,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
                         case .batchRename: operationTitle = .batchRename
                         case .fileInfo: operationTitle = .fileInfo
                         case .copyContents: operationTitle = .copyFileContents
+                        case .fileVisibility: operationTitle = .fileVisibility
                         case .permanentDelete: operationTitle = .permanentDelete
                         case .airDrop: operationTitle = .airDrop
                         case .desktopAlias: operationTitle = .sendAliasToDesktop
@@ -264,6 +265,24 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
         case .batchRename, .fileInfo, .copyContents:
             // Rename payloads are valid only on the immediate-intake route.
             throw FileMoveError.staleRequest
+        case .fileVisibility(let items, let action):
+            let selection = items.map(\.source)
+            guard FileVisibilityPolicy.isEnabled(for: selection, preferences: currentPreferences) else {
+                throw FileVisibilityError.disabled
+            }
+            var bookmarks = currentPreferences.monitoredFolderBookmarks
+            for parent in uniqueParents(selection) {
+                guard try authorize(parent, bookmarks: &bookmarks) else { return }
+            }
+            try requireResolvedSelection(selection)
+            let preferencesFile = self.preferencesFile
+            try await Task.detached(priority: .userInitiated) {
+                try FileVisibilityService.perform(items, action: action) { url in
+                    let preferences = FileMintPreferencesStore(fileURL: preferencesFile).load()
+                    return FileVisibilityPolicy.isEnabled(for: [url], preferences: preferences)
+                        && FolderScope.containsResolvedItem(url, in: preferences.monitoredFolderURLs)
+                }
+            }.value
         case .favoriteAdd(let selection):
             guard FavoriteLocationsPolicy.canAdd(selection, isItemMenu: true,
                 preferences: currentPreferences) else { throw FavoriteLocationError.invalidSelection }
@@ -577,6 +596,20 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
     }
 
     private func show(_ error: Error) {
+        if operationTitle == .fileVisibility {
+            let failure = error as? FileVisibilityFailure
+            let reason = failure?.underlying ?? error
+            let message = (reason as? FileVisibilityError).map { text($0.messageKey) }
+                ?? reason.localizedDescription
+            let alert = NSAlert()
+            alert.messageText = text(.fileVisibility)
+            alert.informativeText = failure.map {
+                String(format: text(.fileVisibilityPartial), $0.processed, $0.total) + "\n" + message
+            } ?? message
+            NSApp.activate(ignoringOtherApps: true)
+            alert.runModal()
+            return
+        }
         if operationTitle == .favoriteLocations {
             let alert = NSAlert()
             alert.messageText = text(.favoriteLocations)

@@ -27,6 +27,7 @@ public struct FileMenuAction: Equatable, Sendable {
     public var openWithTarget: OpenWithTarget? = nil
     public var openWithMode: TerminalOpenMode? = nil
     public var favoriteAction: FavoriteMenuAction? = nil
+    public var visibilityAction: FileVisibilityAction? = nil
     public let selection: [URL]
     public let moveBatchID: UUID?
     public init(directory: URL, templateID: String?) {

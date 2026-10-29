@@ -373,10 +373,21 @@ This fixture does not prove that Finder has loaded the new extension.
   same-path item. Test the menu-bar quick panel with settings closed. A corrupt
   catalog must block writes and offer a confirmed backup-and-reset operation;
   read back the backup bytes before clearing the fixture.
-- For Toggle Finder Hidden Items, confirm first use requests macOS Accessibility
-  consent only after a click, returning from System Settings refreshes status,
-  and each later click changes Finder exactly once. Revoking permission disables
-  the action again; no Finder preference file or Finder restart is involved.
+- Enable Hide & Unhide in File & Folder Tools. Right-click one visible file or
+  folder: one Hide This Item action; a hidden selection gives Unhide This Item.
+  Uniform multi-selection uses the plural label; mixed/unknown states offer both
+  actions at the configured menu level. Change the selection while the menu is
+  open and confirm the captured entries, not the new selection, receive the
+  explicit requested attribute. Repeat an already matching action: no toggle.
+  Check source bytes/names/other flags and directory descendants remain unchanged.
+- Hide selected entries, temporarily reveal hidden items with Finder's ⌘⇧., then
+  right-click and unhide them. A name beginning with a period must report the
+  name-hidden limitation before any batch changes; never rename it. Missing or
+  replaced entries, symlinks, revoked switches/scope and denied writes must fail
+  explicitly. Success opens no settings, permission or completion window. No
+  Accessibility access, Finder preference changes or Finder restart is involved.
+  Repeat after quitting/relaunching with configured external-folder grants; the
+  own-container sandbox fixture is not proof of those grants or Finder callbacks.
 
 ## Distribution
 

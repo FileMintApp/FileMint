@@ -46,6 +46,7 @@ SUITES = {
     "favorite-model": Suite("", "PASS favorite model"),
     "hotkey-sandbox": Suite("hotkey-sandbox", "PASS hotkey sandbox:", ("--verify-automation",)),
     "quick-search": Suite("template-workflow", "PASS quick search:", environment=(("FILEMINT_TEMPLATE_QA_MODE", "quick-search"),)),
+    "file-visibility": Suite("template-workflow", "PASS file visibility:", environment=(("FILEMINT_TEMPLATE_QA_MODE", "file-visibility"),)),
 }
 ALL = tuple(SUITES)
 BUILDERS = {kind: f"scripts/build_{kind.replace('-', '_')}_harness.sh"
@@ -65,6 +66,8 @@ MANUAL = {
 
 # Shared-file rules are conservative; --suite is the reviewed behavior-based override.
 RULES = (
+    (("CorePackage/Sources/FileMintCore/FileVisibility.swift", "scripts/file_visibility_checks.swift",
+      "scripts/file_visibility_capture_smoke.swift", "scripts/verify_file_visibility.sh"), ("file-visibility", "file-tools-settings"), ("finder",)),
     (("App/FileMint/GlobalShortcut*.swift", "CorePackage/Sources/FileMintCore/GlobalShortcut.swift"), ("hotkey-sandbox", "quick-search", "design-ui"), ("global-hotkey",)),
     (("App/FileMint/QuickSearch*.swift", "scripts/quick_search_checks.swift", "CorePackage/Sources/FileMintCore/QuickSearch.swift"), ("quick-search",), ("favorite-search",)),
     (("scripts/hotkey_sandbox/*", "scripts/build_hotkey_sandbox_harness.sh"), ("hotkey-sandbox",), ("global-hotkey",)),

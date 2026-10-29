@@ -6,7 +6,11 @@ DEVELOPER_DIR ?= /Applications/Xcode.app/Contents/Developer
 export DEVELOPER_DIR
 export DEVELOPMENT_TEAM
 
-verify: verify-context verify-fork-sync verify-github-token verify-image-compression test harness verify-harness-cli verify-appcast verify-release-metadata verify-release-notarization verify-release-publication verify-homebrew verify-signing-entitlements verify-native-qa verify-native-checks-runner verify-batch-rename-capture verify-batch-rename-access verify-file-info-capture
+verify: verify-context verify-fork-sync verify-github-token verify-image-compression test harness verify-harness-cli verify-appcast verify-release-metadata verify-release-notarization verify-release-publication verify-homebrew verify-signing-entitlements verify-native-qa verify-native-checks-runner verify-batch-rename-capture verify-batch-rename-access verify-file-info-capture verify-file-visibility
+
+.PHONY: verify-file-visibility
+verify-file-visibility:
+	bash scripts/verify_file_visibility.sh
 
 .PHONY: verify-file-info-capture
 verify-file-info-capture:

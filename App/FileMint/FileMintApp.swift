@@ -92,7 +92,6 @@ private struct FileMintMenu: View {
                 FavoriteQuickPanelController.shared.show()
             }
         }
-        Button(model.text(.toggleFinderHiddenItems)) { model.toggleFinderHiddenItems() }
         Button(model.text(.openFileMint)) {
             SettingsWindowController.shared.show()
         }.keyboardShortcut(",")

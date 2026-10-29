@@ -19,7 +19,7 @@ not instructions to recursively read everything.
 | Names, clipboard images, collisions, drafts, URLs/tickets; `FilenamePolicy`, `ClipboardImage*`, `CustomFileDraft`, `FileCreationService`, `CreationRoute`, `QuickCreationTicket`, `SharedUI/CustomFileSavePanelController`, `PlainTextEditor` | [Creation](domains/creation.md) |
 | Presets/custom types, order, restoration, text/Office templates; `FileTemplate`, `DocumentTemplate*`, type editing in `ContentView` / `PreferencesModel` | [Templates](domains/templates.md) |
 | Finder menus, targets, folder scope/bookmarks, permission guidance, extension cleanup; `FinderSyncExtension/`, `SharedUI/FolderAccess`, `FolderScope`, `FileMenuAction` | [Finder and permissions](domains/finder-permissions.md) |
-| File info/checksums, batch rename, moves and clipboard; `FileTools`, `FileMove*`, `BatchRename*`, `PendingFileMove`, `FinderSync` / settings | [File tools](domains/file-tools.md) |
+| File info/checksums, batch rename, hiding, moves and clipboard; `FileTools`, `FileMove*`, `BatchRename*`, `PendingFileMove`, `FinderSync` / settings | [File tools](domains/file-tools.md) |
 | Favorites, favorite search, Finder add/locate; `FavoriteLocation*` | [Favorite locations](domains/favorite-locations.md) |
 | Configured apps, opening selections and app menu placement; `OpenWith*` | [Open with App](domains/open-with.md) |
 | Image actions and private metadata removal; `ResourceTools*`, `FileMintImages` | [Resource tools](domains/resource-tools.md) |

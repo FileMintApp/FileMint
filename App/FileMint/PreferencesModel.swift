@@ -20,8 +20,6 @@ final class PreferencesModel: ObservableObject {
     }
     @Published var lastError: String?
     @Published var extensionEnabled = false
-    @Published var accessibilityTrusted = false
-    @Published var hiddenItemsMessage: String?
     @Published var loginItemState: LoginItemState = .notRegistered
     @Published var loginItemError: String?
     @Published var isUpdatingLoginItem = false
@@ -141,9 +139,6 @@ final class PreferencesModel: ObservableObject {
     }
     func refreshStatus() {
         extensionEnabled = FinderIntegrationStatus.isEnabled
-        let trusted = FinderHiddenItemsService.isAuthorized
-        if trusted != accessibilityTrusted { hiddenItemsMessage = nil }
-        accessibilityTrusted = trusted
         loginItemState = loginItemService.state
         guard loginItemService.isInstalled, preferences.hasAttemptedLoginItemSetup,
               !isUpdatingLoginItem, loginItemError == nil else { return }
@@ -151,23 +146,6 @@ final class PreferencesModel: ObservableObject {
         if preferences.launchAtLogin != actual {
             preferences.launchAtLogin = actual
             save()
-        }
-    }
-
-    func toggleFinderHiddenItems() {
-        Task { @MainActor in
-            let outcome = await FinderHiddenItemsService.toggle()
-            accessibilityTrusted = FinderHiddenItemsService.isAuthorized
-            switch outcome {
-            case .needsAuthorization:
-                hiddenItemsMessage = text(.hiddenItemsAuthorizeHint)
-                SettingsWindowController.shared.show(pane: .folders)
-            case .sent:
-                hiddenItemsMessage = text(.hiddenItemsSent)
-            case .finderUnavailable:
-                hiddenItemsMessage = text(.hiddenItemsUnavailable)
-                SettingsWindowController.shared.show(pane: .folders)
-            }
         }
     }
 

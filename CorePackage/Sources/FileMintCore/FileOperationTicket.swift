@@ -8,6 +8,7 @@ public enum FileOperationRequest: Codable, Equatable, Sendable {
     case batchRename(selection: BatchRenameSelection)
     case fileInfo(FileInfoSelection)
     case copyContents(selection: FileInfoSelection, pasteboardChangeCount: Int)
+    case fileVisibility(items: [FileInfoSelection], action: FileVisibilityAction)
     case resource(tool: ResourceTool, selection: [URL])
     case openWith(application: OpenWithApplicationReference, selection: [URL])
     case openDirectory(application: OpenWithApplicationReference, directory: URL, mode: TerminalOpenMode)
@@ -42,6 +43,8 @@ public struct FileOperationTicketStore: Sendable {
     }
 
     public func enqueue(_ request: FileOperationRequest, now: Date = Date()) throws -> URL {
+        if case .fileVisibility(let items, _) = request,
+           !FileVisibilityPolicy.canSelect(items.map(\.source)) { throw FileVisibilityError.invalidSelection }
         let isBatchRename: Bool
         if case .batchRename(let selection) = request {
             guard FileToolsPolicy.canBatchRename(selection.items.map(\.source)) else {
@@ -97,6 +100,8 @@ public struct FileOperationTicketStore: Sendable {
         defer { try? FileManager.default.removeItem(at: claimed) }
         let ticket = try JSONDecoder().decode(FileOperationTicket.self, from: Data(contentsOf: claimed))
         guard (0...60).contains(now.timeIntervalSince(ticket.issuedAt)) else { return nil }
+        if case .fileVisibility(let items, _) = ticket.request,
+           !FileVisibilityPolicy.canSelect(items.map(\.source)) { return nil }
         if case .batchRename = ticket.request {
             guard isBatchRename else { return nil }
         } else if case .fileInfo = ticket.request {

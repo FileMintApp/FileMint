@@ -44,6 +44,44 @@ Load for: Optional Finder file/folder actions, batch rename, selection snapshots
 - Chinese product copy uses 拷贝 consistently, including 文件（夹）名称 and
   文件（夹）路径; English uses Copy.
 
+## Hide and unhide selected items
+
+- Hide & Unhide / 隐藏与取消隐藏 is a File & Folder Tools child with an independent
+  switch, initially off for new/missing/invalid settings, and the usual submenu/main
+  placement. It replaces the Finder-wide hidden-item toggle in settings/menu bar.
+- Operate only on the complete captured selection of 1–1,000 ordinary local files
+  or directories in configured scope. Packages and aliases are opaque entries;
+  never inspect their contents or follow aliases. Reject symbolic links, special
+  files, duplicate objects and missing/replaced entries. Background/toolbar/sidebar
+  contexts never use a stale selection for this action.
+- Read bounded selected-entry metadata to name the menu. All visible gives one
+  **Hide This Item / 隐藏此项目** (plural **Hide Selected Items / 隐藏所选项目**).
+  All hidden gives one **Unhide This Item / 取消隐藏此项目** (plural **Unhide Selected
+  Items / 取消隐藏所选项目**). Mixed or unknown visibility offers both explicit
+  actions at the same configured menu level. Never label an attribute action
+  “Show Hidden Files”, “Display” or “Toggle”.
+- Capture item and real-parent identities only after the click, then transfer
+  them with the existing private single-use ticket. The main app rechecks switches,
+  resolved scope, complete selection and identities after exact-parent write
+  authorization and around mutation. Reuse existing folder grants; additional
+  picker grants last only for the operation and never expand monitored roots.
+- Use no-follow descriptors and metadata APIs to set/clear the BSD hidden flag
+  on the captured objects. Read the bounded 32-byte FinderInfo metadata as well;
+  Unhide also clears its legacy invisible bit. Pin parent/item identities, preserve other flags and FinderInfo fields,
+  filenames, contents and directory descendants, and verify the result. No shell,
+  simulated input, Accessibility permission, Finder preference change or restart.
+  Already matching attributes are idempotent; the menu's explicit requested state
+  remains authoritative if another action changed visibility after menu creation.
+- Names beginning with a period stay name-hidden. Reject an Unhide request
+  containing such a name before changing any selected item, and explain that this
+  action never renames it. Reject other known hidden mechanisms that cannot be
+  removed through these metadata operations, rather than reporting them as visible. Unsupported
+  filesystems/permissions fail explicitly. Preflight the complete batch before
+  edits; a later failure reports processed/total counts without claiming atomicity.
+- Success is silent. Serialize with existing file operations and keep access alive
+  through worker cleanup. Settings explain that Finder's Command-Shift-Period
+  shortcut can temporarily reveal hidden items so they can be selected and unhidden.
+
 ## Copy file contents
 
 - Copy File Contents / 拷贝文件内容 has an independent child switch, default off

@@ -58,9 +58,10 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - Favorite Locations has its own Extensions settings page and menu-bar quick
   access. Its direct Finder add entry and bounded quick list have independent
   saved visibility switches, initially on, and never broaden Finder folder scope.
-- Finder hidden-item switching checks system Accessibility trust at use time.
-  The permission belongs to macOS, not a saved FileMint preference; settings
-  refresh its status when FileMint becomes active.
+- Hide & Unhide is an independently configurable File & Folder Tools child,
+  initially off on new installs and migration. It has no menu-bar command or
+  Accessibility permission flow; its selection and metadata contract lives in
+  [file tools](file-tools.md#hide-and-unhide-selected-items).
 - Open with App has an initially empty persistent application list. Explicitly
   adding an app enables its entry; its independent placement defaults to submenu.
   Saved list order controls each Finder menu level. See [Open with App](open-with.md)

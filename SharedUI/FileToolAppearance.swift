@@ -82,6 +82,7 @@ enum FileToolAppearance {
         case .desktopAlias: (.systemBlue, .systemTeal)
         case .batchRename: (.systemMint, .systemTeal)
         case .fileInfo: (.systemTeal, .systemBlue)
+        case .fileVisibility: (.systemIndigo, .systemPurple)
         case .convert: (.systemBlue, .systemTeal)
         case .compress: (.systemOrange, .systemRed)
         case .resize: (.systemIndigo, .systemBlue)

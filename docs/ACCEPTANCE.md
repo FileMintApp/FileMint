@@ -3,6 +3,39 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Hide and unhide selected items — 2026-10-29
+
+Primary `a49a75a` plus the uncommitted selection-scoped implementation passed
+`make verify` (381 Core, 23 image tests), unsigned App/Finder Release compilation,
+and the final signed sandbox `file-visibility` check in
+`build/native-checks.noindex/run.4wnlxkab/report.json` on arm64 macOS 27.2 /
+Xcode 27.1 / Swift 6.4. The fixture uses the production coordinator and private
+single-use tickets to hide/unhide captured files/folders and legacy FinderInfo
+invisibility, preserving later selections, bytes, descendants and saved settings.
+Core/subprocess checks cover explicit state-driven labels, other flags/FinderInfo
+fields, dot-name rejection, replacement, revocation, partial counts, metadata-only
+capture and denied-write preservation. Existing UI/icon fixture checks also passed.
+Bilingual guide/privacy changes passed the local site tests/build.
+
+The installed app and live website were not replaced. Actual Finder callbacks,
+external-folder grants across relaunch and older-macOS runtime remain not run.
+See the [task/evidence](tasks/2026-10-29-finder-hidden-items.md#verification).
+
+## Initial Finder display permission repair — superseded 2026-10-29
+
+Primary `a49a75a` plus this uncommitted repair passed `make verify` (370 Core,
+23 image tests), unsigned App/Finder Release compilation and the fresh signed
+`design-ui` fixture `run.6T2rFM` on arm64 macOS 27.2 / Xcode 27.1 / Swift 6.4.
+Injected checks cover permission request/explicit retry, bounded Finder activation,
+revocation, cancellation, focus loss, event flags and overlapping clicks. Native
+accessibility assertions and inspected bilingual view-cache captures confirm one
+status row and a conditional Accessibility settings button. The fixture does not
+prove sandboxed event posting, real system consent or actual Finder visibility.
+The user subsequently clarified the requirement as hiding/unhiding selected
+files/folders. This global-toggle interface and its permission code were removed;
+these observations do not validate the replacement. The installed app was not
+replaced. See the [current task](tasks/2026-10-29-finder-hidden-items.md#verification).
+
 ## Silent file-content copy success — 2026-10-29
 
 Primary `2a8831b` plus the uncommitted feedback change passed `make verify`

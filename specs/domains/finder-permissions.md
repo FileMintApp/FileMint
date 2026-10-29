@@ -70,16 +70,11 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   compiled into both app and extension.
 - Menu icon choices are read from the cached preferences snapshot while building
   the menu. Rendering a symbol never reads user files or changes captured targets.
-- Finder & Folders offers a user-triggered **Toggle Finder Hidden Items** action,
-  also available from FileMint's menu bar. Check actual Accessibility trust only
-  on that action and when refreshing the displayed status; request the system
-  permission prompt on first use, never at launch. The user enables FileMint in
-  System Settings. After granting, a later explicit click sends Finder's
-  Command-Shift-Period shortcut once. Recheck trust and Finder target each time;
-  never send the shortcut to another app. Do not persist a claimed visibility or
-  authorization state, modify Finder preferences, watch keys, or restart Finder.
-  When access is absent, show the manual Finder shortcut. Authorization and the
-  event path require installed signed-app acceptance before claiming success.
+- Hiding/unhiding is a selection-scoped [file tool](file-tools.md#hide-and-unhide-selected-items).
+  Finder captures metadata identities only after the explicit menu click; the main
+  app owns exact-parent authorization and hidden-attribute writes. Do not request
+  Accessibility access, send keys, change Finder preferences or restart Finder.
+  There is no Finder-wide hidden-item toggle in settings or the menu bar.
 
 ## File information authorization
 

@@ -114,6 +114,7 @@ struct FileToolsSettingsView: View {
         case .desktopAlias: .desktopAliasHint
         case .batchRename: .batchRenameHint
         case .fileInfo: .fileInfoHint
+        case .fileVisibility: .fileVisibilityHint
         }
     }
 }

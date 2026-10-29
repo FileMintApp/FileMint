@@ -139,15 +139,12 @@ In the app, open **Extensions → Resource Tools → Use Tools** and choose loca
 
 Convert between JPEG, PNG, HEIC and TIFF; compress or resize; generate icons; stitch at least two images; or extract text with OCR. The processing panel shows a preview and output location before you run an action. Originals stay unchanged and results are saved separately. You can edit OCR text, then explicitly copy it or save a TXT file.
 
-## Toggle Finder hidden items
+## Hide or unhide selected items
 
-![FileMint Finder & Folders settings with the hidden-item toggle](/images/finder-hidden-items-en.jpg)
-
-<p class="guide-caption">Example interface. Finder controls the actual hidden-item state.</p>
-
-1. Open **Finder &amp; Folders** in FileMint and find Finder Display; you can also use the FileMint menu-bar command.
-2. Click **Toggle** yourself. On first use, FileMint directs you to **System Settings → Privacy &amp; Security → Accessibility** to authorize the app.
-3. Return to FileMint and click **Toggle** again. It does not switch automatically when you leave System Settings, and it does not store or guess Finder's current state. If the command is unavailable, use Finder's `⌘⇧.` shortcut.
+1. In **Extensions → File &amp; Folder Tools**, enable the module and **Hide &amp; Unhide**. Choose the main context menu or the tools submenu for its placement.
+2. Select files or folders in a configured Finder folder and right-click. Visible items offer **Hide This Item**; hidden items offer **Unhide This Item**. Multiple selection uses **Selected Items**; mixed or unknown visibility offers both explicit actions.
+3. FileMint changes only the captured entries' hidden attributes, preserving names, contents, other flags and folder descendants. A system picker requests directory access if needed. Accessibility permission is not required.
+4. After hiding an item, press `⌘⇧.` in Finder to reveal hidden items temporarily, then right-click to unhide it. Clearing hidden attributes cannot reveal a name beginning with a period, such as `.env`; FileMint explains the limitation and preserves its name.
 
 ## Save and find Favorite Locations
 
