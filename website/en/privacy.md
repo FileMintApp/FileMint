@@ -17,6 +17,8 @@ FileMint creates files, stores document templates, batch renames items, calculat
 - **Finder hidden-item switching** runs only after your explicit click and requires macOS Accessibility permission. FileMint does not store or infer Finder's hidden-item state.
 - **Batch Rename** acts only on files or folders you select and confirm, without reading their contents or traversing subfolders. Operation records needed for recovery and the most recent undo stay on your Mac and are not uploaded.
 - **File Info and checksums** reads metadata when opened and file contents only after you click Calculate. Results stay in the current window without a saved checksum history. Copying results and comparing an expected value require your action.
+- **Copy File Contents** reads the selected text file only after its explicit Finder action. Source and decoded text are each limited to 8 MiB. Content is fully validated before clipboard publication and is not uploaded, logged or cached. Failure or cancellation does not publish partial results.
+- **Quick Search** matches existing actions, templates, favorites and settings locally without crawling folders. Queries and selection remain in memory for the current app session. The optional global shortcut registers only the configured combination with macOS; it does not record unrelated keys or require Input Monitoring or Accessibility permission.
 
 ## What it does not collect
 

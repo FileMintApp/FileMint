@@ -11,15 +11,17 @@ FileMint puts the action back in Finder: **right-click, choose a type and your f
 Use this native **macOS Finder extension** for right-click file creation, reusable templates, batch rename, SHA-256 checksums, image compression and OCR.
 
 <!-- #region release -->
-## What's new in 0.8.0
+## What's new in 0.8.1
 
-Batch Rename previews rules or pasted names before execution and supports undoing the most recent successful operation. File Info adds SHA-256, SHA-512, SHA-1 and MD5 calculation, copying and comparison. Both tools start off; enable them under File & Folder Tools when needed. Existing templates, grants and settings are retained, with both DMG and ZIP update archives available. The stable installer supports M-series Macs on macOS 13+.
+Open creation drafts directly, use a compact clipboard-image window and switch settings smoothly with arrow keys. Quick Search finds creation actions, templates, favorites and settings, with an optional global shortcut. Copy File Contents adds an opt-in Finder action for supported text files. Existing templates, grants and settings are retained.
 
-[0.8.0 release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.8.0)
+[0.8.1 release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.8.1)
 <!-- #endregion release -->
 
 ## Recent features
 
+- **Quick Search**: Find creation actions, enabled templates, favorites and settings from one panel; optionally enable a global shortcut in General.
+- **Copy File Contents**: Copy complete supported text files from Finder, retaining whitespace and line endings. Enable it under File & Folder Tools.
 - **Batch Rename**: Preview and rename 2–1,000 items in one directory on local, writable APFS, with undo, interrupted-operation recovery and no overwriting of existing items.
 - **File Info and checksums**: Inspect one ordinary file, explicitly calculate four supported digests, and copy or compare results.
 - **Copy and preview templates**: Start with a copy of an existing template and optionally inspect text output or an Office preview supported by the system.
@@ -32,7 +34,7 @@ Batch Rename previews rules or pasted names before execution and supports undoin
 - **Word / Excel templates**: Create blank `.docx` and `.xlsx` files from built-in templates, or import your own documents and create independent copies with their formatting and content intact.
 - **Themes and settings**: General now offers Follow System, Light and Dark, with consistent control alignment and interaction styles.
 
-[Full release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.8.0)
+[Full release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.8.1)
 
 ## Why FileMint
 

@@ -34,11 +34,19 @@ For a specific filename, destination or first paragraph, choose **New File → N
 
 A complete filename determines the suffix; choosing a different format updates the name. Starter content is saved exactly as entered. A custom suffix creates a text file; it does not convert text into a Word, Excel or image file.
 
+App, menu-bar and Quick Search creation entries also open this panel directly, without a preliminary folder picker. Change the destination using Save Location. macOS may still request folder authorization when write access is missing.
+
 **Keyboard:** Use Tab / Shift-Tab to move between controls, ⌘↩ to create, and Esc to cancel. Return inserts a newline in the content editor. The Paste button reads clipboard text only when you click it.
 
 ### Create a text file from the clipboard
 
 Copy one plain-text item, then choose **New File from Clipboard…** in Finder's **New File** menu, the app or the menu bar. FileMint reads the text once and prefills the creation panel. You can change the name, format, destination and text. Only **Create** writes a file; cancelling saves nothing. File references, multiple clipboard items and empty content are not created as text files.
+
+## Find actions, templates and settings with Quick Search
+
+Choose **File → Quick Search…** or press Command-Shift-K in FileMint. Type a query and narrow it with Actions, Templates, Favorites or Settings. Use arrow keys to select, Return to execute and Esc to close. Command-1 through Command-5 select All and the four categories. Dismissal retains the session's query and selection; successful execution resets them.
+
+To open search from another app, enable **Enable Global Shortcut** under **General → Quick Search**. First enable suggests Control-Option-K; you can record another combination. The switch starts off, and quitting FileMint releases the shortcut. Choose another combination if the app reports a conflict.
 
 ## Save reusable templates
 
@@ -79,6 +87,7 @@ Open **Extensions → File & Folder Tools**, enable the master switch, then enab
 <p class="guide-caption">This is an example with tools enabled. Check the Permanent Delete setting before using it.</p>
 
 - **Copy Names / Paths:** Select one or more items, then use the context menu. Multiple items are copied one per line. With Copy Paths enabled, you can also right-click an in-scope folder background to copy that folder's full path.
+- **Copy File Contents:** Enable this child tool, then right-click one supported ordinary local text file to copy its complete contents. Accept UTF-8, BOM-declared UTF-16 and a limited validated RTF subset, with source and decoded text each limited to 8 MiB. Preserve whitespace and line endings without truncation; failure or cancellation leaves the clipboard untouched. Images, PDF, Office documents, RTF attachments and tables are unsupported.
 - **Move File / Folder:** Select the source items and choose this action. Then right-click the **background of the destination folder** and choose **Move Selected Items Here**. The first step only remembers the sources; existing names are never overwritten or merged.
 - **Delete Permanently:** Bypasses Trash and asks for confirmation by default. It cannot be undone. Enable it only when you need it.
 - **AirDrop / Send Alias to Desktop:** AirDrop opens the native macOS chooser so you select a recipient. An alias points to the original item without moving it.

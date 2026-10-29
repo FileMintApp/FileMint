@@ -15,6 +15,16 @@ sharing service only when you explicitly choose it.
 - Open with App passes selected items or Finder's captured, authorized directory
   to a local app you configured. It does not change default file associations;
   the receiving app controls what it does afterward.
+- Copy File Contents reads one supported ordinary local text file only after
+  its explicit Finder action. Source and decoded text are each limited to 8 MiB.
+  It validates complete text or a supported RTF subset before publishing the
+  clipboard; failures and cancellation do not publish partial results. Content
+  is not logged, cached or uploaded. Another copy supersedes pending publication.
+- Quick Search matches the existing configured actions, templates, favorites and
+  settings locally, without crawling folders. Query and selection restoration
+  stays in memory for the current app session. The optional global shortcut
+  registers only its configured key combination with macOS while FileMint runs;
+  it does not record unrelated keys or require Input Monitoring or Accessibility.
 - Resource Tools reads only explicitly selected local images. Conversion,
   compression, resizing, icons, stitching and Vision text recognition run on the
   Mac without uploading images or recognized text. Previews and OCR results are

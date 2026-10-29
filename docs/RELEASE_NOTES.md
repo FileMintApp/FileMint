@@ -1,6 +1,70 @@
 <!-- Future releases after 0.8.0 use docs/RELEASE_NOTES_TEMPLATE.md.
 Keep released entries unchanged; add the next version only during release preparation. -->
 
+# FileMint 0.8.1
+
+## 更新摘要
+
+更直接地新建文件，更顺畅地切换设置和常用操作。
+
+- 新建、模板和剪贴板文本直接进入创建面板，图片弹窗更紧凑。
+- 修复设置侧栏快速按上下键时的选中滞后与多余滚动。
+- 快捷搜索集中查找新建操作、模板、常用文件与设置，可选全局快捷键。
+- 新增拷贝文件内容，直接把所选文本文件的完整内容放入剪贴板。
+
+## 开始使用
+
+升级后，新建流程、图片弹窗与设置导航修复直接生效。在创建面板的“保存位置”中更换目录；实际缺少写入权限时仍需按 macOS 提示授权。
+
+从主应用“文件 → 快捷搜索…”或按 Command-Shift-K 打开搜索。需要跨应用呼出时，在“通用 → 快捷搜索”开启“启用全局快捷键”，首次启用建议 Control-Option-K，也可录制其他组合。全局快捷键默认关闭，FileMint 运行时有效。
+
+在“扩展功能 → 文件（夹）工具”开启总开关及“拷贝文件内容”，再在 Finder 中右键单个受支持的文本文件执行。该工具默认关闭。
+
+## 详细改进
+
+- **创建流程**：主应用、菜单栏及搜索中的新建入口直接打开同一个创建面板，不再先要求选择一次文件夹。已有草稿保持原样；只有“创建”才写入文件，取消不保存。
+- **紧凑的图片弹窗**：按实际可见控件计算窗口高度，移除图片预览下方多余留白；文本、Office 模板及“创建后打开”开关切换也保持正常间距。
+- **设置键盘导航**：快速连续按上下键时逐次更新当前页面和选中态，只有选中项超出可视范围时才滚动。
+- **快捷搜索**：提供操作、模板、常用文件和设置分类及键盘导航；关闭后保留本次会话的查询、分类与选择，完成操作后重置。原生对话框优先，异步操作不会关闭后来打开的搜索窗口。
+- **拷贝文件内容**：读取单个普通本地文本文件，保留空白、换行及 Unicode；支持 UTF-8、带 BOM 的 UTF-16 和经过完整校验的有限 RTF 子集。源文件与解码文本均不超过 8 MiB；不截断内容，读取失败或取消时不覆盖剪贴板。RTF 附件、表格及未支持格式不接受。
+- **更新摘要与帮助**：“关于”展示新版本的对应语言摘要和完整说明入口，帮助菜单、菜单栏与关于页可打开官方在线使用指南。
+- **可靠性修复**：改善大幅方形图片的 OCR 尺寸控制和大量模板变量的处理效率；设置保存失败时恢复界面状态，排队操作保留请求过期与顺序检查。
+
+## 升级须知
+
+支持 macOS 13 或更新版本的 M 系列 Mac，不含 Intel 代码。通过“关于 → 检查更新 → 更新并重启”升级，或下载 DMG 手动安装。已有模板、文件夹授权、应用选择和开关设置保留；全局快捷键与拷贝文件内容在缺少旧设置时默认关闭。继续提供 DMG、ZIP、校验文件和两种签名更新源。0.5.7/0.5.8 用户仍需手动安装 0.5.9 或更新版本一次。
+
+## Highlights
+
+Create files directly and move smoothly between settings and everyday actions.
+
+- Open creation drafts directly, with a more compact clipboard-image window.
+- Keep rapid arrow-key selection in settings in step without unnecessary scrolling.
+- Search creation actions, templates, favorite locations and settings, with an optional global shortcut.
+- Copy the complete contents of a supported text file directly from Finder.
+
+## Getting started
+
+Creation, image-window and settings-navigation fixes take effect after upgrading. Change the destination using Save Location in the creation panel; macOS may still request authorization when write access is missing.
+
+Choose File → Quick Search… or press Command-Shift-K in FileMint. To open it from another app, enable Enable Global Shortcut under General → Quick Search. First enable suggests Control-Option-K; you can record another combination. The global shortcut starts off and works while FileMint is running.
+
+Enable the module and Copy File Contents under Extensions → File & Folder Tools, then right-click one supported text file in Finder. This tool starts off.
+
+## Details
+
+- **Direct creation**: App, menu-bar and search entries open the shared creation panel without a preliminary folder picker. Existing drafts remain intact. Only Create writes a file; cancelling saves nothing.
+- **Compact image window**: Fit the window to visible controls instead of leaving empty space below the preview. Text, Office and Create and Open variants retain their spacing.
+- **Settings navigation**: Rapid arrow keys advance the selected page in order. Scroll only when the selected row moves outside the visible area.
+- **Quick Search**: Browse actions, templates, favorites and settings with keyboard navigation. Dismissal retains the session's query, category and selection; successful execution resets them. Native dialogs take priority, and older asynchronous work cannot close a reopened search window.
+- **Copy File Contents**: Preserve complete whitespace, line endings and Unicode from one ordinary local text file. Accept UTF-8, BOM-declared UTF-16 and a fully validated, limited RTF subset. Both source and decoded text are limited to 8 MiB. Never truncate; read failures and cancellation leave the clipboard untouched. RTF attachments, tables and unsupported formatting are rejected.
+- **Update summaries and help**: About shows the available version's localized summary and release-notes link. Open the official online guide from Help, the menu bar or About.
+- **Reliability**: Improve OCR sizing for large square images and processing of templates with many variables. Failed settings saves restore visible state; queued operations retain expiry and ordering checks.
+
+## Before you update
+
+Requires an M-series Mac running macOS 13 or later; no Intel code is included. Upgrade through About → Check for Updates → Update and Restart, or install the DMG manually. Existing templates, folder grants, app choices and feature switches are retained. The global shortcut and Copy File Contents default off when older settings omit them. DMG, ZIP, checksums and both signed update feeds remain available. Versions 0.5.7/0.5.8 still require one manual installation of 0.5.9 or later.
+
 # FileMint 0.8.0
 
 ## 新功能与改进
