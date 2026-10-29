@@ -149,6 +149,37 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
         NSApp.mainMenu = bar
         NSApp.activate(ignoringOtherApps: true)
         print("READY isolated FileMint UI: \(root.path)")
+        if CommandLine.arguments.contains("--verify-creation-layout") {
+            Task { @MainActor in
+                do {
+                    try await checkCreationLayout(root: root)
+                    print("PASS creation panel layout: compact image/text/document forms and live action controls")
+                    fflush(nil)
+                    NSApp.terminate(nil)
+                } catch {
+                    print("FAIL creation panel layout: \(error)")
+                    fflush(nil)
+                    exit(1)
+                }
+            }
+            return
+        }
+        if CommandLine.arguments.contains("--verify-settings-navigation") {
+            Task { @MainActor in
+                do {
+                    try await waitForSettingsReady()
+                    try await checkSettingsNavigation()
+                    print("PASS settings navigation: rapid native key bursts, selection and visible-row scroll stability")
+                    fflush(nil)
+                    NSApp.terminate(nil)
+                } catch {
+                    print("FAIL settings navigation: \(error)")
+                    fflush(nil)
+                    exit(1)
+                }
+            }
+            return
+        }
         if CommandLine.arguments.contains("--verify-updates") {
             Task { @MainActor in
                 do {
@@ -165,12 +196,30 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
             }
             return
         }
+        if CommandLine.arguments.contains("--verify-creation-entry") {
+            Task { @MainActor in
+                do {
+                    try await waitForSettingsReady()
+                    try await checkCreationEntry(store: store, root: root)
+                    print("PASS creation entry: direct drafts, template selection, clipboard preservation, Create-only writes and unchanged folder preferences")
+                    fflush(nil)
+                    NSApp.terminate(nil)
+                } catch {
+                    print("FAIL creation entry: \(error)"); fflush(nil); exit(1)
+                }
+            }
+            return
+        }
         if CommandLine.arguments.contains("--updates") { updater.checkForUpdates() }
         if CommandLine.arguments.contains("--verify-automation") {
             Task { @MainActor in
                 do {
                     try await waitForSettingsReady()
+                    print("CHECK automated settings navigation"); fflush(nil)
+                    try await checkSettingsNavigation()
                     print("CHECK automated design appearance"); fflush(nil)
+                    try await checkCreationEntry(store: store, root: root)
+                    try await checkCreationLayout(root: root)
                     try checkAppearance(store: store, root: root)
                     print("CHECK automated design settings"); fflush(nil)
                     try await checkSettings(store: store, root: root)
@@ -222,6 +271,72 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
         }
     }
 
+    private func checkCreationEntry(store: FileMintPreferencesStore, root: URL) async throws {
+        func require(_ condition: Bool, _ message: String) throws {
+            if !condition { throw NSError(domain: "CreationEntry", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: message]) }
+        }
+        func views(_ view: NSView) -> [NSView] { [view] + view.subviews.flatMap(views) }
+        func draftWindow() throws -> NSWindow {
+            guard let panel = NSApp.windows.first(where: {
+                $0.isVisible && $0.identifier?.rawValue == "io.github.daigua.filemint.custom-file"
+            }) else { throw ResourceError.failed }
+            return panel
+        }
+        // A regression into runModal must fail, rather than leave an unattended picker.
+        let watchdog = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(8))
+            if !Task.isCancelled {
+                print("FAIL creation entry: operation stalled or opened a preliminary folder picker")
+                fflush(nil); exit(1)
+            }
+        }
+        defer { watchdog.cancel() }
+        let before = try Data(contentsOf: root.appendingPathComponent("fixture-preferences.json"))
+        let initialFiles = try FileManager.default.contentsOfDirectory(atPath: root.path).sorted()
+        model.newFile()
+        var panel = try draftWindow()
+        try require(panel.attachedSheet == nil && NSApp.modalWindow == nil, "New File opened a picker")
+        panel.performClose(nil)
+        guard let template = model.committedPreferences.templates.first(where: { $0.id == "markdown" && $0.isEnabled }) else {
+            throw ResourceError.failed
+        }
+        model.newFile(templateID: template.id)
+        panel = try draftWindow()
+        try require(views(panel.contentView!).compactMap { $0 as? NSTextField }
+            .contains { $0.isEditable && $0.stringValue == template.suggestedFileName }, "Requested template was not preselected")
+        panel.performClose(nil)
+        let board = NSPasteboard.withUniqueName()
+        defer { board.releaseGlobally() }
+        let content = "  clipboard draft 🪴\r\n{{fileName}}  "
+        board.setString(content, forType: .string)
+        model.presentClipboardText(in: nil, pasteboard: board)
+        panel = try draftWindow()
+        let controls = views(panel.contentView!)
+        guard let editor = controls.compactMap({ $0 as? NSTextView }).first(where: { $0.string == content }),
+              let name = controls.compactMap({ $0 as? NSTextField }).first(where: { $0.isEditable && !($0 is NSComboBox) }),
+              let create = controls.compactMap({ $0 as? NSButton }).first(where: { $0.action == NSSelectorFromString("createRequestedFile:") }) else {
+            throw ResourceError.failed
+        }
+        board.clearContents()
+        model.presentClipboardText(in: nil, pasteboard: board)
+        model.newFile(templateID: template.id)
+        try require(editor.string == content && (try draftWindow()) === panel, "Repeated creation replaced the active draft")
+        try require(try FileManager.default.contentsOfDirectory(atPath: root.path).sorted() == initialFiles,
+                    "Opening or cancelling a draft wrote a file")
+        name.stringValue = "creation-entry-result.txt"
+        create.performClick(nil)
+        for _ in 0..<100 where CustomFileSavePanelController.shared.hasActiveDraft {
+            try await Task.sleep(for: .milliseconds(30))
+        }
+        try require(!CustomFileSavePanelController.shared.hasActiveDraft, "Create did not finish")
+        try require(try Data(contentsOf: root.appendingPathComponent("creation-entry-result.txt")) == Data(content.utf8),
+                    "Create did not preserve exact clipboard bytes")
+        try require(try Data(contentsOf: root.appendingPathComponent("fixture-preferences.json")) == before,
+                    "Opening a draft changed saved folders or authorization")
+        try require(store.load().monitoredFolderURLs == [root], "Creation changed Finder scope")
+    }
+
     private static func updateFixture(body: String?, current: String) throws -> AppUpdate? {
         let base = "https://github.com/FileMintApp/FileMint/releases"
         let name = "FileMint-9.9.9.dmg"
@@ -237,6 +352,72 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
         if let body { release["body"] = body }
         return try AppUpdatePolicy.availableUpdate(from: JSONSerialization.data(withJSONObject: release),
                                                   currentVersion: current)
+    }
+
+    private func checkCreationLayout(root: URL) async throws {
+        func require(_ value: Bool, _ message: String) throws {
+            if !value { throw NSError(domain: "CreationLayout", code: 1, userInfo: [NSLocalizedDescriptionKey: message]) }
+        }
+        func descendants(_ view: NSView) -> [NSView] {
+            [view] + view.subviews.flatMap(descendants)
+        }
+        let output = root.appendingPathComponent("creation-layout", isDirectory: true)
+        try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+        let png = try Data(contentsOf: root.appendingPathComponent("Mountain.png"))
+        let controller = CustomFileSavePanelController.shared
+        for language in [AppLanguage.chinese, .english] {
+            for kind in ["image", "text", "document"] {
+                var preferences = model.preferences
+                preferences.language = language
+                preferences.creationOpeningEnabled = false
+                let document = preferences.templates.first { $0.document != nil }
+                try require(document != nil, "Missing Office template fixture")
+                controller.present(in: root, preferences: preferences,
+                    templateID: kind == "document" ? document?.id : nil,
+                    imageData: kind == "image" ? png : nil,
+                    imagePreview: kind == "image" ? NSImage(data: png) : nil,
+                    documentTemplates: model.documentTemplates)
+                guard let panel = NSApp.windows.first(where: {
+                    $0.isVisible && $0.identifier?.rawValue == "io.github.daigua.filemint.custom-file"
+                }), let content = panel.contentView else { throw ResourceError.failed }
+                defer { panel.close() }
+                var closedHeight: CGFloat?
+                for opening in [false, true, false] {
+                    preferences.creationOpeningEnabled = opening
+                    controller.updateFeatures(preferences)
+                    try await Task.sleep(for: .milliseconds(50))
+                    content.layoutSubtreeIfNeeded()
+                    let views = descendants(content)
+                    guard let cancel = views.compactMap({ $0 as? NSButton }).first(where: {
+                        $0.title == FileMintStrings.text(.cancel, language: language)
+                    }), let footer = cancel.superview?.superview else { throw ResourceError.failed }
+                    let footerRect = footer.convert(footer.bounds, to: content)
+                    try require((18...28).contains(footerRect.minY),
+                                "\(language)/\(kind)/opening=\(opening): excessive footer gap \(footerRect.minY)")
+                    try require(abs(content.bounds.width - 560) < 1,
+                                "Creation width changed while fitting visible content")
+                    for control in views where !control.isHiddenOrHasHiddenAncestor &&
+                        (control is NSControl || control is NSScrollView) {
+                        let rect = control.convert(control.bounds, to: content)
+                        try require(rect.minY >= -1 && rect.maxY <= content.bounds.height + 1,
+                                    "\(kind): visible control clipped after sizing")
+                    }
+                    if opening, let closedHeight {
+                        try require(content.bounds.height > closedHeight,
+                                    "Action controls did not receive additional height")
+                    } else if let closedHeight {
+                        try require(abs(content.bounds.height - closedHeight) < 1,
+                                    "Closing action controls left reserved space")
+                    } else { closedHeight = content.bounds.height }
+                    print("LAYOUT \(language)/\(kind) opening=\(opening) height=\(content.bounds.height) footerGap=\(footerRect.minY)")
+                }
+                guard let bitmap = content.bitmapImageRepForCachingDisplay(in: content.bounds) else { throw ResourceError.failed }
+                panel.display(); content.cacheDisplay(in: content.bounds, to: bitmap)
+                guard let capture = bitmap.representation(using: .png, properties: [:]) else { throw ResourceError.failed }
+                try capture.write(to: output.appendingPathComponent("\(language.rawValue)-\(kind).png"))
+            }
+        }
+        print("CREATION_LAYOUT_CAPTURES \(output.path)")
     }
 
     private func checkUpdateSummaries(root: URL) async throws {
@@ -314,6 +495,93 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
                 toFile: URL(fileURLWithPath: root).appendingPathComponent("qa-window-size.txt").path,
                 atomically: true, encoding: .utf8)
         }
+    }
+
+    private func checkSettingsNavigation() async throws {
+        func require(_ value: Bool, _ message: String) throws {
+            if !value { throw NSError(domain: "SettingsNavigation", code: 1,
+                                     userInfo: [NSLocalizedDescriptionKey: message]) }
+        }
+        func descendants(_ view: NSView) -> [NSView] {
+            [view] + view.subviews.flatMap(descendants)
+        }
+        // SwiftUI accessibility elements implement the Objective-C getters but
+        // do not all declare the full NSAccessibilityProtocol conformance.
+        func attribute(_ node: NSObject, _ key: String) -> Any? {
+            let getter = key == "accessibilitySelected" ? "isAccessibilitySelected" : key
+            guard node.responds(to: NSSelectorFromString(getter)) else { return nil }
+            return node.value(forKey: key)
+        }
+        func accessible(_ node: NSObject, depth: Int = 0) -> [NSObject] {
+            guard depth < 30 else { return [] }
+            return [node] + (attribute(node, "accessibilityChildren") as? [NSObject] ?? [])
+                .flatMap { accessible($0, depth: depth + 1) }
+        }
+        func post(_ codes: [UInt16]) throws {
+            for code in codes {
+                let characters = code == 125 ? "\u{F701}" : "\u{F700}"
+                guard let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [],
+                    timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
+                    context: nil, characters: characters, charactersIgnoringModifiers: characters,
+                    isARepeat: true, keyCode: code) else { throw ResourceError.failed }
+                NSApp.postEvent(event, atStart: false)
+            }
+        }
+        window.setContentSize(NSSize(width: 1040, height: 900))
+        model.selectedPane = .fileTypes
+        try await Task.sleep(for: .milliseconds(150))
+        guard let content = window.contentView else {
+            throw NSError(domain: "SettingsNavigation", code: 1,
+                          userInfo: [NSLocalizedDescriptionKey: "Settings content view is missing"])
+        }
+        let nodes = accessible(content)
+        guard let first = nodes.first(where: { attribute($0, "accessibilityIdentifier") as? String == "settings.fileTypes" }) else {
+            let identifiers = nodes.map { "\(type(of: $0)):\(attribute($0, "accessibilityIdentifier") as? String ?? "nil")" }
+            throw NSError(domain: "SettingsNavigation", code: 2,
+                          userInfo: [NSLocalizedDescriptionKey: "First settings accessibility row is missing: \(identifiers)"])
+        }
+        let scrollViews = descendants(content).compactMap { $0 as? NSScrollView }
+        guard let sidebar = scrollViews.first(where: {
+            $0.convert($0.bounds, to: content).maxX <= 203
+        }) else {
+            let frames = scrollViews.map { "\(type(of: $0)):\($0.convert($0.bounds, to: content))" }
+            throw NSError(domain: "SettingsNavigation", code: 3,
+                          userInfo: [NSLocalizedDescriptionKey: "Sidebar scroll view is missing: \(frames)"])
+        }
+        guard let firstFrame = (attribute(first, "accessibilityFrame") as? NSValue)?.rectValue else {
+            throw NSError(domain: "SettingsNavigation", code: 4,
+                          userInfo: [NSLocalizedDescriptionKey: "First settings row has no accessibility frame"])
+        }
+        let point = window.convertPoint(fromScreen: NSPoint(x: firstFrame.midX, y: firstFrame.midY))
+        for kind in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
+            guard let event = NSEvent.mouseEvent(with: kind, location: point, modifierFlags: [],
+                timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
+                context: nil, eventNumber: 0, clickCount: 1, pressure: 1) else { throw ResourceError.failed }
+            NSApp.sendEvent(event)
+        }
+        try await Task.sleep(for: .milliseconds(50))
+        let origin = sidebar.contentView.bounds.origin
+        // Queue each whole burst before yielding: focus-based navigation used to
+        // calculate several successive events from the same previous frame.
+        for _ in 0..<3 {
+            try post([125, 125, 125, 125, 126, 126])
+            try await Task.sleep(for: .milliseconds(150))
+            try require(model.selectedPane == .fileTools, "Rapid arrows lost or repeated a page transition")
+            try require(sidebar.contentView.bounds.origin == origin,
+                        "Arrow navigation scrolled rows that were already visible")
+            try post([126, 126, 126])
+            try await Task.sleep(for: .milliseconds(100))
+            try require(model.selectedPane == .fileTypes, "Up navigation did not clamp to the first page")
+        }
+        window.setContentSize(NSSize(width: 960, height: 680))
+        try await Task.sleep(for: .milliseconds(100))
+        try post(Array(repeating: 125, count: 12))
+        try await Task.sleep(for: .milliseconds(150))
+        try require(model.selectedPane == .about, "Down navigation did not reach the last page at minimum size")
+        try require(sidebar.contentView.bounds.origin.y > 0, "Offscreen settings row was not revealed")
+        let last = accessible(content).first { attribute($0, "accessibilityIdentifier") as? String == "settings.about" }
+        try require(last.flatMap { attribute($0, "accessibilitySelected") as? Bool } == true,
+                    "Visible selected appearance/accessibility state lagged behind navigation")
     }
 
     private func checkWindowSize() async throws {

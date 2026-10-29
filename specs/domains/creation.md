@@ -26,12 +26,16 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   Quick actions instead enqueue an expiring, single-use local request and pass
   its random identifier to the app. The app consumes it only for an enabled
   template and a configured folder; a bare deep link cannot create a file.
-- The app and its menu bar also offer New File… with a native folder picker,
-  so creation remains useful without Finder integration.
-- Quick Search can select an enabled template by stable ID through that same
-  app-side folder-picker flow. Recheck enablement/existence after the picker and
-  preselect the exact template. An existing draft is focused unchanged before
-  choosing a directory; cancelling or a stale template creates nothing.
+- The app, menu bar and Quick Search open creation drafts directly, with the
+  first configured folder (or the user's home) initially selected. Change the
+  destination through the panel's Save Location control; do not require a
+  separate folder picker before showing the draft. Opening/cancelling a draft
+  does not add a monitored folder or persist a new authorization.
+- Quick Search selects an enabled template by stable ID in that same panel.
+  Recheck enablement/existence before opening and preselect the exact template.
+  An existing draft is focused unchanged; cancelling or a stale template creates
+  nothing. Finder retains its captured destination; if it needs authorization,
+  show the draft first and request access only when Create needs it.
 - Creation requests open or focus only the single creation panel. A Finder URL
   must not open or restore settings, including a cold launch or a request after
   settings was closed. Closing/cancelling the panel leaves settings closed.
@@ -80,7 +84,10 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - New File from Clipboard is an explicit Finder New File action and a main-app/menu-bar action. Finder sends only the captured destination in a private, single-use, expiring ticket; the main app reads one clipboard item only when handling the action. Menu construction never reads clipboard data.
 - Accept nonempty plain text up to 8 MiB as UTF-8, including whitespace-only text and a plain-text representation of rich text. Reject file references, multiple items, image-only content and oversized text. Never interpret URLs or template tokens in the captured text.
 - Prefill the single creation panel as an edited `txt` draft. Format and filename remain editable; switching text formats preserves the exact content. Only Create writes; Cancel or canceled folder selection writes nothing. An existing draft is focused unchanged without reading the clipboard.
-- The main-app entry captures text before its directory picker; Finder uses its menu-captured destination. Preparation and an open draft block updater relaunch. Permission errors retain the draft and use the existing exact-directory authorization flow.
+- The main-app entry captures text on invocation and opens the draft directly;
+  Finder uses its menu-captured destination. Preparation and an open draft block
+  updater relaunch. Permission errors retain the draft and use the existing
+  directory authorization flow.
 
 ## Clipboard image creation
 

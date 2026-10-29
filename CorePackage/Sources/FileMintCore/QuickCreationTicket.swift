@@ -77,8 +77,9 @@ public struct QuickCreationTicketStore: Sendable {
         if intent == .template && !preferences.templates.contains(where: { $0.id == ticket.templateID && $0.isEnabled }) {
             return nil
         }
-        // The main app must authorize and recheck a permission-blocked path
-        // before reading the clipboard or writing anything.
+        // A permission-blocked destination may open a draft, including explicit
+        // clipboard capture. Automatic writes still require resolved scope;
+        // draft submission obtains any missing access through the native picker.
         guard FolderScope.directoryAccess(ticket.directory, in: preferences.monitoredFolderURLs) != .outsideScope else { return nil }
         return ticket
     }

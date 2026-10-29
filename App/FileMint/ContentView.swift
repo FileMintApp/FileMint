@@ -8,7 +8,8 @@ struct ContentView: View {
     var quickSearch: QuickSearchPanelController = .shared
     @EnvironmentObject private var model: PreferencesModel
     @EnvironmentObject private var updater: UpdateModel
-    @FocusState private var focusedPane: PreferencesModel.Pane?
+    @FocusState private var sidebarFocused: Bool
+    @State private var sidebarFrames: [PreferencesModel.Pane: CGRect] = [:]
 
     var body: some View {
         HStack(spacing: 0) {
@@ -60,43 +61,62 @@ struct ContentView: View {
                     Text(model.text(.productTagline)).font(.system(size: 10)).foregroundStyle(.secondary)
                 }
             }.padding(.horizontal, 20).padding(.top, 54).padding(.bottom, 28)
-            ScrollView {
-                VStack(spacing: 5) {
-                    ForEach(PreferencesModel.Pane.allCases) { pane in
-                        if pane == .fileTypes || pane == .fileTools || pane == .general {
-                            Text(pane.groupTitle(model.preferences.language))
-                                .font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.horizontal, 12).padding(.top, pane == .fileTypes ? 0 : 20)
-                                .padding(.bottom, 4)
-                                .accessibilityAddTraits(.isHeader)
-                        }
-                        SettingsSidebarButton(title: model.text(pane.title), symbol: pane.symbol,
-                                              isSelected: model.selectedPane == pane,
-                                              isFocused: focusedPane == pane) {
-                            model.selectedPane = pane
-                            focusedPane = pane
-                        }
-                        .focusable()
-                        .modifier(SidebarFocusEffect())
-                        .focused($focusedPane, equals: pane)
-                        .accessibilityIdentifier("settings.\(pane.rawValue)")
+            GeometryReader { viewport in
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        VStack(spacing: 5) {
+                            ForEach(PreferencesModel.Pane.allCases) { pane in
+                                if pane == .fileTypes || pane == .fileTools || pane == .general {
+                                    Text(pane.groupTitle(model.preferences.language))
+                                        .font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding(.horizontal, 12).padding(.top, pane == .fileTypes ? 0 : 20)
+                                        .padding(.bottom, 4)
+                                        .accessibilityAddTraits(.isHeader)
+                                }
+                                SettingsSidebarButton(title: model.text(pane.title), symbol: pane.symbol,
+                                                      isSelected: model.selectedPane == pane,
+                                                      isFocused: sidebarFocused && model.selectedPane == pane) {
+                                    model.selectedPane = pane
+                                    sidebarFocused = true
+                                }
+                                .modifier(SidebarFocusEffect())
+                                .accessibilityIdentifier("settings.\(pane.rawValue)")
+                                .id(pane)
+                                .background(GeometryReader { row in
+                                    Color.clear.preference(key: SidebarRowFrames.self,
+                                        value: [pane: row.frame(in: .named("settings-sidebar"))])
+                                })
+                            }
+                        }.padding(.horizontal, 12).padding(.vertical, 4)
                     }
-                }.padding(.horizontal, 12).padding(.vertical, 4)
-            }
-            .onMoveCommand { direction in
-                guard let focusedPane,
-                      let index = PreferencesModel.Pane.allCases.firstIndex(of: focusedPane) else { return }
-                let offset: Int
-                switch direction {
-                case .up: offset = -1
-                case .down: offset = 1
-                default: return
+                    .coordinateSpace(name: "settings-sidebar")
+                    .focusable()
+                    .modifier(SidebarFocusEffect())
+                    .focused($sidebarFocused)
+                    .onPreferenceChange(SidebarRowFrames.self) { sidebarFrames = $0 }
+                    .onMoveCommand { direction in
+                        let offset: Int
+                        switch direction {
+                        case .up: offset = -1
+                        case .down: offset = 1
+                        default: return
+                        }
+                        // A key burst must advance from the synchronously committed
+                        // selection, not a per-row SwiftUI focus update from the last frame.
+                        let panes = PreferencesModel.Pane.allCases
+                        guard let index = panes.firstIndex(of: model.selectedPane) else { return }
+                        model.selectedPane = panes[max(0, min(panes.count - 1, index + offset))]
+                    }
+                    .onChange(of: model.selectedPane) { pane in
+                        guard let row = sidebarFrames[pane] else { return }
+                        // Keep visible rows stationary; moving native focus between
+                        // every row otherwise starts an unnecessary scroll on each key.
+                        if row.minY < 0 || row.maxY > viewport.size.height {
+                            proxy.scrollTo(pane, anchor: row.minY < 0 ? .top : .bottom)
+                        }
+                    }
                 }
-                let panes = PreferencesModel.Pane.allCases
-                let next = max(0, min(panes.count - 1, index + offset))
-                self.focusedPane = panes[next]
-                model.selectedPane = panes[next]
             }
             VStack(alignment: .leading, spacing: 14) {
                 if let update = updater.update, model.selectedPane != .about {
@@ -162,6 +182,14 @@ struct ContentView: View {
         case .favoriteLocations: FavoriteLocationsPane(favorites: favoriteLocations)
         case .about: AboutPane()
         }
+    }
+}
+
+private struct SidebarRowFrames: PreferenceKey {
+    static let defaultValue: [PreferencesModel.Pane: CGRect] = [:]
+    static func reduce(value: inout [PreferencesModel.Pane: CGRect],
+                       nextValue: () -> [PreferencesModel.Pane: CGRect]) {
+        value.merge(nextValue(), uniquingKeysWith: { _, new in new })
     }
 }
 

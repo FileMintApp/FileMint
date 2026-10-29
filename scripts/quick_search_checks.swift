@@ -137,6 +137,20 @@ enum QuickSearchChecks {
         try await search.execute(.template("quick-search-notes"), settings: model, favorites: favorites)
         try check(draft.hasActiveDraft && editor?.string == "unsaved sentinel",
                   "template search replaced the active draft")
+        // This completes the existing-draft scenario before testing a separate
+        // search invocation. NSApp activation is asynchronous even though the
+        // existing-draft action above returns synchronously. Observe readiness;
+        // never repair focus on behalf of the production search controller.
+        var readyTurns = 0
+        for _ in 0..<100 {
+            try await Task.sleep(for: .milliseconds(10))
+            let responderWindow = (draftWindow.firstResponder as? NSView)?.window
+            if NSApp.isActive && draftWindow.isVisible && draftWindow.isKeyWindow && responderWindow === draftWindow {
+                readyTurns += 1
+                if readyTurns == 2 { break }
+            } else { readyTurns = 0 }
+        }
+        try check(readyTurns == 2, "existing draft did not finish activating")
         // An old-result regression may request New File. Keep an existing draft
         // so the failure focuses this isolated fixture instead of opening a picker.
         try await checkImmediateSearchSubmission(search: search, model: model, favorites: favorites)

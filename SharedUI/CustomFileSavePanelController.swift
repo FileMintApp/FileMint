@@ -15,6 +15,7 @@ final class CustomFileSavePanelController: NSObject {
     private var allOptions = FileFormatCatalog.builtInOptions
 
     private var panel: NSPanel?
+    private var contentStack: NSStackView?
     private var directoryPicker: NSOpenPanel?
     private var fileNameField: NSTextField?
     private var destinationPopUpButton: NSPopUpButton?
@@ -69,7 +70,6 @@ final class CustomFileSavePanelController: NSObject {
         revealAfterCreation = preferences.revealAfterCreation
         creationApplications = preferences.creationApplications
         guard panel != nil else { return }
-        panel?.setContentSize(NSSize(width: 560, height: openingEnabled ? 620 : 570))
         if imageData == nil { updateContentField() }
         updateActionControls()
         if let focused = panel?.firstResponder as? NSView, focused.isHiddenOrHasHiddenAncestor {
@@ -96,6 +96,20 @@ final class CustomFileSavePanelController: NSObject {
         updateApplicationPresentation(action)
         createButton?.title = actionText(action.opensApplication ? .createAndOpen : .none)
         if !action.opensApplication { createButton?.title = FileMintStrings.text(.create, language: language) }
+        if let panel { fitContent(in: panel) }
+    }
+
+    private func fitContent(in panel: NSPanel) {
+        guard let content = panel.contentView, let contentStack else { return }
+        content.layoutSubtreeIfNeeded()
+        // Hidden image/document hints and action controls must not reserve empty
+        // space below the footer. Measure the visible form at its fixed width.
+        let size = NSSize(width: 560, height: ceil(contentStack.fittingSize.height) + 46)
+        guard abs(content.bounds.height - size.height) > 0.5 else { return }
+        var frame = panel.frameRect(forContentRect: NSRect(origin: .zero, size: size))
+        frame.origin = NSPoint(x: panel.frame.minX, y: panel.frame.maxY - frame.height)
+        panel.setFrame(frame, display: true)
+        content.layoutSubtreeIfNeeded()
     }
 
     private func updateApplicationPresentation(_ action: TemplateCreationAction) {
@@ -240,6 +254,7 @@ final class CustomFileSavePanelController: NSObject {
         creationPanel.animationBehavior = .utilityWindow
         creationPanel.delegate = self
         creationPanel.contentView = makeContentView(for: creationPanel)
+        fitContent(in: creationPanel)
         creationPanel.initialFirstResponder = fileNameField
         creationPanel.standardWindowButton(.miniaturizeButton)?.isHidden = true
         creationPanel.standardWindowButton(.zoomButton)?.isHidden = true
@@ -254,8 +269,10 @@ final class CustomFileSavePanelController: NSObject {
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 14
+        stack.detachesHiddenViews = true
         stack.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(stack)
+        contentStack = stack
 
         let heading = NSTextField(labelWithString: creationPanel.title)
         heading.font = .systemFont(ofSize: 23, weight: .semibold)
@@ -1074,6 +1091,7 @@ extension CustomFileSavePanelController: NSWindowDelegate {
         directoryPicker?.cancel(nil)
         directoryPicker = nil
         panel = nil
+        contentStack = nil
         fileNameField = nil
         destinationPopUpButton = nil
         formatComboBox = nil

@@ -555,23 +555,12 @@ final class PreferencesModel: ObservableObject {
     func newFile(templateID: String? = nil) {
         if CustomFileSavePanelController.shared.focusExistingPanel() || isPreparingCreation { return }
         guard validateCreationTemplate(templateID) else { return }
-        isPreparingCreation = true
-        pendingCreationWork += 1
-        defer { isPreparingCreation = false; pendingCreationWork -= 1 }
-        let picker = NSOpenPanel()
-        picker.canChooseFiles = false
-        picker.canChooseDirectories = true
-        picker.allowsMultipleSelection = false
-        picker.canCreateDirectories = true
-        picker.title = text(.saveLocation)
-        picker.prompt = text(.newFile)
-        picker.directoryURL = preferences.monitoredFolderURLs.first
-        NSApp.activate(ignoringOtherApps: true)
-        guard picker.runModal() == .OK, let url = picker.url else { return }
-        guard validateCreationTemplate(templateID) else { return }
-        guard rememberMonitoredFolders([url]) else { return }
-        CustomFileSavePanelController.shared.present(in: url, preferences: committedPreferences,
+        CustomFileSavePanelController.shared.present(in: initialCreationDirectory, preferences: committedPreferences,
             templateID: templateID, documentTemplates: documentTemplates)
+    }
+
+    private var initialCreationDirectory: URL {
+        committedPreferences.monitoredFolderURLs.first ?? DefaultFolders.resolvedUserHomeDirectory(fileManager: .default)
     }
 
     private func validateCreationTemplate(_ id: String?) -> Bool {
@@ -633,22 +622,8 @@ final class PreferencesModel: ObservableObject {
         defer { isPreparingCreation = false; pendingCreationWork -= 1 }
         do {
             let content = try ClipboardTextReader.capture(from: pasteboard)
-            var destination = directory
-            if destination == nil {
-                let picker = NSOpenPanel()
-                picker.canChooseFiles = false
-                picker.canChooseDirectories = true
-                picker.allowsMultipleSelection = false
-                picker.canCreateDirectories = true
-                picker.title = text(.saveLocation)
-                picker.prompt = text(.newFileFromClipboard)
-                picker.directoryURL = preferences.monitoredFolderURLs.first
-                NSApp.activate(ignoringOtherApps: true)
-                guard picker.runModal() == .OK, let selected = picker.url else { return }
-                guard rememberMonitoredFolders([selected]) else { return }
-                destination = selected
-            }
-            guard let destination, !CustomFileSavePanelController.shared.focusExistingPanel() else { return }
+            let destination = directory ?? initialCreationDirectory
+            guard !CustomFileSavePanelController.shared.focusExistingPanel() else { return }
             CustomFileSavePanelController.shared.present(in: destination, preferences: preferences,
                 initialText: content, documentTemplates: documentTemplates)
         } catch {
@@ -668,7 +643,7 @@ final class PreferencesModel: ObservableObject {
 
     func pasteImageFile() {
         guard !isPreparingCreation, !CustomFileSavePanelController.shared.focusExistingPanel() else { return }
-        let directory = preferences.monitoredFolderURLs.first ?? FileManager.default.homeDirectoryForCurrentUser
+        let directory = initialCreationDirectory
         Task { await presentClipboardImage(in: directory) }
     }
 
@@ -727,19 +702,16 @@ final class PreferencesModel: ObservableObject {
                 }.value
                 guard let ticket, let intent = ticket.resolvedIntent else { return }
                 let originalFollowUp = CreationFollowUp(template: snapshot.templates.first { $0.id == ticket.templateID }, preferences: snapshot, gate: originalGate)
-                if FolderScope.directoryAccess(ticket.directory, in: preferences.monitoredFolderURLs) == .requiresAuthorization {
-                    if CustomFileSavePanelController.shared.focusExistingPanel() { return }
-                    guard authorizeQuickCreationDirectory(ticket.directory) else { return }
-                    if intent == .template {
-                        guard preferences.templates.contains(where: { $0.id == ticket.templateID && $0.isEnabled }) else { return }
-                        // Permission recovery still requires Create in the draft;
-                        // accepting a folder prompt alone never writes a file.
-                        CustomFileSavePanelController.shared.present(in: ticket.directory, preferences: preferences,
-                            templateID: ticket.templateID, initialFollowUp: originalFollowUp, documentTemplates: documentTemplates)
-                        return
-                    }
+                let access = FolderScope.directoryAccess(ticket.directory, in: preferences.monitoredFolderURLs)
+                guard access != .outsideScope else { return }
+                if access == .requiresAuthorization, intent == .template {
+                    guard preferences.templates.contains(where: { $0.id == ticket.templateID && $0.isEnabled }) else { return }
+                    // Open the draft first; its Create action requests access
+                    // only if writing to the selected destination needs it.
+                    CustomFileSavePanelController.shared.present(in: ticket.directory, preferences: preferences,
+                        templateID: ticket.templateID, initialFollowUp: originalFollowUp, documentTemplates: documentTemplates)
+                    return
                 }
-                guard FolderScope.directoryAccess(ticket.directory, in: preferences.monitoredFolderURLs) == .allowed else { return }
                 switch ticket.resolvedIntent {
                 case .clipboardImage: await presentClipboardImage(in: ticket.directory)
                 case .clipboardText: presentClipboardText(in: ticket.directory)
@@ -747,48 +719,6 @@ final class PreferencesModel: ObservableObject {
                 case nil: break
                 }
             } catch { lastError = error.localizedDescription }
-        }
-    }
-
-    private func authorizeQuickCreationDirectory(_ directory: URL) -> Bool {
-        guard !isPreparingCreation else { return false }
-        isPreparingCreation = true
-        defer { isPreparingCreation = false }
-        let picker = NSOpenPanel()
-        picker.canChooseFiles = false
-        picker.canChooseDirectories = true
-        picker.allowsMultipleSelection = false
-        picker.canCreateDirectories = false
-        picker.directoryURL = directory
-        picker.message = text(.authorizeFolderHint)
-        picker.prompt = text(.allowFolder)
-        NSApp.activate(ignoringOtherApps: true)
-        guard picker.runModal() == .OK, let chosen = picker.url else { return false }
-        let granted = chosen.startAccessingSecurityScopedResource()
-        defer { if granted { chosen.stopAccessingSecurityScopedResource() } }
-        guard chosen.resolvingSymlinksInPath().standardizedFileURL == directory.resolvingSymlinksInPath().standardizedFileURL,
-              FolderScope.directoryAccess(directory, in: preferences.monitoredFolderURLs) == .allowed else {
-            let alert = NSAlert()
-            alert.messageText = text(.createFileErrorTitle)
-            alert.informativeText = text(.moveChooseExactFolder)
-            alert.runModal()
-            return false
-        }
-        let previous = preferences
-        do {
-            try FolderAccess.remember(chosen, in: &preferences)
-            guard save() else {
-                preferences = previous
-                showCreationFailure(lastError ?? text(.preferencesRecoveryRequired))
-                return false
-            }
-            folderAccess.restore(preferences)
-            return true
-        } catch {
-            preferences = previous
-            lastError = error.localizedDescription
-            showCreationFailure(error.localizedDescription)
-            return false
         }
     }
 

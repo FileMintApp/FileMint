@@ -3,6 +3,21 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Debug acceptance corrections — 2026-10-29
+
+Primary `34372a3ab617` plus the uncommitted fixes passed offline verification,
+unsigned Release compilation, creation workflow/opening checks and the final
+design-ui/quick-search native suites on arm64 macOS 27.2. Tests cover direct
+creation drafts, exact clipboard bytes, compact image/text/Office panel sizing,
+and rapid sidebar key navigation with scroll/selection assertions.
+
+The signed Debug 0.8.0/build 29 was installed after backing up the previous app.
+CUA observed the installed New File action opening the creation panel directly,
+then cancellation returning to settings. The user accepted all three reported
+corrections, including keyboard smoothness, on 2026-10-29. External-folder
+permission persistence and older macOS versions were not separately re-tested. See the
+[task and evidence](tasks/2026-10-29-debug-acceptance-fixes.md#evidence).
+
 ## Quick Search redesign — 2026-10-29
 
 On primary `1f9a031` plus the uncommitted redesign, arm64 macOS 27.2 /
