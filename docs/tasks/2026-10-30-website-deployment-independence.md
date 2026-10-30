@@ -1,7 +1,7 @@
 # Task: Independent website deployment
 
-Status: in-progress
-Next action: Verify the deployment fix, commit the requested local updates, then confirm the exact remote deployment and live Quick Search entry.
+Status: complete
+Next action: None; use the normal main-push website flow for future reviewed updates.
 
 ## Objective and scope
 
@@ -38,21 +38,25 @@ Next action: Verify the deployment fix, commit the requested local updates, then
   tag, plus a later website change, rather than only testing a mocked path list.
 - The requested pre-existing local launcher-probe work was committed separately
   as `e644aef`; its task still records P0 as in progress.
+- Fix `4d512ce` and the local updates were pushed to `origin/main` together.
+  The subsequent website build and actual Pages deployment step both succeeded.
+  The official Chinese and English pages now show all four scenes, and each
+  Quick Search scene loads its matching-language 1360 × 1000 capture.
 
 ## Evidence
 
-Tested commit/worktree: `07d1323` plus this fix and the user's pending launcher-probe updates.
+Tested commit/worktree: `e644aef` for the local launcher-probe update, and `4d512ce` for the website fix and deployed artifact.
 Environment: local macOS, Node 26; remote website build/deployment on GitHub Actions.
 
 | Check / command | Status | Observed result / evidence |
 | --- | --- | --- |
 | Deployment regression and production website build | passed | `SITE_BASE=/FileMint/ pnpm run site:build`: 27 tests and VitePress production build; real Git history covers both automatic deployment and manual retry after native changes. |
 | Full offline verification for pending native-QA infrastructure | passed | `make verify` exited 0; local log `build/website-deployment-fix-20261030/verify.log`, including all 6 launcher transport regressions. No native GUI acceptance was added. |
-| Remote exact-commit website deployment | not-run | Must verify the actual Pages step, not only the workflow conclusion. |
-| Live bilingual fourth Quick Search scene | not-run | Use the requested in-app browser. |
+| Remote exact-commit website deployment | passed | [Build 40992726679](https://github.com/FileMintApp/FileMint/actions/runs/40992726679) succeeded for `4d512ce`; [deploy 40992773821](https://github.com/FileMintApp/FileMint/actions/runs/40992773821) ran configure/upload/Pages deployment successfully rather than skipping them. |
+| Live bilingual fourth Quick Search scene | passed | In the requested in-app browser, the [Chinese](https://filemintapp.github.io/FileMint/) and [English](https://filemintapp.github.io/FileMint/en/) official homepages both displayed four tabs and loaded the correct Quick Search capture. Latest stable discovery still points to `v0.8.1`. Screenshots are local under `build/website-deployment-fix-20261030/`. |
 
 ## Handoff
 
-- Remaining work: local checks, scoped commits/push, actual deployment and live verification.
+- Remaining website work: none. All requested local source updates were committed and pushed.
 - The launcher integration remains a prototype with incomplete native acceptance;
   see its [existing task](2026-10-29-shortcuts-and-launchers.md).
