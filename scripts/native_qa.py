@@ -28,6 +28,7 @@ KINDS = {
     "sparkle-installation": ("UpgradeQA.app", "io.github.daigua.filemint.upgrade-qa", ()),
     "access-migration": ("FileMintAccessQA.app", "io.github.daigua.filemint.access-qa", ("io.github.daigua.filemint.access-qa.finder",)),
     "hotkey-sandbox": ("FileMintHotKeyQA.app", "io.github.daigua.filemint.hotkey-qa", ("io.github.daigua.filemint.hotkey-peer",)),
+    "launcher-integration": ("FileMintLauncherIntegrationQA.app", "io.github.daigua.filemint.launcher-integration-qa", ()),
 }
 
 

@@ -72,6 +72,26 @@ All paths below are relative to that stable root.
 | sparkle-installation | UpgradeQA.app | io.github.daigua.filemint.upgrade-qa |
 | access-migration | FileMintAccessQA.app | io.github.daigua.filemint.access-qa |
 | hotkey-sandbox | FileMintHotKeyQA.app | io.github.daigua.filemint.hotkey-qa |
+| launcher-integration | FileMintLauncherIntegrationQA.app | io.github.daigua.filemint.launcher-integration-qa |
+
+The `launcher-integration` P0 fixture uses only synthetic requests and its own
+container/run ID. It retains App Sandbox and explicit user-selected directory
+access, declares App Intents in its main app, and registers a separate QA URL
+scheme. Real Shortcuts/launcher calls, folder grants after an Intent returns,
+and cold-launch visibility require observed system delivery; directly invoking
+an Intent or parser is not equivalent evidence. URL probes distinguish sender
+text, dispatch result, raw event availability and received Foundation URL data.
+They never register the production URL scheme, load production preferences or
+log user input. Missing tool/OS environments remain blocked. Build with
+`bash scripts/build_launcher_integration_harness.sh` and use its published stable
+path; the actual probes and outcomes are recorded in the
+[launcher task](../../docs/tasks/2026-10-29-shortcuts-and-launchers.md).
+Its builder freezes the four probe source/configuration files and a SHA-256
+manifest under the run's `source/` before generating the project. Xcode's staging
+application registration is removed on build exit; only the verified, signed
+stable path is then registered. This prevents Shortcuts from cold-launching an
+unsigned staging copy with the same bundle ID. Neither cleanup resets the global
+LaunchServices database or modifies another application's registration.
 
 The template/opening receivers retain their own stable identifiers and sit inside
 their host's Resources. The update fixture's inert extension remains separate from

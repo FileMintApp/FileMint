@@ -16,6 +16,13 @@ import native_checks as checks
 
 
 class SelectionTests(unittest.TestCase):
+    def test_launcher_probe_requires_real_system_delivery(self):
+        plan = checks.plan_checks(['scripts/launcher_integration/ProbeApp.swift',
+                                  'scripts/build_launcher_integration_harness.sh'])
+        self.assertEqual(plan['suites'], [])
+        self.assertEqual([item['id'] for item in plan['manualChecks']], ['launcher-integration'])
+        self.assertEqual(plan['requiresReview'], [])
+
     def test_visibility_uses_existing_sandbox_identity_and_keeps_finder_boundary(self):
         plan = checks.plan_checks(['CorePackage/Sources/FileMintCore/FileVisibility.swift'])
         self.assertCountEqual(plan['suites'], ['file-visibility', 'file-tools-settings'])

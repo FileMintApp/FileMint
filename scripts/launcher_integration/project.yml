@@ -1,0 +1,39 @@
+name: FileMintLauncherIntegrationQA
+options:
+  deploymentTarget:
+    macOS: "13.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    ARCHS: arm64
+    ONLY_ACTIVE_ARCH: NO
+    MACOSX_DEPLOYMENT_TARGET: "13.0"
+    CODE_SIGNING_ALLOWED: NO
+    CODE_SIGNING_REQUIRED: NO
+    ENABLE_APP_SANDBOX: YES
+    ENABLE_USER_SELECTED_FILES: readwrite
+    GENERATE_INFOPLIST_FILE: NO
+    FILEMINT_FIXTURE_RUN_ID: manual
+    FILEMINT_FIXTURE_URL_MODE: delegate
+targets:
+  FileMintLauncherIntegrationQA:
+    type: application
+    platform: macOS
+    sources:
+      - path: ProbeApp.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.daigua.filemint.launcher-integration-qa
+        PRODUCT_NAME: FileMintLauncherIntegrationQA
+        INFOPLIST_FILE: Info.plist
+        CODE_SIGN_ENTITLEMENTS: Probe.entitlements
+    dependencies:
+      - sdk: AppIntents.framework
+      - sdk: AppKit.framework
+      - sdk: SwiftUI.framework
+schemes:
+  FileMintLauncherIntegrationQA:
+    build:
+      targets:
+        FileMintLauncherIntegrationQA: all

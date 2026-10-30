@@ -3,6 +3,43 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Shortcuts and launchers P0 — partial, 2026-10-29
+
+Primary `acd6ca7` plus uncommitted isolated QA infrastructure was exercised on
+arm64 macOS 27.2 / Xcode 27.1, Shortcuts 10.0 and Raycast 2.10.1.0. The Developer
+ID signed sandbox fixture uses its own bundle ID, URL scheme and container;
+the production app and preferences were not replaced. AppKit and GURL each
+delivered all 30 synthetic URL cases, with the same four upstream normalization
+differences. Invalid UTF-8, unknown/duplicate fields and over-limit data still
+arrived, so production parsing must validate the received representation.
+
+Real Raycast import/invocation preserved Chinese and URL-reserved characters;
+repeat invocation preserved an edited draft. Real Shortcuts discovered and ran
+the probe actions. A directory scope remained usable after Intent completion:
+explicit unique sentinel creation/removal passed and the isolated directory
+remained empty; cancellation released scope. The selected source directory's
+identity still needs independent device/inode comparison, so an empty directory
+before/after is not proof that IntentFile preserved its original location.
+Stopping delayed admission prevented
+a late draft. Search returned shown/alreadyVisible/busy with input preservation
+and actual modal rejection. These are prototype/system-boundary results, not
+production feature acceptance.
+
+P0 is still in progress. External-session ownership fixed late-reopen focus in
+the modern-API probe, but ordinary cold startup and the original macOS 13
+foreground entry still have failed observations. A single macOS 13.3 continuation
+candidate compiled and eventually returned, with unexplained long foreground
+waits; it is not accepted as the final experience. The production minimum remains
+13.0; the proposed increase to 26 was withdrawn. Xcode's extra
+unsigned staging registration caused a separate cold-launch team-ID error; only
+the QA staging entries were removed and its builder now unregisters staging and
+registers the stable signed path. The user has moved Alfred adaptation to phase
+two and asked to defer further interactive testing/acceptance until 2026-10-30.
+No production integration feature has been implemented yet. First-user onboarding, single-input daily
+use, first-glance comprehension and final promotional assets remain unverified.
+See the [task](tasks/2026-10-29-shortcuts-and-launchers.md#p0-实施观察尚未整体通过)
+for build run IDs and the locally exported evidence.
+
 ## Hide and unhide selected items — 2026-10-29
 
 Primary `a49a75a` plus the uncommitted selection-scoped implementation passed
