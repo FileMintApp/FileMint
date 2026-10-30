@@ -1,11 +1,12 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import {
   REPOSITORY, prepareDeployment, validateArchive, validateArtifact, validateBuildRun,
-  automaticBuildInputs, validateInputs, validateMain, validateRelease, validateWebsitePaths,
+  automaticBuildInputs, validateInputs, validateMain, validateRelease,
 } from '../scripts/prepare-deployment.mjs'
 
 const commit = 'a'.repeat(40)
@@ -78,25 +79,6 @@ test('requires one retained artifact from the exact run and source', () => {
   ]) assert.throws(() => validateArtifact({ artifacts }, inputs), JSON.stringify(artifacts))
 })
 
-test('repository maintenance is independent of the published native application', () => {
-  validateWebsitePaths([
-    'website/index.md', 'website/scripts/prepare-deployment.mjs',
-    'README.md', 'README.zh-CN.md', 'README.en.md',
-    'package.json', 'pnpm-lock.yaml', 'docs/tasks/deployment.md',
-    'specs/domains/presentation.md', 'specs/domains/distribution.md',
-    '.github/workflows/build-pages.yml', '.github/workflows/deploy-website.yml',
-    'scripts/release_publication.py', 'scripts/test_publish_release.py',
-    'scripts/homebrew_tap.py', '.github/workflows/ci.yml', 'Makefile',
-  ])
-  for (const path of [
-    'project.yml', 'CorePackage/Sources/Foo.swift', 'App/FileMint/App.swift',
-    'Config/FileMint.entitlements', 'FinderSyncExtension/FileMintFinderSync/FinderSync.swift',
-    'SharedUI/FolderAccess.swift', 'Resources/AppIcon.icns', 'ThirdParty/runtime.a',
-    'CorePackage/Package.swift', 'LICENSE', 'UnknownRuntime/main.swift',
-    'website/../App/main.swift', '/website/index.md', '',
-  ]) assert.throws(() => validateWebsitePaths([path]), path)
-})
-
 test('download must contain only a nonempty regular artifact.tar', t => {
   const directory = mkdtempSync(join(tmpdir(), 'filemint-deploy-test-'))
   t.after(() => rmSync(directory, { recursive: true, force: true }))
@@ -114,33 +96,38 @@ test('download must contain only a nonempty regular artifact.tar', t => {
   assert.throws(() => validateArchive(directory))
 })
 
-function fixture(t, { afterDownload = () => {}, paths = ['website/index.md'], checkout = commit,
-  ancestor = true, automatic = false } = {}) {
+function fixture(t, { afterDownload = () => {}, checkout = commit,
+  ancestor = true, automatic = false, gitRun } = {}) {
   const directory = mkdtempSync(join(tmpdir(), 'filemint-deploy-test-'))
   t.after(() => rmSync(directory, { recursive: true, force: true }))
-  const env = { ...environment, RUNNER_TEMP: directory, GITHUB_OUTPUT: join(directory, 'outputs') }
-  const state = { build: structuredClone(buildRun), artifacts: [structuredClone(artifact)],
-    main: structuredClone(main), release: structuredClone(published) }
+  const sourceCommit = gitRun ? gitRun(['rev-parse', 'HEAD']).trim() : commit
+  const env = { ...environment, SITE_COMMIT: sourceCommit,
+    RUNNER_TEMP: directory, GITHUB_OUTPUT: join(directory, 'outputs') }
+  const state = {
+    build: { ...structuredClone(buildRun), head_sha: sourceCommit },
+    artifacts: [{ ...structuredClone(artifact), workflow_run: { ...artifact.workflow_run, head_sha: sourceCommit } }],
+    main: { object: { type: 'commit', sha: sourceCommit } }, release: structuredClone(published),
+  }
   if (automatic) {
     env.GITHUB_EVENT_NAME = 'workflow_run'
     env.GITHUB_REPOSITORY = REPOSITORY
     env.GITHUB_EVENT_PATH = join(directory, 'event.json')
     env.GITHUB_STEP_SUMMARY = join(directory, 'summary.md')
     writeFileSync(env.GITHUB_EVENT_PATH, JSON.stringify({ action: 'completed',
-      repository: { full_name: REPOSITORY }, workflow_run: buildRun }))
+      repository: { full_name: REPOSITORY }, workflow_run: state.build }))
     for (const key of ['SITE_COMMIT', 'SITE_BUILD_RUN_ID', 'SITE_ARTIFACT_ID', 'SITE_RELEASE_ID']) delete env[key]
   }
   const calls = []
   const run = (command, args) => {
     calls.push([command, ...args])
     if (command === 'git') {
+      if (gitRun) return gitRun(args)
       if (args[0] === 'rev-parse') return checkout
       if (args[0] === 'merge-base') {
         if (!ancestor) throw Error('not an ancestor')
         assert.deepEqual(args, ['merge-base', '--is-ancestor', 'refs/tags/v1.2.3', 'HEAD'])
         return ''
       }
-      if (args[0] === 'diff') return paths.join('\0') + '\0'
     }
     if (command === 'gh' && args[0] === 'api') {
       const endpoint = args[1].replace(`repos/${REPOSITORY}/`, '')
@@ -169,11 +156,54 @@ test('reuses the successful archive with read-only commands and no rebuild or ap
   assert.equal(options.calls.filter(call => call[0] === 'gh' && call[1] === 'run').length, 1)
 })
 
-test('changed checkout, unrelated history or unpublished app code prevents downloading', t => {
-  for (const changes of [{ checkout: 'b'.repeat(40) }, { ancestor: false }, { paths: ['project.yml'] }]) {
+test('changed checkout or unrelated release history prevents downloading', t => {
+  for (const changes of [{ checkout: 'b'.repeat(40) }, { ancestor: false }]) {
     const options = fixture(t, changes)
     assert.throws(() => prepareDeployment(options))
     assert.ok(options.calls.every(call => !(call[0] === 'gh' && call[1] === 'run')))
+  }
+})
+
+test('website deployment stays independent of unpublished native changes in a real Git history', t => {
+  const directory = mkdtempSync(join(tmpdir(), 'filemint-deploy-history-'))
+  t.after(() => rmSync(directory, { recursive: true, force: true }))
+  const gitRun = args => execFileSync('git', [
+    '-c', 'core.hooksPath=/dev/null', '-c', 'commit.gpgsign=false', '-c', 'tag.gpgsign=false', ...args,
+  ], {
+    cwd: directory, encoding: 'utf8', timeout: 10_000, stdio: ['ignore', 'pipe', 'pipe'],
+    env: { ...process.env, GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1',
+      GIT_AUTHOR_NAME: 'FileMint Test', GIT_AUTHOR_EMAIL: 'filemint-test@example.invalid',
+      GIT_COMMITTER_NAME: 'FileMint Test', GIT_COMMITTER_EMAIL: 'filemint-test@example.invalid' },
+  })
+  gitRun(['init', '--initial-branch=main'])
+  for (const name of ['App', 'website', 'Resources']) mkdirSync(join(directory, name))
+  writeFileSync(join(directory, 'App/FileMint.swift'), '// Published application\n')
+  writeFileSync(join(directory, 'website/index.md'), 'Published feature guide\n')
+  gitRun(['add', '.'])
+  gitRun(['commit', '-m', 'Published stable application'])
+  gitRun(['tag', 'v1.2.3'])
+  const stableCommit = gitRun(['rev-parse', 'refs/tags/v1.2.3']).trim()
+  writeFileSync(join(directory, 'App/FileMint.swift'), '// Unreleased native development\n')
+  writeFileSync(join(directory, 'Resources/native.txt'), 'Unreleased native resource\n')
+  writeFileSync(join(directory, 'project.yml'), 'name: NativeDevelopment\n')
+  gitRun(['add', '.'])
+  gitRun(['commit', '-m', 'Continue native development'])
+  writeFileSync(join(directory, 'website/index.md'), 'Reviewed guide for a published feature\n')
+  gitRun(['add', '.'])
+  gitRun(['commit', '-m', 'Update the website independently'])
+  assert.deepEqual(gitRun(['diff', '--name-only', 'v1.2.3', 'HEAD']).trim().split('\n'), [
+    'App/FileMint.swift', 'Resources/native.txt', 'project.yml', 'website/index.md',
+  ])
+  const websiteCommit = gitRun(['rev-parse', 'HEAD']).trim()
+  for (const automatic of [false, true]) {
+    const options = fixture(t, { automatic, gitRun })
+    const archive = prepareDeployment(options)
+    assert.equal(readFileSync(archive, 'utf8'), 'verified website bytes')
+    assert.equal(readFileSync(options.env.GITHUB_OUTPUT, 'utf8'), `archive=${archive}\nready=true\n`)
+    assert.deepEqual(options.state.release, published)
+    assert.equal(gitRun(['rev-parse', 'refs/tags/v1.2.3']).trim(), stableCommit)
+    assert.equal(gitRun(['rev-parse', 'HEAD']).trim(), websiteCommit)
+    assert.equal(options.calls.filter(call => call[0] === 'gh' && call[1] === 'run').length, 1)
   }
 })
 
@@ -205,25 +235,15 @@ test('automatic trigger accepts only successful original-repository main push bu
 })
 
 test('automatic deployment discovers and pins the exact build, artifact and stable release', t => {
-  const options = fixture(t, { automatic: true, paths: [
-    'website/index.md', 'scripts/homebrew_tap.py', 'scripts/test_github_token.py',
-    '.github/workflows/ci.yml', 'Makefile', 'specs/HARNESS.md',
-  ] })
+  const options = fixture(t, { automatic: true })
   const archive = prepareDeployment(options)
   assert.equal(readFileSync(archive, 'utf8'), 'verified website bytes')
   assert.equal(readFileSync(options.env.GITHUB_OUTPUT, 'utf8'), `archive=${archive}\nready=true\n`)
   assert.equal(options.calls.filter(call => call[0] === 'gh' && call[1] === 'run').length, 1)
 })
 
-test('automatic deployment skips superseded builds and unpublished application changes', t => {
-  for (const changes of [
-    { checkout: 'b'.repeat(40) }, { paths: ['App/FileMint/FileMintApp.swift'] },
-    { paths: ['CorePackage/Package.swift'] }, { paths: ['Config/AppInfo.plist'] },
-    { paths: ['project.yml'] }, { paths: ['Resources/AppIcon.icns'] },
-    { paths: ['SharedUI/FolderAccess.swift'] }, { paths: ['ThirdParty/runtime.a'] },
-    { paths: ['FinderSyncExtension/FinderSync.swift'] }, { paths: ['LICENSE'] },
-    { paths: ['UnknownRuntime/main.swift'] },
-  ]) {
+test('automatic deployment skips superseded builds before downloading', t => {
+  for (const changes of [{ checkout: 'b'.repeat(40) }]) {
     const options = fixture(t, { automatic: true, ...changes })
     assert.equal(prepareDeployment(options), null)
     assert.equal(readFileSync(options.env.GITHUB_OUTPUT, 'utf8'), 'ready=false\n')

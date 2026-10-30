@@ -305,12 +305,15 @@ owns the rules, supported storage, counts, explicit actions and recovery behavio
   build the website but must not automatically deploy unpublished release copy.
   Website failures have a separate status from application publication.
 - Website updates on main automatically deploy after a successful push build,
-  independently of an App release when application source, resources and project
-  configuration still match the latest public stable tag. Docs, CI and publication
-  tooling maintenance does not by itself block the website. Superseded builds and
-  unpublished App changes remain undeployed with a clear reason. Reuse the exact
-  successful Pages artifact, with validated run and artifact IDs; manual retry is
-  available. This path never creates or changes application releases, tags or assets.
+  independently of App source changes since the latest public stable tag. Publish
+  only the exact successful Pages artifact, with validated repository, current
+  main, stable-release ancestry, run and unexpired artifact IDs. Superseded builds
+  are skipped with a clear reason; API/identity errors fail closed. Manual retry
+  uses the same checks. This path never builds or publishes the App, moves tags
+  or changes release assets. Website copy must describe publicly available
+  features or clearly identified plans; new-release copy still follows the
+  release-dispatched build and post-publication deployment workflow. Native path
+  differences are not evidence that independently reviewed website copy is premature.
 - Website homepages present the current creation, text/Office templates,
   clipboard-image creation, Open with App, file tools, image tools and appearance
   choices in both languages. Use real app captures with matching-language captions;

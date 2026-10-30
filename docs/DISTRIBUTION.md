@@ -184,10 +184,11 @@ release-write and Actions-dispatch/read access; missing permissions stop the dra
 When website inputs differ from the previous stable tag, a website build for this
 release commit must also succeed and produce a retained Pages artifact. No matching
 run does not mean the build is optional. Unchanged website inputs are explicitly
-marked not applicable. Main-push website builds automatically deploy only when the
-application source, resources and project configuration still match the latest
-public stable release. Release-dispatched builds never auto-deploy new release
-copy before the application is public.
+marked not applicable. Independently reviewed main-push website builds deploy
+their successful static artifact even when App development has advanced beyond
+the latest public stable release. New-release copy remains part of this release
+workflow; release-dispatched builds never auto-deploy it before the application
+is public.
 
 ### 4. Promote the verified candidate and confirm online updates
 
@@ -479,13 +480,18 @@ Main-push website updates build and deploy automatically, independently of
    latest-release discovery. Record the commit, build and deployment run URLs.
 
 The source must remain current main and descend from the public stable tag.
-Application source, dependencies, resources, configuration, project.yml and the
-bundled LICENSE must match that tag. Website, docs/specs, scripts, CI and repository
-maintenance may advance independently; unknown root paths remain rejected.
-Superseded builds and unpublished application changes are skipped with a reason
-before downloading. API failures, invalid metadata and changed identities during
-download fail closed. Release-dispatched builds and failed/cancelled builds never
-auto-deploy. The exact successful archive is deployed without rebuilding.
+The website is a static artifact with an independent delivery cycle. App source,
+dependencies, resources, configuration and other repository changes since that
+tag do not block a reviewed website update. The deployer does not publish those
+App changes or change the public download. Review website copy against publicly
+available features; clearly label planned work, and keep new-release copy in the
+release-bound workflow above. A repository-wide file diff cannot establish that
+content is ready for publication.
+
+Superseded builds are skipped with a reason before downloading. API failures,
+invalid metadata and changed identities during download fail closed.
+Release-dispatched builds and failed/cancelled builds never auto-deploy. The exact
+successful archive is deployed without rebuilding.
 
 For an explicit retry, manually dispatch **Deploy website-only update** on `main`
 with `commit`, `build_run_id`, `artifact_id` and `release_id` pinned to the exact

@@ -66,11 +66,13 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   Serialize with release website deployments and retain manual dispatch for retries.
   Validate the originating repository, push event, workflow, current main, stable
   release ancestry and the exact successful build and unexpired artifact IDs.
-  App, CorePackage, FinderSyncExtension, SharedUI, Config, Resources, ThirdParty,
-  project.yml and bundled license changes since the stable tag prevent independent
-  deployment. Website, docs/specs, tests, CI and publication tooling may advance
-  independently; reject unknown root paths. Skip superseded builds and unpublished
-  application changes with an explicit reason, before downloading any artifact.
+  The independent deployment publishes the static website artifact; application
+  source, dependencies, resources, configuration and other repository changes
+  since the stable tag do not block it. Do not use a repository-wide path diff
+  as a proxy for whether reviewed website content is ready. Website copy follows
+  the [presentation contract](presentation.md#product-presentation); new-release
+  copy uses the release-bound publication path. Skip superseded builds with an
+  explicit reason before downloading any artifact.
   Recheck identities after downloading and deploy the retained archive without
   rebuilding or modifying releases. Release-dispatched builds never auto-deploy;
   the existing application-publication and release-bound website gates remain.

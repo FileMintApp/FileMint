@@ -7,16 +7,6 @@ export const REPOSITORY = 'FileMintApp/FileMint'
 const STABLE_TAG = /^v(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/
 const SHA = /^[0-9a-f]{40}$/
 const ID = /^[1-9]\d*$/
-const allowedFiles = new Set([
-  'README.md', 'README.zh-CN.md', 'package.json', 'pnpm-lock.yaml',
-  // Stable tags may still include this former English README in rename/deletion diffs.
-  'README.en.md',
-  'Makefile', 'AGENTS.md', '.gitignore',
-])
-// These maintain the repository and its publication process, not the application
-// shipped in the stable release. Native source, resources, config and dependencies
-// are deliberately absent, as are unknown root paths and the bundled LICENSE.
-const maintenanceRoots = ['website/', 'docs/', 'specs/', 'scripts/', '.github/']
 
 function requireCondition(condition, message) {
   if (!condition) throw new Error(message)
@@ -91,13 +81,6 @@ export function validateArtifact(data, { artifactId, runId, commit }) {
   'Website artifact is missing, expired, ambiguous or differs from the requested build artifact')
 }
 
-export function validateWebsitePaths(paths) {
-  requireCondition(Array.isArray(paths) && paths.every(path => typeof path === 'string'
-    && path.length > 0 && !path.split('/').includes('..') && !path.startsWith('/')
-    && (maintenanceRoots.some(root => path.startsWith(root)) || allowedFiles.has(path))),
-  'Application source, resources or project configuration differs from the published release, or an unknown root path changed')
-}
-
 export function validateArchive(directory) {
   const entries = readdirSync(directory)
   requireCondition(entries.length === 1 && entries[0] === 'artifact.tar', 'Unexpected website artifact contents')
@@ -137,16 +120,9 @@ export function prepareDeployment({ env = process.env, run = (command, args) => 
   const release = api('releases/latest')
   const releaseId = automatic ? String(release?.id) : inputs.releaseId
   const tag = validateRelease(release, releaseId)
-  // Main must descend from the stable tag. Repository maintenance may advance,
-  // but application code, resources, dependencies and project settings may not.
+  // Keep release ancestry, but publish only the verified static artifact.
+  // Unrelated App development must not block a reviewed website update.
   run('git', ['merge-base', '--is-ancestor', `refs/tags/${tag}`, 'HEAD'])
-  const paths = run('git', ['diff', '--name-only', '--no-renames', '-z', `refs/tags/${tag}`, 'HEAD', '--'])
-    .split('\0').filter(Boolean)
-  if (automatic) {
-    try { validateWebsitePaths(paths) } catch {
-      return skip('application or unsupported source changes await a published release')
-    }
-  } else validateWebsitePaths(paths)
   const artifactsEndpoint = `actions/runs/${inputs.runId}/artifacts?per_page=100`
   const artifacts = api(artifactsEndpoint)
   if (automatic) {

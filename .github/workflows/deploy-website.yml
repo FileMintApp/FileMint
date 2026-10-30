@@ -57,7 +57,7 @@ jobs:
           check-latest: true
       - name: Show deployment Node version
         run: node --version
-      - name: Verify published application source and fetch the successful website build
+      - name: Verify the public release and fetch the successful website build
         id: candidate
         env:
           GH_TOKEN: ${{ github.token }}
