@@ -28,7 +28,7 @@ Right-click the desktop or a folder background in Finder, open **New File**, the
 
 For a specific filename, destination or first paragraph, choose **New File → New File…**. Enter a full filename such as `project-kickoff.md`, check the format and destination, optionally type starter content, then click **Create**. **Cancel** writes nothing.
 
-![New File panel showing the filename, format, destination, starter content, Cancel and Create controls](/images/create-panel-en.jpg)
+<img src="/images/create-panel-en.jpg" alt="New File panel showing the filename, format, destination, starter content, Cancel and Create controls" width="1120" height="1226">
 
 <p class="guide-caption">Check the name, format, location and content before creating the file.</p>
 
@@ -44,9 +44,15 @@ Copy one plain-text item, then choose **New File from Clipboard…** in Finder's
 
 ## Find actions, templates and settings with Quick Search
 
-Choose **File → Quick Search…** or press Command-Shift-K in FileMint. Type a query and narrow it with Actions, Templates, Favorites or Settings. Use arrow keys to select, Return to execute and Esc to close. Command-1 through Command-5 select All and the four categories. Dismissal retains the session's query and selection; successful execution resets them.
+Choose **File → Quick Search…** or press Command-Shift-K in FileMint. Type a query and narrow it with Actions, Templates, Favorite Locations or Settings. Use arrow keys to select, Return to execute and Esc to close. Command-1 through Command-5 select All and the four categories. Dismissal retains the session's query and selection; successful execution resets them.
 
-To open search from another app, enable **Enable Global Shortcut** under **General → Quick Search**. First enable suggests Control-Option-K; you can record another combination. The switch starts off, and quitting FileMint releases the shortcut. Choose another combination if the app reports a conflict.
+### Enable the global shortcut
+
+1. Turn on **Enable Global Shortcut** under **General → Quick Search** in FileMint. It is **off by default**. Enabling it with no saved combination fills in **Control + Option + K (⌃⌥K)**.
+2. Keep FileMint running, switch to another app such as your browser or editor, and press the combination to open Quick Search. Press it again while the search panel has focus to dismiss it.
+3. To change the combination, click the shortcut recorder and press your preferred keys. Choose another combination if a conflict is reported. Turning the switch off keeps your saved combination; quitting FileMint releases the shortcut.
+
+Quick Search finds creation actions, enabled templates, saved files and folders, and settings pages. It does not scan your disk or index file contents. The global shortcut needs no Accessibility or Input Monitoring permission. The in-app Command-Shift-K remains available independently of the switch. Choosing a template still opens a creation draft; only **Create** writes a file.
 
 ## Save reusable templates
 

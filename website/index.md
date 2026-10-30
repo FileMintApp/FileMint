@@ -1,8 +1,8 @@
 ---
 layout: home
 titleTemplate: false
-title: FileMint — macOS Finder 右键新建文件、批量重命名与图片工具
-description: FileMint 是原生 macOS Finder 扩展，支持右键新建文件、复用文本与 Office 模板、批量重命名、SHA-256 文件校验、图片压缩及 OCR 文字识别。本机处理，个人及非商业使用免费。
+title: FileMint — Mac 全局快捷搜索、Finder 右键新建与文件工具
+description: 用全局快捷键呼出 FileMint，搜索新建操作、已启用模板、常用位置与设置。支持 macOS Finder 右键新建文件、批量重命名、SHA-256 校验、图片处理与 OCR。本机处理，非商业使用免费。
 ---
 
 <LandingPage lang="zh">

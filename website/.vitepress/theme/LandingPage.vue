@@ -8,6 +8,7 @@ const t = (zh: string, english: string) => en.value ? english : zh
 const page = (path: string) => withBase(`${en.value ? '/en' : ''}/${path}.html`)
 const asset = (name: string) => withBase(`/images/${name}-${props.lang}.jpg`)
 const release = 'https://github.com/FileMintApp/FileMint/releases/latest'
+const quickSearchGuide = computed(() => `${page('guide')}#${t('用快捷搜索找到操作、模板和设置', 'find-actions-templates-and-settings-with-quick-search')}`)
 const active = ref(0)
 const preview = ref<HTMLDialogElement | null>(null)
 type Capture = { image: string; alt: string; class?: string }
@@ -20,7 +21,8 @@ async function openPreview(capture: Capture) {
 const scenes = computed(() => [
   { label: t('新建文件', 'Create a file'), title: t('从一个好开头开始。', 'Start with a head start.'), detail: t('文件名、位置、初始内容，一次写好。', 'Name, location, and first lines. All in one place.'), image: en.value ? asset('create-panel') : withBase('/images/create-workflow-zh.png'), alt: t('真实新建文件面板，包含文件名、保存位置与 Markdown 内容', 'Real New File panel with filename, destination and Markdown content'), class: 'creation' },
   { label: t('处理图片', 'Process images'), title: t('给图片一个新的用途。', 'A new purpose for your images.'), detail: t('转换格式、预览结果，原图始终保留。', 'Choose a format. Preview it. Keep your original.'), image: withBase(`/images/resource-panel-longmao-${props.lang}.png`), alt: t('真实图片转换窗口，展示预览、输出格式与保存位置', 'Real image conversion window with preview, formats and destination'), class: 'image' },
-  { label: t('打开 App', 'Open your apps'), title: t('接着在熟悉的 App 里工作。', 'Continue in your favorite app.'), detail: t('把常用编辑器和终端放进右键菜单。', 'Bring your editors and terminals into the context menu.'), image: asset('open-with'), alt: t('使用 App 打开设置示例，已配置应用与菜单位置', 'Example Open with App configuration with applications and menu placement'), class: 'apps' }
+  { label: t('打开 App', 'Open your apps'), title: t('接着在熟悉的 App 里工作。', 'Continue in your favorite app.'), detail: t('把常用编辑器和终端放进右键菜单。', 'Bring your editors and terminals into the context menu.'), image: asset('open-with'), alt: t('使用 App 打开设置示例，已配置应用与菜单位置', 'Example Open with App configuration with applications and menu placement'), class: 'apps' },
+  { label: t('快捷搜索', 'Quick Search'), title: t('快捷搜索，一按就到。', 'Quick Search, a shortcut away.'), detail: t('⌃⌥K · 默认关闭，可在「通用 → 快捷搜索」启用。', '⌃⌥K · Optional. Enable in General → Quick Search.'), image: asset('quick-search'), alt: t('已安装 FileMint 的真实快捷搜索弹窗，展示分类、新建文件、从剪贴板新建和图片粘贴为文件', 'Quick Search in the installed FileMint app, showing categories, New File, New File from Clipboard and Paste Image as File'), class: 'search', width: 1360, height: 1000, href: quickSearchGuide.value }
 ])
 function choose(index: number) { active.value = index }
 function onTabKey(event: KeyboardEvent, index: number) {
@@ -33,14 +35,13 @@ function onTabKey(event: KeyboardEvent, index: number) {
   event.preventDefault(); choose(next)
   document.getElementById(`scene-tab-${next}`)?.focus()
 }
+const searchScopes = computed(() => [
+  { title: t('新建操作', 'Creation actions'), body: t('新建一份文件，或从剪贴板开始。', 'Create a file, or start with your clipboard.') },
+  { title: t('你的模板', 'Your templates'), body: t('找到已启用的模板，复用熟悉的开头。', 'Find enabled templates for a familiar head start.') },
+  { title: t('常用位置', 'Favorite locations'), body: t('定位已收藏的文件与文件夹。', 'Locate the files and folders you have saved.') },
+  { title: t('应用设置', 'App settings'), body: t('直达需要的设置页面，少找一层。', 'Jump straight to the settings you need.') }
+])
 const everydayActions = computed(() => [
-  {
-    id: 'search', title: t('一个入口，找到常用操作。', 'One place for everyday actions.'),
-    body: t('搜索新建操作、启用的模板、常用文件与设置。上下键选择，Return 执行，不必来回找入口。', 'Find creation actions, enabled templates, favorites and settings. Choose with arrow keys and press Return to continue.'),
-    hint: t('应用内 ⌘⇧K · 可选全局 ⌃⌥K', 'In app: ⌘⇧K · Optional global: ⌃⌥K'),
-    note: t('在「通用 → 快捷搜索」启用全局快捷键，可录制其他组合；默认关闭。', 'Enable the global shortcut in General → Quick Search or record another combination. It starts off.'),
-    link: t('使用快捷搜索', 'Use Quick Search'), anchor: t('用快捷搜索找到操作、模板和设置', 'find-actions-templates-and-settings-with-quick-search')
-  },
   {
     id: 'copy', title: t('拷贝内容，省去一次打开。', 'Copy the contents. Keep your flow.'),
     body: t('右键一个文本文件，把完整内容放入剪贴板。代码、Markdown 和配置文件保留原有空白与换行。', 'Right-click a text file to copy its complete contents. Keep whitespace and line endings in code, Markdown and configuration files.'),
@@ -106,10 +107,10 @@ const faqs = computed(() => [
     <section class="fm-hero fm-wrap" aria-labelledby="hero-title">
       <div class="fm-hero-copy">
         <div class="fm-eyebrow"><span class="fm-dot" /> {{ t('为 macOS 而生', 'MADE FOR macOS') }} <span class="fm-eyebrow-rule" /></div>
-        <h1 id="hero-title">{{ t('顺手的工具，', 'Small actions.') }}<br><em>{{ t('就在右键。', 'A better flow.') }}</em></h1>
-        <p class="fm-hero-lead">{{ t('把文件工具，放回 Finder。', 'Your file tools. Right where you work.') }}</p>
-        <p class="fm-hero-description">{{ t('在 macOS Finder 右键新建文件，批量重命名，计算 SHA-256 校验值，压缩图片或识别文字。常用文件工具，都在手边。', 'Create new files from the macOS Finder context menu. Batch rename, calculate SHA-256 checksums, compress images and extract text with OCR.') }}</p>
-        <a class="fm-hero-tools fm-text-link" href="#file-tools">{{ t('认识批量重命名与文件校验', 'Meet Batch Rename & file checksums') }} <span aria-hidden="true">↗</span></a>
+        <h1 id="hero-title">{{ t('顺手的工具，', 'Your tools.') }}<br><em>{{ t('一按即达。', 'Within reach.') }}</em></h1>
+        <p class="fm-hero-lead">{{ t('一次右键，或一组快捷键。', 'A right-click. A shortcut. Keep your flow.') }}</p>
+        <p class="fm-hero-description">{{ t('在 Finder 右键新建文件，用全局快捷键找到操作、模板与常用位置。批量重命名、校验文件、处理图片，常用工具都在手边。', 'Create files with a right-click in Finder. Find actions, templates and favorites with a global shortcut. Rename files, verify checksums and process images, all on your Mac.') }}</p>
+        <a class="fm-hero-shortcut" href="#quick-search" :aria-label="t('了解全局快捷键 Control + Option + K', 'Discover the Control + Option + K global shortcut')"><span class="fm-hero-keys" aria-hidden="true"><kbd>⌃</kbd><kbd>⌥</kbd><kbd>K</kbd></span><span>{{ t('全局快捷键，随时呼出', 'Your tools, a shortcut away') }}</span><span aria-hidden="true">↗</span></a>
         <div class="fm-actions"><a class="fm-button fm-button-primary" :href="release"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v4h16v-4"/></svg>{{ t('下载 macOS 版', 'Download for macOS') }}</a><a class="fm-text-link" href="#workflows">{{ t('看看怎么用', 'See it in action') }} <span aria-hidden="true">↗</span></a></div>
         <div class="fm-release-line"><LatestRelease :lang="lang" /><span>macOS 13+ · Apple M-series</span></div>
         <p class="fm-license">{{ t('个人及非商业使用免费', 'Free for personal & non-commercial use') }}</p>
@@ -117,8 +118,8 @@ const faqs = computed(() => [
       <div class="fm-product-stage">
         <div class="fm-stage-top"><span class="fm-stage-mark">F<span>ileMint</span></span><span>{{ t('少一点往返，多一点专注。', 'A little less friction.') }}</span></div>
         <div v-for="(scene, index) in scenes" :key="scene.class" v-show="active === index" :id="`scene-panel-${index}`" role="tabpanel" :aria-labelledby="`scene-tab-${index}`" tabindex="0" class="fm-scene" :class="`fm-scene--${scene.class}`">
-          <div class="fm-scene-image"><button class="fm-capture-button" type="button" :aria-label="t('放大界面截图', 'Enlarge interface screenshot')" @click="openPreview(scene)"><img :src="scene.image" :alt="scene.alt" :fetchpriority="index === 0 ? 'high' : 'auto'" :loading="index === 0 ? 'eager' : 'lazy'"></button></div>
-          <div class="fm-scene-caption"><strong>{{ scene.title }}</strong><span>{{ scene.detail }}</span></div>
+          <div class="fm-scene-image"><button class="fm-capture-button" type="button" :aria-label="t('放大界面截图', 'Enlarge interface screenshot')" @click="openPreview(scene)"><img :src="scene.image" :alt="scene.alt" :width="scene.width" :height="scene.height" :fetchpriority="index === 0 ? 'high' : 'auto'" :loading="index === 0 ? 'eager' : 'lazy'"></button></div>
+          <div class="fm-scene-caption"><strong><a v-if="scene.href" class="fm-scene-guide" :href="scene.href">{{ scene.title }} <span aria-hidden="true">↗</span></a><template v-else>{{ scene.title }}</template></strong><span>{{ scene.detail }}</span></div>
         </div>
         <div class="fm-scene-tabs" role="tablist" :aria-label="t('探索使用场景', 'Explore workflows')"><button v-for="(scene, index) in scenes" :key="scene.class" :id="`scene-tab-${index}`" type="button" role="tab" :aria-selected="active === index" :aria-controls="`scene-panel-${index}`" :tabindex="active === index ? 0 : -1" @click="choose(index)" @keydown="onTabKey($event, index)"><span class="fm-tab-number">0{{ index + 1 }}</span>{{ scene.label }}</button></div>
         <p class="fm-capture-note">{{ t('真实应用界面 · 示例配置，可按需调整', 'Real app captures · Example configuration, yours to customize') }}</p>
@@ -128,9 +129,37 @@ const faqs = computed(() => [
     <div class="fm-principles fm-wrap"><span>{{ t('原生 macOS 体验', 'Native to macOS') }}</span><span>{{ t('文件在本机处理', 'Files stay on your Mac') }}</span><span>{{ t('无需账号', 'No account needed') }}</span><span>{{ t('菜单按你所需', 'Your menu, your way') }}</span></div>
 
     <section id="quick-actions" class="fm-section fm-wrap fm-everyday" aria-labelledby="quick-actions-title">
-      <div class="fm-section-heading">
-        <div><p class="fm-eyebrow">{{ t('常用操作，更顺手', 'LESS FRICTION, EVERY DAY') }}</p><h2 id="quick-actions-title">{{ t('少一次往返。', 'Fewer detours.') }}<br><em>{{ t('多一点专注。', 'More focus.') }}</em></h2></div>
-        <p>{{ t('从呼出操作到保存文件，让常用步骤更直接。已有模板与设置继续保留，新能力按需开启。', 'From finding an action to saving a file, keep everyday steps direct. Retain your templates and settings, and enable new tools as needed.') }}</p>
+      <span id="quick-search" class="fm-anchor" />
+      <div class="fm-shortcut-showcase">
+        <div class="fm-shortcut-intro">
+          <div class="fm-shortcut-copy">
+            <p class="fm-eyebrow">{{ t('全局快捷键 / 快捷搜索', 'GLOBAL SHORTCUT / QUICK SEARCH') }}</p>
+            <h2 id="quick-actions-title">{{ t('手不离键盘，', 'Keep your flow.') }}<br><em>{{ t('思路不必打断。', 'Call up your tools.') }}</em></h2>
+            <p class="fm-shortcut-description">{{ t('写到一半，想到就做。FileMint 运行时，从其他应用按下快捷键，搜索操作、模板、常用位置与设置，接着完成手头的事。', 'An idea should not mean a detour. While FileMint is running, call up Quick Search from another app. Find an action, template, favorite or setting, and carry on.') }}</p>
+            <a class="fm-text-link" :href="quickSearchGuide">{{ t('了解快捷搜索', 'Explore Quick Search') }} <span aria-hidden="true">↗</span></a>
+          </div>
+          <div class="fm-shortcut-visual">
+            <p class="fm-shortcut-visual-label">{{ t('从你正在工作的应用，即刻呼出', 'RIGHT FROM THE APP YOU ARE IN') }}</p>
+            <div class="fm-shortcut-combination" role="img" aria-label="Control + Option + K">
+              <kbd><span>⌃</span><small>control</small></kbd>
+              <kbd><span>⌥</span><small>option</small></kbd>
+              <kbd class="fm-shortcut-key-main"><span>K</span></kbd>
+            </div>
+            <p class="fm-shortcut-default">{{ t('默认组合 · 也可以换成你习惯的快捷键', 'THE DEFAULT COMBINATION. MAKE IT YOURS.') }}</p>
+            <div class="fm-shortcut-navigation">
+              <span><kbd>↑</kbd><kbd>↓</kbd> {{ t('选择', 'Select') }}</span>
+              <span><kbd>↵</kbd> {{ t('执行', 'Run') }}</span>
+              <span><kbd>esc</kbd> {{ t('关闭', 'Close') }}</span>
+            </div>
+          </div>
+        </div>
+        <ul class="fm-search-scopes">
+          <li v-for="(scope, index) in searchScopes" :key="index"><span class="fm-search-scope-number" aria-hidden="true">0{{ index + 1 }}</span><h3>{{ scope.title }}</h3><p>{{ scope.body }}</p></li>
+        </ul>
+      </div>
+      <div class="fm-shortcut-setup">
+        <p><strong>{{ t('由你选择，按需开启。', 'Your shortcut. Your choice.') }}</strong><span>{{ t('在「通用 → 快捷搜索」启用；组合可自行录制。', 'Enable it in General → Quick Search. Choose your own keys if you prefer.') }}</span></p>
+        <p class="fm-shortcut-conditions">{{ t('默认关闭 · 需 FileMint 运行', 'Off by default · FileMint must be running') }}<span>{{ t('无需辅助功能或输入监控权限', 'No Accessibility or Input Monitoring permission needed') }}</span></p>
       </div>
       <div class="fm-everyday-grid">
         <article v-for="action in everydayActions" :key="action.id" class="fm-everyday-card" :aria-labelledby="`everyday-${action.id}`">

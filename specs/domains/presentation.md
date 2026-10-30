@@ -263,11 +263,15 @@ owns the rules, supported storage, counts, explicit actions and recovery behavio
 ## Product presentation
 
 - The bilingual website uses a workflow-led landing page: a real product capture,
-  selectable creation/image/app scenarios, a compact capability overview, local
+  selectable creation/image/app/Quick Search scenarios, a compact capability overview, local
   processing facts, installation FAQ and a clear download action. Keep the mint
   identity, readable mobile layouts, keyboard controls and reduced-motion support.
   Guides and privacy pages describe capabilities without stale release banners;
   historical compatibility and updater exceptions retain their actual versions.
+  The Quick Search scenario shows a real matching-language panel capture, names
+  the optional Control-Option-K shortcut and links to the usage guide. Preserve
+  accessible tab selection, arrow/Home/End navigation and screenshot enlargement
+  across all four scenarios, with readable labels at narrow widths.
 - Give Batch Rename and File Info/checksums a prominent bilingual homepage
   showcase with real, matching-language captures and direct usage-guide links.
   Explain preview-before-commit, protected extensions, conflict blocking and
@@ -280,6 +284,13 @@ owns the rules, supported storage, counts, explicit actions and recovery behavio
   native interactions. Give each workflow a clear bilingual guide link and
   state its actual defaults and limits. Keep the current-release label dynamic;
   do not turn the homepage into a hard-coded release banner or simulated app UI.
+- Promote Quick Search in the hero and navigation, with a dedicated bilingual
+  showcase immediately after the hero. Use typographic Control-Option-K keycaps
+  and the four actual search categories: creation actions, enabled templates,
+  saved favorites and settings. Explain that the global shortcut starts off,
+  can be customized and works while FileMint is running. Keycaps illustrate the
+  shortcut; do not simulate a working native search panel or imply whole-disk
+  search, inferred Finder targets or additional launcher integrations.
 - Current-release labels come from the public GitHub `releases/latest` endpoint
   for FileMintApp/FileMint at page load, never from project.yml, README release
   includes or a hard-coded version. Accept only published, non-draft,

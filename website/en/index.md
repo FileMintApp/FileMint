@@ -1,8 +1,8 @@
 ---
 layout: home
 titleTemplate: false
-title: FileMint — macOS Finder Extension for New Files & Batch Rename
-description: Create new files from the Finder context menu, batch rename, verify SHA-256 checksums, compress images and run OCR locally. Native macOS app; free for non-commercial use.
+title: FileMint — Global Quick Search & Finder File Tools for Mac
+description: A global shortcut for creation actions, enabled templates, favorites and settings. Create files in Finder, batch rename, verify checksums, process images and run OCR locally. Free for non-commercial use.
 ---
 
 <LandingPage lang="en">

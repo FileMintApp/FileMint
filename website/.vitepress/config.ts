@@ -89,6 +89,7 @@ export default defineConfig({
       themeConfig: {
         outline: { level: 'deep', label: '本页目录' },
         nav: [
+          { text: '快捷搜索', link: '/#quick-search' },
           { text: '功能', link: '/#features' },
           { text: '设计理念', link: '/#privacy' },
           { text: '使用指南', link: '/guide' },
@@ -109,6 +110,7 @@ export default defineConfig({
       description: 'Native macOS Finder extension for right-click file creation, reusable templates, batch rename, SHA-256 checksums, image compression and OCR.',
       themeConfig: {
         nav: [
+          { text: 'Quick Search', link: '/en/#quick-search' },
           { text: 'Features', link: '/en/#features' },
           { text: 'Our approach', link: '/en/#privacy' },
           { text: 'User Guide', link: '/en/guide' },
