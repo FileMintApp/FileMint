@@ -8,7 +8,7 @@
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>1.0</string>
   <key>CFBundleVersion</key><string>1</string>
-  <key>LSMinimumSystemVersion</key><string>13.0</string>
+  <key>LSMinimumSystemVersion</key><string>$(MACOSX_DEPLOYMENT_TARGET)</string>
   <key>LSUIElement</key><true/>
   <key>NSPrincipalClass</key><string>NSApplication</string>
   <key>FixtureRunID</key><string>$(FILEMINT_FIXTURE_RUN_ID)</string>

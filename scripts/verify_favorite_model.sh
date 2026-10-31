@@ -12,6 +12,6 @@ else
   CORE_LINK=(-I "$CORE_BUILD/Modules" "$CORE_BUILD"/FileMintCore.build/*.o)
 fi
 swiftc -swift-version 6 -parse-as-library \
-  App/FileMint/FavoriteLocationsModel.swift scripts/favorite_model_smoke.swift \
+  App/FileMint/FavoriteLocationsModel.swift SharedUI/ExternalDraftPresentation.swift scripts/favorite_model_smoke.swift \
   "${CORE_LINK[@]}" -o "$work/smoke"
 "$work/smoke"

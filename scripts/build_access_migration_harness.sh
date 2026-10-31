@@ -14,12 +14,12 @@ if [[ -f "$ACCESS_QA_CORE/libFileMintCore.a" ]]; then
 else
   ACCESS_QA_LINK=(-I "$ACCESS_QA_CORE/Modules" "$ACCESS_QA_CORE"/FileMintCore.build/*.o)
 fi
-swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.0 \
+swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.3 \
   scripts/access_migration_support.swift scripts/access_migration_smoke.swift \
-  App/FileMint/OpenWithFolderAccess.swift SharedUI/FolderAccess.swift \
+  App/FileMint/OpenWithFolderAccess.swift SharedUI/FolderAccess.swift SharedUI/ExternalDraftPresentation.swift \
   "${ACCESS_QA_LINK[@]}" -F "$ACCESS_QA_SPARKLE" -framework Sparkle \
   -Xlinker -rpath -Xlinker @executable_path/../Frameworks -o "$ACCESS_QA_RUN/FileMintAccessQA"
-swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.0 -module-name AccessFinderSync \
+swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.3 -module-name AccessFinderSync \
   -Xlinker -e -Xlinker _NSExtensionMain \
   scripts/access_migration_support.swift scripts/access_migration_finder.swift \
   "${ACCESS_QA_LINK[@]}" -framework FinderSync -o "$ACCESS_QA_RUN/AccessFinderSync"

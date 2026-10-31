@@ -9,7 +9,7 @@ import SwiftUI
 final class PreferencesModel: ObservableObject {
     static let shared = PreferencesModel()
     enum Pane: String, CaseIterable, Identifiable {
-        case fileTypes, creation, fileTools, resourceTools, openWith, favoriteLocations, general, folders, about
+        case fileTypes, creation, fileTools, resourceTools, openWith, favoriteLocations, general, integrations, folders, about
         var id: String { rawValue }
     }
     @Published var selectedPane: Pane = .general
@@ -41,6 +41,9 @@ final class PreferencesModel: ObservableObject {
     @Published var isValidatingPackage = false
     private var packageValidationTask: Task<Void, Never>?
     @Published var isMutatingTemplates = false
+    @Published private(set) var isStartupReady = false
+    lazy var externalInvocations = ExternalInvocationCoordinator(model: self)
+    var integrationsState: IntegrationsModel?
     var templateRecoveryError: String?
     var templateMutationAllowed: Bool { !isMutatingTemplates && templateRecoveryError == nil }
 
@@ -96,7 +99,8 @@ final class PreferencesModel: ObservableObject {
     }
 
     init(store: FileMintPreferencesStore = FileMintPreferencesStore(), documentTemplates: DocumentTemplateStore = DocumentTemplateStore(),
-         quickCreationTickets: QuickCreationTicketStore = QuickCreationTicketStore()) {
+         quickCreationTickets: QuickCreationTicketStore = QuickCreationTicketStore(),
+         startupPreparation: (@MainActor () async -> Void)? = nil) {
         self.store = store
         self.quickCreationTickets = quickCreationTickets
         self.documentTemplates = documentTemplates
@@ -113,7 +117,7 @@ final class PreferencesModel: ObservableObject {
         folderAccess.restore(preferences)
         refreshStatus()
         templateRecoveryError = workflowText(.recoveryNeeded)
-        Task { await recoverTemplateTransactions() }
+        Task { await recoverTemplateTransactions(); await startupPreparation?(); isStartupReady = true }
         preferenceObserver = DistributedNotificationCenter.default().addObserver(
             forName: Notification.Name(FileMintAppGroup.preferencesDidChangeNotification), object: nil, queue: .main
         ) { [weak self] _ in
@@ -531,13 +535,13 @@ final class PreferencesModel: ObservableObject {
     }
 
     func newFile(templateID: String? = nil) {
-        if CustomFileSavePanelController.shared.focusExistingPanel() || isPreparingCreation { return }
+        if CustomFileSavePanelController.shared.focusExistingPanel() || isPreparingCreation || externalInvocations.pendingRequestCount > 0 || !launcherWork.isEmpty { return }
         guard validateCreationTemplate(templateID) else { return }
         CustomFileSavePanelController.shared.present(in: initialCreationDirectory, preferences: committedPreferences,
             templateID: templateID, documentTemplates: documentTemplates)
     }
 
-    private var initialCreationDirectory: URL {
+    var initialCreationDirectory: URL {
         committedPreferences.monitoredFolderURLs.first ?? DefaultFolders.resolvedUserHomeDirectory(fileManager: .default)
     }
 
@@ -586,7 +590,19 @@ final class PreferencesModel: ObservableObject {
     }
 
     private var pendingCreationWork = 0
-    var pendingCreationCount: Int { pendingCreationWork + postCreationExecutor.activeCount + (hasTemplateModalWork ? 1 : 0) }
+    private var launcherWork: Set<UUID> = []
+    func beginLauncherWork() -> UUID { let id = UUID(); launcherWork.insert(id); return id }
+    func endLauncherWork(_ id: UUID) { launcherWork.remove(id) }
+    var pendingCreationCount: Int {
+        pendingCreationWork + postCreationExecutor.activeCount + (hasTemplateModalWork ? 1 : 0)
+            + externalInvocations.pendingRequestCount + ExternalDraftDirectoryAccess.pendingOperationCount
+            + launcherWork.count
+    }
+    var hasIndependentCreationWork: Bool {
+        isPreparingCreation || pendingCreationWork > 0 || postCreationExecutor.activeCount > 0
+            || hasTemplateModalWork || ExternalDraftDirectoryAccess.pendingOperationCount > 0
+            || !launcherWork.isEmpty
+    }
     private var isPreparingCreation = false
 
     func newFileFromClipboard() {
@@ -594,7 +610,8 @@ final class PreferencesModel: ObservableObject {
     }
 
     func presentClipboardText(in directory: URL?, pasteboard: NSPasteboard = .general) {
-        guard !CustomFileSavePanelController.shared.focusExistingPanel(), !isPreparingCreation else { return }
+        guard !CustomFileSavePanelController.shared.focusExistingPanel(), !isPreparingCreation,
+              externalInvocations.pendingRequestCount == 0, launcherWork.isEmpty else { return }
         isPreparingCreation = true
         pendingCreationWork += 1
         defer { isPreparingCreation = false; pendingCreationWork -= 1 }
@@ -620,13 +637,15 @@ final class PreferencesModel: ObservableObject {
     }
 
     func pasteImageFile() {
-        guard !isPreparingCreation, !CustomFileSavePanelController.shared.focusExistingPanel() else { return }
+        guard !isPreparingCreation, !CustomFileSavePanelController.shared.focusExistingPanel(),
+              externalInvocations.pendingRequestCount == 0, launcherWork.isEmpty else { return }
         let directory = initialCreationDirectory
         Task { await presentClipboardImage(in: directory) }
     }
 
     func presentClipboardImage(in directory: URL, pasteboard: NSPasteboard = .general) async {
-        guard !isPreparingCreation, !CustomFileSavePanelController.shared.focusExistingPanel() else { return }
+        guard !isPreparingCreation, !CustomFileSavePanelController.shared.focusExistingPanel(),
+              externalInvocations.pendingRequestCount == 0, launcherWork.isEmpty else { return }
         isPreparingCreation = true
         pendingCreationWork += 1
         defer { isPreparingCreation = false; pendingCreationWork -= 1 }
@@ -659,11 +678,16 @@ final class PreferencesModel: ObservableObject {
     }
 
     func handle(url: URL) {
+        if url.scheme == "filemint", url.host == "draft" || url.host == "search" {
+            externalInvocations.receive(url)
+            return
+        }
         if url.scheme == "filemint", url.host == "move" || url.host == "rename" || url.host == "file-info" || url.host == "copy-contents" {
             FileOperationCoordinator.shared.enqueue(url)
             return
         }
         if let directory = CreationRoute.directory(from: url) {
+            guard externalInvocations.pendingRequestCount == 0, launcherWork.isEmpty else { return }
             CustomFileSavePanelController.shared.present(in: directory, preferences: preferences,
                                                           templateID: CreationRoute.templateID(from: url), documentTemplates: documentTemplates)
             return
@@ -679,6 +703,10 @@ final class PreferencesModel: ObservableObject {
                     try tickets.consume(url, preferences: snapshot)
                 }.value
                 guard let ticket, let intent = ticket.resolvedIntent else { return }
+                // Consume the private ticket before rejecting concurrent work;
+                // it must not replay after a launcher reservation ends.
+                guard externalInvocations.pendingRequestCount == 0, launcherWork.isEmpty,
+                      CustomFileSavePanelController.shared.externalWindow == nil else { return }
                 let originalFollowUp = CreationFollowUp(template: snapshot.templates.first { $0.id == ticket.templateID }, preferences: snapshot, gate: originalGate)
                 let access = FolderScope.directoryAccess(ticket.directory, in: preferences.monitoredFolderURLs)
                 guard access != .outsideScope else { return }

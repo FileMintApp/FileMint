@@ -16,6 +16,19 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
     private var operationIsBusy = false
     private var immediateIntakes = 0
     var isBusy: Bool { operationIsBusy || immediateIntakes > 0 }
+    /// Use the existing serialized operation guard while preparing an external
+    /// panel. Queued one-use tickets keep their normal consumption/order rules.
+    func reserveExternalPresentation() -> (@MainActor () -> Void)? {
+        guard !isBusy, queue.isEmpty else { return nil }
+        operationIsBusy = true
+        var released = false
+        return { [weak self] in
+            guard let self, !released else { return }
+            released = true
+            self.operationIsBusy = false
+            self.consumeQueue()
+        }
+    }
     private(set) lazy var fileInfoController = FileInfoController(preferencesFile: preferencesFile,
         acquire: { [weak self] in
             guard let self, !self.isBusy, self.queue.isEmpty else { return false }

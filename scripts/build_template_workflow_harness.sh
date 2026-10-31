@@ -32,12 +32,12 @@ source scripts/image_compression_link.sh
 TEMPLATE_LINK+=("${FILEMINT_COMPRESSION_LINK[@]}")
 filemint_embed_compression "$TEMPLATE_APP"
 filemint_embed_compression "$TEMPLATE_RECEIVER"
-swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.0 -D TEMPLATE_RECEIVER scripts/template_workflow_smoke.swift "${TEMPLATE_LINK[@]}" -o "$TEMPLATE_RECEIVER/Contents/MacOS/TemplateReceiver"
+swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.3 -D TEMPLATE_RECEIVER scripts/template_workflow_smoke.swift "${TEMPLATE_LINK[@]}" -o "$TEMPLATE_RECEIVER/Contents/MacOS/TemplateReceiver"
 codesign --force --sign - --timestamp=none "$TEMPLATE_RECEIVER"
 TEMPLATE_SOURCES=()
 while IFS= read -r TEMPLATE_SOURCE; do TEMPLATE_SOURCES+=("$TEMPLATE_SOURCE"); done < <(rg --files App/FileMint SharedUI | rg '\.swift$' | rg -v '/(FileMintApp|AppDelegate)\.swift$')
 TEMPLATE_SPARKLE="$PWD/build/SourcePackages/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64"
-swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.0 "${TEMPLATE_SOURCES[@]}" FinderSyncExtension/FileMintFinderSync/FinderIntegrationStatus.swift scripts/template_workflow_smoke.swift scripts/creation_opening_checks.swift scripts/quick_search_checks.swift scripts/file_visibility_checks.swift "${TEMPLATE_LINK[@]}" -F "$TEMPLATE_SPARKLE" -framework Sparkle -Xlinker -rpath -Xlinker "$TEMPLATE_SPARKLE" -o "$TEMPLATE_APP/Contents/MacOS/TemplateWorkflowSmoke"
+swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.3 "${TEMPLATE_SOURCES[@]}" FinderSyncExtension/FileMintFinderSync/FinderIntegrationStatus.swift scripts/template_workflow_smoke.swift scripts/creation_opening_checks.swift scripts/quick_search_checks.swift scripts/file_visibility_checks.swift "${TEMPLATE_LINK[@]}" -F "$TEMPLATE_SPARKLE" -framework Sparkle -Xlinker -rpath -Xlinker "$TEMPLATE_SPARKLE" -o "$TEMPLATE_APP/Contents/MacOS/TemplateWorkflowSmoke"
 codesign --force --sign - --timestamp=none --entitlements "$TEMPLATE_RUN/entitlements.plist" "$TEMPLATE_APP"
 codesign --verify --strict "$TEMPLATE_APP"
 python3 scripts/native_qa.py publish template-workflow "$TEMPLATE_APP" "$TEMPLATE_RUN"

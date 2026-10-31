@@ -1,14 +1,14 @@
 name: FileMintLauncherIntegrationQA
 options:
   deploymentTarget:
-    macOS: "13.0"
+    macOS: "13.3"
   createIntermediateGroups: true
 settings:
   base:
     SWIFT_VERSION: "6.0"
     ARCHS: arm64
     ONLY_ACTIVE_ARCH: NO
-    MACOSX_DEPLOYMENT_TARGET: "13.0"
+    MACOSX_DEPLOYMENT_TARGET: "13.3"
     CODE_SIGNING_ALLOWED: NO
     CODE_SIGNING_REQUIRED: NO
     ENABLE_APP_SANDBOX: YES

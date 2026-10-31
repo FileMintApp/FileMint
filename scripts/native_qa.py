@@ -29,6 +29,7 @@ KINDS = {
     "access-migration": ("FileMintAccessQA.app", "io.github.daigua.filemint.access-qa", ("io.github.daigua.filemint.access-qa.finder",)),
     "hotkey-sandbox": ("FileMintHotKeyQA.app", "io.github.daigua.filemint.hotkey-qa", ("io.github.daigua.filemint.hotkey-peer",)),
     "launcher-integration": ("FileMintLauncherIntegrationQA.app", "io.github.daigua.filemint.launcher-integration-qa", ()),
+    "launcher-product": ("FileMintLauncherProductQA.app", "io.github.daigua.filemint.launcher-product-qa", ()),
 }
 
 
@@ -56,7 +57,7 @@ def app_path(kind):
 
 def assert_stopped(kind):
     identifiers = (KINDS[kind][1], *KINDS[kind][2])
-    active = json.loads(command(["xcrun", "swift", "-target", "arm64-apple-macos13.0",
+    active = json.loads(command(["xcrun", "swift", "-target", "arm64-apple-macos13.3",
                                  ROOT / "scripts/native_qa_running.swift", *identifiers]))
     if not isinstance(active, list) or active:
         raise QAError("Close this QA app and its receiver before rebuilding; running fixtures are never replaced")

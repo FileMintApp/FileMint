@@ -32,10 +32,10 @@ fi
 source scripts/image_compression_link.sh
 BATCH_RENAME_LINK+=("${FILEMINT_COMPRESSION_LINK[@]}")
 filemint_embed_compression "$BATCH_RENAME_APP"
-swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.0 \
+swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.3 \
   App/FileMint/DesignSystem.swift App/FileMint/ResourceToolsController.swift App/FileMint/ResourceToolsView.swift \
   App/FileMint/MenuIconControl.swift App/FileMint/SystemSymbolCatalog.swift scripts/native_qa_preferences.swift \
-  App/FileMint/PlainTextEditor.swift SharedUI/CustomFileSavePanelController.swift SharedUI/FolderAccess.swift \
+  App/FileMint/PlainTextEditor.swift SharedUI/CustomFileSavePanelController.swift SharedUI/FolderAccess.swift SharedUI/ExternalDraftPresentation.swift \
   SharedUI/FileToolAppearance.swift App/FileMint/FavoriteLocationsModel.swift \
   App/FileMint/FavoriteQuickPanelController.swift App/FileMint/FavoriteFeedbackController.swift \
   App/FileMint/ClipboardTextReader.swift App/FileMint/OpenWithApplicationAccess.swift App/FileMint/OpenWithFolderAccess.swift \

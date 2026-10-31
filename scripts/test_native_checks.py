@@ -23,6 +23,13 @@ class SelectionTests(unittest.TestCase):
         self.assertEqual([item['id'] for item in plan['manualChecks']], ['launcher-integration'])
         self.assertEqual(plan['requiresReview'], [])
 
+    def test_product_launcher_fixture_has_its_own_real_entry_boundary(self):
+        plan = checks.plan_checks(['scripts/launcher_product/FixtureApp.swift',
+                                  'scripts/build_launcher_product_harness.sh'])
+        self.assertEqual(plan['suites'], [])
+        self.assertEqual([item['id'] for item in plan['manualChecks']], ['launcher-product'])
+        self.assertEqual(plan['requiresReview'], [])
+
     def test_visibility_uses_existing_sandbox_identity_and_keeps_finder_boundary(self):
         plan = checks.plan_checks(['CorePackage/Sources/FileMintCore/FileVisibility.swift'])
         self.assertCountEqual(plan['suites'], ['file-visibility', 'file-tools-settings'])

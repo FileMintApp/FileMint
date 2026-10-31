@@ -63,6 +63,7 @@ MANUAL = {
     "favorite-search": "Quick-search keyboard/selection behavior needs the affected native interaction check.",
     "global-hotkey": "Real cross-application keys, IME, modal focus and fullscreen/display behavior need the isolated hotkey fixture.",
     "launcher-integration": "P0 needs the signed launcher fixture with real Shortcuts/launchers, URL delivery and directory scope; record unavailable tool/OS environments as blocked.",
+    "launcher-product": "Production launcher entry points need the isolated signed product fixture and real Shortcuts/Raycast delivery; parser/UI injection alone is not system acceptance.",
 }
 
 # Shared-file rules are conservative; --suite is the reviewed behavior-based override.
@@ -73,6 +74,9 @@ RULES = (
     (("App/FileMint/QuickSearch*.swift", "scripts/quick_search_checks.swift", "CorePackage/Sources/FileMintCore/QuickSearch.swift"), ("quick-search",), ("favorite-search",)),
     (("scripts/hotkey_sandbox/*", "scripts/build_hotkey_sandbox_harness.sh"), ("hotkey-sandbox",), ("global-hotkey",)),
     (("scripts/launcher_integration/*", "scripts/build_launcher_integration_harness.sh"), (), ("launcher-integration",)),
+    (("scripts/launcher_product/*", "scripts/build_launcher_product_harness.sh", "App/FileMint/Intents/*",
+      "App/FileMint/ExternalInvocationCoordinator.swift", "App/FileMint/IntegrationsModel.swift",
+      "App/FileMint/IntegrationsPane.swift", "SharedUI/ExternalDraftPresentation.swift"), (), ("launcher-product",)),
     (("scripts/native_checks.py", "scripts/test_native_checks.py", "scripts/native_qa.py", "scripts/test_native_qa.py",
       "scripts/native_qa_running.swift", "scripts/native_qa_preferences.swift", "scripts/image_compression_link.sh", "Makefile"), ALL, ()),
     (("scripts/batch_rename_smoke.swift", "scripts/build_batch_rename_harness.sh", "App/FileMint/BatchRename*.swift"), ("batch-rename",), ()),

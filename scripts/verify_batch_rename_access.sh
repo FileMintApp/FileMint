@@ -11,7 +11,7 @@ if [[ -f "$RENAME_ACCESS_BUILD/libFileMintCore.a" ]]; then
 else
   RENAME_ACCESS_LINK=(-I "$RENAME_ACCESS_BUILD/Modules" "$RENAME_ACCESS_BUILD"/FileMintCore.build/*.o)
 fi
-swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.0 \
+swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.3 \
   scripts/batch_rename_access_smoke.swift "${RENAME_ACCESS_LINK[@]}" -o "$RENAME_ACCESS_WORK/smoke"
 "$RENAME_ACCESS_WORK/smoke" setup "$RENAME_ACCESS_WORK"
 python3 - "$RENAME_ACCESS_WORK" <<'PY'

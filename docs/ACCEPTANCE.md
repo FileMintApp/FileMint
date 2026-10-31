@@ -3,6 +3,164 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Shortcuts and launchers product — covered local checks, 2026-10-31
+
+Resumed the explicitly paused task in the primary checkout at `f4eaa61` plus the
+uncommitted integration work. Production App/SharedUI/Core sources are identical
+across yesterday's final `run.GprAyE` and today's final `run.y5O1nO`; frozen
+manifests differ only in the product QA fixture. Earlier real Raycast/daily-workflow
+results retain their original build attribution.
+
+Passed on arm64 macOS 27.2 / Xcode 27.1: final offline verification (402 Core tests,
+23 image tests, public Harness 5/5 and script/subprocess checks), unsigned main-app
+and Finder compilation, arm64/minimum-13.3 artifact metadata and production Intents
+metadata. Five affected native suites passed across two rounds: template-workflow
+in `run.vn5g3lgk` before that round correctly stopped for changed source, then
+creation-opening, design-ui, favorite-model and quick-search together in
+`run.9g1vqbzn`. This is not one new fourteen-suite pass.
+
+Real Shortcuts in `run.B5nrJA` created an independent 32,025-byte Word document
+identical to the bundled original. Manual draft name/body and native undo/redo
+survived a rejected second request. Replacing the admitted directory object
+blocked publication without changing either original or replacement; cancelling
+reselection preserved the draft, and explicit reselection plus a second Create
+produced the correct Markdown while preserving the Office original.
+
+`run.h4wOH4` again received a real upstream text variable and created its exact
+72 UTF-8 bytes after settings closed. Tab focus traversed the draft controls.
+A separate test entered actual Shortcuts fullscreen through its menu, opened a
+visible/key/active draft, typed a name, cancelled without writing and restored the
+ordinary window. Final `run.y5O1nO` passed 12 native mappings plus 3 active missing
+fields, 5 generator validation cases, and saved language/appearance changes used
+by real native drafts. Pending workers were zero and normal exit was confirmed.
+
+Fixed only QA defects: transparent PNG copy now composites source-over onto an
+opaque background, and fixture language/appearance controls now save through the
+production paths. Six native content-view exports were visually checked; five
+main assets also passed sampled opacity checks. These exports are not continuous
+screen recordings or proof of every minimum-size/display combination.
+
+Full acceptance remains incomplete. macOS 13.3 runtime and the user-deferred
+three-person onboarding/understanding study remain pending. Actual IME and
+VoiceOver feedback could not be observed reliably through CUA despite explicit
+temporary-setting authorization; VoiceOver was restored from on to its original
+off state, its utility exited, and input-method lists/shortcuts were unchanged.
+One name anomaly after input-source key probes did not recur through explicit Run
+and a subsequent Command-R; marked-text handoff still needs controlled observation.
+The system recording component could not launch, so no continuous bilingual video
+is claimed. An additional Chrome custom-scheme recheck was rejected by the browser
+protocol policy, without a workaround. Remaining matrix gaps are explicit in the
+[current task](tasks/2026-10-29-shortcuts-and-launchers.md#2026-10-31-本机技术复核与剩余边界).
+
+Local evidence: `build/launcher-integration-verification.noindex/2026-10-31/`, with
+`acceptance-report.json` explicitly setting `fullAcceptanceComplete=false`.
+No commit, push, release, tap publication or remote Actions inspection occurred.
+
+## Shortcuts and launchers product — paused handoff, 2026-10-30
+
+The user requested a pause before leaving work and will resume acceptance tomorrow.
+The primary checkout remains uncommitted at `f4eaa61` plus the integration changes;
+no push, release or tap publication occurred. Product code now includes native
+Intents, shared typed admission/parser/writer, settings/generator/preview and
+Raycast export. This is no longer a P0-only implementation.
+
+On arm64 macOS 27.2 / Xcode 27.1 / Shortcuts 10.0 / Raycast 2.10.1.0, actual product
+fixture `run.GprAyE` completed three differently named notes through each real
+tool, including a genuinely exited/cold launch for each. Only a name was entered;
+saved folder access, template and content were reused. Six files matched their
+expected Markdown bytes. A two-action Shortcuts workflow passed its upstream
+Text variable without another filename/body entry; the saved bytes preserved
+spaces, LF, Chinese, emoji and literal tokens. Switching retained native text to
+Empty Content produced a zero-byte file while preserving the original. Cancelling
+replacement preserved the original and draft. Word plus external text was
+correctly rejected; normal Office creation remains pending.
+
+Earlier product snapshots separately passed temporary native folder access after
+Intent return, search refocus/query preservation, real busy/modal rejection,
+cancellation without late presentation, generator preview/configuration/focus
+restoration, nonmodal export guidance, actual Raycast discovery and existing-draft
+preservation. These observations retain their own run IDs in the task record.
+
+The last full offline run passed 402 Core tests, 23 image tests, the public harness
+and scripts. All 14 automatic native suites have passing evidence across reviewed
+runs: 11 in `run.2dz2ayyy`, favorite-model/hotkey in `run.f7fub847`, and the original
+strict quick-search checks in unlocked `run.0p1ss_qv`. Hotkey tests required a normal
+temporary exit of the installed FileMint, which was subsequently restored with
+its preferences unchanged. Locked-desktop focus failures are not product failures;
+unconfirmed activation/fixture changes were reverted. Actual Homebrew parsing,
+style and the version-only minimum gate passed six simulated version boundaries.
+Simulation and a 13.3 deployment target do not prove macOS 13.3 runtime.
+
+Two final QA-only corrections remain unbuilt: normalize the mapping fixture's
+`/private/tmp` expectation to Foundation's `/tmp`, and render screenshots over the
+actual window background. The prior mapping aggregate false and transparent PNG
+are not passing evidence. Rebuild the product fixture and current unsigned app
+before final sign-off. Remaining native interaction/appearance boundaries and
+media are listed in the [current handoff](tasks/2026-10-29-shortcuts-and-launchers.md#handoff).
+macOS 13.3 runtime remains blocked; three novice-user onboarding/first-glance tests
+are explicitly deferred by the user, not passed. The QA app was closed normally.
+Local evidence is under `build/launcher-integration-verification.noindex/2026-10-30/`,
+especially `product-created-files-run.GprAyE.json`, `product-daily-*.jsonl`,
+`product-pause-run.GprAyE.jsonl` and `product-make-verify-final.log`.
+
+## Shortcuts and launchers P0 — current-host boundary checks, 2026-10-30
+
+After manual unlock, final Developer ID sandbox build `run.JCKtYr` passed the
+available P0 boundaries on arm64 macOS 27.2 / Xcode 27.1 / Shortcuts 10.0 /
+Raycast 2.10.1.0. A public Apple-event activation marker separates an explicit
+Finder cold launch from an Intent background host launch; the ordinary window
+now appears before any observation-tool reopen. Cold draft/search/URL calls do
+not open it. Native outcomes were coupled to visible, key, text-focused windows.
+
+The same build passed selected-directory identity, post-return sentinel creation
+and cleanup, picker cancellation, scope release, edited-draft preservation and
+search shown/refocus/busy. Real Shortcuts cancellation produced no later outcome
+over 118.893 seconds. All 30 URL cases arrived once with only the same four
+upstream normalization classes. Real Raycast cold/repeat calls preserved Chinese,
+reserved characters and existing edits. The final probe source snapshot and
+actual sandbox entitlements were verified, `make verify` passed, and QA quit
+normally. Source baseline remains `f4eaa61` plus the snapshot-bound probe changes.
+
+This closes the current-host P0 startup failure. It does not establish macOS 13.3
+runtime, a latency distribution, real IME/Spaces/fullscreen/multidisplay product
+behavior, product integration or first-user acceptance. Core P1 subsequently
+added typed request/parser/admission rules with 15 focused scenarios and real
+file preservation checks; native product adapters and P3/P4 remain in progress.
+See the [current task](tasks/2026-10-29-shortcuts-and-launchers.md#2026-10-30-解锁后的-p0-收敛与-p1)
+and its `acceptance-report.json`, `p0-final-*.jsonl`, `make-verify-final.log`
+and `p1-core-tests.log` evidence under
+`build/launcher-integration-verification.noindex/2026-10-30/`.
+
+## Shortcuts and launchers P0 — partial before unlock, 2026-10-30
+
+Primary `f4eaa61` plus isolated probe changes was exercised on arm64 macOS 27.2 /
+Xcode 27.1 and Shortcuts 10.0. `run.UoD2Ah` reproduced a blocked legacy foreground
+continuation: no search outcome after 34.377 seconds, then explicit cancellation.
+`run.zujClS` uses ForegroundContinuableIntent with `openAppWhenRun=false` and native
+AppKit presentation. Real cold search, warm refocus, modal busy, delayed-request
+cancellation, multiline Chinese/special-character delivery and edited-draft
+preservation passed. Request-to-interactive search was 0.231 seconds; this is not
+end-to-end caller latency. No ordinary control window opened in that Intent run.
+
+The original selected directory identity independently matched on the host and
+in the sandbox (device/inode). An explicit sentinel was created and removed after
+the Intent returned, the fixture directory stayed empty, and draft cancellation
+released its scope. These close the earlier source-directory identity gap for this
+run, not for production code that has not been implemented.
+
+Ordinary cold launch still failed: an actual Finder double-click left the fixture
+waiting for activation, and only an observation-tool reopen displayed controls.
+The latest signed build `run.UrOuCN` adds public untitled-open callback observations;
+its runtime check was blocked when the Mac locked and Computer Use required a
+manual unlock. The full offline `make verify` passed (381 Core / 23 image tests,
+public Harness 5/5 and script/subprocess checks) before that final logging-only
+addition. Native selection reports the manual launcher boundary as blocked.
+Production minimum remains 13.0; the candidate API floor of 13.3 is not runtime
+evidence for macOS 13.3. P0 and product/experience acceptance remain incomplete.
+See the [current task](tasks/2026-10-29-shortcuts-and-launchers.md#2026-10-30-恢复验收仍未整体通过)
+for source/build identities and evidence under
+`build/launcher-integration-verification.noindex/2026-10-30/`.
+
 ## Shortcuts and launchers P0 — partial, 2026-10-29
 
 Primary `acd6ca7` plus uncommitted isolated QA infrastructure was exercised on

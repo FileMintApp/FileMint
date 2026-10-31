@@ -11,7 +11,7 @@ if [[ -f "$RENAME_CAPTURE_BUILD/libFileMintCore.a" ]]; then
 else
   RENAME_CAPTURE_LINK=(-I "$RENAME_CAPTURE_BUILD/Modules" "$RENAME_CAPTURE_BUILD"/FileMintCore.build/*.o)
 fi
-swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.0 \
+swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.3 \
   scripts/batch_rename_capture_smoke.swift "${RENAME_CAPTURE_LINK[@]}" -o "$RENAME_CAPTURE_WORK/smoke"
 python3 - "$RENAME_CAPTURE_WORK" <<'PY'
 import hashlib, json, os, pathlib, sys

@@ -20,6 +20,7 @@ cask "filemint" do
   depends_on macos: :ventura
 
   app "FileMint.app"
+@MINIMUM_GUARD@
 
   caveats <<~EOS
     Before a Homebrew upgrade, reinstall, adoption or uninstall, save or cancel

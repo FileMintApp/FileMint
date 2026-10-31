@@ -11,13 +11,13 @@ struct LauncherProbeApp: App {
     }
 }
 
-struct ProbeOpenDraftIntent: AppIntent {
+struct ProbeOpenDraftIntent: ForegroundContinuableIntent {
     static let title: LocalizedStringResource = "P0 Open FileMint QA Draft"
     static let description = IntentDescription("Isolated sandbox probe. Use synthetic text and an empty QA folder only. No file is created by this action.")
-    // P0 tests the original foreground entry with the newer window coordinator.
-    // The current host verifies the entry; targeting 13.0 alone does not prove
-    // that system's runtime behavior.
-    static var openAppWhenRun: Bool { true }
+    // Run in the host without pre-opening ordinary UI. AppKit owns presentation
+    // and success requires a visible, active window with keyboard focus.
+    // Runtime evidence remains tied to the host OS, not this deployment target.
+    static var openAppWhenRun: Bool { false }
 
     @Parameter(title: "Synthetic filename", default: "P0 Synthetic.txt",
         inputOptions: .init(capitalizationType: .none, autocorrect: false, smartQuotes: false, smartDashes: false)) var name: String
@@ -39,7 +39,7 @@ struct ProbeOpenDraftIntent: AppIntent {
         controller.beginIntentPresentation(action: "draft")
         defer { controller.endIntentPresentation(action: "draft") }
         try Task.checkCancellation()
-        controller.record("intent-direct-foreground", ["action": "draft", "appActive": NSApp.isActive])
+        controller.record("intent-appkit-foreground", ["action": "draft", "appActive": NSApp.isActive])
         let result = try await controller.openDraft(
             name: name, text: text, directory: folder?.fileURL,
             folderProvided: folder != nil, delay: delay, source: "app-intent")
@@ -50,10 +50,10 @@ struct ProbeOpenDraftIntent: AppIntent {
     }
 }
 
-struct ProbeShowSearchIntent: AppIntent {
+struct ProbeShowSearchIntent: ForegroundContinuableIntent {
     static let title: LocalizedStringResource = "P0 Show FileMint QA Search"
     static let description = IntentDescription("Shows the isolated QA search window, or returns busy when a modal window is active.")
-    static var openAppWhenRun: Bool { true }
+    static var openAppWhenRun: Bool { false }
     @Parameter(title: "Delay before admission (seconds)", default: 0) var delay: Int
 
     @MainActor func perform() async throws -> some IntentResult & ReturnsValue<String> {
@@ -61,7 +61,7 @@ struct ProbeShowSearchIntent: AppIntent {
         controller.beginIntentPresentation(action: "search")
         defer { controller.endIntentPresentation(action: "search") }
         try Task.checkCancellation()
-        controller.record("intent-direct-foreground", ["action": "search", "appActive": NSApp.isActive])
+        controller.record("intent-appkit-foreground", ["action": "search", "appActive": NSApp.isActive])
         let result = try await controller.showSearch(delay: delay, source: "app-intent")
         controller.record("intent-return", ["action": "search", "result": result])
         return .result(value: result)
@@ -101,7 +101,9 @@ final class ProbeDelegate: NSObject, NSApplicationDelegate {
             "defaultLaunch": notification.userInfo?[NSApplication.launchIsDefaultUserInfoKey] as? Bool ?? false])
         ProbeAppShortcuts.updateAppShortcutParameters()
         if notification.userInfo?[NSApplication.launchIsDefaultUserInfoKey] as? Bool == true {
-            ProbeController.shared.requestOrdinaryStartupControl()
+            let activationExpected = NSAppleEventManager.shared().currentAppleEvent?
+                .paramDescriptor(forKeyword: AEKeyword(kAEApplicationActivationExpected))?.booleanValue == true
+            ProbeController.shared.requestOrdinaryStartupControl(activationExpected: activationExpected)
         }
     }
 
@@ -141,6 +143,14 @@ final class ProbeDelegate: NSObject, NSApplicationDelegate {
             "serviceItemParameterPresent": event.paramDescriptor(forKeyword: keyAELaunchedAsServiceItem) != nil]
         metadata["source"] = event.attributeDescriptor(forKeyword: keyEventSourceAttr)?.int32Value
         metadata["senderPID"] = event.attributeDescriptor(forKeyword: keySenderPIDAttr)?.int32Value
+        if let expected = event.paramDescriptor(forKeyword: AEKeyword(kAEApplicationActivationExpected)) {
+            metadata["activationExpected"] = expected.booleanValue
+        }
+        if event.numberOfItems > 0 {
+            metadata["parameterKeywords"] = (1...event.numberOfItems).map {
+                String(format: "%08x", event.keywordForDescriptor(at: $0))
+            }
+        }
         ProbeController.shared.record("launch-event", metadata)
     }
     func applicationShouldOpenUntitledFile(_ sender: NSApplication) -> Bool { false }
@@ -166,8 +176,6 @@ final class ProbeController: NSObject, NSWindowDelegate {
     private var logLines: [String] = []
     private var scopeStatus: NSTextField?
     private var intentPresentations = 0
-    private var pendingOrdinaryStartupControl = false
-    private var initialPresentationClaimedByIntent = false
     private lazy var logURL: URL = {
         let root = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("FileMintLauncherQA", isDirectory: true)
@@ -195,43 +203,28 @@ final class ProbeController: NSObject, NSWindowDelegate {
 
     func beginIntentPresentation(action: String) {
         intentPresentations += 1
-        initialPresentationClaimedByIntent = true
-        if pendingOrdinaryStartupControl {
-            pendingOrdinaryStartupControl = false
-            record("ordinary-startup-cancelled", ["reason": "intent-claimed-presentation"])
-        }
         record("intent-presentation-began", ["action": action, "count": intentPresentations])
     }
     func endIntentPresentation(action: String) {
         intentPresentations -= 1
         record("intent-presentation-ended", ["action": action, "count": intentPresentations])
     }
-    func requestOrdinaryStartupControl() {
-        guard !initialPresentationClaimedByIntent else {
-            record("ordinary-ui-suppressed", ["source": "default-launch", "reason": "intent-claimed-initial-presentation"])
+    func requestOrdinaryStartupControl(activationExpected: Bool) {
+        // An accessory app need not become active until it presents a window.
+        // The default-launch notification is also sent for an Intent's background
+        // host launch. Only the public explicit activation marker requests ordinary
+        // UI; do not guess from sender PIDs or delay until an Intent might arrive.
+        guard activationExpected else {
+            record("ordinary-ui-suppressed", ["source": "default-launch", "reason": "no-explicit-activation"])
             return
         }
-        pendingOrdinaryStartupControl = true
-        record("ordinary-startup-pending", ["active": NSApp.isActive])
-        // A normal explicit launch may have activated before didFinishLaunching.
-        // Otherwise wait for the public activation notification without activating
-        // a background launch ourselves or imposing an arbitrary time delay.
-        if NSApp.isActive { applicationBecameActive() }
+        presentOrdinaryLaunchControl(source: "default-launch-activation-request")
     }
     func applicationBecameActive() {
-        record("application-became-active", ["pendingOrdinaryUI": pendingOrdinaryStartupControl,
-            "intentPresentations": intentPresentations, "active": NSApp.isActive])
-        guard pendingOrdinaryStartupControl else { return }
-        pendingOrdinaryStartupControl = false
-        guard intentPresentations == 0, !initialPresentationClaimedByIntent else {
-            record("ordinary-ui-suppressed", ["source": "activation", "reason": "intent-claimed-initial-presentation"])
-            return
-        }
-        presentOrdinaryLaunchControl(source: "default-launch-activation")
+        record("application-became-active", ["intentPresentations": intentPresentations, "active": NSApp.isActive])
     }
     func presentOrdinaryLaunchControl(source: String) {
         if let foregroundModal = NSApp.modalWindow ?? NSApp.windows.compactMap(\.attachedSheet).first ?? modal {
-            pendingOrdinaryStartupControl = false
             foregroundModal.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             record("focus-modal-on-reopen", ["source": source])
@@ -241,7 +234,6 @@ final class ProbeController: NSObject, NSWindowDelegate {
         // Window-session ownership outlives that stack frame; never retain an
         // unbounded one-shot token that could consume a later ordinary launch.
         if let external = lastExternalWindow ?? search ?? draft {
-            pendingOrdinaryStartupControl = false
             external.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             record("focus-external-on-reopen", ["source": source, "kind": external === draft ? "draft" : "search"])
@@ -251,7 +243,6 @@ final class ProbeController: NSObject, NSWindowDelegate {
             record("ordinary-ui-suppressed", ["source": source, "reason": "active-intent-presentation"])
             return
         }
-        pendingOrdinaryStartupControl = false
         record("ordinary-ui-shown", ["source": source])
         showControl()
     }
@@ -320,7 +311,6 @@ final class ProbeController: NSObject, NSWindowDelegate {
         let window = makeWindow("FileMint P0 Draft — synthetic data only", size: NSSize(width: 620, height: 460))
         draft = window
         lastExternalWindow = window
-        pendingOrdinaryStartupControl = false
         window.delegate = self
         let nameField = NSTextField(string: name)
         nameField.setAccessibilityLabel("Synthetic filename")
@@ -374,7 +364,6 @@ final class ProbeController: NSObject, NSWindowDelegate {
             search = window
         }
         lastExternalWindow = search
-        pendingOrdinaryStartupControl = false
         search?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         guard let search else { throw ProbeError(message: "unavailable: search not visible") }

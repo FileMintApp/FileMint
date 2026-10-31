@@ -73,6 +73,7 @@ All paths below are relative to that stable root.
 | access-migration | FileMintAccessQA.app | io.github.daigua.filemint.access-qa |
 | hotkey-sandbox | FileMintHotKeyQA.app | io.github.daigua.filemint.hotkey-qa |
 | launcher-integration | FileMintLauncherIntegrationQA.app | io.github.daigua.filemint.launcher-integration-qa |
+| launcher-product | FileMintLauncherProductQA.app | io.github.daigua.filemint.launcher-product-qa |
 
 The `launcher-integration` P0 fixture uses only synthetic requests and its own
 container/run ID. It retains App Sandbox and explicit user-selected directory
@@ -92,6 +93,21 @@ application registration is removed on build exit; only the verified, signed
 stable path is then registered. This prevents Shortcuts from cold-launching an
 unsigned staging copy with the same bundle ID. Neither cleanup resets the global
 LaunchServices database or modifies another application's registration.
+
+The separate `launcher-product` fixture compiles the production Intents, Core
+parser/admission/writer, shared draft panel and search controller. It injects
+private preferences/assets/catalog/ticket stores and the real serialized operation
+guard, without loading production stores or registering the production URL scheme.
+Its host folder is a fresh `/private/tmp/FileMint-Launchers-QA.*` fixture, with no
+automatic grant. Choose it explicitly in the fixture/Shortcuts before external
+writes. It freezes app/shared/package sources, resources, artifacts and a SHA-256
+manifest per run. Build with `bash scripts/build_launcher_product_harness.sh`;
+use the printed stable path. The optional 20-second next-startup delay is an
+injected readiness dependency for real Shortcuts cancellation, not a production
+parameter or latency result. QA Controls are available through Command-comma;
+export metadata-only evidence there and quit normally after finishing/cancelling
+drafts. Native caller success, user-confirmed writes and original-file preservation
+need separate observations; a green compile or internal UI call proves less.
 
 The template/opening receivers retain their own stable identifiers and sit inside
 their host's Resources. The update fixture's inert extension remains separate from

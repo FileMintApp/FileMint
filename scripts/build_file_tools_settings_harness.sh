@@ -28,7 +28,7 @@ if [[ -f "$CORE_BUILD/libFileMintCore.a" ]]; then
 else
   CORE_LINK=(-I "$CORE_BUILD/Modules" "$CORE_BUILD"/FileMintCore.build/*.o)
 fi
-swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.0 \
+swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.3 \
   App/FileMint/DesignSystem.swift App/FileMint/FileToolsSettingsView.swift App/FileMint/MenuIconControl.swift \
   App/FileMint/SystemSymbolCatalog.swift \
   SharedUI/FileToolAppearance.swift \

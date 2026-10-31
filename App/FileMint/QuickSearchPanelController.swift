@@ -109,6 +109,40 @@ final class QuickSearchPanelController: NSObject, NSWindowDelegate {
         }
     }
 
+    func showFromExternal(settings: PreferencesModel, favorites: FavoriteLocationsModel) async throws -> ExternalSearchResult {
+        guard NSApp.modalWindow == nil, NSApp.windows.allSatisfy({ $0.attachedSheet == nil }) else { return .busy }
+        try Task.checkCancellation()
+        let previous = panel
+        show(settings: settings, favorites: favorites)
+        guard let owner = panel else { return .unavailable }
+        let shownGeneration = generation
+        func closeNewPresentation() {
+            if previous == nil, panel === owner, generation == shownGeneration,
+               owner.attachedSheet == nil, relatedInteractions == 0 { close() }
+        }
+        let deadline = ContinuousClock.now.advanced(by: .seconds(2))
+        do {
+            while ContinuousClock.now < deadline {
+                try Task.checkCancellation()
+                guard panel === owner, generation == shownGeneration, owner.isVisible else { return .unavailable }
+                if NSApp.modalWindow != nil || NSApp.windows.contains(where: { $0.attachedSheet != nil }) {
+                    closeNewPresentation()
+                    return .busy
+                }
+                if owner.isKeyWindow, let field = searchField, field.window === owner,
+                   let editor = field.currentEditor(), owner.firstResponder === editor {
+                    return previous == nil ? .shown : .alreadyVisible
+                }
+                try await Task.sleep(for: .milliseconds(20))
+            }
+        } catch {
+            closeNewPresentation()
+            throw error
+        }
+        closeNewPresentation()
+        return .unavailable
+    }
+
     func close() { panel?.close() }
     func focusSearch() {
         guard let panel else { return }
@@ -292,6 +326,7 @@ enum QuickSearchSettingsCatalog {
         PreferencesModel.Pane.allCases.map { pane in
             let aliases: [String] = switch pane {
             case .general: ["appearance", "theme", "language", "startup", "login", "shortcut", "hotkey", "menu bar", "外观", "主题", "语言", "开机", "快捷键", "菜单栏"]
+            case .integrations: ["shortcuts", "launchers", "raycast", "workflow", "快捷指令", "启动器", "联动", "工作流"]
             case .fileTypes: ["templates", "types", "模板", "类型"]
             case .creation: ["creation", "collision", "preview", "新建", "创建", "重名", "预览"]
             case .folders: ["folders", "permission", "authorization", "finder", "目录", "授权", "权限", "扩展"]

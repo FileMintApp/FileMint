@@ -3,7 +3,7 @@ name: FileMint
 options:
   bundleIdPrefix: io.github.daigua
   deploymentTarget:
-    macOS: "13.0"
+    macOS: "13.3"
   createIntermediateGroups: true
 
 packages:
@@ -19,7 +19,7 @@ settings:
     ARCHS: arm64
     ONLY_ACTIVE_ARCH: "NO"
     ENABLE_HARDENED_RUNTIME: "YES"
-    MACOSX_DEPLOYMENT_TARGET: 13.0
+    MACOSX_DEPLOYMENT_TARGET: 13.3
     DEVELOPMENT_TEAM: ""
     CODE_SIGN_STYLE: Automatic
     ENABLE_USER_SCRIPT_SANDBOXING: "NO"

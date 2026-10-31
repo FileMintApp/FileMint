@@ -26,10 +26,10 @@ fi
 source scripts/image_compression_link.sh
 RESOURCE_LINK+=("${FILEMINT_COMPRESSION_LINK[@]}")
 filemint_embed_compression "$RESOURCE_APP"
-swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.0 \
+swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.3 \
   App/FileMint/DesignSystem.swift App/FileMint/ResourceToolsController.swift App/FileMint/ResourceToolsView.swift \
   App/FileMint/MenuIconControl.swift App/FileMint/SystemSymbolCatalog.swift scripts/native_qa_preferences.swift \
-  App/FileMint/PlainTextEditor.swift SharedUI/CustomFileSavePanelController.swift SharedUI/FolderAccess.swift \
+  App/FileMint/PlainTextEditor.swift SharedUI/CustomFileSavePanelController.swift SharedUI/FolderAccess.swift SharedUI/ExternalDraftPresentation.swift \
   SharedUI/FileToolAppearance.swift \
   scripts/resource_tools_smoke.swift "${RESOURCE_LINK[@]}" \
   -o "$RESOURCE_APP/Contents/MacOS/FileMintResourceQA"

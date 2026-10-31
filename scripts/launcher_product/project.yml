@@ -1,0 +1,68 @@
+name: FileMintLauncherProductQA
+options:
+  deploymentTarget:
+    macOS: "13.3"
+  createIntermediateGroups: true
+packages:
+  FileMintCore:
+    path: CorePackage
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    exactVersion: 2.10.0
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    ARCHS: arm64
+    ONLY_ACTIVE_ARCH: NO
+    MACOSX_DEPLOYMENT_TARGET: "13.3"
+    CODE_SIGNING_ALLOWED: NO
+    CODE_SIGNING_REQUIRED: NO
+    SWIFT_ACTIVE_COMPILATION_CONDITIONS: FILEMINT_LAUNCHER_PRODUCT_QA
+    FILEMINT_FIXTURE_RUN_ID: manual
+    FILEMINT_FIXTURE_HOST_DIRECTORY: /private/tmp/FileMint-Launchers-QA
+targets:
+  FileMintLauncherProductQA:
+    type: application
+    platform: macOS
+    sources:
+      - path: App/FileMint
+        excludes: [FileMintApp.swift, AppDelegate.swift]
+      - SharedUI
+      - FixtureApp.swift
+      - FinderIntegrationStatus.swift
+      - path: Resources/SFSymbolNames.txt
+        buildPhase: resources
+      - path: Resources/SFSymbolRestrictedNames.txt
+        buildPhase: resources
+      - Resources/Assets.xcassets
+    dependencies:
+      - package: FileMintCore
+      - package: FileMintCore
+        product: FileMintImages
+      - package: Sparkle
+      - sdk: AppIntents.framework
+    info:
+      path: Info.plist
+      properties:
+        CFBundleIdentifier: io.github.daigua.filemint.launcher-product-qa
+        CFBundleName: FileMint Launchers QA
+        CFBundleDisplayName: FileMint Launchers QA
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        CFBundleLocalizations: [en, zh-Hans]
+        LSUIElement: true
+        LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
+        FixtureRunID: $(FILEMINT_FIXTURE_RUN_ID)
+        FixtureHostDirectory: $(FILEMINT_FIXTURE_HOST_DIRECTORY)
+        CFBundleURLTypes:
+          - CFBundleURLName: FileMint isolated product launcher QA
+            CFBundleURLSchemes: [filemint-product-qa]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.daigua.filemint.launcher-product-qa
+        PRODUCT_NAME: FileMintLauncherProductQA
+schemes:
+  FileMintLauncherProductQA:
+    build:
+      targets:
+        FileMintLauncherProductQA: all

@@ -37,14 +37,14 @@ source scripts/image_compression_link.sh
 OPEN_WITH_LINK+=("${FILEMINT_COMPRESSION_LINK[@]}")
 filemint_embed_compression "$OPEN_WITH_APP"
 filemint_embed_compression "$OPEN_WITH_RECEIVER"
-swiftc -swift-version 6 -parse-as-library -target "arm64-apple-macos13.0" -D OPEN_WITH_RECEIVER \
+swiftc -swift-version 6 -parse-as-library -target "arm64-apple-macos13.3" -D OPEN_WITH_RECEIVER \
   scripts/open_with_smoke.swift "${OPEN_WITH_LINK[@]}" \
   -o "$OPEN_WITH_RECEIVER/Contents/MacOS/OpenWithReceiver"
 codesign --force --sign - --timestamp=none "$OPEN_WITH_RECEIVER"
-swiftc -swift-version 6 -parse-as-library -target "arm64-apple-macos13.0" \
+swiftc -swift-version 6 -parse-as-library -target "arm64-apple-macos13.3" \
   App/FileMint/DesignSystem.swift App/FileMint/ResourceToolsController.swift App/FileMint/ResourceToolsView.swift \
   App/FileMint/MenuIconControl.swift App/FileMint/SystemSymbolCatalog.swift scripts/native_qa_preferences.swift \
-  App/FileMint/PlainTextEditor.swift SharedUI/CustomFileSavePanelController.swift SharedUI/FolderAccess.swift \
+  App/FileMint/PlainTextEditor.swift SharedUI/CustomFileSavePanelController.swift SharedUI/FolderAccess.swift SharedUI/ExternalDraftPresentation.swift \
   SharedUI/FileToolAppearance.swift \
   App/FileMint/FavoriteLocationsModel.swift App/FileMint/FavoriteQuickPanelController.swift \
   App/FileMint/FavoriteFeedbackController.swift \

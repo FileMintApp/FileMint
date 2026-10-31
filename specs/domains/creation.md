@@ -79,6 +79,56 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   write in progress cannot be interrupted just because no update is installing.
 - Drafts are not stored. Cancelling never creates a file or changes the destination.
 
+## External drafts and launcher requests
+
+- The public version-1 `filemint://draft?v=1` route opens a user-confirmed draft.
+  Native Shortcuts parameters and public URLs share one typed request, validation,
+  admission and writer. They never enter the private quick-creation trust path.
+  The existing `new` route retains its own strict fields and behavior.
+- Draft fields are `v`, `name`, `template`, `text`, `directory`, `favorite`,
+  `location` and `id`. Require exactly `v=1`; reject unknown or duplicate fields,
+  missing values, empty name/IDs, malformed percent or UTF-8, NUL, userinfo,
+  port, fragment and any path. `directory`, `favorite` and `location=ask` are
+  mutually exclusive. A directory is an absolute local path suggestion; IDs
+  never grant access. Search accepts only `filemint://search?v=1`.
+- Validate the received encoded string before URL construction. Decode values
+  exactly once; `+` is literal, not a space. The AppKit URL callback exposes the
+  representation received by the app, not the caller's original spelling.
+  Upstream normalization of malformed percent/Unicode cannot be reversed or
+  treated as trust. Exporters encode each value independently.
+- Reject, never truncate, inputs above 16 KiB encoded URL, 8 KiB URL text, 1 MiB
+  native text, 1 KiB name, 4 KiB directory or 256-byte template/favorite ID
+  limits (all UTF-8). Names and identifiers reject controls/path escape;
+  text preserves whitespace, Unicode and literal template tokens, except NUL.
+- Resolve an enabled exact template before suffix/content. A provided complete
+  suffix must match that template; a bare name gains its suffix. Without a
+  template use the existing filename/default-format rules. Missing text uses
+  template content; present text, including an empty string, is verbatim and
+  cannot be supplied to an Office template. Freeze one timestamp per draft.
+- Shortcuts retains old values in hidden conditional parameters. Its adapter
+  selects only the current location/content enum's fields, validates required
+  active values and then creates the same disjoint typed request. Hidden folder
+  or text values cannot grant access or override the selected mode. Public URL
+  conflicting fields remain invalid.
+- Admission is atomic and permits one preparing/presented external session.
+  Existing manual drafts retain all input and undo. Native modal/sheet, active
+  writes, preparation and exclusive operations reject as busy without queuing.
+  Success means a visible, active, keyboard-interactive draft; it never means a
+  file was saved. Cancelled/failed preparation cannot later present a window.
+- A UUID request ID deduplicates only in memory: the same normalized request
+  focuses its active session, a changed request conflicts, and a finished ID
+  cannot reopen for ten minutes. Keep at most 512 bounded metadata/fingerprint
+  records, never retain finished text/paths or persist/log their fingerprints.
+  Unpresented failed preparation releases its reservation for retry.
+- The source, exact template and full destination remain understandable in the
+  one existing creation panel. Initial external focus selects the filename stem
+  while retaining its suffix; refocusing an existing draft preserves selection.
+  Ask-location opens that draft before any picker.
+  Only Create writes through the existing exclusive/collision/receipt path.
+  Explicit destination failures preserve input and never guess another folder.
+  Temporary directory access belongs to the session through write cleanup.
+  See [Finder and permissions](finder-permissions.md) for access and identity.
+
 ## Clipboard text draft
 
 - New File from Clipboard is an explicit Finder New File action and a main-app/menu-bar action. Finder sends only the captured destination in a private, single-use, expiring ticket; the main app reads one clipboard item only when handling the action. Menu construction never reads clipboard data.

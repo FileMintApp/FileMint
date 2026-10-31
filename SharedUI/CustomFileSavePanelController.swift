@@ -63,6 +63,70 @@ final class CustomFileSavePanelController: NSObject {
     private var applicationIconTask: Task<Void, Never>?
     private var pendingFollowUp: CreationFollowUp?
     private var usesRequestFallback = false
+    private var externalPresentation: ExternalDraftPresentation?
+    private var requestNotice: NSTextField?
+    private var dismissRequestNotice: NSButton?
+    private var rejectedRequestMessage: String?
+
+    var externalWindow: NSWindow? { externalPresentation == nil ? nil : panel }
+    func ownsExternalSession(_ id: UUID) -> Bool { externalPresentation?.sessionID == id && panel != nil }
+    func externalPanelIsInteractive(_ id: UUID) -> Bool {
+        guard ownsExternalSession(id), NSApp.isActive, let panel, panel.isVisible, panel.isKeyWindow else { return false }
+        return panel.firstResponder is NSTextView || panel.firstResponder is NSTextField
+    }
+    func externalPanelState(_ id: UUID) -> [String: Bool] {
+        ["ownsSession": ownsExternalSession(id), "appActive": NSApp.isActive,
+         "visible": panel?.isVisible == true, "key": panel?.isKeyWindow == true,
+         "canBecomeKey": panel?.canBecomeKey == true,
+         "textResponder": panel?.firstResponder is NSTextView || panel?.firstResponder is NSTextField]
+    }
+    func closeExternalSession(_ id: UUID) {
+        guard ownsExternalSession(id), !isCreating else { return }
+        closePanel(with: .cancel)
+    }
+    func showExternalRequestNotice(_ message: String) {
+        guard panel != nil else { return }
+        rejectedRequestMessage = message
+        refreshExternalNotice()
+    }
+    @objc private func dismissExternalRequestNotice() {
+        rejectedRequestMessage = nil
+        refreshExternalNotice()
+    }
+    private func refreshExternalNotice() {
+        var parts: [String] = []
+        if let external = externalPresentation {
+            parts.append(external.source.title(language) + " · " + LauncherText.draftPending.text(language))
+            if external.directory.isChecking { parts.append(LauncherText.checkingLocation.text(language)) }
+            else if let error = external.directory.error { parts.append(error.message(language)) }
+            createButton?.isEnabled = !isCreating && !external.directory.isChecking
+        }
+        if let rejectedRequestMessage { parts.append(rejectedRequestMessage) }
+        requestNotice?.stringValue = parts.joined(separator: "\n")
+        requestNotice?.isHidden = parts.isEmpty
+        dismissRequestNotice?.isHidden = rejectedRequestMessage == nil
+        if let panel { fitContent(in: panel) }
+    }
+    func externalDirectoryDidChange(_ session: UUID) {
+        guard let external = externalPresentation, external.sessionID == session, panel != nil else { return }
+        if !external.directory.needsSelection { locationSelection?.selectDirectory(external.directory.url) }
+        refreshDestinationMenu()
+        refreshExternalNotice()
+    }
+    private func selectExternalDirectory(_ url: URL) {
+        guard let current = externalPresentation else { return }
+        current.directory.releaseWhenIdle()
+        let access = ExternalDraftDirectoryAccess(url: url, nativeGrantURL: url)
+        let sessionID = current.sessionID
+        externalPresentation?.directory = access
+        locationSelection?.selectDirectory(url)
+        access.prepare(using: { try ExternalDraftDirectoryAccess.resolveDirectory(url) }, didChange: { [weak self, weak access] in
+            guard let self, let access, self.externalPresentation?.directory === access else { return }
+            self.externalDirectoryDidChange(sessionID)
+        })
+        refreshDestinationMenu()
+        refreshExternalNotice()
+    }
 
     func updateFeatures(_ preferences: FileMintPreferences) {
         openingEnabled = preferences.creationOpeningEnabled
@@ -172,9 +236,9 @@ final class CustomFileSavePanelController: NSObject {
 
     private override init() {}
 
-    func focusExistingPanel() -> Bool {
+    func focusExistingPanel(fromExternal: Bool = false) -> Bool {
         guard panel != nil else { return false }
-        bringPanelForward(selectFileName: false)
+        bringPanelForward(selectFileName: false, requestActivation: fromExternal)
         return true
     }
 
@@ -188,13 +252,15 @@ final class CustomFileSavePanelController: NSObject {
         initialFollowUp: CreationFollowUp? = nil,
         capturedAt: Date? = nil,
         templateSnapshot: FileTemplate? = nil,
-        documentTemplates: DocumentTemplateStore = DocumentTemplateStore()
+        documentTemplates: DocumentTemplateStore = DocumentTemplateStore(),
+        external: ExternalDraftPresentation? = nil
     ) {
         if panel != nil {
             bringPanelForward(selectFileName: false)
             return
         }
         guard initialText == nil || (imageData == nil && templateID == nil) else { return }
+        guard external == nil || (initialText == nil && imageData == nil) else { return }
 
         clearDocumentPreview()
         openingEnabled = preferences.creationOpeningEnabled
@@ -202,6 +268,8 @@ final class CustomFileSavePanelController: NSObject {
         editingContent = false
         pendingFollowUp = initialFollowUp
         usesRequestFallback = initialText != nil || imageData != nil
+        externalPresentation = external
+        rejectedRequestMessage = nil
         temporaryApplication = nil
         creationApplications = preferences.creationApplications
         templates = preferences.templates
@@ -219,6 +287,10 @@ final class CustomFileSavePanelController: NSObject {
         if let option = allOptions.first(where: { $0.templateID == templateID }) {
             draft.selectFormat(option, templates: templates)
         }
+        if let external {
+            draft = external.seed.draft
+            hasEditedFileName = external.seed.hasExplicitName
+        }
         appliedExtension = draft.extensionInput
         if imageData != nil { appliedExtension = "png" }
         locationSelection = CustomFileLocationSelection(directoryURL: defaultDirectory)
@@ -226,6 +298,7 @@ final class CustomFileSavePanelController: NSObject {
         let creationPanel = makePanel()
         panel = creationPanel
         refreshDestinationMenu()
+        refreshExternalNotice()
         bringPanelForward(selectFileName: true)
 
     }
@@ -241,7 +314,7 @@ final class CustomFileSavePanelController: NSObject {
             "io.github.daigua.filemint.custom-file"
         )
         creationPanel.onCreate = { [weak self] in self?.createRequestedFile(nil) }
-        creationPanel.title = FileMintStrings.text(imageData != nil ? .pasteImageFile :
+        creationPanel.title = FileMintStrings.text(externalPresentation != nil ? .customNewFile : imageData != nil ? .pasteImageFile :
             (draft.hasEditedContent ? .newFileFromClipboard : .customNewFile), language: language)
         creationPanel.titlebarAppearsTransparent = true
         creationPanel.backgroundColor = FileMintStyle.backgroundNS
@@ -283,6 +356,7 @@ final class CustomFileSavePanelController: NSObject {
         )
 
         let nameField = NSTextField(string: selectedTemplate?.suggestedFileName ?? "Untitled.\(draft.extensionInput)")
+        if let external = externalPresentation { nameField.stringValue = external.seed.fileName }
         if imageData != nil { nameField.stringValue = FileMintStrings.text(.imageFileName, language: language) }
         nameField.placeholderString = "Untitled.txt"
         nameField.controlSize = .regular
@@ -495,7 +569,18 @@ final class CustomFileSavePanelController: NSObject {
             shortcut.centerYAnchor.constraint(equalTo: footer.centerYAnchor)
         ])
 
-        for view in [heading, subtitle, form, formatHint, contentHeader, contentArea, placeholderHint, separator, footer] {
+        let notice = wrappingLabel("", maximumNumberOfLines: 5)
+        notice.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
+        notice.textColor = .secondaryLabelColor
+        notice.isHidden = true
+        requestNotice = notice
+        let dismissNotice = CreationButton(title: LauncherText.closeNotice.text(language), target: self,
+                                          action: #selector(dismissExternalRequestNotice))
+        dismissNotice.bezelStyle = .inline
+        dismissNotice.controlSize = .small
+        dismissNotice.isHidden = true
+        dismissRequestNotice = dismissNotice
+        for view in [heading, subtitle, notice, dismissNotice, form, formatHint, contentHeader, contentArea, placeholderHint, separator, footer] {
             stack.addArrangedSubview(view)
             view.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
         }
@@ -524,7 +609,7 @@ final class CustomFileSavePanelController: NSObject {
         ])
 
         creationPanel.defaultButtonCell = createButton.cell as? NSButtonCell
-        creationPanel.focusOrder = [nameField, comboBox, destinationButton, actionPicker, chooseApp, textView, editButton, encodingLabel, cancelButton, createButton]
+        creationPanel.focusOrder = [nameField, comboBox, destinationButton, dismissNotice, actionPicker, chooseApp, textView, editButton, encodingLabel, cancelButton, createButton]
         updateActionControls()
         if imageData == nil { updateContentField() }
         return container
@@ -574,12 +659,16 @@ final class CustomFileSavePanelController: NSObject {
         return label
     }
 
-    private func bringPanelForward(selectFileName: Bool) {
+    private func bringPanelForward(selectFileName: Bool, requestActivation: Bool = false) {
         guard let panel else {
             return
         }
 
-        if #available(macOS 14.0, *) {
+        if requestActivation || externalPresentation != nil {
+            // An external host launch has no foreground activation to inherit.
+            // Use the single explicit activation path verified by the launcher probe.
+            NSApp.activate(ignoringOtherApps: true)
+        } else if #available(macOS 14.0, *) {
             NSApp.activate()
         } else {
             NSApp.activate(ignoringOtherApps: true)
@@ -592,6 +681,14 @@ final class CustomFileSavePanelController: NSObject {
         if selectFileName, panel.attachedSheet == nil {
             panel.makeFirstResponder(fileNameField)
             fileNameField?.selectText(nil)
+            if externalPresentation != nil, let field = fileNameField,
+               let editor = field.currentEditor() as? NSTextView {
+                let suffix = "." + appliedExtension
+                if field.stringValue.lowercased().hasSuffix(suffix.lowercased()) {
+                    let length = (field.stringValue as NSString).length - (suffix as NSString).length
+                    if length > 0 { editor.setSelectedRange(NSRange(location: 0, length: length)) }
+                }
+            }
         }
     }
 
@@ -603,7 +700,8 @@ final class CustomFileSavePanelController: NSObject {
 
         let menu = NSMenu()
         let currentItem = NSMenuItem(
-            title: (directoryURL.path as NSString).abbreviatingWithTildeInPath,
+            title: externalPresentation?.directory.needsSelection == true ? LauncherText.chooseLocation.text(language)
+                : (directoryURL.path as NSString).abbreviatingWithTildeInPath,
             action: nil,
             keyEquivalent: ""
         )
@@ -654,7 +752,7 @@ final class CustomFileSavePanelController: NSObject {
 
         picker.beginSheetModal(for: panel) { [weak self] response in
             Task { @MainActor in
-                guard let self else {
+                guard let self, self.panel === panel else {
                     return
                 }
 
@@ -663,6 +761,7 @@ final class CustomFileSavePanelController: NSObject {
                     selectedDirectoryURL: selectedDirectory
                 )
                 self.directoryPicker = nil
+                if let selectedDirectory, self.externalPresentation != nil { self.selectExternalDirectory(selectedDirectory) }
                 self.refreshDestinationMenu()
                 self.bringPanelForward(selectFileName: false)
             }
@@ -676,6 +775,15 @@ final class CustomFileSavePanelController: NSObject {
 
     @objc private func createRequestedFile(_ sender: Any?) {
         guard !isCreating, panel?.attachedSheet == nil, directoryPicker == nil else { return }
+        if let external = externalPresentation {
+            guard !external.directory.isChecking else { return }
+            guard external.validateTemplate(draft.selectedTemplateID) else {
+                showError(ExternalInvocationError.templateUnavailable)
+                return
+            }
+            if external.directory.needsSelection { chooseOtherFolder(nil); return }
+            if external.directory.identity == nil { authorizeForRetry(external.directory.url); return }
+        }
         guard let directoryURL = locationSelection?.directoryURL,
               let fileName = resolvedFileName() else {
             showError(invalidExtensionError())
@@ -721,7 +829,10 @@ final class CustomFileSavePanelController: NSObject {
                                           requestedFileName: fileName,
                                           collisionStrategy: imageData != nil || template.document != nil ? .increment : (replacingExistingFile ? .replace : .fail),
                                           contentMode: draft.hasEditedContent ? .verbatim : .template,
-                                          fileData: imageData, capturedAt: draft.capturedAt)
+                                          fileData: imageData, capturedAt: draft.capturedAt,
+                                          expectedDirectoryIdentity: externalPresentation?.directory.identity)
+        let externalAccess = externalPresentation?.directory
+        externalAccess?.beginOperation()
         let assets = documentTemplates
         let followUp = pendingFollowUp ?? snapshotFollowUp?(!usesRequestFallback ? selectedTemplate : nil, draft.actionSelection, temporaryApplication)
         pendingFollowUp = followUp
@@ -729,6 +840,7 @@ final class CustomFileSavePanelController: NSObject {
         let language = self.language
         let basicReveal = revealAfterCreation
         Task {
+            defer { externalAccess?.endOperation() }
             let accessed = directoryURL.startAccessingSecurityScopedResource()
             defer { if accessed { directoryURL.stopAccessingSecurityScopedResource() } }
             let outcome = await Task.detached(priority: .userInitiated) {
@@ -762,7 +874,11 @@ final class CustomFileSavePanelController: NSObject {
         picker.message = FileMintStrings.text(.authorizeFolderHint, language: language)
         picker.prompt = FileMintStrings.text(.allowFolder, language: language)
         picker.beginSheetModal(for: panel) { [weak self] response in
-            guard let self, response == .OK, let url = picker.url else { return }
+            guard let self, self.panel === panel, response == .OK, let url = picker.url else { return }
+            if self.externalPresentation != nil {
+                self.selectExternalDirectory(url)
+                return
+            }
             do { try FolderAccess.persist(url) }
             catch { self.showError(error); return }
             self.locationSelection?.selectDirectory(url)
@@ -955,7 +1071,11 @@ final class CustomFileSavePanelController: NSObject {
         let alert = NSAlert()
         alert.messageText = FileMintStrings.text(.createFileErrorTitle, language: language)
         alert.informativeText = (error as? DocumentTemplateError).map { FileMintStrings.text($0.textKey, language: language) }
+            ?? (error as? ExternalInvocationError)?.message(language)
             ?? error.localizedDescription
+        if externalPresentation != nil, case FileMintError.destinationChanged = error {
+            alert.informativeText = ExternalInvocationError.destinationUnavailable.message(language)
+        }
         alert.alertStyle = .warning
         alert.addButton(withTitle: "OK")
         alert.beginSheetModal(for: panel)
@@ -1106,6 +1226,13 @@ extension CustomFileSavePanelController: NSWindowDelegate {
         pasteButton = nil
         contentHint = nil
         formatHintView = nil
+        let external = externalPresentation
+        externalPresentation = nil
+        requestNotice = nil
+        dismissRequestNotice = nil
+        rejectedRequestMessage = nil
+        external?.directory.releaseWhenIdle()
+        external?.didClose()
     }
 }
 

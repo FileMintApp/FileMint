@@ -11,7 +11,7 @@ if [[ -f "$VISIBILITY_BUILD/libFileMintCore.a" ]]; then
 else
   VISIBILITY_LINK=(-I "$VISIBILITY_BUILD/Modules" "$VISIBILITY_BUILD"/FileMintCore.build/*.o)
 fi
-swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.0 \
+swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.3 \
   scripts/file_visibility_capture_smoke.swift "${VISIBILITY_LINK[@]}" -o "$VISIBILITY_WORK/smoke"
 python3 - "$VISIBILITY_WORK" <<'PY'
 import hashlib, json, pathlib, sys

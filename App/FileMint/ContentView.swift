@@ -173,6 +173,7 @@ struct ContentView: View {
     @ViewBuilder private var page: some View {
         switch model.selectedPane {
         case .general: GeneralPane(favorites: favoriteLocations, searchController: quickSearch)
+        case .integrations: IntegrationsPane(settings: model, favorites: favoriteLocations)
         case .creation: CreationSettingsPane()
         case .fileTypes: TypesPane()
         case .folders: FoldersPane()
@@ -252,6 +253,7 @@ extension PreferencesModel.Pane {
     func subtitleText(_ language: AppLanguage) -> String {
         switch self {
         case .general: InterfaceText.generalSubtitle.text(language)
+        case .integrations: LauncherText.subtitle.text(language)
         case .creation: InterfaceText.creationSubtitle.text(language)
         case .fileTypes: InterfaceText.typesSubtitle.text(language)
         case .folders: InterfaceText.foldersSubtitle.text(language)
@@ -265,6 +267,7 @@ extension PreferencesModel.Pane {
     var title: FileMintTextKey {
         switch self {
         case .general: .general
+        case .integrations: .integrations
         case .creation: .creationSettings
         case .fileTypes: .templatesAndTypes
         case .folders: .finderAndFolders
@@ -279,6 +282,7 @@ extension PreferencesModel.Pane {
     var subtitle: FileMintTextKey {
         switch self {
         case .general: .generalSettingsHint
+        case .integrations: .launcherSettingsHint
         case .creation: .creationSettingsHint
         case .fileTypes: .fileTypeHint
         case .folders: .finderFoldersHint
@@ -293,6 +297,7 @@ extension PreferencesModel.Pane {
     var symbol: String {
         switch self {
         case .general: "gearshape"
+        case .integrations: "arrow.triangle.branch"
         case .creation: "doc.badge.plus"
         case .fileTypes: "doc.on.doc"
         case .folders: "folder"

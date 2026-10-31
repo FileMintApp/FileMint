@@ -76,6 +76,20 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   Accessibility access, send keys, change Finder preferences or restart Finder.
   There is no Finder-wide hidden-item toggle in settings or the menu bar.
 
+## External draft destinations
+
+- A launcher path or favorite ID is a location suggestion, never a grant or a
+  Finder observation root. Native Intent directory access is session-owned;
+  release it only after cancellation or write cleanup. Do not persist it merely
+  because a command was exported, received or previewed.
+- Resolve only the requested directory/favorite, off the UI thread. Validate its
+  kind and captured identity after access and before creation. Bind writes to
+  that directory object so a path replacement cannot redirect publication; a replaced,
+  missing or denied target preserves the draft and offers explicit recovery.
+  Missing access uses the existing exact-directory picker. Cancelling preserves
+  input; choosing another directory updates the panel and requires Create again.
+  External drafts never weaken Finder ticket/scope checks or scan folders.
+
 ## File information authorization
 
 Copy File Contents follows the same captured identity and read-only authorization

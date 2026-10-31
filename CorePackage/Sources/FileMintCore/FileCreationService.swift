@@ -18,6 +18,7 @@ public struct FileCreationRequest: Sendable {
     public var contentMode: FileContentMode
     public var fileData: Data?
     public var capturedAt: Date?
+    public var expectedDirectoryIdentity: CreationDirectoryIdentity?
 
     public init(
         destinationDirectory: URL,
@@ -26,7 +27,8 @@ public struct FileCreationRequest: Sendable {
         collisionStrategy: NameCollisionStrategy = .increment,
         contentMode: FileContentMode = .template,
         fileData: Data? = nil,
-        capturedAt: Date? = nil
+        capturedAt: Date? = nil,
+        expectedDirectoryIdentity: CreationDirectoryIdentity? = nil
     ) {
         self.destinationDirectory = destinationDirectory
         self.template = template
@@ -35,6 +37,7 @@ public struct FileCreationRequest: Sendable {
         self.contentMode = contentMode
         self.fileData = fileData
         self.capturedAt = capturedAt
+        self.expectedDirectoryIdentity = expectedDirectoryIdentity
     }
 }
 
@@ -55,6 +58,7 @@ public enum FileMintError: Error, LocalizedError {
     case templateNotFound(String)
     case fileAlreadyExists(URL)
     case writeFailed(URL)
+    case destinationChanged
 
     public var errorDescription: String? {
         switch self {
@@ -66,6 +70,8 @@ public enum FileMintError: Error, LocalizedError {
             return "File already exists: \(url.path)"
         case .writeFailed(let url):
             return "Could not create file: \(url.path)"
+        case .destinationChanged:
+            return "The save folder changed. Choose the folder again."
         }
     }
 }
@@ -102,11 +108,26 @@ public final class FileCreationService {
             guard request.template.fileExtension == reference.kind.rawValue else { throw DocumentTemplateError.unavailable }
             let data = try documentTemplates.data(for: reference)
             let name = FilenamePolicy.fileName(requestedName, applyingFileExtension: reference.kind.rawValue)!
+            if let expected = request.expectedDirectoryIdentity {
+                return try PinnedCreationWriter.create(in: request.destinationDirectory, expected: expected,
+                    name: name, collision: request.collisionStrategy, kind: .officeDocument, bytes: { _ in data })
+            }
             return try BinaryFileWriter.create(data, in: request.destinationDirectory, name: name, collision: request.collisionStrategy, contentKind: .officeDocument)
         }
         if let data = request.fileData {
+            if let expected = request.expectedDirectoryIdentity {
+                return try PinnedCreationWriter.create(in: request.destinationDirectory, expected: expected,
+                    name: requestedName, collision: request.collisionStrategy, kind: .binary, bytes: { _ in data })
+            }
             return try BinaryFileWriter.create(data, in: request.destinationDirectory,
                 name: requestedName, collision: request.collisionStrategy)
+        }
+        if let expected = request.expectedDirectoryIdentity {
+            return try PinnedCreationWriter.create(in: request.destinationDirectory, expected: expected,
+                name: requestedName, collision: request.collisionStrategy, kind: .text, bytes: { name in
+                    Data(CreationContentResolver.text(template: request.template, fileName: name,
+                        mode: request.contentMode, capturedAt: request.capturedAt ?? now).utf8)
+                })
         }
         let naiveURL = request.destinationDirectory.appendingPathComponent(
             FilenamePolicy.sanitizedFileName(requestedName),

@@ -7,9 +7,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         PreferencesModel.shared.startGlobalShortcut()
         UpdateModel.shared.startAutomaticChecks()
         BatchRenameOperations.shared.refreshStatus()
-        if notification.userInfo?[NSApplication.launchIsDefaultUserInfoKey] as? Bool == true {
-            SettingsWindowController.shared.show()
-        }
+        FileMintLauncherShortcuts.updateAppShortcutParameters()
+        let activationExpected = NSAppleEventManager.shared().currentAppleEvent?
+            .paramDescriptor(forKeyword: AEKeyword(kAEApplicationActivationExpected))?.booleanValue == true
+        PreferencesModel.shared.externalInvocations.handleOrdinaryLaunch(
+            isDefault: notification.userInfo?[NSApplication.launchIsDefaultUserInfoKey] as? Bool == true,
+            activationExpected: activationExpected)
         Task { await PreferencesModel.shared.prepareLoginItemIfNeeded() }
     }
 
@@ -47,12 +50,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldOpenUntitledFile(_ sender: NSApplication) -> Bool { false }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        if let modal = sender.modalWindow {
-            modal.makeKeyAndOrderFront(nil)
-            sender.activate(ignoringOtherApps: true)
-            return false
-        }
-        SettingsWindowController.shared.show()
+        PreferencesModel.shared.externalInvocations.handleReopen()
         return false
     }
 }

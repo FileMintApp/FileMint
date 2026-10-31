@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
     name: "FileMintCore",
     platforms: [
-        .macOS(.v13)
+        .macOS("13.3")
     ],
     products: [
         .library(name: "FileMintCore", targets: ["FileMintCore"]),

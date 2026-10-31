@@ -180,6 +180,41 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   No Finder-only file operation or automatic use of a previous Finder target joins
   this version. Existing operation, quit and update guards remain authoritative.
 
+## Shortcuts and launchers
+
+- Explicit external draft/search actions work independently of the global key and
+  menu-bar switches. Run the adapters in the main app and reuse the existing
+  creation/search controllers, pending-work and quit/update guards.
+- External cold launches present only their accessory draft/search. Ordinary
+  explicit launch remains able to show settings. Never classify an Intent's
+  background host launch as ordinary merely from the default-launch notification;
+  use the public activation request and current external-session ownership.
+  Reopen prioritizes native modal/sheet and the active external panel. Clearing
+  that session restores ordinary reopen, without a lingering suppression token.
+- External search shows/focuses rather than toggles. Report shown or alreadyVisible
+  only when its search input is visible, key and interactive; modal or exclusive
+  work returns busy, and failed/timed-out presentation returns unavailable.
+  Cancellation cannot queue a later search or overwrite an unfinished query.
+- Preferences includes Shortcuts & Launchers after General. It guides project
+  notes, upstream workflow text and Quick Search through native Shortcuts,
+  Raycast or a public URL. Configuration is transient; no account, persistent
+  content preset library or automatic third-party installation is introduced.
+  Export only to an explicit save destination. Keep export/real-test guidance
+  nonmodal so it does not block the external request it asks the user to run.
+- The command generator pauses only its own sheet for a reserved preview, then
+  uses the same draft admission and writer. Keep configuration through preview;
+  restore it and Preview focus after cancellation or completed creation, only
+  when the same settings owner is active/key and has no other modal. A failed
+  write or cancelled authorization keeps the draft. Closing settings cancels
+  unpresented work and releases configuration; it cannot revive the window or
+  destroy an already established independent draft. External callers cannot
+  claim the generator's private reservation.
+- Raycast export writes one executable script atomically to the user's selected
+  location and never edits Raycast configuration. Its one optional runtime name
+  is percent-encoded as data; fixed URL values and shell headers are validated.
+  Show saved/copied and matching local request-received states separately from
+  unverified third-party import. Configuration and content are not persisted.
+
 ## File information lifecycle
 
 - Copy File Contents also defaults off independently on new/malformed/old settings,

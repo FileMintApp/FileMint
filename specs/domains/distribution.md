@@ -6,12 +6,18 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 
 ## Distribution
 
-- New Release apps, DMGs and ZIPs support M-series Macs running macOS 13 or later.
+- The Shortcuts/launcher development build uses one macOS 13.3+ main-app
+  ForegroundContinuableIntent route, with no per-OS execution fork. Main app,
+  Finder extension, Core package and current QA compilation targets share that
+  floor. Current-host boundary evidence is macOS 27.2; macOS 13.3 runtime remains
+  unavailable and must not be reported as passed. Existing published installers
+  through 0.8.1 retain their original macOS 13.0 metadata and bytes.
+- New integration Release apps, DMGs and ZIPs support M-series Macs running macOS 13.3 or later.
   Build the main app, Finder extension and embedded Sparkle executables as
   arm64-only. Reject any x86_64 slice in local and published bundle checks.
   Previously published universal releases keep their original architecture
   support and bytes.
-  The minimum macOS version is 13.0 in the release build and appcast together.
+  The minimum macOS version is 13.3 in the integration build and both appcasts together.
   Arm64 does not distinguish M-series from A-series Apple silicon: A-series
   Macs are outside the support policy, without a chip-name-based launch block.
   The first arm64-only release notes and installation guidance identify the
@@ -190,9 +196,15 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 
 - A FileMint-maintained `FileMintApp/homebrew-tap` Cask reuses the immutable,
   signed and notarized release DMG, with an explicit stable version, SHA-256,
-  arm64 and macOS 13 requirements. It declares `auto_updates true`; Sparkle,
+  arm64 and the current `project.yml` minimum OS. It declares `auto_updates true`; Sparkle,
   Finder extension enablement and folder authorization keep their existing rules.
-  No new build, runtime dependency, installer script or quarantine bypass is added.
+  No new build, runtime dependency, installer command or quarantine bypass is added.
+  Homebrew's macOS dependency DSL supports major releases only. For the 13.3
+  integration floor, retain `:ventura` and add one reviewed, version-only
+  `preflight` comparison of `MacOS.full_version` against `MacOSVersion.new`.
+  It rejects an older host without commands, file access, process changes or
+  permissions. Cask generation derives this check from the same project minimum
+  as appcasts; parsing accepts only exact reviewed current or legacy 13.0 bytes.
 - Prepare and synchronize from the current ten-string-field release manifest
   (including DMG/ZIP and both appcast hashes) and its publication journal. Require
   local archive/checksum/feed integrity, matching local and remote tag commits,

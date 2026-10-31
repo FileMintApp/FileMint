@@ -154,6 +154,8 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case templateReorderHint
 
     case general
+    case integrations
+    case launcherSettingsHint
     case fileTypes
     case folders
     case about
@@ -463,6 +465,8 @@ public enum FileMintStrings {
         .importSettings: ("Import Settings…", "导入设置…"),
 
         .general: ("General", "通用"),
+        .integrations: ("Shortcuts & Launchers", "快捷指令与启动器"),
+        .launcherSettingsHint: ("Set a template and folder once. Enter a name, review, then create.", "配置好模板和位置，日常只填名称，确认后创建。"),
         .fileTypes: ("File Types", "文件类型"),
         .folders: ("Folders", "文件夹"),
         .about: ("About", "关于"),

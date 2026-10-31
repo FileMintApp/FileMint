@@ -11,6 +11,7 @@ final class FavoriteLocationsModel: ObservableObject {
         return instance
     }
     static var sharedIsBusy: Bool { sharedInstance?.isBusy ?? false }
+    static var sharedHasActiveOperations: Bool { (sharedInstance?.pendingOperations ?? 0) > 0 }
     @Published private(set) var catalog = FavoriteLocationsCatalog()
     @Published private(set) var recoveryRequired = false
     @Published private(set) var unavailableIDs: Set<UUID> = []
@@ -261,6 +262,19 @@ final class FavoriteLocationsModel: ObservableObject {
             return ResolvedFavorite(url: url, granted: granted, bookmark: stale ? try? bookmark(for: url) : nil)
         } catch {
             if granted { url.stopAccessingSecurityScopedResource() }
+            throw error
+        }
+    }
+
+    nonisolated static func resolveDraftDirectory(_ item: FavoriteLocation) throws -> ExternalDirectoryResolution {
+        guard item.kind == .folder else { throw ExternalInvocationError.destinationUnavailable }
+        let access = try resolve(item)
+        do {
+            let resolved = access.url.resolvingSymlinksInPath().standardizedFileURL
+            return try .init(url: resolved, identity: CreationDirectoryIdentity.capture(resolved),
+                             startedScopeURL: access.granted ? access.url : nil)
+        } catch {
+            if access.granted { access.url.stopAccessingSecurityScopedResource() }
             throw error
         }
     }

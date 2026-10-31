@@ -1,7 +1,7 @@
 # Task: 快捷指令与启动器联动方案
 
-Status: in-progress — P0；交互测试与验收按用户要求留待 2026-10-30
-Next action: 2026-10-30 先确认 QA 正常退出，再继续 P0 的普通冷启动、Intent 窗口隔离和目录身份核对。最新探针为 macOS 13.0 原始前台入口加窗口协调；13.3 接续路线保留为候选对照。P0 通过后才选择一条完整实现路线、定稿真正可行的最低版本并更新 owning SPEC，再继续 P1–P4。生产最低版本仍为 13.0，未提高到 26；Alfred 二期。当前仅整理改动，不继续交互验收。
+Status: partially-verified — 2026-10-31 自动化、构建及已覆盖的本机原生场景通过；系统输入法/旁白可观察性和连续录屏仍受阻，不能标记完整验收通过。
+Next action: 当前结果见文末“2026-10-31 本机技术复核与剩余边界”。优先在可观察真实候选窗、旁白和录屏的桌面补齐系统交互证据；保留用户明确延期的三名首次使用者体验和缺少环境的 macOS 13.3 实机检查。最终 QA `run.y5O1nO` 已正常退出，pendingWorkers=0；生产源码与昨天 `run.GprAyE` 相同，仅修正验收夹具。Git 交付以提交历史为准；未发布，Alfred 二期。
 
 ## Objective and scope
 
@@ -146,7 +146,7 @@ Raycast 脚本 → URL ──┼→ 解析 / 规范化 / 限额
 
 默认摘要只展示模板、名称和位置。内容及条件参数在编辑动作时按选择展开。实体查询基于 FileMint 已有配置快照，不索引用户文件或正文，不以逐次查询解析所有收藏书签。
 
-条件参数必须共同校验：例如指定了文件夹又指定了收藏，不能靠“任选一个优先”消解；选择“模板内容”时若仍携带文本变量，也要返回修正提示。实现需在 P0 选定的支持范围内验证参数摘要与可选空值的实际行为；“空内容”选项明确表达空字符串，不依赖系统是否把空参数变成 nil。
+原生条件参数按当前选择的模式映射：Shortcuts 会保留隐藏字段旧值，适配器只读取当前位置/内容枚举对应的字段，再校验必需值并生成互斥 typed request。隐藏的文件夹、收藏或文本不能覆盖当前模式或产生授权；公共 URL 的冲突字段仍拒绝整条请求。参数摘要与可选空值需验证实际 SDK 元数据及原生行为；“空内容”明确表达空字符串，不依赖系统是否把空参数变成 nil。此规则依据 2026-10-30 真实切换模式复现，取代设计期将隐藏值一并拒绝的假设。
 
 ### 4.2 动作二：显示 FileMint 快捷搜索
 
@@ -722,9 +722,255 @@ Environment: 2026-10-29；初版与审核阶段仅做文档/静态检查。以�
 - 本轮 5 份相关文档的 126 个本地链接/锚点未新增失效项；验收历史已有 32 个被忽略 build 产物链接在本机不可用，与 HEAD 相同，未修改历史证据或宣称它们已恢复。
 - 明天先修正/复核普通冷启动与 Intent 启动隔离，再核对目录 device/inode、多行文本、最终选定路径的取消和 busy。P0 完成后才进入生产实现；首次使用者、日常单项输入、第一眼体验与宣传素材仍在后续验收阶段。
 
+### 2026-10-30 恢复验收（仍未整体通过）
+
+基线为主检出 `f4eaa612b43cf4947ddbe4e6b2842fbdb3357cd6`，开始时工作区干净。环境仍为 macOS 27.2 arm64 / Xcode 27.1 / Shortcuts 10.0 / Raycast 2.10.1.0。本轮证据根目录为 `build/launcher-integration-verification.noindex/2026-10-30/`；每次构建保留 `source/manifest.json`，不能混用不同 run 的结果。生产 App、偏好及最低版本均未改。
+
+| 检查 | 状态 | 本轮观察与证据 |
+| --- | --- | --- |
+| 13.3 系统前台接续 | failed | `run.UoD2Ah` 的真实冷搜索在 `requestToContinueInForeground()` 等待 34.377 秒仍无 outcome/搜索，也未在 Shortcuts 窗口看到确认。主动停止后才由工具 reopen 展示控制窗；不推断停顿的系统内部原因。日志 `p0-13_3-system-continuation-run.UoD2Ah.jsonl` |
+| 13.3 主进程执行加 AppKit 展示候选 | passed（部分场景） | `run.zujClS` 使用 `ForegroundContinuableIntent`、`openAppWhenRun=false`，在 perform 内先认领会话，然后走同一 AppKit 展示。真实冷搜索 request→可交互 outcome 为 0.231 秒，热搜索 0.016 秒且返回 alreadyVisible/保留输入，模态返回 busy。该 Intent 会话内普通窗展示次数为 0；不将这些耗时冒充从点击工具到完成的端到端延迟 |
+| 取消与已有草稿 | passed | 延迟 20 秒的真实草稿动作在 5.556 秒被停止，取消后 60.578 秒到下一请求期间无展示 outcome；后续正常草稿可打开。重复草稿真实报 existingDraft，已编辑名称保持 `P0 EDITED — preserve.txt`。日志 `p0-appkit-sessions-run.zujClS.jsonl` |
+| 多行文本 | passed（P0 参数交付） | Shortcuts 直接带入中文、emoji、换行、`& # + %`、字面量 `{{year}}`、`$()` 和反引号，QA 原生编辑区完整显示；无 URL 桥接/脚本执行。这不证明尚未实现的产品 verbatim writer |
+| Intent 源目录身份及返回后的 scope | passed | 新建隔离空目录，两侧 metadata 均为 device `16777230` / inode `148493108`。动作返回后手动 probe 仍持有 scope；显式唯一哨兵创建/删除成功，主机独立确认仍为 0 项；取消记录 scope-released。`scope-expected-identity.json` 与 `p0-appkit-sessions-run.zujClS.jsonl` |
+| 普通 Finder 冷启动 | failed | `run.zujClS` 正常退出后由 Finder 真正双击稳定签名应用，仍只记录 ordinary-startup-pending；直到约 3.76 秒后的观察工具 reopen 才展示普通窗。`p0-appkit-normal-cold-before-fix-run.zujClS.jsonl`。因此不能用观察工具打开后看到窗口作为普通冷启动通过证据 |
+| 最新回调观测构建 | passed（构建） / blocked（运行） | `run.UrOuCN` 增加公开 should-open-untitled 回调日志以定位普通启动；构建签名成功，当前四份源与该 run 的 SHA-256 清单一致。实际 entitlements 仅 App Sandbox 与 user-selected read/write，见 `final-probe-entitlements.plist`。操作系统锁屏后 CUA 明确拒绝 UI，已请求用户手动解锁；未使用 shell/自动解锁绕过 |
+| 完整离线回归 | passed | `make verify` exit 0：381 Swift tests / 38 suites、23 image tests、公共 Harness 5/5，以及全部 Python/受限子进程检查。`make-verify.log`；该轮结束后仅增加启动回调观测，最终源码仍需完成适用复核 |
+| 原生自动选择 | blocked（人工边界） | `make native-qa-plan` 只选择 launcher-integration 人工边界；`make verify-native-affected` 如实返回 blocked，无自动 GUI suite；报告 `build/native-checks.noindex/run.0y71z7w0/report.json`。上表实测独立记录，不改写 runner 为通过 |
+| 尚未完成 | blocked / not-run | 锁屏阻断最新构建的普通冷启动、冷草稿及最终 Raycast/URL 复跑；macOS 13.3 无实际运行环境。P1–P4 生产接入、三个示例/生成器、真实创建、3 名首次使用者与宣传素材均未完成，不能用 P0 替代 |
+
+机器可读的阶段汇总为 `partial-report.json`，明确 status=incomplete。当前只收敛 P0，不更新 owning SPEC 为产品可用，也不将 API 起始版本当作已验证的最低系统。
+
+锁屏后完成最新源的定向复核：`make verify-context verify-launcher-probe verify-native-qa verify-native-checks-runner` exit 0（22 文档 / 148 链接、6/15/24 项脚本回归），probe plist、构建脚本语法和 `git diff --check` 通过。`native_qa.py check-stopped launcher-integration` 确认 QA 未运行；没有在锁屏时启动 GUI。已请求手动解锁，等待期间未绕过限制，生产功能、未完成的原生场景和首次使用者验收均保留原状态。
+
+### 2026-10-30 解锁后的 P0 收敛与 P1
+
+用户已手动解锁并要求继续。公开 untitled-open 回调未触发，不能作为分类依据；随后在 SDK 公共 `kAEApplicationActivationExpected` 参数发现可靠的本机差异：真实 Finder 双击带 true，Intent 的后台宿主启动不带该参数。最终探针仅在 default launch 且明确要求激活时显示普通控制窗，其余由外部请求认领窗口；删除了等待 activation 的悬置状态，不按进程 PID、私有字段或计时猜测。
+
+最终 `run.JCKtYr` 的四份源/配置 SHA-256 清单与当前 probe 源一致，Developer ID / App Sandbox / user-selected read-write 已从签名核对。所有以下结果均来自这同一构建、macOS 27.2 arm64 / Xcode 27.1 (27A9275)，不继承早期 run 的通过状态。
+
+- **passed**：Finder 真双击的普通冷启动在任何观察工具 reopen 前已自主展示；Intent 冷草稿、冷搜索和冷 URL 不误开普通窗。草稿、搜索成功 outcome 均同时核对可见、key 和文本焦点。
+- **passed**：多行中文/emoji/保留字符/字面模板 token；同一 source 目录 device/inode；Intent 返回后的显式哨兵写入/清理；目录 picker 取消保留草稿；取消释放 scope，隔离目录仍为 0 项。
+- **passed**：重复草稿报 existingDraft 并保留编辑值；搜索 shown/alreadyVisible/busy 与真实可交互窗口对应；真实 Shortcuts 停止后 118.893 秒观察期间无迟到 outcome。
+- **passed**：30/30 AppKit URL 样本各送达一次，首条覆盖冷启动，其余热启动；仅裸 `%`、`%2`、`%GG`、裸中文空格这四类由上游规范化。没有重跑 GURL 对照，旧原文可观察性结果仍归属 10 月 29 日；生产候选选择 AppKit 交付表示，parser 必须独立严格校验。
+- **passed**：真实 Raycast 已导入命令的冷调用保留 `FileMint-QA 中文 & # + % ? =`，再次真实调用保留 `P0 Raycast EDITED — keep.txt`。输出 0.10/0.07 秒仅是脚本部分耗时，不是端到端或 p95 指标。
+- **passed**：最终 P0 源的 `make verify` exit 0，日志 `make-verify-final.log`；381 Core / 23 image tests、公共 Harness 5/5 和全部脚本/子进程检查。随后 `native_qa.py check-stopped launcher-integration` 确认正常退出。
+- **blocked（自动选择器的人工边界）**：`make native-qa-plan verify-native-affected` 没有可代替真实工具交付的自动 suite，报告 `build/native-checks.noindex/run.96xaf56_/report.json`；上面的人工/真实系统边界另附证据，未把 runner 改成虚假通过。
+
+证据仍位于 `build/launcher-integration-verification.noindex/2026-10-30/`：`acceptance-report.json` 为当前 P0 汇总（status=passed-current-environment），`p0-final-*.jsonl`、`url-final-delegate/comparison.json` 和最终签名/entitlements。早期 `partial-report.json` 保留锁屏时的不完整状态，不能作为最终结论。macOS 13.3 实际运行仍 **blocked**；IME/Space/全屏/多显示器、产品辅助功能/三名首次使用者/宣传素材不由 P0 证明。
+
+P1 先更新 Creation、Startup 和 Finder owning SPEC，再新增 `ExternalDraftRequest`、`ExternalDraftRoute`、`ExternalDraftAdmission`：严格收件表示解析、单次解码/限额、精确模板/正文种子、内存有界去重与准备/呈现/完成状态。`ExternalDraftTests` 的 15 项测试场景（含 49 条非法/边界参数化样本）定向通过，包含真实独立文件 fixture 的逐字写入、重名增量和原件保留；日志 `p1-core-tests.log`。这些产品 Core 代码尚未接入原生入口，后续仍需 `make verify`、App build 和产品 fixture 验收。
+
+
+### 2026-10-30 产品实现与本机技术验收进度
+
+本节补充并取代文末上一版仅到 P1 的当前状态，不改写前面的历史失败/通过记录。
+用户最后要求先记录进度、明天继续，因此暂停，不再开启新测试。用户另明确选择
+“本轮完成技术验收，3 人体验保留待验收”；这不等于首次使用者体验已经通过，也
+不授权发布。
+
+**已实现**：共享严格 URL/typed request/有界内存 admission，App Intents 两个动作，
+同一生产创建/搜索面板、目录会话访问与绑定目录对象的安全写入；设置中的三个场景、
+生成器、预览 sheet 受控交接、Raycast 原子导出/通用链接、非模态接入及本机接收反馈。
+新建双语指南 [English](../SHORTCUTS_AND_LAUNCHERS.md) /
+[中文](../SHORTCUTS_AND_LAUNCHERS.zh-CN.md)。单一 API 路线采用
+`ForegroundContinuableIntent`、`openAppWhenRun=false` 加 AppKit 展示，开发版主 App /
+Finder / Core 最低目标 13.3，不做按 OS 分叉，也没有发布新版。
+
+**本次真实复现后修复**：
+
+- 外部草稿曾可见但 app/key 状态不成立：外部展示使用明确的 AppKit 激活路径，
+  返回成功仍要求实际可交互；真实调用已复测。
+- SDK 生成的条件参数引用曾使用 Swift case 名而非其不同的 raw value，导致缺少
+  Text 字段；case 改为 `text`，新增真实 `extract.actionsdata` 的 12 种条件表单检查。
+- 生成器读链接时曾写入 `@Published error`，关闭/清空配置引发 SwiftUI 重复刷新；
+  validation 已保持纯读取，5 个有效/无效配置的实际 QA 检查通过，设置关闭不再卡住。
+- 预览结束焦点曾回到名称：已等待 sheet key 时序后回到 Preview，实际 AX 焦点通过。
+- Shortcuts 会保留隐藏参数旧值，Specified Text 切 Empty Content 曾误报 invalid；
+  原生适配器现在仅选择当前模式字段，再进入共享 typed 校验。真实切换后空文件为
+  0 字节，原先 70 字节文件完全保留；URL 互斥字段的严格校验不放宽。
+
+**已观察的产品运行证据**（macOS 27.2 arm64 / Xcode 27.1 / Shortcuts 10.0 /
+Raycast 2.10.1.0；各 run 只证明自己的源快照）：
+
+| 范围 | 结果与构建 |
+| --- | --- |
+| 真实原生与 Raycast 创建 | `run.UlFu68` 首次生产端到端场景通过：参数正确，只有明确 Create 后新增文件，Markdown 字节匹配。 |
+| 原生临时目录 | `run.LpVnFv` 从未配置到 FileMint 的实际原始目录传入，Intent 返回后仍可创建，空格/换行/中文/emoji/字面 token 精确保留；不是临时目录副本。 |
+| 搜索与取消 | 同 run 的 shown/alreadyVisible 保留 query，真实独占/模态 busy；停止延迟准备后 74.55 秒无迟到面板。 |
+| 生成器 | `run.1Zp0gH` 预览取消/创建恢复原配置，导出取消不报成功，导出脚本 0700 且被真实 Raycast 自动发现并运行，非模态指南未阻断外部请求，本机 nonce 匹配才报告接收。 |
+| 预览生命周期 | `run.FExOfX` 目录选择取消保留草稿，取消草稿才恢复生成器及 Preview 焦点。`run.Xen8zo` 设置关闭后独立草稿保留，旧配置不复活；5 个 validation 读取用例通过。 |
+| 普通冷启动 | `run.Xen8zo` Finder 显式打开的 activationExpected=true，在观察工具 reopen 前已显示普通窗。 |
+| 日常项目笔记 | `run.GprAyE` 真实 Shortcuts、Raycast 各连续 3 个不同名称，均含真正退出后冷启动；运行只填名称，未重新选模板/位置/正文或授权。六份 Markdown 文件逐字匹配名称。 |
+| 上游文本 | `run.GprAyE` 真实工作流“文本 → 打开文件草稿”，正文为魔法变量，固定名称，无第二次输入；创建文件字节精确匹配多行原文。另一次新请求被已有草稿保护，原正文未变。 |
+| 碰撞与 Office 校验 | 同名替换确认取消后保留原文件和草稿；另取名称显式创建空文件通过。真实 Word 模板 + 上游文本被明确拒绝，无新草稿/文件；正常 Office 模板创建尚待续验。 |
+
+全部本地日志主目录：`build/launcher-integration-verification.noindex/2026-10-30/`。
+当前产品 fixture：`build/native-qa.noindex/launcher-product/FileMintLauncherProductQA.app`，
+bundle ID `io.github.daigua.filemint.launcher-product-qa`，URL scheme `filemint-product-qa`。
+最新**已运行**的源快照：`build/launcher-product-harness.noindex/run.GprAyE/source/manifest.json`。
+其目录为 `/private/tmp/FileMint-Launchers-QA.b7YDAa`（规范化显示 `/tmp/...`），六份笔记
+和一份上游文本共 7 个文件；指定原生目录 `/private/tmp/FileMint-Intent-Only-QA.f3sxloo0`
+保留原文本及 `FileMint-QA Empty Native.md`。不要清理这些证据目录。
+
+关键证据文件：
+
+- `product-created-files-run.GprAyE.json`：六份日常笔记及上游正文逐字检查均 true。
+- `product-daily-shortcuts-hot-run.GprAyE.jsonl` / `product-daily-shortcuts-cold-run.GprAyE.jsonl`。
+- `product-daily-raycast-hot-run.GprAyE.jsonl` / `product-daily-raycast-cold-run.GprAyE.jsonl`。
+- `product-pause-run.GprAyE.jsonl`：暂停前最后一次元数据导出，pendingWorkers=0。
+- `p2-product-real-cancellation-run.LpVnFv.jsonl`、`p3-generator-routing-run.1Zp0gH.jsonl`、
+  `p3-render-and-owner-run.Xen8zo.jsonl`：相应边界，不混称最终 run。
+
+**自动化/构建/分发元数据**：
+
+- `make verify` 最近通过：402 Core / 40 suites，23 image / 2 suites，Harness 5/5，
+  URL probe 6、Intents metadata 4 及其余脚本/受限子进程检查；
+  `product-make-verify-final.log`。最后两处 fixture 小修在此后，尚未重新构建/完整检查。
+- 14 项自动原生 suite **分轮均有通过**，不是一次全绿：
+  `build/native-checks.noindex/run.2dz2ayyy/report.json` 的 11 项通过；
+  `run.f7fub847/report.json` 的 favorite-model / hotkey-sandbox 通过；
+  `run.0p1ss_qv/report.json` 的严格 quick-search 在解锁后通过。
+  favorite-model 曾漏列共享源，已修复；正式 App 占用 Control-Option-K，正常退出后
+  才能测注册，已恢复 `/Applications/FileMint.app` 正常运行，偏好/授权未改。
+- 后几次焦点失败核对发现 Mac 再次锁屏，不能据此归因于产品。
+  临时的 SettingsWindowController / SharedUI 激活条件修改、搜索 fixture 的等待与
+  焦点诊断均已撤回；`scripts/quick_search_checks.swift` 与 HEAD 相同。
+- unsigned 主 App/Finder 构建曾通过（`product-app-build.log`），实际 minos 和
+  LSMinimumSystemVersion 均为 13.3。较后的 `product-app-build-final.log` 对应含随后
+  撤回的临时焦点改动；明天重建当前源码，不把旧产物冒充当前最终包。
+- Homebrew 模板从 project.yml 读取最低版本：Ventura 主版本依赖 + 仅版本比较的
+  preflight。实际 Homebrew style/readall/metadata 通过，真实 preflight 在模拟
+  13.0/13.2.1 拒绝，在 13.3/13.3.1/14.0/27.2 接受；
+  `p4-brew-info.json`、`p4-brew-version-boundaries.json`、`p4-brew-metadata.log`。
+  未安装/升级应用、未推送 tap；临时校验 tap 已注销，brew 自动开启的 developer
+  标记已恢复。模拟版本检查不是旧 OS 实机证据。
+
 ## Handoff
 
-- Remaining work: 按用户要求次日继续 P0；先收敛启动隔离、响应与目录身份，选择一条满足体验的实现路线，再定最低版本并推进 P1–P4。Alfred 二期。
-- Files currently changed: 方案、路线图、验收记录、原生 QA 注册/选择与回归、Makefile 的离线探针检查、新 launcher_integration 探针/构建器；生产功能代码未改，既有交互预览未同步。
-- Known limitations: P0 未整体通过，最新源不是完成的产品实现；普通冷启动与 Intent 误开仍有失败证据。生产最低 13.0 未改，13.3 候选待验证，26 的确定决定已撤回；旧证据不能代替最新源码/目标检查。
-- Next action and minimum context: 先读“收尾与次日检查”和 P0 观察表，再按第 4/5/7/8/13/14 节及 owning domain 修复验证。恢复后需重新构建和运行最终基础设施检查；P0 通过再先更新产品 SPEC、开始 P1，勿直接跳到发布或宣称三项用户体验已验收。
+- **停止位置**：用户要求暂停。隔离 QA 已正常退出；正式 FileMint 已恢复运行。
+  Shortcuts 的 `FileMint Product — Workflow Text` 编辑器保留 Word + Specified Text，
+  刚完成“不兼容正文明确拒绝”检查，错误弹窗已关闭。该流程暂不是可成功运行的示例，
+  明天先切 Template Content 续验正常 Office，或恢复 Markdown + Specified Text。
+- **工作区**：主 checkout `main`，HEAD `f4eaa612b43cf4947ddbe4e6b2842fbdb3357cd6`，
+  origin `https://github.com/FileMintApp/FileMint.git`；本次代码、SPEC、指南、QA 基础设施
+  均未提交/推送/发布。不要换 worktree、覆盖未提交文件或用 P0 替代产品证据。
+- **最新两个未验证的小修都只在 `scripts/launcher_product/FixtureApp.swift`**：
+  Native mapping fixture 预期目录改用 `hostDirectory.standardizedFileURL.path`，因为
+  Foundation 把 `/private/tmp/...` 标准化为 `/tmp/...`（真实 xcrun 读取确认）；旧 run
+  中 12 cases/3 required-fields 里整体 false 是这处预期路径问题，不应当作通过。
+  另将原生 cache screenshot 合成到该 window 的实际背景色，修复透明背景导致黑底
+  看不到黑字；旧 `product-upstream-text-zh.png` **不可用作最终素材**。这两项尚未重建。
+- **第一步**：核对工作区，读本节及 Creation / Startup / Finder / Distribution /
+  Presentation 的已变更条目和 HARNESS；保持 Mac 解锁。确认 QA 未运行后执行
+  `bash scripts/build_launcher_product_harness.sh`，再跑 QA 的 Verify native input
+  mapping（12+3）和 Verify generator validation（5）；重新导出并目视检查截图。
+  新 build 使用全新 run/目录，需在 QA Controls 明确选择其打印的保留目录；不要假定
+  旧 run 的配置自动迁移。
+- **继续范围**：正常 Office 字节与说明、人工已有草稿保护、剩余显式位置/失败恢复与
+  当前产品 URL 窗口/去重边界；实际 IME、Space/全屏、两屏、键盘/无障碍以及中英/明暗/
+  最小尺寸仍有未验证项。只补受影响缺项，不机械重放已通过的六次日常创建。
+  新源码/fixture 完成后补 `make verify`、unsigned `make build`，按变更选 native suites。
+- **环境/体验缺项**：macOS 13.3 实机 blocked；三名首次使用者接入与 5 秒理解测试按
+  用户决定保留待验收。真实连续双语宣传视频和最终可用截图未完成，本轮未宣传/发布。
+  `first-user-acceptance-worksheet.md` 在证据目录，仍是空白表，不是通过记录。
+- **CUA 注意**：每次续上恢复 CUA documentation；每次操作使用新 AX state。
+  Shortcuts “每次均询问”的输入窗口在 `com.apple.WorkflowKit.ShortcutsViewService`，
+  未出现在普通 cua app 列表，按此 bundle ID 获取；每次询问窗口会换 ID。
+  文本参数右键插入变量用实际截图坐标，坐标是截图像素，勿复用旧窗口坐标；菜单
+  无法 Escape 时使用其暴露的 Cancel secondary action。
+  不用 getApp/getAXState 判断退出，可能触发 reopen；使用
+  `python3 scripts/native_qa.py check-stopped launcher-product`。窗口仍可见时 getApp
+  不保证把背景草稿带到前台；QA 新请求可验证 existingDraft 并聚焦，但这会新增提示。
+- **构建身份**：使用 builder 打印的 stable path；不要启动 staging 副本、注册生产
+  URL scheme、扩大沙盒或清理系统权限。生产、探针、产品 fixture 的数据/结果均分开。
+  普通 commit/push 仅在用户要求后按既有交付规则执行；本轮没有远端 Actions 检查。
+
+## 2026-10-31 本机技术复核与剩余边界
+
+本节是最新状态；上面的 10 月 30 日 Handoff 保留为历史停止点。用户要求续上昨天
+中断的工作；“本轮完成技术验收，三人体验保留待验收”的决定继续有效。本轮验收基线为
+主 checkout `main`、HEAD `f4eaa612b43cf4947ddbe4e6b2842fbdb3357cd6` 的未提交工作区，origin 未变。
+
+本轮产品实现没有改动。`source-comparison-final.json` 比较 `run.GprAyE`、
+`run.B5nrJA`、`run.h4wOH4` 与最终 `run.y5O1nO` 的冻结清单，差异均仅为
+`FixtureApp.swift`。因此旧的真实 Raycast/日常单项输入证据仍归属旧构建，不混称本轮
+重新运行；本轮新增场景分别绑定自己的 run。完整本机汇总是
+`build/launcher-integration-verification.noindex/2026-10-31/acceptance-report.json`，
+明确 `fullAcceptanceComplete=false`。
+
+### 本轮修正
+
+- 原生条件映射的标准化路径修正在 `run.B5nrJA` 实测通过：12 种位置/内容组合正确，
+  3 个当前必需字段缺失均拒绝；不再继承旧 run 的整体 false。
+- 截图背景修正首次实测仍失败：`NSBitmapImageRep.draw` 复制了透明区域。改为明确
+  source-over 合成不透明背景，重建后逐份目视复核，并对五份主截图做像素抽样，
+  最小 alpha 均为 1。`integrations-zh-light.png` 是修正前失败产物，不能作为素材。
+- 夹具的语言/外观切换此前仅改临时偏好，外部草稿读的是 committed snapshot。
+  现在语言通过 `save()`、外观通过生产 `setAppearance` 保存。最终 `run.y5O1nO`
+  的四次切换均记录 saved=true；真实 Shortcuts 新草稿分别显示英文深色和中文浅色。
+  这两项修正都只在 QA 夹具；没有改用户正式偏好或产品保存规则。
+- 第 4.1 节按已验证的原生隐藏字段语义消除设计期假设；公共 URL 的互斥校验不变。
+
+### 自动化与构建
+
+| 检查 | 状态与证据 |
+| --- | --- |
+| 最终 `make verify` | **passed**；402 Core tests / 40 suites，23 image tests / 2 suites，公共 Harness 5/5 及全部脚本/受限子进程检查；`make-verify-final.log`。 |
+| unsigned `make build` | **passed**；主 App、Finder 可执行文件均存在且仅 arm64；Mach-O minos、LSMinimumSystemVersion 均为 13.3；生产提取出的 Intents metadata 12 种条件表单通过。`app-build.log`、`app-artifacts.json`。后续仅修改夹具，不需要冒充另一份主 App 构建。 |
+| template-workflow | **passed**；`build/native-checks.noindex/run.vn5g3lgk/report.json` 的该项通过。该轮随后检测到夹具修正使源快照改变，整体如实 blocked，没有把未执行项改绿。 |
+| 其余受影响原生回归 | **passed**；冻结源码后，creation-opening、design-ui、favorite-model、quick-search 四项在 `build/native-checks.noindex/run.9g1vqbzn/report.json` 同轮通过。不是宣称 14 项本轮全重跑。 |
+| 最终产品 fixture | **passed**；`product-final-build.log`、`product-final-run.y5O1nO.jsonl`：12+3 原生映射、5 种生成器读取、保存后的语言/外观与真实草稿通过。导出时 pendingWorkers=0；正常退出后 `native_qa.py check-stopped launcher-product` exit 0。 |
+
+### 新增实际运行证据
+
+- **正常 Office**（`run.B5nrJA`）：真实 Shortcuts 从 Word + Template Content 打开
+  草稿；创建前隔离目录为空，Command-Return 后生成 32,025 字节独立文件，与内置
+  `blank-word-v1.docx` 逐字相同，SHA-256 为
+  `91229fe32398a1d5e2e0472ef97cafd62832377250985a8211547e23c65de277`。
+  UI 明确说明保留原文档内容/排版；`office-result.json`。
+- **手动草稿保护**（同 run）：编辑名称和多行正文后再次真实运行 Shortcuts，明确
+  existingDraft；旧名称/正文保留，原生 undo/redo 可撤销并恢复先前编辑。取消后无文件。
+- **目录替换与恢复**（同 run）：草稿接收后把仅含合成 Office 文件的本轮目录移开，
+  在原路径放空目录；创建正确拒绝，原件及替换目录都不变，输入保留。取消重新选择
+  仍保留草稿；明确选回原目录后也不自动写入，第二次 Create 才生成正确 Markdown。
+  `directory-replacement.json` 记录独立 inode 和原件哈希；原目录已恢复到原路径，
+  空替换目录单独保留，不清理证据。
+- **真实上游文本、关闭设置和键盘**（`run.h4wOH4`）：恢复 Workflow Text 为
+  Markdown + Specified Text，原魔法变量仍连接。关闭设置不丢已建立草稿；明确创建
+  后 72 字节文件逐字匹配空格、LF、中文、emoji 和字面 token。Tab 循环经过格式、
+  位置、正文、粘贴、取消、创建再回名称；`upstream-text-final.json`。
+- **全屏调用**（同 run）：先清空旧草稿，再通过 Shortcuts 的“进入全屏幕”菜单
+  真正进入；运行后草稿 visible/key/active，名称可立即键入 `q.md`。取消不写入，
+  “退出全屏幕”菜单确认状态并恢复原窗口；`native-boundaries.json`。快捷键尝试本身
+  未触发全屏，不拿它冒充这份菜单实测。
+- **视觉**：六份 AppKit 内容视图导出已与实际界面核对，包括中文浅色/英文深色
+  接入页与真实 Shortcuts 文本草稿、英文深色生成器，以及最终 run 在内建显示器上
+  被可用区域约束的滚动页面。截图不是整屏录像；最后一份也不是精确 760×570 最小
+  尺寸证据。`acceptance-report.json` 记录每份实际 run、尺寸和 SHA-256。
+
+本轮证据目录为 `build/launcher-integration-verification.noindex/2026-10-31/`。
+合成文件分别保留在 `/private/tmp/FileMint-Launchers-QA.oau97J`（Office 与恢复后的
+Markdown）和 `/private/tmp/FileMint-Launchers-QA.DkWcTK`（72 字节上游文本）；最终
+builder 的 `/private/tmp/FileMint-Launchers-QA.ak1ZiT` 仍为空。不要清理昨天证据目录。
+
+### 剩余边界与最终停止状态
+
+- **IME / VoiceOver：blocked（工具可观察性）**。用户本轮明确允许临时切换并恢复。
+  已查看系统仅安装 ABC 和微信输入法，切换快捷键原本开启；未改输入法列表、键位
+  或输入预测设置。工具未提供稳定的候选窗/中英文模式，不能把普通字符或 Unicode
+  传递称作组合输入通过。输入源按键探测之后首个请求曾只显示 `.md`，随后直接点击
+  Run 及再次 Command-R 均正确带入完整名；尚不能归因，需可观察真实候选窗时复测。
+  旁白开关从原始 off 临时开到 on，但服务未报告运行、朗读反馈不可观察，仍不计通过；
+  已恢复 off，实用工具正常退出，原本开启的字幕选项未改。系统设置回到原通用页面。
+- **连续双语演示：blocked**。系统 Screenshot 录屏组件无法经 CUA 启动，曾返回
+  launchd spawn failed；未尝试用其他输入技术绕过工具，也没有用截图序列充当连续录像。
+- **额外 Chrome URL 复跑：blocked**。浏览器工具仅允许 HTTP/HTTPS，拒绝自定义
+  scheme；没有换浏览器/命令绕过。昨天的真实系统/Raycast 交付仍按其原 run 留存，
+  当前 Core 协议/去重检查通过，不将这两者混为本轮 Chrome 成功。
+- **保留缺项**：macOS 13.3 实机仍无环境；三名首次使用者及 5 秒理解测试按用户决定
+  待验收。完整的多显示器调用迁移、该新页面精确最小尺寸、大收藏 UI、真实 IME/旁白、
+  对比度/减少动态效果和 p95 测量没有全部建立证据，不能由泛化的 automation 代替。
+- QA 已正常退出，没有 worker；Shortcuts 文本示例恢复为可运行的 Markdown +
+  Specified Text。未创建提交、推送、发布、安装新版、同步远端 tap 或查看远端 Actions。
+  当前是已覆盖本机检查通过，完整 P3/P4 体验/素材闸门仍未满足，不勾选路线图完成。

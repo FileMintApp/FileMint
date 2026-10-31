@@ -11,6 +11,7 @@ verify: verify-context verify-fork-sync verify-github-token verify-image-compres
 .PHONY: verify-launcher-probe
 verify-launcher-probe:
 	python3 scripts/launcher_integration/test_url_probe.py
+	python3 scripts/launcher_product/test_metadata.py
 
 .PHONY: verify-file-visibility
 verify-file-visibility:

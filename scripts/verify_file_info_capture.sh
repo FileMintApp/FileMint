@@ -11,7 +11,7 @@ if [[ -f "$FILE_INFO_BUILD/libFileMintCore.a" ]]; then
 else
   FILE_INFO_LINK=(-I "$FILE_INFO_BUILD/Modules" "$FILE_INFO_BUILD"/FileMintCore.build/*.o)
 fi
-swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.0 \
+swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.3 \
   scripts/file_info_capture_smoke.swift "${FILE_INFO_LINK[@]}" -o "$FILE_INFO_WORK/smoke"
 python3 - "$FILE_INFO_WORK" <<'PY'
 import json, pathlib, sys
