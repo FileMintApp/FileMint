@@ -1,7 +1,7 @@
 import Darwin
 import Foundation
 
-/// A local export configuration, never a persisted preset or a script runner.
+/// A local export configuration, never a script runner.
 public struct LauncherCommand: Sendable {
     public let title: String
     public let invocation: ExternalInvocation
@@ -71,7 +71,7 @@ public struct LauncherCommand: Sendable {
     /// Prepare an owner-only executable before atomically replacing the exact
     /// save-panel destination. Failure before rename preserves its old bytes.
     public func exportRaycast(to destination: URL, bundleIdentifier: String = "io.github.daigua.filemint",
-                              scheme: String = "filemint") throws {
+                              scheme: String = "filemint", replacing expected: LauncherScriptSnapshot? = nil) throws {
         let data = Data(try raycastScript(bundleIdentifier: bundleIdentifier, scheme: scheme).utf8)
         guard OpenWithPolicy.isLocalFileURL(destination), !destination.lastPathComponent.isEmpty,
               destination.path != "/" else { throw ExternalInvocationError.invalidRequest }
@@ -81,6 +81,7 @@ public struct LauncherCommand: Sendable {
             error: &coordinationError) { target in
                 outcome = Result {
                     guard target.standardizedFileURL == destination.standardizedFileURL else { throw ExternalInvocationError.destinationUnavailable }
+                    if let expected { try expected.validate(at: target) }
                     let manager = FileManager.default
                     let stagingDirectory = try manager.url(for: .itemReplacementDirectory, in: .userDomainMask,
                                                            appropriateFor: target, create: true)
@@ -88,6 +89,7 @@ public struct LauncherCommand: Sendable {
                     let staging = stagingDirectory.appendingPathComponent("FileMint-command.sh")
                     try data.write(to: staging, options: .withoutOverwriting)
                     try manager.setAttributes([.posixPermissions: 0o700], ofItemAtPath: staging.path)
+                    if let expected { try expected.validate(at: target) }
                     // rename replaces a link itself and cannot replace a directory.
                     guard rename(staging.path, target.path) == 0 else {
                         throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno))

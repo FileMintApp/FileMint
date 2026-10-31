@@ -78,6 +78,9 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 
 ## External draft destinations
 
+- Saved bookmarks for explicitly exported launcher scripts authorize only those
+  script files for management. They never authorize a draft's save destination
+  or add a Finder observation root. Do not scan their containing directories.
 - A launcher path or favorite ID is a location suggestion, never a grant or a
   Finder observation root. Native Intent directory access is session-owned;
   release it only after cancellation or write cleanup. Do not persist it merely

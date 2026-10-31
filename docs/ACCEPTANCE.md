@@ -3,6 +3,53 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Installed local Debug — 2026-10-31
+
+At the user's explicit request, the feedback worktree was built as Debug with
+`ENABLE_DEBUG_DYLIB=NO`, `DEBUG` and `-Onone`, then signed with the existing
+Developer ID and production sandbox entitlements. The source, staged and installed
+bundles passed verification. Version remains 0.8.1 (30), arm64, minimum macOS 13.0.
+The old installed app was quit normally and backed up as a CRC-checked ZIP before
+replacement; source and installed main/Finder executable hashes match.
+
+The running app and default filemint URL handler resolve to
+`/Applications/FileMint.app`. The installed UI shows separate Extensions entries,
+script management and a leading-aligned Template Content picker; its test sheet
+was cancelled. One enabled Finder plugin is registered inside that installed app;
+this is not full Finder callback acceptance. User data was not changed by the
+installer. No publication was performed.
+
+Evidence: `build/local-debug-install.noindex/run.SWUw8Y/installation.json` and the
+[task record](tasks/2026-10-29-shortcuts-and-launchers.md#2026-10-31-本地-debug-构建与安装).
+
+## Launcher generator and script management — 2026-10-31
+
+On `c36fa36` plus the uncommitted feedback changes, final offline `make verify`
+and unsigned Release compilation passed on arm64 macOS 27.2 / Xcode 27.1.
+The main and embedded Finder executables exist. Final design-ui report
+`run.bc07jt9r` passed 12 bilingual content-picker alignment layouts, separate
+Extensions pages, managed same-file repeated saves, full request preservation,
+private-index reload, external-change protection, list-only removal and a real
+Trash transaction followed by exact-byte restoration of its unique synthetic file.
+
+The isolated sandbox product fixture `run.MAO4Rc` observed save-panel export,
+automatic Raycast Search Script Commands handoff, list restoration after normal
+quit/relaunch, editing the same script without another picker, adding an existing
+script without duplication and cancelling deletion. These retained observations
+belong to that immutable source snapshot; the task records the later source
+comparison. They do not prove sandbox Trash commit or Raycast directory import.
+
+The first design run's `/private/tmp` alias comparison and a later new Trash
+check's query-before-create failure are retained with their corrected checks.
+The complete quick-search suite failed its first hotkey-registration assertion;
+a separate Carbon diagnostic returned -9878 for the occupied suggested key.
+This remains environment-blocked. No user shortcut setting was changed.
+Older-system, IME, VoiceOver and first-user research gaps remain open.
+
+Details and evidence: [launcher feedback task](tasks/2026-10-29-shortcuts-and-launchers.md#2026-10-31-生成器与启动器管理反馈),
+`build/launcher-settings-feedback.noindex/2026-10-31/verification-report.json`.
+No commit, push, installation or publication was performed.
+
 ## Acceptance runner build reuse — 2026-10-31
 
 On `6e936ee` plus the uncommitted workflow optimization, offline `make verify`

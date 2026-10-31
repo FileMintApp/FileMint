@@ -9,7 +9,7 @@ import SwiftUI
 final class PreferencesModel: ObservableObject {
     static let shared = PreferencesModel()
     enum Pane: String, CaseIterable, Identifiable {
-        case fileTypes, creation, fileTools, resourceTools, openWith, favoriteLocations, general, integrations, folders, about
+        case fileTypes, creation, fileTools, resourceTools, openWith, favoriteLocations, shortcuts, launchers, general, folders, about
         var id: String { rawValue }
     }
     @Published var selectedPane: Pane = .general
@@ -44,6 +44,10 @@ final class PreferencesModel: ObservableObject {
     @Published private(set) var isStartupReady = false
     lazy var externalInvocations = ExternalInvocationCoordinator(model: self)
     var integrationsState: IntegrationsModel?
+    var launcherScriptStore: LauncherScriptStore {
+        .init(file: (store.location ?? FileMintStorage.directory.appendingPathComponent("preferences.json"))
+            .deletingLastPathComponent().appendingPathComponent("launcher-scripts.json"))
+    }
     var templateRecoveryError: String?
     var templateMutationAllowed: Bool { !isMutatingTemplates && templateRecoveryError == nil }
 

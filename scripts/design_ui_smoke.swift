@@ -660,9 +660,6 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
             model.integrationsState = originalState
             model.preferences = originalPreferences
         }
-        let ids = ["projectNote.shortcuts", "projectNote.raycast", "workflowText.shortcuts",
-                   "quickSearch.shortcuts", "quickSearch.raycast", "setupShortcuts", "openShortcuts",
-                   "createCommand", "customCommand"]
         var reservations = 0, folderReads = 0
         let request = try ExternalDraftRequest(destination: .directory(root.path))
         for (minor, supported) in [(0, false), (2, false), (3, true)] {
@@ -674,18 +671,26 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
             model.integrationsState = nil
             for language in [AppLanguage.chinese, .english] {
                 model.preferences.language = language
-                let host = NSHostingView(rootView: IntegrationsPane(settings: model, favorites: favorites))
+                for page in [IntegrationPage.shortcuts, .launchers] {
+                let ids = page == .shortcuts
+                    ? ["projectNote.shortcuts", "workflowText.shortcuts", "quickSearch.shortcuts", "setupShortcuts", "openShortcuts"]
+                    : ["projectNote.raycast", "quickSearch.raycast", "createCommand", "customCommand", "addScript", "globalShortcutSettings"]
+                let host = NSHostingView(rootView: IntegrationsPane(settings: model, favorites: favorites, page: page))
                 owner.contentView = host
                 owner.makeKeyAndOrderFront(nil)
                 try await Task.sleep(for: .milliseconds(150))
                 let nodes = accessible(host)
                 try require(nodes.contains { attribute($0, "accessibilityIdentifier") as? String == "integrations.systemRequirement" } == !supported,
                             "System requirement explanation is missing or shown on a supported system")
-                for id in ids + ["globalShortcutSettings"] {
+                for id in ids {
                     let matches = nodes.filter { attribute($0, "accessibilityIdentifier") as? String == "integrations." + id }
                     try require(!matches.isEmpty, "Missing launcher control: \(id)")
                     try require(matches.allSatisfy { attribute($0, "accessibilityEnabled") as? Bool == (id == "globalShortcutSettings" || supported) },
                                 "Incorrect enabled state for \(id) on macOS 13.\(minor)")
+                }
+                let otherPageID = page == .shortcuts ? "createCommand" : "setupShortcuts"
+                try require(!nodes.contains { attribute($0, "accessibilityIdentifier") as? String == "integrations." + otherPageID },
+                            "Shortcuts and launcher setup controls were not separated")
                 }
                 guard !supported, let state = model.integrationsState else { continue }
                 for tool in IntegrationTool.allCases {
@@ -707,6 +712,131 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
         try require(reservations == 0 && folderReads == 0 && !CustomFileSavePanelController.shared.hasActiveDraft,
                     "Unsupported launcher work reached creation or directory access")
         print("PASS launcher availability: macOS 13.0/13.2 disabled, 13.3 enabled, bilingual native controls and direct-entry guards")
+        model.externalInvocations = originalRuntime
+        try await checkLauncherSettings(favorites: favorites, root: root)
+    }
+
+    private func checkLauncherSettings(favorites: FavoriteLocationsModel, root: URL) async throws {
+        func require(_ value: Bool, _ message: String) throws {
+            if !value { throw NSError(domain: "LauncherSettings", code: 1, userInfo: [NSLocalizedDescriptionKey: message]) }
+        }
+        func nodes(_ node: NSObject, depth: Int = 0) -> [NSObject] {
+            guard depth < 30 else { return [] }
+            let children = node.responds(to: NSSelectorFromString("accessibilityChildren"))
+                ? node.value(forKey: "accessibilityChildren") as? [NSObject] ?? [] : []
+            return [node] + children.flatMap { nodes($0, depth: depth + 1) }
+        }
+        func frame(_ host: NSView, id: String) throws -> NSRect {
+            guard let node = nodes(host).first(where: {
+                $0.responds(to: NSSelectorFromString("accessibilityIdentifier")) && $0.value(forKey: "accessibilityIdentifier") as? String == id
+            }), let frame = node.value(forKey: "accessibilityFrame") as? NSValue else {
+                throw NSError(domain: "LauncherSettings", code: 2, userInfo: [NSLocalizedDescriptionKey: "Missing control frame: " + id])
+            }
+            return frame.rectValue
+        }
+        let owner = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1000, height: 800),
+                             styleMask: [.titled], backing: .buffered, defer: false)
+        owner.isReleasedWhenClosed = false
+        owner.contentView = NSHostingView(rootView: IntegrationsPane(settings: model, favorites: favorites))
+        owner.makeKeyAndOrderFront(nil)
+        guard let state = model.integrationsState else { throw ResourceError.failed }
+        state.attachOwner(owner)
+        let language = model.preferences.language, appearance = model.preferences.appearance
+        defer { state.cancelConfiguration(); owner.close(); model.preferences.language = language; model.setAppearance(appearance) }
+        let captures = root.appendingPathComponent("launcher-settings", isDirectory: true)
+        try FileManager.default.createDirectory(at: captures, withIntermediateDirectories: true)
+        for language in [AppLanguage.chinese, .english] {
+            model.preferences.language = language
+            model.setAppearance(language == .chinese ? .light : .dark)
+            state.start(.custom, tool: .raycast)
+            guard let sheet = owner.attachedSheet, let host = sheet.contentView else { throw ResourceError.failed }
+            state.config.advanced = true
+            for width in [600.0, 680.0] {
+                sheet.setContentSize(NSSize(width: width, height: 650))
+                for mode in IntegrationBodyMode.allCases {
+                    state.config.bodyMode = mode
+                    try await Task.sleep(for: .milliseconds(150))
+                    host.layoutSubtreeIfNeeded()
+                    let template = try frame(host, id: "launcher.template"), content = try frame(host, id: "launcher.contentMode")
+                    try require(template.width > 0 && content.width > 0 && abs(template.minX - content.minX) < 2,
+                                "Content picker is not leading-aligned for \(mode), \(language), \(width): \(template) / \(content)")
+                    if let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) {
+                        host.cacheDisplay(in: host.bounds, to: bitmap)
+                        try bitmap.representation(using: .png, properties: [:])?.write(to: captures.appendingPathComponent("\(language.rawValue)-\(Int(width))-\(mode.rawValue).png"))
+                    }
+                }
+            }
+            state.cancelConfiguration()
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        let file = root.appendingPathComponent("managed-script.sh")
+        let identifier = Bundle.main.bundleIdentifier!, scheme = state.scheme
+        let request = try ExternalDraftRequest(templateID: "markdown", content: .verbatim("literal {{year}}\n正文\n"), destination: .directory(root.path), requestID: UUID())
+        let original = try LauncherCommand(title: "Managed QA", invocation: .draft(request), runtimeName: true)
+        try original.exportRaycast(to: file, bundleIdentifier: identifier, scheme: scheme)
+        try await state.scripts.register(file)
+        guard let record = state.scripts.records.first(where: { $0.url == file.standardizedFileURL }) else {
+            throw NSError(domain: "LauncherSettings", code: 3, userInfo: [NSLocalizedDescriptionKey: "Missing managed export reference"])
+        }
+        try require(try model.launcherScriptStore.load().contains(record), "Export reference was not persisted")
+        state.editScript(record)
+        for _ in 0..<100 where state.isExporting { try await Task.sleep(for: .milliseconds(30)) }
+        try require(owner.attachedSheet != nil && state.config.bodyMode == .text && state.config.text == "literal {{year}}\n正文\n" &&
+                    state.config.nameMode == .runtime && state.config.directory?.standardizedFileURL == root.standardizedFileURL && state.editingScript != nil,
+                    "Managed script did not restore generator configuration")
+        state.config.title = "Updated QA"
+        state.exportRaycast()
+        for _ in 0..<100 where state.isExporting { try await Task.sleep(for: .milliseconds(30)) }
+        let updated = try LauncherScriptSnapshot.read(at: file).contents()
+        try require(updated.command.title == "Updated QA" && updated.command.invocation == .draft(request), "Managed save did not update the same script")
+        state.returnToEditor()
+        try require(state.editingScript != nil && owner.attachedSheet != nil, "Returning to the editor lost the managed script")
+        state.config.title = "Updated Twice QA"
+        state.exportRaycast()
+        for _ in 0..<100 where state.isExporting { try await Task.sleep(for: .milliseconds(30)) }
+        try require(try LauncherScriptSnapshot.read(at: file).contents().command.title == "Updated Twice QA", "Second managed save did not update the same script")
+        guard let saved = state.scripts.records.first(where: { $0.id == record.id }) else { throw ResourceError.failed }
+        try require(try model.launcherScriptStore.load().contains(saved), "Updated reference was not persisted")
+        state.cancelConfiguration()
+        state.editScript(saved)
+        for _ in 0..<100 where state.isExporting { try await Task.sleep(for: .milliseconds(30)) }
+        let external = Data("external changes must be preserved\n".utf8)
+        try external.write(to: file)
+        state.exportRaycast()
+        for _ in 0..<100 where state.isExporting { try await Task.sleep(for: .milliseconds(30)) }
+        try require(state.error != nil && owner.attachedSheet != nil && (try Data(contentsOf: file)) == external, "Save overwrote an external edit or discarded the editor")
+        state.cancelConfiguration()
+        state.trashScript(saved)
+        for _ in 0..<100 where state.scripts.isWorking { try await Task.sleep(for: .milliseconds(30)) }
+        try require(state.scripts.error != nil && (try Data(contentsOf: file)) == external, "Trash removed an externally changed script")
+        state.scripts.forget(saved)
+        try require(!state.scripts.records.contains { $0.id == saved.id } && (try Data(contentsOf: file)) == external,
+                    "Removing a list entry changed the script")
+        // Exercise the real file transaction on one uniquely named synthetic
+        // script, then restore that exact output so the check leaves no Trash item.
+        let disposable = root.appendingPathComponent("FileMint-QA-" + UUID().uuidString + ".sh")
+        try original.exportRaycast(to: disposable, bundleIdentifier: identifier, scheme: scheme)
+        let trash = try FileManager.default.url(for: .trashDirectory, in: .userDomainMask, appropriateFor: disposable, create: false)
+            .appendingPathComponent(disposable.lastPathComponent)
+        try require(!FileManager.default.fileExists(atPath: trash.path), "Disposable Trash target is already occupied")
+        let disposableSnapshot = try LauncherScriptSnapshot.read(at: disposable)
+        defer {
+            if let current = try? LauncherScriptSnapshot.read(at: trash), current.data == disposableSnapshot.data {
+                try? FileManager.default.moveItem(at: trash, to: disposable)
+            }
+        }
+        try await state.scripts.register(disposable)
+        guard let disposableRecord = state.scripts.records.first(where: { $0.url == disposable.standardizedFileURL }) else { throw ResourceError.failed }
+        state.trashScript(disposableRecord)
+        for _ in 0..<100 where state.scripts.isWorking { try await Task.sleep(for: .milliseconds(30)) }
+        try require(state.scripts.error == nil && !FileManager.default.fileExists(atPath: disposable.path) &&
+                    !state.scripts.records.contains { $0.id == disposableRecord.id }, "Trash did not remove the script and its entry: \(state.scripts.error ?? "no error")")
+        try require(try LauncherScriptSnapshot.read(at: trash).data == disposableSnapshot.data, "Trash did not preserve the exact script bytes")
+        try FileManager.default.moveItem(at: trash, to: disposable)
+        try require(PreferencesModel.Pane.shortcuts.groupTitle(.english) == FileMintStrings.text(.extensions, language: .english) &&
+                    PreferencesModel.Pane.launchers.groupTitle(.english) == FileMintStrings.text(.extensions, language: .english), "Integration pages are outside Extensions")
+        print("PASS launcher settings: 12 content-picker layouts, exact script edit/save, persisted references, external-change preservation, list-only removal and recoverable Trash transaction")
+        print("LAUNCHER_SETTINGS_CAPTURES \(captures.path)")
     }
 
     private func checkSettings(store: FileMintPreferencesStore, root: URL) async throws {

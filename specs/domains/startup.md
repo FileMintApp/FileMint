@@ -202,9 +202,10 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   only when its search input is visible, key and interactive; modal or exclusive
   work returns busy, and failed/timed-out presentation returns unavailable.
   Cancellation cannot queue a later search or overwrite an unfinished query.
-- Preferences includes Shortcuts & Launchers after General. It guides project
-  notes, upstream workflow text and Quick Search through native Shortcuts,
-  Raycast or a public URL. Configuration is transient; no account, persistent
+- Extensions includes separate Shortcuts and Launchers pages. Shortcuts guides
+  native actions and upstream workflow text; Launchers owns Raycast commands,
+  public URLs and exported-script management. Both can introduce project notes
+  and Quick Search. Generator configuration is transient; no account, general
   content preset library or automatic third-party installation is introduced.
   Export only to an explicit save destination. Keep export/real-test guidance
   nonmodal so it does not block the external request it asks the user to run.
@@ -220,7 +221,22 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   location and never edits Raycast configuration. Its one optional runtime name
   is percent-encoded as data; fixed URL values and shell headers are validated.
   Show saved/copied and matching local request-received states separately from
-  unverified third-party import. Configuration and content are not persisted.
+  unverified third-party import. After a successful new export, open Raycast's
+  Script Commands through its public command deeplink and retain an explicit
+  reopen action, the folder path and the remaining Settings → Script Commands →
+  Add Script Directory steps. Use a direct import/settings deeplink only when
+  supported by Raycast; never invent one or automate its UI. Missing Raycast or a failed handoff preserves the saved script and gives
+  manual setup guidance; opening settings never claims successful import.
+- Launchers lists only explicitly exported or user-selected FileMint scripts.
+  A bounded private index retains titles, exact-file bookmarks, identities and
+  content fingerprints, without duplicating script bodies or crawling folders.
+  Existing generated scripts may be added with a file picker; parse their known
+  format as data and never run them. Editing reconstructs generator fields from
+  the script and atomically updates that same file. Preserve external changes,
+  replacements, symlinks, missing files and unreadable/corrupt indexes; explain
+  failures and allow removing only the list entry. Deletion explicitly confirms
+  moving the unchanged script to Trash, then removes its entry. Exported-file
+  access remains separate from draft destination authorization and Finder scope.
 
 ## File information lifecycle
 

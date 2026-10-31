@@ -1,7 +1,7 @@
 # Task: 快捷指令与启动器联动方案
 
-Status: partially-verified — 2026-10-31 最低版本范围修正已完成并通过本机检查：应用最低 13.0，接入功能最低 13.3，低系统禁用；完整联动体验/素材验收仍未完成。
-Next action: 本轮修正及证据见文末“2026-10-31 最低系统范围纠正”。后续继续原有 IME/旁白/录屏和三名首次使用者体验缺项，macOS 13.0/13.3 实机仍缺少环境。额外快捷搜索首次失败、同源码诊断复跑通过，原始失败保留且原因未定。未提交、推送或发布；Alfred 二期。
+Status: partially-verified — 2026-10-31 生成器/脚本管理反馈的 Core、编译与 design-ui 通过，沙盒导出/重启后编辑已有实测；后续帮助文字对齐和搜索滚动修正已 Debug 编译安装，按要求未追加测试或校验。完整联动体验/素材验收仍未完成。
+Next action: 本轮反馈及后续界面修正已完成，最新本地 Debug 已安装到 /Applications/FileMint.app，见文末记录。后续补原有 IME/旁白/录屏、三名首次使用者体验及 macOS 13.0/13.3 实机缺项；沙盒真实移入废纸篓仍未提交操作。完整 quick-search 原生检查受 Control-Option-K 已占用（系统 -9878）阻塞，保留失败记录，不修改用户快捷键。未推送或发布；Alfred 二期。
 
 ## Objective and scope
 
@@ -1004,3 +1004,36 @@ builder 的 `/private/tmp/FileMint-Launchers-QA.ak1ZiT` 仍为空。不要清理
 | macOS 13.0/13.3 实机 | **blocked**：无旧系统环境。注入版本、较新系统上的原生检查和目标元数据均不作为旧系统运行证据；原有体验缺项继续保留。 |
 
 Native planner 因 18 份通用 QA/验证脚本恢复目标字面值而保守选出所有套件；逐份确认这些脚本的唯一变化为 `arm64-apple-macos13.3` → `arm64-apple-macos13.0`，本轮按行为显式缩到 design-ui、quick-search，并另外编译产品夹具，不重放无关 Finder/安装/权限流程。全部 QA 正常退出；产品夹具只构建未启动，没有替换正式应用或改用户偏好。最终任务状态更新后另执行文档检查。
+
+## 2026-10-31 生成器与启动器管理反馈
+
+- 范围：用户截图中的内容下拉框对齐缺陷；导出后 Raycast 接入引导；已导出脚本的编辑、定位与删除；将快捷指令/启动器拆到扩展功能下。沿用 Ponytail Pragmatic 的完整修复和按风险验证原则。
+- 契约：startup、presentation、creation、finder-permissions；先更新 owning SPEC，再修改实现。保留应用最低 13.0 / 接入功能最低 13.3 的边界。
+- 设计判断：快捷指令编排原生工作流，启动器管理 Raycast 命令与通用 URL，分别放在扩展功能下，比低频集成占据偏好设置顶层更清楚。共享执行链与生成器，分别提供与该入口相关的场景和操作。
+- Raycast 官方手册要求在 Settings → Script Commands 中添加脚本目录（Raycast 1 为 Extensions → + → Add Script Directory）：<https://manual.raycast.com/script-commands>、<https://github.com/raycast/script-commands>。当前本机 Raycast 2 的公开 URL 分发器不接受 settings/preferences 路由，实际尝试的两种设置 URL 未打开目标；不使用臆造链接、私有配置改写或 UI 自动化。新导出后通过公开命令 deeplink 打开 Search Script Commands，同时保留剩余设置步骤、目录路径拷贝及 Finder 定位。首次目录接入仍由用户完成，不宣称自动导入。
+- 脚本管理仅保存明确导出/选择的文件引用、权限书签、身份与摘要，不复制脚本正文，不枚举目录。旧导出可手动添加；只接受已知生成格式，按数据解析且不执行脚本。编辑恢复原配置并更新原文件；外部修改、替换或链接拒绝覆盖/删除。删除确认移到废纸篓；仅移除列表记录不改文件。
+- 计划检查：`make verify`、无签名 `make build`；共享文件修改已审阅，相关自动原生范围为 `design-ui,quick-search`。新增核心回归检查格式还原、同文件更新与旧快照拒绝、索引持久化/损坏保护；原生补充三种内容模式在中英/600与680宽度下的实际控件对齐，以及编辑/保存/外部修改保护。沙盒书签、真实 Raycast 跳转与手动接入另记观察边界。
+- 实现补充：编辑保留原脚本的完整请求（包括已有请求 ID），原子更新同一个文件并刷新文件身份和书签；返回编辑后继续更新原文件。本机预览不携带脚本的公共去重 ID，避免预览提前消耗真实调用。脚本正文只存在导出文件与当前编辑器内存中。
+- **passed — 离线与编译**：基线 `c36fa36e8745dce9a4fdd12a19676e8df8d3d414` 上的本轮未提交修改；arm64 macOS 27.2、Xcode 27.1 / Swift 6.4。最终 `make verify` 通过（407 Core / 42 suites、23 image / 2 suites、5/5 公共 harness 及脚本回归），`CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO make build` 通过，主 App 和嵌入 Finder 扩展的可执行文件存在。最终日志为证据目录的 `verify-verified.log`、`build-verified.log`。
+- **passed — 自动原生**：`NATIVE_QA_SUITES=design-ui make verify-native-affected`，最终报告 `build/native-checks.noindex/run.bc07jt9r/report.json`。包含中英、600/680 宽度 × 三种内容模式的 12 组实际控件左边缘断言；独立页面/低系统禁用；原配置还原、同文件连续两次更新、请求 ID 保留、索引重载；外部改动拒绝覆盖/删除、仅移除列表不改文件；真实废纸篓事务和原字节保留，随后将该唯一合成文件恢复到夹具目录，未遗留该轮 Trash 项。最终截图和报告已复制到本轮证据目录。
+- **passed — 保留的沙盒实测**：不可变产品夹具 `run.MAO4Rc`、独立身份 `io.github.daigua.filemint.launcher-product-qa`。用保存面板导出合成脚本，自动打开 Raycast 的 Search Script Commands 确认页；正常退出/重启后列表恢复，直接编辑并更新原文件，无需再次选择文件；添加同一已有脚本后仍只有一条记录；删除确认的取消保留条目和文件；脚本实际模式为 0700、标题字节符合更新结果。已正常退出 QA。最终源码后来增加非空 ID 的还原/预览隔离，并将确认提示从“首次”改为“打开时”；上述实测脚本无 ID，所测导出/书签/更新行为未变，因此保留原 run 归属，不宣称最终源码重新执行了沙盒实测。具体观察为 `product-observations.json`。
+- **failed retained → corrected**：`run.1yk59hao` 的 design-ui 在 12 组布局通过后，因夹具用 `/private/tmp` 与 Foundation 标准化的 `/tmp` 直接比较而失败；修正夹具预期后 `run._fmiqpnb` 通过。补充 Trash 回归的 `run.s_19sqin` 在合成文件创建前查询其卷 Trash 位置，返回 Cocoa 3328 / POSIX 2；修正检查顺序后最终 `run.bc07jt9r` 通过。原始失败报告均保留。
+- **blocked — 完整 quick-search 原生检查**：`run.1yk59hao` 的 quick-search 在第一个建议键注册断言失败；独立 Carbon 诊断同一 Control-Option-K 返回 -9878（SDK 定义的已存在热键错误）。未改动用户配置、未终止占用者，也未将该项重跑成绿。新增页面的导航和显示已由最终 design-ui 覆盖；完整搜索回归仍需空闲组合键环境。
+- **not-run / 原有缺项**：本轮没有给 Raycast 添加目录或宣称完成导入；没有提交沙盒实际移入废纸篓操作（真实事务自动检查使用独立 design-ui 夹具）。没有 macOS 13.0/13.3 实机，原有 IME/旁白/首次使用者/素材缺项不因本轮 UI 回归通过而关闭。终端读取 QA 私有容器索引被系统拒绝，持久化观察来自 App UI，未绕过容器访问限制。
+- 证据汇总：`build/launcher-settings-feedback.noindex/2026-10-31/verification-report.json`。本轮未提交、推送、安装或发布。
+
+## 2026-10-31 本地 Debug 构建与安装
+
+- 用户明确要求构建本地 Debug 并安装；此操作不走发布、远端 CI 或 Homebrew 同步流程。
+- **passed — 构建/签名**：按 `docs/DEVELOPMENT.md` 用 Debug 配置和 `ENABLE_DEBUG_DYLIB=NO` 构建，保留 `DEBUG` / `-Onone`，应用版本仍为 0.8.1（30）。使用现有 Developer ID（Team 8S66M2ZLD5）签署主 App、Finder 扩展及嵌套组件；源副本、安装临时副本和最终安装副本均通过 `verify_bundle.sh` 与 Developer ID 检查，保持 macOS 13.0、arm64、原沙盒权限。
+- **passed — 替换/保留**：通过 App UI 正常退出原 FileMint 并核对进程停止，原应用以 `previous-FileMint.app.zip` 备份；ZIP 全量 CRC 和原可执行文件 SHA-256 一致。验证新副本后替换 `/Applications/FileMint.app`，安装副本主 App/Finder 可执行文件与源副本哈希相同。安装器未读写用户配置、模板或目录书签。
+- **passed — 本机启动/界面**：安装后丢弃旧电脑操作绑定，从 Finder 显式打开已安装 App；确认“扩展功能”下有独立快捷指令/启动器入口、已创建脚本管理区；实际打开生成器并展开“模板内容”，观察下拉框左对齐，再取消返回启动器页。未创建或导出用户文件。
+- **passed — 路由/注册**：只运行一个正式 FileMint 进程，执行位置为 `/Applications/FileMint.app/Contents/MacOS/FileMint`；`filemint://` 的默认处理 App 为 `/Applications/FileMint.app`。已注销已知 Debug/Release 开发副本注册并注册安装副本；Finder 扩展查询只返回一个已启用插件，路径位于已安装 App 内。没有通过 pluginkit 改动启用状态，没有回放完整 Finder 回调检查。
+- 证据：`build/local-debug-install.noindex/run.SWUw8Y/installation.json`，同目录的 build/sign/verify 日志、`process-info.json`、`finder-registration.log` 和原应用备份。Debug App 保持运行，停留在启动器页。没有提交、推送或发布。
+
+## 2026-10-31 后续界面修正与重新安装
+
+- 快捷指令与启动器页共用的“限制与帮助”展开内容改为撑满可用宽度并左对齐，多行文字显式采用 leading 对齐。
+- 快捷搜索用统一的选中项滚动定位：选回首项时定位首个分组标题的顶部，其余项目保留原来的最小可见滚动；重新打开面板恢复首项时采用同一逻辑。没有改变结果顺序、键盘选择规则或草稿执行路径。
+- 用户要求不跑测试，并要求后续本地构建安装不做校验。两处修正已用 Debug / `ENABLE_DEBUG_DYLIB=NO` 编译、按原身份签名，备份旧 App 后安装到 `/Applications/FileMint.app`；没有追加测试、签名/包校验或 UI 验收，不把此前的原生结果当作本次修正的运行证据。
+- 最近安装记录：`build/local-debug-install.noindex/run.ygBp29/installation.json`，同目录保存构建/签名日志和旧 App 备份。原有完整搜索及平台/体验验收缺项继续保留。

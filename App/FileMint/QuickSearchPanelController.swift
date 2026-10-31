@@ -326,7 +326,8 @@ enum QuickSearchSettingsCatalog {
         PreferencesModel.Pane.allCases.map { pane in
             let aliases: [String] = switch pane {
             case .general: ["appearance", "theme", "language", "startup", "login", "shortcut", "hotkey", "menu bar", "外观", "主题", "语言", "开机", "快捷键", "菜单栏"]
-            case .integrations: ["shortcuts", "launchers", "raycast", "workflow", "快捷指令", "启动器", "联动", "工作流"]
+            case .shortcuts: ["shortcuts", "workflow", "快捷指令", "联动", "工作流"]
+            case .launchers: ["launchers", "raycast", "script", "url", "启动器", "脚本", "链接"]
             case .fileTypes: ["templates", "types", "模板", "类型"]
             case .creation: ["creation", "collision", "preview", "新建", "创建", "重名", "预览"]
             case .folders: ["folders", "permission", "authorization", "finder", "目录", "授权", "权限", "扩展"]
@@ -378,7 +379,7 @@ private struct QuickSearchView: View {
                 searchHeader(move: { offset in
                     selection.move(offset, in: results)
                     remember()
-                    if let id = selection.id { proxy.scrollTo(id) }
+                    scrollToSelection(proxy)
                 })
                 scopeBar
                 Rectangle().fill(FileMintStyle.line).frame(height: 1)
@@ -414,7 +415,7 @@ private struct QuickSearchView: View {
             .onChange(of: scope) { _ in scrollToResultsStart(proxy) }
             .onAppear {
                 rebuild(reset: !restoresSelection)
-                if let id = selection.id { proxy.scrollTo(id) }
+                scrollToSelection(proxy)
             }
         }
         .background(FileMintStyle.background).ignoresSafeArea()
@@ -667,6 +668,16 @@ private struct QuickSearchView: View {
 
     private func scrollToResultsStart(_ proxy: ScrollViewProxy) {
         if let group = results.first?.group { proxy.scrollTo(group.rawValue, anchor: .top) }
+    }
+
+    private func scrollToSelection(_ proxy: ScrollViewProxy) {
+        guard let id = selection.id else { return }
+        if id == results.first?.id {
+            // Include the first section's heading when returning to the top.
+            scrollToResultsStart(proxy)
+        } else {
+            proxy.scrollTo(id)
+        }
     }
 
     private func rebuild(query: String? = nil, preferences: FileMintPreferences? = nil,

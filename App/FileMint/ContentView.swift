@@ -173,7 +173,8 @@ struct ContentView: View {
     @ViewBuilder private var page: some View {
         switch model.selectedPane {
         case .general: GeneralPane(favorites: favoriteLocations, searchController: quickSearch)
-        case .integrations: IntegrationsPane(settings: model, favorites: favoriteLocations)
+        case .shortcuts: IntegrationsPane(settings: model, favorites: favoriteLocations, page: .shortcuts)
+        case .launchers: IntegrationsPane(settings: model, favorites: favoriteLocations, page: .launchers)
         case .creation: CreationSettingsPane()
         case .fileTypes: TypesPane()
         case .folders: FoldersPane()
@@ -245,7 +246,7 @@ extension PreferencesModel.Pane {
     func groupTitle(_ language: AppLanguage) -> String {
         switch self {
         case .fileTypes, .creation: InterfaceText.fileCreation.text(language)
-        case .fileTools, .resourceTools, .openWith, .favoriteLocations: FileMintStrings.text(.extensions, language: language)
+        case .fileTools, .resourceTools, .openWith, .favoriteLocations, .shortcuts, .launchers: FileMintStrings.text(.extensions, language: language)
         default: InterfaceText.preferences.text(language)
         }
     }
@@ -253,7 +254,8 @@ extension PreferencesModel.Pane {
     func subtitleText(_ language: AppLanguage) -> String {
         switch self {
         case .general: InterfaceText.generalSubtitle.text(language)
-        case .integrations: LauncherText.subtitle.text(language)
+        case .shortcuts: language.resolved() == .chinese ? "用原生动作连接工作流，把名称与文本带入 FileMint 草稿。" : "Connect native actions to bring names and workflow text into FileMint drafts."
+        case .launchers: LauncherText.subtitle.text(language)
         case .creation: InterfaceText.creationSubtitle.text(language)
         case .fileTypes: InterfaceText.typesSubtitle.text(language)
         case .folders: InterfaceText.foldersSubtitle.text(language)
@@ -267,7 +269,8 @@ extension PreferencesModel.Pane {
     var title: FileMintTextKey {
         switch self {
         case .general: .general
-        case .integrations: .integrations
+        case .shortcuts: .shortcuts
+        case .launchers: .launchers
         case .creation: .creationSettings
         case .fileTypes: .templatesAndTypes
         case .folders: .finderAndFolders
@@ -282,7 +285,7 @@ extension PreferencesModel.Pane {
     var subtitle: FileMintTextKey {
         switch self {
         case .general: .generalSettingsHint
-        case .integrations: .launcherSettingsHint
+        case .shortcuts, .launchers: .launcherSettingsHint
         case .creation: .creationSettingsHint
         case .fileTypes: .fileTypeHint
         case .folders: .finderFoldersHint
@@ -297,7 +300,8 @@ extension PreferencesModel.Pane {
     var symbol: String {
         switch self {
         case .general: "gearshape"
-        case .integrations: "arrow.triangle.branch"
+        case .shortcuts: "square.stack.3d.up"
+        case .launchers: "command"
         case .creation: "doc.badge.plus"
         case .fileTypes: "doc.on.doc"
         case .folders: "folder"

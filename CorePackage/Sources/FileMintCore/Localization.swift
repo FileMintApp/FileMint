@@ -155,6 +155,8 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
 
     case general
     case integrations
+    case shortcuts
+    case launchers
     case launcherSettingsHint
     case fileTypes
     case folders
@@ -466,6 +468,8 @@ public enum FileMintStrings {
 
         .general: ("General", "通用"),
         .integrations: ("Shortcuts & Launchers", "快捷指令与启动器"),
+        .shortcuts: ("Shortcuts", "快捷指令"),
+        .launchers: ("Launchers", "启动器"),
         .launcherSettingsHint: ("Set a template and folder once. Enter a name, review, then create.", "配置好模板和位置，日常只填名称，确认后创建。"),
         .fileTypes: ("File Types", "文件类型"),
         .folders: ("Folders", "文件夹"),

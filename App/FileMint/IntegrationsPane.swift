@@ -2,19 +2,25 @@ import AppKit
 import FileMintCore
 import SwiftUI
 
+enum IntegrationPage { case shortcuts, launchers }
+
 @MainActor
 struct IntegrationsPane: View {
     @ObservedObject private var settings: PreferencesModel
     @ObservedObject private var state: IntegrationsModel
-    init(settings: PreferencesModel, favorites: FavoriteLocationsModel) {
+    @ObservedObject private var scripts: LauncherScriptsModel
+    private let page: IntegrationPage
+    @State private var deleting: LauncherScriptRecord?
+
+    init(settings: PreferencesModel, favorites: FavoriteLocationsModel, page: IntegrationPage = .launchers) {
         self.settings = settings
-        if let existing = settings.integrationsState { state = existing }
-        else {
-            let value = IntegrationsModel(settings: settings, favorites: favorites)
-            settings.integrationsState = value
-            state = value
-        }
+        self.page = page
+        let state = settings.integrationsState ?? IntegrationsModel(settings: settings, favorites: favorites)
+        settings.integrationsState = state
+        self.state = state
+        scripts = state.scripts
     }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 25) {
@@ -26,40 +32,17 @@ struct IntegrationsPane: View {
                 SettingsSection(title: state.text("Start with a workflow", "从一个常用场景开始")) {
                     scenario(.projectNote, title: state.text("New project note", "新建项目笔记"),
                         detail: state.text("Configure a text template and folder. Enter only the note name each day.", "配置文本模板和目录，日常只输入笔记名称。"))
-                    Divider()
-                    scenario(.workflowText, title: state.text("Save workflow text", "保存工作流生成的文本"),
-                        detail: state.text("Pass an earlier Shortcuts action's text directly into a draft.", "把快捷指令上一步的文本直接带入草稿。"))
+                    if page == .shortcuts {
+                        Divider()
+                        scenario(.workflowText, title: state.text("Save workflow text", "保存工作流生成的文本"),
+                            detail: state.text("Pass an earlier Shortcuts action's text directly into a draft.", "把快捷指令上一步的文本直接带入草稿。"))
+                    }
                     Divider()
                     scenario(.quickSearch, title: state.text("Show Quick Search", "显示快捷搜索"),
                         detail: state.text("Open or focus search without changing an unfinished query.", "直接显示或聚焦搜索，保留未完成的查询。"))
                 }
-                if let guide = state.guide { guidance(guide) }
-                SettingsSection(title: state.text("Tools and custom commands", "工具与自定义命令")) {
-                    HStack {
-                        Label(state.text("Native Shortcuts actions", "原生快捷指令动作"), systemImage: "square.stack.3d.up")
-                        Spacer()
-                        Button(state.text("Set up example…", "设置示例动作…")) { state.start(.projectNote, tool: .shortcuts) }
-                            .accessibilityIdentifier("integrations.setupShortcuts")
-                        Button(state.text("Open Shortcuts", "打开快捷指令")) { state.openShortcuts() }
-                            .accessibilityIdentifier("integrations.openShortcuts")
-                    }.disabled(!state.isSupported)
-                    Divider()
-                    HStack {
-                        Label("Raycast", systemImage: "command")
-                        Spacer()
-                        Button(state.text("Create command…", "创建启动命令…")) { state.start(.projectNote, tool: .raycast) }
-                            .accessibilityIdentifier("integrations.createCommand")
-                    }.disabled(!state.isSupported)
-                    Divider()
-                    HStack {
-                        Button(state.text("Custom command…", "自定义命令…")) { state.start(.custom, tool: .url) }
-                            .disabled(!state.isSupported)
-                            .accessibilityIdentifier("integrations.customCommand")
-                        Spacer()
-                        Button(state.text("Global shortcut settings", "全局快捷键设置")) { settings.selectedPane = .general }
-                            .accessibilityIdentifier("integrations.globalShortcutSettings")
-                    }
-                }
+                if let guide = state.guide, (guide == .shortcuts) == (page == .shortcuts) { guidance(guide) }
+                if page == .shortcuts { shortcutsTools } else { launcherTools; scriptManagement }
                 SettingsSection(title: state.text("Reuse folder access", "长期复用目录访问")) {
                     Text(state.text("For a repeatable command, use a folder already authorized in Finder & Folders. Adding a folder there saves access and also changes Finder menu scope. A temporary selection may need authorization again after relaunch.",
                         "固定工作流请使用已在“Finder 与文件夹”中授权的目录。在那里添加目录会保存访问权限，也会调整 Finder 菜单范围；临时选择的位置在重启后可能需要再次授权。"))
@@ -69,14 +52,58 @@ struct IntegrationsPane: View {
                 DisclosureGroup(state.text("Limits and help", "限制与帮助")) {
                     VStack(alignment: .leading, spacing: 9) {
                         Text(state.text("These actions open drafts. Only Create writes a file. An unfinished draft is preserved when another request arrives.", "这些入口只打开草稿，只有点击创建才写入文件；新请求不会覆盖未完成草稿。"))
-                        Text(state.text("Links are limited to 16 KiB, including at most 8 KiB of UTF-8 text. Native Shortcuts accepts up to 1 MiB. Tools may keep their own history; use native parameters for longer or sensitive text.", "完整链接限 16 KiB，其中文本最多 8 KiB UTF-8；原生快捷指令最多 1 MiB。调用工具可能保留自己的历史，较长或敏感文本优先使用原生参数。"))
-                        Text(state.text("Requires macOS 13.3 or later and a logged-in interactive desktop. Raycast is installed separately. Template and folder IDs belong to this Mac; reconfigure them when sharing commands.", "需要 macOS 13.3 及以上和可交互的已登录桌面；Raycast 需另行安装。模板和收藏 ID 属于本机，分享命令时需重新配置。"))
-                    }.font(.system(size: 11)).foregroundStyle(.secondary).padding(.top, 8)
+                        Text(page == .shortcuts
+                            ? state.text("Native actions accept up to 1 MiB of text. Connect an earlier action's output to pass text directly.", "原生动作最多接收 1 MiB 文本，可直接连接上一步动作的输出。")
+                            : state.text("Links are limited to 16 KiB, including at most 8 KiB of UTF-8 text. Text is stored in exported scripts. Use native Shortcuts for longer text.", "完整链接限 16 KiB，其中文本最多 8 KiB UTF-8；文本会保存在导出脚本中。较长文本请使用原生快捷指令。"))
+                        Text(state.text("Requires macOS 13.3 or later and a logged-in interactive desktop. Template and folder IDs belong to this Mac; reconfigure them when sharing commands.", "需要 macOS 13.3 及以上和可交互的已登录桌面。模板和收藏 ID 属于本机，分享命令时需重新配置。"))
+                    }.font(.system(size: 11)).foregroundStyle(.secondary)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.top, 8)
                 }
                 if let error = state.error { Text(error.message).font(.callout).foregroundStyle(.red).textSelection(.enabled) }
             }.padding(1)
         }
         .background(IntegrationWindowReader { state.attachOwner($0) }.frame(width: 0, height: 0))
+        .alert(state.text("Move Script to Trash?", "将脚本移到废纸篓？"), isPresented: Binding(
+            get: { deleting != nil }, set: { if !$0 { deleting = nil } }), presenting: deleting) { record in
+                Button(state.text("Move to Trash", "移到废纸篓"), role: .destructive) { state.trashScript(record) }
+                Button(state.text("Cancel", "取消"), role: .cancel) {}
+            } message: { record in
+                Text(state.text("“\(record.title)” will stop being available in Raycast. You can restore the script from Trash.", "“\(record.title)”将不再出现在 Raycast 中，可从废纸篓恢复脚本。"))
+            }
+    }
+
+    private var shortcutsTools: some View {
+        SettingsSection(title: state.text("Native Shortcuts actions", "原生快捷指令动作")) {
+            HStack {
+                Button(state.text("Set up example…", "设置示例动作…")) { state.start(.projectNote, tool: .shortcuts) }
+                    .accessibilityIdentifier("integrations.setupShortcuts")
+                Button(state.text("Open Shortcuts", "打开快捷指令")) { state.openShortcuts() }
+                    .accessibilityIdentifier("integrations.openShortcuts")
+            }.disabled(!state.isSupported)
+            Text(state.text("Build a workflow with FileMint's Open File Draft and Show Quick Search actions. Manage those workflows in Shortcuts.", "用 FileMint 的“打开文件草稿”和“显示快捷搜索”动作编排工作流；已创建的工作流在快捷指令 App 中管理。"))
+                .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    private var launcherTools: some View {
+        SettingsSection(title: state.text("Tools and custom commands", "工具与自定义命令")) {
+            HStack {
+                Label("Raycast", systemImage: "command")
+                Spacer()
+                Button(state.text("Create command…", "创建启动命令…")) { state.start(.projectNote, tool: .raycast) }
+                    .accessibilityIdentifier("integrations.createCommand")
+            }.disabled(!state.isSupported)
+            Divider()
+            HStack {
+                Button(state.text("Custom link…", "自定义链接…")) { state.start(.custom, tool: .url) }
+                    .disabled(!state.isSupported).accessibilityIdentifier("integrations.customCommand")
+                Spacer()
+                Button(state.text("Global shortcut settings", "全局快捷键设置")) { settings.selectedPane = .general }
+                    .accessibilityIdentifier("integrations.globalShortcutSettings")
+            }
+        }
     }
 
     private func scenario(_ scenario: IntegrationScenario, title: String, detail: String) -> some View {
@@ -86,15 +113,47 @@ struct IntegrationsPane: View {
                 Text(detail).font(.system(size: 11)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 8)
-            HStack(spacing: 8) {
-                Button(state.text("Shortcuts…", "快捷指令…")) { state.start(scenario, tool: .shortcuts) }
-                    .accessibilityIdentifier("integrations.\(scenario).shortcuts")
-                if scenario != .workflowText {
-                    Button("Raycast…") { state.start(scenario, tool: .raycast) }
-                        .accessibilityIdentifier("integrations.\(scenario).raycast")
-                }
-            }.controlSize(.small).disabled(!state.isSupported)
+            Button(page == .shortcuts ? state.text("Set up…", "设置示例…") : state.text("Create command…", "创建命令…")) {
+                state.start(scenario, tool: page == .shortcuts ? .shortcuts : .raycast)
+            }.accessibilityIdentifier("integrations.\(scenario).\(page == .shortcuts ? "shortcuts" : "raycast")")
+                .controlSize(.small).disabled(!state.isSupported)
         }.padding(.vertical, 3)
+    }
+
+    private var scriptManagement: some View {
+        SettingsSection(title: state.text("Created scripts", "已创建的脚本")) {
+            HStack {
+                Text(state.text("Manage exported commands here. Add their folder to Raycast once; later scripts and edits in that folder are picked up automatically.", "在这里管理已导出的命令。目录在 Raycast 添加一次后，同目录的新命令和修改会自动更新。"))
+                    .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                Spacer()
+                Button(state.text("Add existing script…", "添加已有脚本…")) { state.addExistingScript() }
+                    .disabled(!state.isSupported || scripts.isWorking || state.isExporting)
+                    .accessibilityIdentifier("integrations.addScript")
+            }
+            if scripts.records.isEmpty {
+                Text(state.text("No scripts yet. Create a command above, or add a script previously exported by FileMint.", "尚无脚本。可在上方创建命令，或添加之前由 FileMint 导出的脚本。"))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            ForEach(scripts.records) { record in
+                Divider()
+                HStack(spacing: 10) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(record.title).font(.system(size: 12, weight: .medium))
+                        Text(record.url.path).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+                    }.frame(maxWidth: .infinity, alignment: .leading)
+                    Button(state.text("Edit…", "编辑…")) { state.editScript(record) }.disabled(!state.isSupported)
+                        .accessibilityLabel(state.text("Edit ", "编辑 ") + record.title)
+                    Button(state.text("Show in Finder", "在 Finder 中显示")) { scripts.reveal(record) }
+                    Menu {
+                        Button(state.text("Remove from list", "仅从列表移除")) { scripts.forget(record) }
+                        Button(state.text("Move to Trash…", "移到废纸篓…"), role: .destructive) { deleting = record }
+                            .disabled(!state.isSupported)
+                    } label: { Image(systemName: "ellipsis") }
+                        .accessibilityLabel(state.text("More actions for ", "更多操作：") + record.title)
+                }.disabled(scripts.isWorking || state.isExporting)
+            }
+            if let error = scripts.error { Text(error).font(.callout).foregroundStyle(.red).textSelection(.enabled) }
+        }
     }
 
     private func guidance(_ tool: IntegrationTool) -> some View {
@@ -102,7 +161,17 @@ struct IntegrationsPane: View {
             if tool == .raycast, let url = state.savedURL {
                 Label(state.text("Script saved to the selected location", "脚本已保存到所选位置"), systemImage: "checkmark.circle")
                 Text(url.path).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
-                Text(state.text("1. In Raycast Settings → Extensions → Script Commands, add the folder containing this script.", "1. 在 Raycast 设置 → Extensions → Script Commands 中添加脚本所在目录。"))
+                Text(state.text("1. In Raycast, press ⌘, to open Settings. Select Script Commands (under Extensions in Raycast 1), then use + / Add Script Directory to add this script's folder. Add a folder only once.", "1. 在 Raycast 按 ⌘, 打开设置，选择 Script Commands（Raycast 1 位于 Extensions 下），通过 + / Add Script Directory 添加脚本所在目录。同一目录只需添加一次。"))
+                HStack {
+                    Button(state.text("Open Script Commands", "打开 Script Commands")) { state.openRaycast() }
+                    Button(state.text("Copy folder path", "拷贝目录路径")) {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(url.deletingLastPathComponent().path, forType: .string)
+                    }
+                    Button(state.text("Show in Finder", "在 Finder 中显示")) { NSWorkspace.shared.activateFileViewerSelecting([url]) }
+                }
+                Text(state.text("Raycast may ask you to confirm Run Command when opening this page.", "打开此页面时，Raycast 可能会请你确认 Run Command。"))
+                    .font(.caption).foregroundStyle(.secondary)
                 Text(state.text("2. Search for “\(state.config.title)”.", "2. 在 Raycast 搜索“\(state.config.title)”。")
                     + (state.config.nameMode == .runtime ? state.text(" Enter only the file name.", " 只需填写文件名。") : state.text(" Run it without additional input.", " 无需额外输入，直接运行。")))
             } else if tool == .url {
@@ -143,7 +212,7 @@ struct LauncherGeneratorView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 7) {
-                Text(label("Create Launcher Command", "创建启动命令")).font(.system(size: 21, weight: .semibold))
+                Text(state.editingScript == nil ? label("Create Launcher Command", "创建启动命令") : label("Edit Launcher Command", "编辑启动命令")).font(.system(size: 21, weight: .semibold))
                 Text(state.config.scenario == .quickSearch ? label("Open or focus Quick Search. No file is created by this action.", "直接显示或聚焦快捷搜索，此动作不创建文件。")
                      : state.config.nameMode == .runtime ? label("Enter a name in Raycast, review the configured draft, then create.", "在 Raycast 输入名称，检查已配置的草稿，然后创建。")
                      : label("Review the prepared name, template and location before creating.", "创建前检查已带入的名称、模板和位置。"))
@@ -156,7 +225,7 @@ struct LauncherGeneratorView: View {
                     Picker(label("Use with", "使用方式"), selection: $state.config.tool) {
                         Text("Raycast").tag(IntegrationTool.raycast)
                         Text(label("General URL", "通用链接")).tag(IntegrationTool.url)
-                    }.pickerStyle(.segmented)
+                    }.pickerStyle(.segmented).disabled(state.editingScript != nil)
                     .onChange(of: state.config.tool) { tool in
                         if tool == .url, state.config.nameMode == .runtime { state.config.nameMode = .fixed }
                     }
@@ -167,7 +236,7 @@ struct LauncherGeneratorView: View {
                                 ForEach(state.templates.filter { state.config.scenario != .projectNote || $0.document == nil }) { template in
                                     Text(FileMintStrings.templateDisplayName(for: template, language: state.language) + " · ." + template.fileExtension).tag(Optional(template.id))
                                 }
-                            }.labelsHidden()
+                            }.labelsHidden().accessibilityIdentifier("launcher.template")
                             error("template")
                         }
                         field(label("Save location", "保存位置")) {
@@ -208,7 +277,7 @@ struct LauncherGeneratorView: View {
                                     Text(label("Template content", "模板内容")).tag(IntegrationBodyMode.templateDefault)
                                     Text(label("Specified text", "指定文本")).tag(IntegrationBodyMode.text)
                                     Text(label("Empty content", "空内容")).tag(IntegrationBodyMode.empty)
-                                }.labelsHidden()
+                                }.labelsHidden().accessibilityIdentifier("launcher.contentMode")
                                 if state.config.bodyMode == .text {
                                     PlainTextEditor(text: $state.config.text, label: label("Initial content", "初始内容"))
                                         .frame(minHeight: 105)
@@ -216,7 +285,7 @@ struct LauncherGeneratorView: View {
                                         .font(.system(size: 11)).foregroundStyle(.secondary)
                                 }
                                 error("content")
-                            }.padding(.top, 10)
+                            }.padding(.top, 10).frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }
                     DisclosureGroup(label("View link", "查看链接"), isExpanded: $showLink) {
@@ -234,7 +303,7 @@ struct LauncherGeneratorView: View {
                 if state.config.scenario != .quickSearch {
                     Button(label("Preview draft", "预览草稿")) { state.preview() }.focusable().focused($previewFocused)
                 }
-                Button(state.config.tool == .raycast ? label("Export Raycast Script…", "导出 Raycast 脚本…") : label("Copy Link", "复制链接")) {
+                Button(state.editingScript != nil ? label("Save changes", "保存修改") : state.config.tool == .raycast ? label("Export Raycast Script…", "导出 Raycast 脚本…") : label("Copy Link", "拷贝链接")) {
                     if state.config.tool == .raycast { state.exportRaycast() } else { state.copyLink() }
                 }.buttonStyle(MintButtonStyle(primary: true)).keyboardShortcut(.defaultAction)
             }.controlSize(.regular).disabled(state.isExporting).padding(18)

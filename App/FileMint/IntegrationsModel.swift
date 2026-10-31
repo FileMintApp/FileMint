@@ -18,6 +18,7 @@ struct IntegrationConfiguration: Equatable {
     var location: IntegrationLocation = .defaultLocation
     var directory: URL?
     var favoriteID: UUID?
+    var requestID: UUID?
     var nameMode: IntegrationNameMode = .runtime
     var fileName = ""
     var bodyMode: IntegrationBodyMode = .templateDefault
@@ -29,6 +30,7 @@ struct IntegrationConfiguration: Equatable {
 final class IntegrationsModel: NSObject, ObservableObject, NSWindowDelegate {
     let settings: PreferencesModel
     let favorites: FavoriteLocationsModel
+    let scripts: LauncherScriptsModel
     @Published var config = IntegrationConfiguration() {
         didSet { error = nil; testReceived = false; testNonce = nil }
     }
@@ -38,6 +40,7 @@ final class IntegrationsModel: NSObject, ObservableObject, NSWindowDelegate {
     @Published private(set) var isExporting = false
     @Published private(set) var testReceived = false
     @Published var previewFocus = UUID()
+    @Published private(set) var editingScript: LauncherScriptEdit?
     private weak var owner: NSWindow?
     private var generator: NSWindow?
     private var sessionID: UUID?
@@ -62,6 +65,9 @@ final class IntegrationsModel: NSObject, ObservableObject, NSWindowDelegate {
     init(settings: PreferencesModel, favorites: FavoriteLocationsModel) {
         self.settings = settings
         self.favorites = favorites
+        scripts = LauncherScriptsModel(store: settings.launcherScriptStore, language: { [weak settings] in
+            settings?.preferences.language ?? .system
+        })
         super.init()
         received = runtime.$lastAcceptedRequestID.sink { [weak self] id in
             Task { @MainActor in
@@ -117,7 +123,7 @@ final class IntegrationsModel: NSObject, ObservableObject, NSWindowDelegate {
             let screen = owner.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 900, height: 750)
             let size = NSSize(width: min(680, screen.width - 40), height: min(650, screen.height - 70))
             window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
-            window.title = text("Create Launcher Command", "创建启动命令")
+            window.title = editingScript == nil ? text("Create Launcher Command", "创建启动命令") : text("Edit Launcher Command", "编辑启动命令")
             window.contentMinSize = NSSize(width: min(600, size.width), height: min(500, size.height))
             window.isReleasedWhenClosed = false
             window.isRestorable = false
@@ -172,7 +178,7 @@ final class IntegrationsModel: NSObject, ObservableObject, NSWindowDelegate {
         case .empty: body = .verbatim("")
         }
         let name = config.nameMode == .fixed ? config.fileName : nil
-        let request = try ExternalDraftRequest(name: name, templateID: config.templateID, content: body, destination: destination)
+        let request = try ExternalDraftRequest(name: name, templateID: config.templateID, content: body, destination: destination, requestID: config.requestID)
         _ = try request.resolve(preferences: settings.committedPreferences, capturedAt: Date())
         return request
     }
@@ -238,7 +244,11 @@ final class IntegrationsModel: NSObject, ObservableObject, NSWindowDelegate {
                     self.guide = self.config.tool
                 } else {
                     let request = try self.request()
-                    _ = try await self.runtime.openDraft(request, source: .preview,
+                    // A local preview must not consume an imported command's
+                    // public deduplication ID before that command is actually run.
+                    let preview = try ExternalDraftRequest(name: request.name, templateID: request.templateID,
+                        content: request.content, destination: request.destination)
+                    _ = try await self.runtime.openDraft(preview, source: .preview,
                         nativeGrantURL: self.config.location == .directory ? self.config.directory : nil,
                         didClose: { [weak self] in
                             guard let self, self.sessionID == session else { return }
@@ -284,8 +294,25 @@ final class IntegrationsModel: NSObject, ObservableObject, NSWindowDelegate {
             let work = settings.beginLauncherWork()
             let settings = settings
             isExporting = true
+            if let editingScript {
+                Task {
+                    defer { self.isExporting = false; settings.endLauncherWork(work); release() }
+                    do {
+                        let saved = try await scripts.update(editingScript, command: command,
+                            bundleIdentifier: Bundle.main.bundleIdentifier ?? "io.github.daigua.filemint", scheme: scheme)
+                        guard sessionID == session else { return }
+                        self.editingScript = saved.edit
+                        finishExport(tool: .raycast, saved: saved.url)
+                    } catch {
+                        scripts.report(error)
+                        self.error = ("general", scripts.error ?? text("Could not update this script.", "未能更新脚本。"))
+                    }
+                }
+                return
+            }
             let picker = NSSavePanel()
             picker.nameFieldStringValue = FilenamePolicy.sanitizedFileName(config.title) + ".sh"
+            picker.directoryURL = scripts.records.last?.url.deletingLastPathComponent()
             picker.beginSheetModal(for: generator) { [weak self] response in
                 Task { @MainActor in
                     defer { settings.endLauncherWork(work); release() }
@@ -300,12 +327,87 @@ final class IntegrationsModel: NSObject, ObservableObject, NSWindowDelegate {
                     }.value
                     guard self.sessionID == session else { return }
                     switch result {
-                    case .success: self.finishExport(tool: .raycast, saved: url)
+                    case .success:
+                        do { try await self.scripts.register(url) }
+                        catch { self.scripts.reportSavedIndexFailure() }
+                        self.finishExport(tool: .raycast, saved: url)
+                        self.openRaycast()
                     case .failure(let error): self.handle(error)
                     }
                 }
             }
         } catch { handle(error) }
+    }
+
+    func editScript(_ record: LauncherScriptRecord) {
+        guard isSupported, !isExporting, let owner, owner.isVisible, owner.attachedSheet == nil,
+              let release = runtime.reserveSettingsOperation() else { show(.busy); return }
+        let work = settings.beginLauncherWork()
+        isExporting = true
+        Task {
+            defer { isExporting = false; settings.endLauncherWork(work); release() }
+            do {
+                let edit = try await scripts.edit(record,
+                    bundleIdentifier: Bundle.main.bundleIdentifier ?? "io.github.daigua.filemint", scheme: scheme)
+                guard self.owner === owner, owner.isVisible, owner.attachedSheet == nil else { return }
+                cancelConfiguration()
+                var value = IntegrationConfiguration()
+                value.title = edit.command.title
+                value.tool = .raycast
+                if case .draft(let request) = edit.command.invocation {
+                    value.scenario = .custom
+                    value.templateID = request.templateID
+                    value.requestID = request.requestID
+                    value.nameMode = edit.command.runtimeName ? .runtime : request.name == nil ? .automatic : .fixed
+                    value.fileName = request.name ?? ""
+                    switch request.content {
+                    case .templateDefault: value.bodyMode = .templateDefault
+                    case .verbatim(let text): value.bodyMode = text.isEmpty ? .empty : .text; value.text = text
+                    }
+                    switch request.destination {
+                    case .defaultLocation: value.location = .defaultLocation
+                    case .ask: value.location = .ask
+                    case .directory(let path): value.location = .directory; value.directory = URL(fileURLWithPath: path)
+                    case .favorite(let id): value.location = .favorite; value.favoriteID = id
+                    }
+                    value.advanced = value.bodyMode != .templateDefault
+                } else { value.scenario = .quickSearch; value.nameMode = .automatic }
+                config = value
+                sessionID = value.id
+                editingScript = edit
+                showGenerator()
+            } catch { scripts.report(error) }
+        }
+    }
+
+    func addExistingScript() {
+        guard isSupported, !scripts.isWorking, !isExporting, let owner, owner.attachedSheet == nil,
+              let release = runtime.reserveSettingsOperation() else { return }
+        let settings = self.settings
+        let work = settings.beginLauncherWork()
+        scripts.addExisting(owner: owner, bundleIdentifier: Bundle.main.bundleIdentifier ?? "io.github.daigua.filemint", scheme: scheme) {
+            settings.endLauncherWork(work); release()
+        }
+    }
+
+    func trashScript(_ record: LauncherScriptRecord) {
+        guard isSupported else { show(.unsupportedSystemVersion); return }
+        guard !scripts.isWorking, !isExporting, let release = runtime.reserveSettingsOperation() else { show(.busy); return }
+        let settings = self.settings
+        let work = settings.beginLauncherWork()
+        scripts.trash(record) { settings.endLauncherWork(work); release() }
+    }
+
+    func openRaycast() {
+        guard isSupported else { show(.unsupportedSystemVersion); return }
+        // The public command route is supported by Raycast 1/2. Settings/import
+        // URL guesses are silently ignored by Raycast 2, so keep the steps visible.
+        let url = URL(string: "raycast://extensions/raycast/script-commands/search-script-commands")!
+        guard NSWorkspace.shared.urlForApplication(toOpen: url) != nil, NSWorkspace.shared.open(url) else {
+            error = ("general", text("Raycast could not be opened. Your script is saved; open Raycast and add its folder in Script Commands settings.",
+                                     "未能打开 Raycast。脚本已保存，请打开 Raycast，在 Script Commands 设置中添加脚本目录。"))
+            return
+        }
     }
 
     private func finishExport(tool: IntegrationTool, saved: URL?) {
@@ -377,6 +479,7 @@ final class IntegrationsModel: NSObject, ObservableObject, NSWindowDelegate {
         previewIsOpen = false
         focusPreviewOnKey = false
         sessionID = nil
+        editingScript = nil
         guide = nil
         savedURL = nil
         testNonce = nil
