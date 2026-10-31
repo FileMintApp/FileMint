@@ -3,6 +3,33 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Launcher feature availability correction — 2026-10-31
+
+At `6a36217` plus this uncommitted correction, restore the application, Finder
+extension and Core package minimum to macOS 13.0. Only Shortcuts & Launchers
+requires 13.3. On arm64 macOS 27.2 / Xcode 27.1, `make verify` and unsigned Release
+compilation passed. Both app executables have Mach-O and plist minima of 13.0;
+both extracted Intent availability annotations remain 13.3. The isolated product
+fixture `run.HpTsJr` also builds with that split. Homebrew stays declarative at
+Ventura, without an additional feature-driven installer gate.
+
+`run.vjcrhi1_` design-ui passed with injected 13.0/13.2/13.3 versions: English and
+Chinese native accessibility trees show disabled/enabled setup controls and the
+requirement notice; direct requests are rejected before operation reservation or
+catalog access. Ordinary shortcut settings remain enabled. This is current-host
+simulation, not evidence from a Mac running 13.x.
+
+That run's extra quick-search regression failed its Escape/query restoration
+assertion. A separate unchanged-source diagnostic `run.ej9xrruc` passed all
+quick-search checks; the first failure is retained and its cause remains
+undetermined. No Quick Search implementation was changed for that result.
+
+Evidence: `build/launcher-integration-verification.noindex/2026-10-31-system-requirements/verification-report.json`
+and the [task correction](tasks/2026-10-29-shortcuts-and-launchers.md#2026-10-31-最低系统范围纠正).
+Actual macOS 13.0/13.3 runtime remains unavailable. Full launcher experience and
+publication gates remain open; no commit, production installation or publication occurred.
+The older entries below retain their original build minima and observations.
+
 ## Shortcuts and launchers product — covered local checks, 2026-10-31
 
 Resumed the explicitly paused task in the primary checkout at `f4eaa61` plus the

@@ -51,6 +51,7 @@ final class IntegrationsModel: NSObject, ObservableObject, NSWindowDelegate {
     private var received: AnyCancellable?
     var language: AppLanguage { settings.preferences.language }
     var runtime: ExternalInvocationCoordinator { settings.externalInvocations }
+    var isSupported: Bool { runtime.isSupported }
     var templates: [FileTemplate] { TemplateCatalog.enabledTemplates(from: settings.committedPreferences.templates) }
     var folderFavorites: [FavoriteLocation] { favorites.catalog.items.filter { $0.kind == .folder } }
     var scheme: String {
@@ -87,6 +88,7 @@ final class IntegrationsModel: NSObject, ObservableObject, NSWindowDelegate {
     func attachOwner(_ window: NSWindow) { owner = window }
 
     func start(_ scenario: IntegrationScenario, tool: IntegrationTool) {
+        guard isSupported else { show(.unsupportedSystemVersion); return }
         guard !isExporting, let owner, owner.isVisible, owner.attachedSheet == nil,
               NSApp.modalWindow == nil else { show(.busy); return }
         cancelConfiguration()
@@ -106,6 +108,7 @@ final class IntegrationsModel: NSObject, ObservableObject, NSWindowDelegate {
     }
 
     private func showGenerator(focusPreview: Bool = false) {
+        guard isSupported else { show(.unsupportedSystemVersion); return }
         guard let owner, owner.isVisible, owner.attachedSheet == nil, NSApp.modalWindow == nil,
               let sessionID, sessionID == config.id else { show(.busy); return }
         let window: NSWindow
@@ -147,6 +150,7 @@ final class IntegrationsModel: NSObject, ObservableObject, NSWindowDelegate {
     func returnToEditor() { error = nil; showGenerator() }
 
     func request() throws -> ExternalDraftRequest {
+        try runtime.requireSupportedSystem()
         if config.scenario == .projectNote, config.templateID == nil {
             throw ExternalInvocationError.templateUnavailable
         }
@@ -172,7 +176,10 @@ final class IntegrationsModel: NSObject, ObservableObject, NSWindowDelegate {
         _ = try request.resolve(preferences: settings.committedPreferences, capturedAt: Date())
         return request
     }
-    func invocation() throws -> ExternalInvocation { config.scenario == .quickSearch ? .search : .draft(try request()) }
+    func invocation() throws -> ExternalInvocation {
+        try runtime.requireSupportedSystem()
+        return config.scenario == .quickSearch ? .search : .draft(try request())
+    }
     func command() throws -> LauncherCommand { try .init(title: config.title, invocation: invocation(), runtimeName: config.scenario != .quickSearch && config.nameMode == .runtime) }
     func link() throws -> String {
         let original = try ExternalDraftRoute.string(for: invocation())
@@ -339,6 +346,7 @@ final class IntegrationsModel: NSObject, ObservableObject, NSWindowDelegate {
     }
 
     func openShortcuts() {
+        guard isSupported else { show(.unsupportedSystemVersion); return }
         guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.shortcuts") else { show(.unavailable); return }
         NSWorkspace.shared.openApplication(at: url, configuration: .init())
     }

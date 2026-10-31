@@ -253,27 +253,16 @@ def validate_release(manifest_path, gh=None, require_complete=False):
             "caskSHA256": hashlib.sha256(render_cask(manifest["version"], manifest["dmgSHA256"]).encode()).hexdigest()}
 
 
-def minimum_guard(minimum):
-    # The Homebrew dependency DSL accepts named major releases, not 13.3.
-    # Keep the only additional Ruby code an exact, version-only comparison.
-    if minimum == "13.0":
-        return ""
-    if not re.fullmatch(r"13\.[1-9][0-9]*", minimum):
-        raise TapError("Review the Homebrew major-release dependency for this minimum OS")
-    return (f'\n\n  preflight do\n'
-            f'    odie "FileMint requires macOS {minimum} or later." if MacOS.full_version < MacOSVersion.new("{minimum}")\n'
-            f'  end\n')
-
-
-def render_cask(version, sha256, *, minimum=None):
+def render_cask(version, sha256):
     version_key(version)
+    if update_appcast.minimum_system_version() != "13.0":
+        raise TapError("Review the Homebrew dependency before changing FileMint's minimum OS")
     if not isinstance(sha256, str) or not re.fullmatch(r"[0-9a-f]{64}", sha256):
         raise TapError("Invalid Cask SHA-256")
     template = regular_file(TEMPLATE).read_text(encoding="utf-8")
-    if any(template.count(key) != 1 for key in ("@VERSION@", "@SHA256@", "@MINIMUM_GUARD@")):
-        raise TapError("Cask template must contain exactly the reviewed placeholders")
-    guard = minimum_guard(minimum if minimum is not None else update_appcast.minimum_system_version())
-    return template.replace("@VERSION@", version).replace("@SHA256@", sha256).replace("\n@MINIMUM_GUARD@", guard.rstrip("\n"))
+    if template.count("@VERSION@") != 1 or template.count("@SHA256@") != 1:
+        raise TapError("Cask template must contain exactly the version and SHA-256 placeholders")
+    return template.replace("@VERSION@", version).replace("@SHA256@", sha256)
 
 
 def parse_cask(text):
@@ -281,10 +270,7 @@ def parse_cask(text):
         raise TapError("Invalid Cask text")
     versions = re.findall(r'^  version "([0-9.]+)"$', text, re.MULTILINE)
     hashes = re.findall(r'^  sha256 "([0-9a-f]{64})"$', text, re.MULTILINE)
-    if len(versions) != 1 or len(hashes) != 1:
-        raise TapError("Existing Cask differs from the reviewed release template")
-    canonical = [render_cask(versions[0], hashes[0]), render_cask(versions[0], hashes[0], minimum="13.0")]
-    if text not in canonical:
+    if len(versions) != 1 or len(hashes) != 1 or render_cask(versions[0], hashes[0]) != text:
         raise TapError("Existing Cask differs from the reviewed declarative template")
     return versions[0], hashes[0]
 
@@ -342,7 +328,7 @@ def prepare(manifest_path, output_dir, gh=None):
     return receipt | {"status": "prepared"}
 
 
-def validate_brew_metadata(payload, version, sha256, token, *, has_minimum_guard=True):
+def validate_brew_metadata(payload, version, sha256, token):
     try:
         info = json.loads(payload)
     except ValueError as error:
@@ -353,16 +339,14 @@ def validate_brew_metadata(payload, version, sha256, token, *, has_minimum_guard
     item = casks[0]
     dependencies = {"arch": [{"type": "arm", "bits": 64}], "macos": {">=": ["13"]}}
     artifacts = item.get("artifacts")
-    apps = [artifact for artifact in artifacts if isinstance(artifact, dict) and "app" in artifact] if isinstance(artifacts, list) else []
     if (item.get("token") != "filemint" or item.get("full_token") != f"{token}/filemint"
             or item.get("tap") != token or item.get("version") != version
             or item.get("sha256") != sha256 or item.get("auto_updates") is not True
             or item.get("url") != f"{publication.PUBLIC}/releases/download/v{version}/FileMint-{version}.dmg"
             or item.get("depends_on") != dependencies
-            or not isinstance(artifacts, list) or len(artifacts) != (2 if has_minimum_guard else 1)
-            or len(apps) != 1 or apps[0].get("app") != ["FileMint.app"]
-            or set(apps[0]) - {"app", "target"}
-            or (has_minimum_guard and {"preflight": None} not in artifacts)):
+            or not isinstance(artifacts, list) or len(artifacts) != 1
+            or not isinstance(artifacts[0], dict) or artifacts[0].get("app") != ["FileMint.app"]
+            or set(artifacts[0]) - {"app", "target"}):
         raise TapError("Homebrew metadata differs from the reviewed release/platform/app contract")
 
 
@@ -401,7 +385,7 @@ def validate_brew(checkout):
             run(["brew", "style", str(snapshot_cask)], cwd=snapshot, env=environment)
             run(["brew", "readall", "--os=all", "--arch=all", token], cwd=snapshot, env=environment)
             payload = run(["brew", "info", "--json=v2", "--cask", named_cask], cwd=snapshot, env=environment)
-            validate_brew_metadata(payload, version, sha256, token, has_minimum_guard="\n  preflight do\n" in contents)
+            validate_brew_metadata(payload, version, sha256, token)
             run(["brew", "audit", "--cask", "--online", "--strict",
                  f"--except={','.join(LOCAL_AUDIT_EXCLUSIONS)}", named_cask], cwd=snapshot, env=environment)
             run(["brew", "livecheck", "--cask", named_cask], cwd=snapshot, env=environment)

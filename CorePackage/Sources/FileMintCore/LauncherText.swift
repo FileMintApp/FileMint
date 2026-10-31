@@ -29,6 +29,7 @@ extension ExternalInvocationError {
         let pair: (String, String) = switch self {
         case .invalidRequest: ("This draft request is invalid. Check the command's parameters.", "无法打开此创建请求，请检查命令参数。")
         case .unsupportedVersion: ("This link version is not supported by FileMint.", "当前 FileMint 不支持此链接版本。")
+        case .unsupportedSystemVersion: ("Shortcuts & Launchers requires macOS 13.3 or later. This feature is disabled on this Mac.", "快捷指令与启动器需要 macOS 13.3 及以上，当前系统已禁用此功能。")
         case .invalidFilename: ("Use a filename without a path, matching the selected template's extension.", "请只填写文件名，并使用与所选模板一致的后缀。")
         case .templateUnavailable: ("The selected template was removed or disabled. Choose an enabled template.", "所选模板已移除或停用，请重新选择启用的模板。")
         case .contentTemplateMismatch: ("This document template cannot receive text. Use its template content or choose a text template.", "此文档模板不能接收文本，请沿用模板内容或改用文本模板。")

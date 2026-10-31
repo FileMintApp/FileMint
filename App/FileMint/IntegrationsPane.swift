@@ -18,6 +18,11 @@ struct IntegrationsPane: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 25) {
+                if !state.isSupported {
+                    Label(ExternalInvocationError.unsupportedSystemVersion.message(state.language), systemImage: "info.circle")
+                        .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("integrations.systemRequirement")
+                }
                 SettingsSection(title: state.text("Start with a workflow", "从一个常用场景开始")) {
                     scenario(.projectNote, title: state.text("New project note", "新建项目笔记"),
                         detail: state.text("Configure a text template and folder. Enter only the note name each day.", "配置文本模板和目录，日常只输入笔记名称。"))
@@ -34,19 +39,25 @@ struct IntegrationsPane: View {
                         Label(state.text("Native Shortcuts actions", "原生快捷指令动作"), systemImage: "square.stack.3d.up")
                         Spacer()
                         Button(state.text("Set up example…", "设置示例动作…")) { state.start(.projectNote, tool: .shortcuts) }
+                            .accessibilityIdentifier("integrations.setupShortcuts")
                         Button(state.text("Open Shortcuts", "打开快捷指令")) { state.openShortcuts() }
-                    }
+                            .accessibilityIdentifier("integrations.openShortcuts")
+                    }.disabled(!state.isSupported)
                     Divider()
                     HStack {
                         Label("Raycast", systemImage: "command")
                         Spacer()
                         Button(state.text("Create command…", "创建启动命令…")) { state.start(.projectNote, tool: .raycast) }
-                    }
+                            .accessibilityIdentifier("integrations.createCommand")
+                    }.disabled(!state.isSupported)
                     Divider()
                     HStack {
                         Button(state.text("Custom command…", "自定义命令…")) { state.start(.custom, tool: .url) }
+                            .disabled(!state.isSupported)
+                            .accessibilityIdentifier("integrations.customCommand")
                         Spacer()
                         Button(state.text("Global shortcut settings", "全局快捷键设置")) { settings.selectedPane = .general }
+                            .accessibilityIdentifier("integrations.globalShortcutSettings")
                     }
                 }
                 SettingsSection(title: state.text("Reuse folder access", "长期复用目录访问")) {
@@ -77,8 +88,12 @@ struct IntegrationsPane: View {
             Spacer(minLength: 8)
             HStack(spacing: 8) {
                 Button(state.text("Shortcuts…", "快捷指令…")) { state.start(scenario, tool: .shortcuts) }
-                if scenario != .workflowText { Button("Raycast…") { state.start(scenario, tool: .raycast) } }
-            }.controlSize(.small)
+                    .accessibilityIdentifier("integrations.\(scenario).shortcuts")
+                if scenario != .workflowText {
+                    Button("Raycast…") { state.start(scenario, tool: .raycast) }
+                        .accessibilityIdentifier("integrations.\(scenario).raycast")
+                }
+            }.controlSize(.small).disabled(!state.isSupported)
         }.padding(.vertical, 3)
     }
 

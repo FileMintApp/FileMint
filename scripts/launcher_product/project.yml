@@ -1,7 +1,7 @@
 name: FileMintLauncherProductQA
 options:
   deploymentTarget:
-    macOS: "13.3"
+    macOS: "13.0"
   createIntermediateGroups: true
 packages:
   FileMintCore:
@@ -14,7 +14,7 @@ settings:
     SWIFT_VERSION: "6.0"
     ARCHS: arm64
     ONLY_ACTIVE_ARCH: NO
-    MACOSX_DEPLOYMENT_TARGET: "13.3"
+    MACOSX_DEPLOYMENT_TARGET: "13.0"
     CODE_SIGNING_ALLOWED: NO
     CODE_SIGNING_REQUIRED: NO
     SWIFT_ACTIVE_COMPILATION_CONDITIONS: FILEMINT_LAUNCHER_PRODUCT_QA

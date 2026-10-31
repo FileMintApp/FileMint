@@ -6,9 +6,13 @@ This guide describes the **unreleased integration build**. It opens a draft for
 you to review. Only **Create** writes a file. An action returning “draft opened”
 does not mean the file was created.
 
-The build requires an Apple-silicon Mac and macOS 13.3 or later, with a logged-in,
-interactive desktop. Current native evidence is from macOS 27.2, Shortcuts 10.0
-and Raycast 2.10.1.0. Running on macOS 13.3 remains unverified. Raycast is installed
+FileMint retains its Apple-silicon Mac and macOS 13.0 application requirement.
+Only Shortcuts & Launchers requires macOS 13.3 or later and a logged-in,
+interactive desktop. On macOS 13.0–13.2, its setup controls are disabled with an
+explanation, and direct external draft/search requests are rejected. Ordinary
+file creation and Quick Search remain available. Current native evidence is from
+macOS 27.2, Shortcuts 10.0 and Raycast 2.10.1.0; actual macOS 13.0/13.3 runtime
+remains unverified. Raycast is installed
 separately. See the [task and acceptance evidence](tasks/2026-10-29-shortcuts-and-launchers.md)
 for exact builds, remaining environments and first-time-user acceptance.
 
@@ -122,9 +126,7 @@ If Shortcuts cannot make the app ready within its bounded preparation interval,
 it reports unavailable. Cancelling that preparation must not open a panel later.
 Headless/background-only workflows are outside this interactive draft workflow.
 
-The development build's minimum is shared by the app, Finder extension and
-appcasts. Homebrew uses its Ventura major-version dependency plus a version-only
-13.3 gate. Previously released clients can still display a GitHub update notice
-before Sparkle filters incompatible updates; this build cannot retroactively
-remove an older client's notice. No new release, tap push or website publication
-is implied by this guide.
+The app, Finder extension and appcasts retain macOS 13.0. Homebrew retains its
+Ventura dependency without an additional 13.3 installation gate. Feature
+availability is checked inside FileMint and does not restrict application
+updates. This guide does not imply a new release, tap push or website publication.

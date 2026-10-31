@@ -182,6 +182,13 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 
 ## Shortcuts and launchers
 
+- FileMint keeps its macOS 13.0 application minimum. Shortcuts & Launchers alone
+  requires macOS 13.3 or later, using one ForegroundContinuableIntent route.
+  On macOS 13.0–13.2, keep the settings page readable, show the required version
+  and disable its setup, preview and export actions. Reject direct external
+  draft/search requests before admitting work or accessing a destination.
+  Do not offer an older-system fallback, persist an enabled state, raise the
+  application's deployment target or disable ordinary creation/Quick Search.
 - Explicit external draft/search actions work independently of the global key and
   menu-bar switches. Run the adapters in the main app and reuse the existing
   creation/search controllers, pending-work and quit/update guards.

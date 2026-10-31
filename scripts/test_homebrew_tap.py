@@ -9,7 +9,6 @@ import io
 import json
 import os
 from pathlib import Path
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -128,16 +127,12 @@ class ManifestAndCaskTests(ReleaseFixture):
         self.assertIn(':ventura', cask)
         self.assertIn('auto_updates true', cask)
         self.assertIn('app "FileMint.app"', cask)
-        self.assertIn('MacOS.full_version < MacOSVersion.new("13.3")', cask)
-        for forbidden in ("\n  zap ", "\n  uninstall ", "system_command", "\n  postflight", "quit:", "signal:"):
+        for forbidden in ("\n  zap ", "\n  uninstall ", "system_command", "\n  preflight", "\n  postflight", "quit:", "signal:"):
             self.assertNotIn(forbidden, cask)
 
     def test_cask_rejects_executable_ruby_and_unrecognized_layout(self):
         cask = tap.render_cask(VERSION, self.manifest["dmgSHA256"])
         mutations = [cask + '\nsystem("true")\n', cask.replace("\nend", '\n  zap trash: "~/Library"\nend'),
-                     cask.replace('MacOS.full_version', 'MacOS.version'),
-                     cask.replace('MacOSVersion.new("13.3")', 'MacOSVersion.new("13.2")'),
-                     cask.replace('  preflight do', '  preflight do\n    system("true")'),
                      cask.replace('app "FileMint.app"', 'app "Other.app"'),
                      cask.replace('auto_updates true', 'auto_updates false'),
                      cask.replace('arch: :arm64', 'arch: :intel'),
@@ -149,43 +144,14 @@ class ManifestAndCaskTests(ReleaseFixture):
                 with self.assertRaises(EVIDENCE_ERROR):
                     tap.parse_cask(text)
 
-    def test_legacy_cask_is_recognized_without_rewriting_its_minimum(self):
-        legacy = tap.render_cask(VERSION, self.manifest["dmgSHA256"], minimum="13.0")
-        self.assertNotIn("preflight", legacy)
-        self.assertEqual(tap.parse_cask(legacy), (VERSION, self.manifest["dmgSHA256"]))
-        with self.assertRaises(EVIDENCE_ERROR):
-            tap.render_cask(VERSION, self.manifest["dmgSHA256"], minimum="14.0")
-
-    @unittest.skipUnless(shutil.which("ruby"), "Ruby is unavailable")
-    def test_generated_guard_rejects_only_hosts_below_the_exact_minor_floor(self):
+    def test_optional_launcher_requirement_does_not_restrict_app_installation(self):
+        self.assertEqual(tap.update_appcast.minimum_system_version(), "13.0")
         cask = tap.render_cask(VERSION, self.manifest["dmgSHA256"])
-        # Execute the actual generated block in a metadata-only DSL. No app is
-        # downloaded or installed, and other Cask blocks are deliberately inert.
-        harness = '''require "rubygems/version"
-MacOSVersion = Gem::Version
-module MacOS
-  def self.full_version; MacOSVersion.new(ARGV.fetch(0)); end
-end
-class MetadataCask
-  attr_reader :guard
-  def method_missing(name, *args, &block)
-    @guard = block if name == :preflight
-  end
-  def odie(message); raise message; end
-end
-def cask(name, &block)
-  item = MetadataCask.new
-  item.instance_eval(&block)
-  item.instance_eval(&item.guard) if item.guard
-end
-eval(STDIN.read, TOPLEVEL_BINDING, "generated-filemint-cask.rb")
-'''
-        for host, accepted in (("13.0", False), ("13.2.1", False), ("13.3", True), ("13.3.1", True), ("14.0", True), ("27.2", True)):
-            with self.subTest(host=host):
-                result = subprocess.run(["ruby", "-e", harness, host], input=cask, text=True, capture_output=True)
-                self.assertEqual(result.returncode == 0, accepted, result.stderr)
-                if not accepted:
-                    self.assertIn("FileMint requires macOS 13.3 or later.", result.stderr)
+        self.assertIn("depends_on macos: :ventura", cask)
+        self.assertNotIn("preflight", cask)
+        with patch.object(tap.update_appcast, "minimum_system_version", return_value="13.3"):
+            with self.assertRaises(EVIDENCE_ERROR):
+                tap.render_cask(VERSION, self.manifest["dmgSHA256"])
 
     def test_versions_compare_numerically(self):
         self.assertGreater(tap.version_key("0.10.0"), tap.version_key("0.9.99"))
@@ -551,7 +517,7 @@ class BrewContractTests(ReleaseFixture):
                                 "url": f"{PUBLIC}/releases/download/{TAG}/FileMint-{VERSION}.dmg",
                                 "depends_on": {"arch": [{"type": "arm", "bits": 64}],
                                                "macos": {">=": ["13"]}},
-                                "artifacts": [{"preflight": None}, {"app": ["FileMint.app"]}]}]}
+                                "artifacts": [{"app": ["FileMint.app"]}]}]}
         self.commands = []
         self.registered = {"fixture/existing"}
         self.validation_tap = None

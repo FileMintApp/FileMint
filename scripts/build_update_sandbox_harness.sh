@@ -15,7 +15,7 @@ SMOKE_DIRECTORY="$(mktemp -d "$PWD/build/update-sandbox-harness.noindex/run.XXXX
 APP_PATH="$SMOKE_DIRECTORY/FileMintUpdateSandboxSmoke.app"
 mkdir -p "$APP_PATH/Contents/MacOS"
 cp scripts/update-sandbox-smoke/Info.plist "$APP_PATH/Contents/Info.plist"
-swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.3 \
+swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.0 \
   App/FileMint/UpdateClient.swift scripts/update_sandbox_smoke.swift \
   "${CORE_LINK[@]}" -o "$APP_PATH/Contents/MacOS/FileMintUpdateSandboxSmoke"
 codesign --force --options runtime --sign - --timestamp=none \

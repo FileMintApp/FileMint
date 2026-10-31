@@ -36,7 +36,7 @@ fi
 source scripts/image_compression_link.sh
 DESIGN_LINK+=("${FILEMINT_COMPRESSION_LINK[@]}")
 filemint_embed_compression "$DESIGN_APP"
-swiftc -swift-version 6 -parse-as-library -target "arm64-apple-macos13.3" \
+swiftc -swift-version 6 -parse-as-library -target "arm64-apple-macos13.0" \
   "${DESIGN_SOURCES[@]}" SharedUI/*.swift FinderSyncExtension/FileMintFinderSync/FinderIntegrationStatus.swift \
   scripts/design_ui_smoke.swift "${DESIGN_LINK[@]}" -F "$DESIGN_FRAMEWORKS" -framework Sparkle \
   -Xlinker -rpath -Xlinker "$DESIGN_FRAMEWORKS" -o "$DESIGN_APP/Contents/MacOS/FileMintDesignQA"

@@ -57,7 +57,7 @@ def app_path(kind):
 
 def assert_stopped(kind):
     identifiers = (KINDS[kind][1], *KINDS[kind][2])
-    active = json.loads(command(["xcrun", "swift", "-target", "arm64-apple-macos13.3",
+    active = json.loads(command(["xcrun", "swift", "-target", "arm64-apple-macos13.0",
                                  ROOT / "scripts/native_qa_running.swift", *identifiers]))
     if not isinstance(active, list) or active:
         raise QAError("Close this QA app and its receiver before rebuilding; running fixtures are never replaced")

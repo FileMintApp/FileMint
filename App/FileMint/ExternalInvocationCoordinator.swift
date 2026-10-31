@@ -23,6 +23,7 @@ final class ExternalInvocationCoordinator: ObservableObject {
     #endif
 
     @Published private(set) var lastAcceptedRequestID: UUID?
+    let isSupported: Bool
     private weak var model: PreferencesModel?
     private let creation: CustomFileSavePanelController
     private let search: QuickSearchPanelController
@@ -51,7 +52,9 @@ final class ExternalInvocationCoordinator: ObservableObject {
          }, reserveOperation: @escaping @MainActor () -> (@MainActor () -> Void)? = {
              FileOperationCoordinator.shared.reserveExternalPresentation()
          }, openSettings: @escaping @MainActor () -> Void = { SettingsWindowController.shared.show() },
-         diagnostic: (@MainActor (String, [String: Bool]) -> Void)? = nil) {
+         diagnostic: (@MainActor (String, [String: Bool]) -> Void)? = nil,
+         systemVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion) {
+        isSupported = LauncherAvailability.isSupported(on: systemVersion)
         self.model = model
         self.creation = creation ?? .shared
         self.search = search ?? .shared
@@ -65,6 +68,7 @@ final class ExternalInvocationCoordinator: ObservableObject {
     func openDraft(_ request: ExternalDraftRequest, source: ExternalDraftSource,
                    nativeGrantURL: URL? = nil, didClose: (@MainActor () -> Void)? = nil,
                    preview: ExternalPreviewReservation? = nil) async throws -> ExternalDraftOpenResult {
+        try requireSupportedSystem()
         let pending: UUID
         var releaseOperation: (@MainActor () -> Void)?
         if let preview {
@@ -183,6 +187,7 @@ final class ExternalInvocationCoordinator: ObservableObject {
     }
 
     func showSearch() async throws -> ExternalSearchResult {
+        try requireSupportedSystem()
         guard pendingID == nil else { return .busy }
         let pending = UUID()
         pendingID = pending
@@ -214,6 +219,7 @@ final class ExternalInvocationCoordinator: ObservableObject {
     }
 
     func reservePreview(ownedSheet: NSWindow, owner: NSWindow) throws -> ExternalPreviewReservation {
+        try requireSupportedSystem()
         guard pendingID == nil, let model, model.isStartupReady, model.templateRecoveryError == nil else {
             throw ExternalInvocationError.busy
         }
@@ -241,13 +247,16 @@ final class ExternalInvocationCoordinator: ObservableObject {
     }
 
     func reserveSettingsOperation() -> (@MainActor () -> Void)? {
-        guard pendingID == nil, let model, !model.hasIndependentCreationWork, !creation.hasActiveWrite, !isBlocked() else { return nil }
+        guard isSupported, pendingID == nil, let model, !model.hasIndependentCreationWork, !creation.hasActiveWrite, !isBlocked() else { return nil }
         return reserveOperation()
     }
 
     func receive(_ url: URL) {
         let invocation: ExternalInvocation
-        do { invocation = try ExternalDraftRoute.parse(url.absoluteString) }
+        do {
+            try requireSupportedSystem()
+            invocation = try ExternalDraftRoute.parse(url.absoluteString)
+        }
         catch { reportURLFailure(error); return }
         Task {
             do {
@@ -300,6 +309,7 @@ final class ExternalInvocationCoordinator: ObservableObject {
     }
 
     private func readyModel() async throws -> PreferencesModel {
+        try requireSupportedSystem()
         guard let model else { throw ExternalInvocationError.unavailable }
         let deadline = ContinuousClock.now.advanced(by: .seconds(5))
         while !model.isStartupReady {
@@ -310,6 +320,9 @@ final class ExternalInvocationCoordinator: ObservableObject {
         try Task.checkCancellation()
         guard model.templateRecoveryError == nil else { throw ExternalInvocationError.unavailable }
         return model
+    }
+    func requireSupportedSystem() throws {
+        guard isSupported else { throw ExternalInvocationError.unsupportedSystemVersion }
     }
     private func waitForFavorites(_ catalog: FavoriteLocationsModel) async throws {
         let deadline = ContinuousClock.now.advanced(by: .seconds(5))

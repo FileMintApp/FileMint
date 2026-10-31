@@ -1,7 +1,7 @@
 import Foundation
 
 public enum ExternalInvocationError: String, Error, Equatable, Sendable {
-    case invalidRequest, unsupportedVersion, invalidFilename, templateUnavailable
+    case invalidRequest, unsupportedVersion, unsupportedSystemVersion, invalidFilename, templateUnavailable
     case contentTemplateMismatch, payloadTooLarge, existingDraft, busy, unavailable
     case destinationUnavailable, authorizationRequired, authorizationDenied
     case conflictingRequestID, alreadyHandled

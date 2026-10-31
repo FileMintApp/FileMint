@@ -32,7 +32,7 @@ fi
 source scripts/image_compression_link.sh
 CORE_LINK+=("${FILEMINT_COMPRESSION_LINK[@]}")
 filemint_embed_compression "$APP_PATH"
-swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.3 \
+swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.0 \
   App/FileMint/DesignSystem.swift App/FileMint/ResourceToolsController.swift App/FileMint/ResourceToolsView.swift \
   App/FileMint/MenuIconControl.swift App/FileMint/SystemSymbolCatalog.swift scripts/native_qa_preferences.swift \
   App/FileMint/PlainTextEditor.swift SharedUI/CustomFileSavePanelController.swift SharedUI/FolderAccess.swift SharedUI/ExternalDraftPresentation.swift \

@@ -27,10 +27,10 @@ for app, name, identifier in [(host, 'FileMintHotKeyQA', 'io.github.daigua.filem
     (app / 'Contents/Info.plist').write_bytes(plistlib.dumps(info))
 (root / 'entitlements.plist').write_bytes(plistlib.dumps({'com.apple.security.app-sandbox': True}))
 PY
-swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.3 \
+swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.0 \
   App/FileMint/GlobalShortcutService.swift scripts/hotkey_sandbox/HotKeyService.swift scripts/hotkey_sandbox/Peer.swift "${HOTKEY_LINK[@]}" \
   -o "$HOTKEY_PEER/Contents/MacOS/FileMintHotKeyPeer"
-swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.3 \
+swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.0 \
   App/FileMint/GlobalShortcutService.swift App/FileMint/GlobalShortcutController.swift \
   scripts/hotkey_sandbox/HotKeyService.swift scripts/hotkey_sandbox/Host.swift "${HOTKEY_LINK[@]}" \
   -o "$HOTKEY_APP/Contents/MacOS/FileMintHotKeyQA"

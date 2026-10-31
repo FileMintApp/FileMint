@@ -85,6 +85,8 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   Native Shortcuts parameters and public URLs share one typed request, validation,
   admission and writer. They never enter the private quick-creation trust path.
   The existing `new` route retains its own strict fields and behavior.
+  The [feature system gate](startup.md#shortcuts-and-launchers) rejects external
+  requests before admission on unsupported systems, without changing this route.
 - Draft fields are `v`, `name`, `template`, `text`, `directory`, `favorite`,
   `location` and `id`. Require exactly `v=1`; reject unknown or duplicate fields,
   missing values, empty name/IDs, malformed percent or UTF-8, NUL, userinfo,

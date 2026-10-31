@@ -26,7 +26,9 @@ final class LauncherProductFixtureDelegate: NSObject, NSApplicationDelegate {
         _ = LauncherProductRuntime.shared
     }
     func applicationDidFinishLaunching(_ notification: Notification) {
-        FileMintLauncherShortcuts.updateAppShortcutParameters()
+        if #available(macOS 13.3, *) {
+            FileMintLauncherShortcuts.updateAppShortcutParameters()
+        }
         let expected = NSAppleEventManager.shared().currentAppleEvent?
             .paramDescriptor(forKeyword: AEKeyword(kAEApplicationActivationExpected))?.booleanValue == true
         LauncherProductRuntime.shared.record("launch", ["activationExpected": expected])
@@ -283,6 +285,10 @@ final class LauncherProductRuntime: NSObject {
         record("product-appearance-toggled", ["saved": model.preferences.appearance == model.committedPreferences.appearance])
     }
     @objc private func verifyNativeInputMapping() {
+        guard #available(macOS 13.3, *) else {
+            record("native-input-mapping", ["blocked": "Requires macOS 13.3 or later"])
+            return
+        }
         var passed = true
         var count = 0
         let favoriteID = UUID()

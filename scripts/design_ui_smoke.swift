@@ -215,6 +215,8 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
             Task { @MainActor in
                 do {
                     try await waitForSettingsReady()
+                    print("CHECK optional launcher system requirements"); fflush(nil)
+                    try await checkLauncherAvailability(favorites: favoriteModel, root: root)
                     print("CHECK automated settings navigation"); fflush(nil)
                     try await checkSettingsNavigation()
                     print("CHECK automated design appearance"); fflush(nil)
@@ -610,6 +612,86 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
             throw NSError(domain: "SettingsReview", code: 1,
                 userInfo: [NSLocalizedDescriptionKey: "Template recovery did not finish"])
         }
+    }
+
+    private func checkLauncherAvailability(favorites: FavoriteLocationsModel, root: URL) async throws {
+        func require(_ value: Bool, _ message: String) throws {
+            if !value { throw NSError(domain: "LauncherAvailability", code: 1,
+                                     userInfo: [NSLocalizedDescriptionKey: message]) }
+        }
+        func attribute(_ node: NSObject, _ key: String) -> Any? {
+            let getter = key == "accessibilityEnabled" ? "isAccessibilityEnabled" : key
+            guard node.responds(to: NSSelectorFromString(getter)) else { return nil }
+            return node.value(forKey: key)
+        }
+        func accessible(_ node: NSObject, depth: Int = 0) -> [NSObject] {
+            guard depth < 30 else { return [] }
+            return [node] + (attribute(node, "accessibilityChildren") as? [NSObject] ?? [])
+                .flatMap { accessible($0, depth: depth + 1) }
+        }
+        func expectUnsupported(_ operation: () async throws -> Void) async throws {
+            do { try await operation(); try require(false, "Unsupported system admitted launcher work") }
+            catch let error as ExternalInvocationError { try require(error == .unsupportedSystemVersion, "Incorrect system requirement error") }
+        }
+        let originalRuntime = model.externalInvocations, originalState = model.integrationsState
+        let originalPreferences = model.preferences
+        let owner = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1000, height: 900),
+                             styleMask: [.titled], backing: .buffered, defer: false)
+        owner.isReleasedWhenClosed = false
+        defer {
+            model.integrationsState?.cancelConfiguration()
+            owner.close()
+            model.externalInvocations = originalRuntime
+            model.integrationsState = originalState
+            model.preferences = originalPreferences
+        }
+        let ids = ["projectNote.shortcuts", "projectNote.raycast", "workflowText.shortcuts",
+                   "quickSearch.shortcuts", "quickSearch.raycast", "setupShortcuts", "openShortcuts",
+                   "createCommand", "customCommand"]
+        var reservations = 0, folderReads = 0
+        let request = try ExternalDraftRequest(destination: .directory(root.path))
+        for (minor, supported) in [(0, false), (2, false), (3, true)] {
+            let runtime = ExternalInvocationCoordinator(model: model, search: quickSearch,
+                favorites: { folderReads += 1; return favorites },
+                reserveOperation: { reservations += 1; return {} },
+                systemVersion: .init(majorVersion: 13, minorVersion: minor, patchVersion: 0))
+            model.externalInvocations = runtime
+            model.integrationsState = nil
+            for language in [AppLanguage.chinese, .english] {
+                model.preferences.language = language
+                let host = NSHostingView(rootView: IntegrationsPane(settings: model, favorites: favorites))
+                owner.contentView = host
+                owner.makeKeyAndOrderFront(nil)
+                try await Task.sleep(for: .milliseconds(150))
+                let nodes = accessible(host)
+                try require(nodes.contains { attribute($0, "accessibilityIdentifier") as? String == "integrations.systemRequirement" } == !supported,
+                            "System requirement explanation is missing or shown on a supported system")
+                for id in ids + ["globalShortcutSettings"] {
+                    let matches = nodes.filter { attribute($0, "accessibilityIdentifier") as? String == "integrations." + id }
+                    try require(!matches.isEmpty, "Missing launcher control: \(id)")
+                    try require(matches.allSatisfy { attribute($0, "accessibilityEnabled") as? Bool == (id == "globalShortcutSettings" || supported) },
+                                "Incorrect enabled state for \(id) on macOS 13.\(minor)")
+                }
+                guard !supported, let state = model.integrationsState else { continue }
+                for tool in IntegrationTool.allCases {
+                    state.start(.projectNote, tool: tool)
+                    try require(state.guide == nil && owner.attachedSheet == nil && state.error?.message ==
+                                ExternalInvocationError.unsupportedSystemVersion.message(language), "Disabled setup started a session")
+                }
+                try await expectUnsupported { _ = try state.link() }
+                try await expectUnsupported { _ = try await runtime.openDraft(request, source: .shortcuts) }
+                try await expectUnsupported { _ = try await runtime.openDraft(request, source: .externalLink) }
+                try await expectUnsupported { _ = try await runtime.showSearch() }
+                try await expectUnsupported { _ = try await runtime.folderSnapshot() }
+                try await expectUnsupported { _ = try await runtime.enabledTemplateSnapshot() }
+                try await expectUnsupported { _ = try runtime.reservePreview(ownedSheet: owner, owner: owner) }
+                try require(runtime.reserveSettingsOperation() == nil && runtime.pendingRequestCount == 0 &&
+                            runtime.lastAcceptedRequestID == nil, "Disabled integration reserved or accepted work")
+            }
+        }
+        try require(reservations == 0 && folderReads == 0 && !CustomFileSavePanelController.shared.hasActiveDraft,
+                    "Unsupported launcher work reached creation or directory access")
+        print("PASS launcher availability: macOS 13.0/13.2 disabled, 13.3 enabled, bilingual native controls and direct-entry guards")
     }
 
     private func checkSettings(store: FileMintPreferencesStore, root: URL) async throws {

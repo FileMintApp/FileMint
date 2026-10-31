@@ -7,7 +7,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         PreferencesModel.shared.startGlobalShortcut()
         UpdateModel.shared.startAutomaticChecks()
         BatchRenameOperations.shared.refreshStatus()
-        FileMintLauncherShortcuts.updateAppShortcutParameters()
+        if #available(macOS 13.3, *) {
+            FileMintLauncherShortcuts.updateAppShortcutParameters()
+        }
         let activationExpected = NSAppleEventManager.shared().currentAppleEvent?
             .paramDescriptor(forKeyword: AEKeyword(kAEApplicationActivationExpected))?.booleanValue == true
         PreferencesModel.shared.externalInvocations.handleOrdinaryLaunch(
