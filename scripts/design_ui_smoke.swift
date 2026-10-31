@@ -3,6 +3,7 @@ import SwiftUI
 import ImageIO
 import CoreGraphics
 import CoreText
+import Darwin
 import FileMintCore
 
 /// Runs production views/models/coordinators with an isolated store. It does not
@@ -17,6 +18,7 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
     private var updater: UpdateModel!
     private var updateBody: String?
     private var quickSearch: QuickSearchPanelController?
+    private var fixtureRoot: URL!
 
     static func main() {
         let app = NSApplication.shared
@@ -34,7 +36,20 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
 
     private func prepare() throws {
         guard let path = Bundle.main.object(forInfoDictionaryKey: "FixturePath") as? String else { throw ResourceError.failed }
-        let root = URL(fileURLWithPath: path, isDirectory: true)
+        let base = URL(fileURLWithPath: path, isDirectory: true)
+        let automatic = CommandLine.arguments.contains("--verify-automation") || CommandLine.arguments.contains("--verify-updates")
+        let root: URL
+        if automatic {
+            // Keep the normal-layout fixture's displayed destination short.
+            // Adding isolation must not turn it into the separate long-path case.
+            var pattern = Array("/private/tmp/FileMintDesignQA.XXXXXX".utf8CString)
+            guard let directory = mkdtemp(&pattern) else { throw ResourceError.failed }
+            root = URL(fileURLWithPath: String(cString: directory), isDirectory: true)
+            guard let icon = Bundle.main.url(forResource: "QAAppIcon", withExtension: "png") else { throw ResourceError.failed }
+            try FileManager.default.copyItem(at: icon, to: root.appendingPathComponent("AppIcon.png"))
+            print("QA_RUNTIME_ROOT \(root.path)")
+        } else { root = base }
+        fixtureRoot = root
         for i in 0..<2 { try fixture(root.appendingPathComponent(i == 0 ? "Mountain.png" : "Lake.png"), variant: i) }
         var preferences = FileMintPreferences.default
         preferences.monitoredFolderURLs = [root]
@@ -491,10 +506,10 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
     private func recordWindowSize(_ event: String) {
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(300))
-            guard let root = Bundle.main.object(forInfoDictionaryKey: "FixturePath") as? String else { return }
+            guard let root = self.fixtureRoot else { return }
             let size = window.contentRect(forFrameRect: window.frame).size
             try? "\(event) \(size.width) \(size.height)".write(
-                toFile: URL(fileURLWithPath: root).appendingPathComponent("qa-window-size.txt").path,
+                toFile: root.appendingPathComponent("qa-window-size.txt").path,
                 atomically: true, encoding: .utf8)
         }
     }

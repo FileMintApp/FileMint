@@ -63,6 +63,9 @@ final class ResourceToolsSmoke: NSObject, NSApplicationDelegate {
             throw ResourceError.failed
         }
         let root = URL(fileURLWithPath: path, isDirectory: true)
+            .appendingPathComponent("invocation-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
+        print("QA_RUNTIME_ROOT \(root.path)")
         let preferencesFile = root.appendingPathComponent("fixture-preferences.json")
         var preferences = FileMintPreferences.default
         preferences.monitoredFolderURLs = [root]

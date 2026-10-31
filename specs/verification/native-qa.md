@@ -13,17 +13,30 @@ The equivalent CLI is `python3 scripts/native_checks.py plan|run`, with `--base`
 repeatable `--path` / `--suite`, and explicit `--all` for runner maintenance.
 
 The runner reuses the existing builders, fixed identities and signed stable
-paths. It runs serially, verifies the published identity and fresh build run ID,
-and requires both exit 0 and each suite's completion marker. Logs and a JSON
-report live in a unique directory under `build/native-checks.noindex`. Every new
-invocation rebuilds selected fixtures with fresh data. No previous pass or last
-good bundle can substitute for a failed build. An empty plan is `not-applicable`,
-not a successful native test.
+paths. It runs serially and requires both exit 0 and each suite's completion
+marker. Logs and a JSON report live in a unique directory under
+`build/native-checks.noindex`. Each selected check executes with fresh runtime
+data; a previous passing log never substitutes for execution.
+
+Build reuse requires matching conservative fixture inputs, toolchain/build
+environment, pinned signing identity and complete signed application contents.
+Inputs include product/shared/Core code, resources, build configuration and that
+fixture's scripts; unrelated documentation and other fixture scripts do not
+invalidate it. The input manifest is recorded per kind. A relevant edit during
+execution blocks only affected results, retaining their observed outcome and
+the unaffected suites. The report's whole-worktree state is audit metadata.
+
+On a miss, rebuild in fresh staging and verify a new build run ID. A failed build
+cannot fall back to a retained app. `--rebuild` (or `NATIVE_QA_REBUILD=1`) forces
+this path for diagnosis. A reused artifact keeps its build run ID; every check
+still gets a new report, runtime workspace and output. Reuse does not cover
+manual Shortcuts/Raycast, installed Finder, persistent grants or update evidence.
+An empty plan is `not-applicable`, not a successful native test.
 
 Automatic suites are `batch-rename`, `template-workflow`, `creation-opening`,
 `update-scheduling`, `open-with`, `file-tools-settings`, `file-info`, `resource-tools`,
 `design-ui`, `update-summary`, `hotkey-sandbox`, `quick-search`, `file-visibility`, and the headless `favorite-model`. Template scenarios share one
-fresh build in a run and each create their own runtime workspace. Design QA uses
+verified build in a run and each create their own runtime workspace. Design QA uses
 `--verify-automation`; ordinary interactive modes remain available.
 The focused `update-summary` suite reuses the design fixture with `--verify-updates`,
 injected release metadata and isolated preferences. It covers language switching,
@@ -49,6 +62,10 @@ interactive fixture modes are removed from automatic child processes.
 Selection is a conservative path-based plan, not semantic coverage analysis.
 Pure Core rule and documentation changes do not start GUI QA by default. Review
 shared-file changes against the owning contract before choosing a narrower set.
+Runner planning/reporting/cache changes use offline subprocess regressions and
+representative native runs when execution/build reuse changes; they do not select
+every GUI fixture automatically. Publication/signing helper edits remain
+conservative. `--all` remains available for an explicitly needed full replay.
 See the [implementation task](../../docs/tasks/native-qa-automation.md) for evidence.
 
 ## Identity registry
@@ -230,9 +247,10 @@ window stay isolated. Existing P0 evidence remains tied to its original run.
 - `make verify` includes offline publication tests: fixed identities/paths, isolated
   runs, failure preservation, running/concurrent rejection, signature/requirement
   mismatch, symlink containment and already-signed installer-host preservation.
-- Build every affected native builder. Rebuild at least two representative kinds
-  and compare the actual bundle IDs, launch paths and designated requirements;
-  check their fixture roots and run IDs differ.
+- Build affected native builders when their inputs change. For build-reuse
+  changes, run at least two representative kinds freshly and then by reuse:
+  bundle IDs, launch paths and designated requirements stay fixed; the reused
+  build ID stays fixed while runtime data roots and report IDs differ.
 - Run the affected native checks at the stable paths. For the installer fixture,
   verify build 1 → build 2 at the stable path with separate launch PIDs, using the
   per-run loopback feed and event log.

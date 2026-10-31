@@ -22,7 +22,7 @@ verify-file-info-capture:
 	bash scripts/verify_file_info_capture.sh
 
 .PHONY: native-qa-plan verify-native-affected verify-native-checks-runner
-export NATIVE_QA_BASE NATIVE_QA_SUITES
+export NATIVE_QA_BASE NATIVE_QA_SUITES NATIVE_QA_REBUILD
 
 native-qa-plan:
 	python3 scripts/native_checks.py plan

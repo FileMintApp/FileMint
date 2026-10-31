@@ -3,6 +3,27 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Acceptance runner build reuse — 2026-10-31
+
+On `6e936ee` plus the uncommitted workflow optimization, offline `make verify`
+passed, including 35 runner regressions. Three Developer ID signed QA kinds
+(file-tools-settings, resource-tools and design-ui) passed their affected modes
+both freshly and by reuse. Build identities stayed fixed on reuse, while runtime
+roots and report/log paths changed. Current per-kind input comparison retains the
+unchanged icon/resource passes; final design/update-summary passes are bound to
+`run.7r0z8mk2` and `run.8zhge10d`.
+
+Both final design modes passed in 54.528 seconds with a fresh build and 22.003
+seconds with a reused build on this arm64 macOS 27.2 / Xcode 27.1 host. This is a
+single local measurement. Checks still execute and validate exit codes/markers.
+Documentation changed during `run.n02jma99` without invalidating its unrelated
+passing results. Initial long-path creation-width failures remain recorded;
+this workflow change does not claim that product boundary passed.
+
+Evidence and scope: [native QA follow-up](tasks/native-qa-automation.md#2026-10-31-acceptance-efficiency-verification)
+and `build/acceptance-efficiency-verification.noindex/2026-10-31/verification-report.json`.
+No production installation, publication or remote Actions inspection occurred.
+
 ## Launcher feature availability correction — 2026-10-31
 
 At `6a36217` plus this uncommitted correction, restore the application, Finder

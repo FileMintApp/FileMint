@@ -38,7 +38,8 @@ from the current task rather than replaying a transcript.
 - A handoff includes the objective, current state, decisions, next action, relevant
   paths and evidence links. Never copy whole SPEC sections, tool logs or secrets.
 - Keep past outcomes attached to the revision/environment that produced them.
-  A previous pass is not a current pass. Preserve unresolved native checks.
+  Retain evidence for unchanged inputs after an explicit dependency/environment
+  comparison; do not label it as rerun. Preserve unresolved native checks.
 
 ## Implementation and review
 
@@ -51,6 +52,11 @@ from the current task rather than replaying a transcript.
   covered scope. Explain the trigger for additional native QA and keep it to the
   affected scenarios. Routine work does not require a Debug package or a full
   GUI replay. Keep compilation, runtime acceptance and publication evidence distinct.
+- Follow [bounded acceptance rounds](../specs/HARNESS.md#bounded-acceptance-rounds):
+  prepare automatic checks and fixtures before involving the user, state the
+  small manual scope and stop condition, and timebox user-assisted work. Keep
+  technical verification, agreed user research and publicity work in their own
+  phases. A fixture fix or unavailable tool must not restart unrelated acceptance.
 - For affected native interactions, inspect `make native-qa-plan` and run
   `make verify-native-affected`. Use `NATIVE_QA_BASE` after committing or
   `NATIVE_QA_SUITES` for a reviewed shared-file scope. Follow

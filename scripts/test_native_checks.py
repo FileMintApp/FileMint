@@ -5,6 +5,7 @@ import io
 import json
 import os
 from pathlib import Path
+import plistlib
 import subprocess
 import sys
 import tempfile
@@ -90,10 +91,12 @@ class SelectionTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 checks.plan_checks([path])
 
-    def test_runner_changes_select_all_automatic_suites_without_adding_manual_experiments(self):
-        plan = checks.plan_checks(['scripts/native_checks.py'])
-        self.assertEqual(plan['suites'], list(checks.ALL))
+    def test_runner_only_edits_use_offline_checks_without_replaying_every_gui(self):
+        plan = checks.plan_checks(['scripts/native_checks.py', 'scripts/test_native_checks.py', 'Makefile'])
+        self.assertEqual(plan['suites'], [])
         self.assertEqual(plan['manualChecks'], [])
+        self.assertEqual(checks.plan_checks(['scripts/native_qa.py'])['suites'], list(checks.ALL))
+        self.assertEqual(checks.plan_checks([], all_suites=True)['suites'], list(checks.ALL))
 
     def test_child_environment_removes_external_app_and_interactive_overrides(self):
         with patch.dict(os.environ, {'FILEMINT_TERMINAL_MODE': 'newWindow', 'FILEMINT_OPEN_WITH_APP': 'code',
@@ -133,6 +136,41 @@ class GitSelectionTests(unittest.TestCase):
                 git('commit', '-qm', 'fixture change')
                 self.assertEqual(checks.changed_paths(base), ['edited.swift', 'new name.swift', 'old name.swift', 'untracked.swift'])
                 self.assertEqual(checks.changed_paths(), [])
+
+
+class InputTests(unittest.TestCase):
+    def test_docs_and_other_fixtures_leave_inputs_valid_while_real_inputs_invalidate(self):
+        with tempfile.TemporaryDirectory() as temporary, patch.object(checks, 'ROOT', Path(temporary)):
+            root = Path(temporary)
+            def write(name, value='fixture'):
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(value)
+            initial = checks.fixture_inputs('design-ui')['sha256']
+            for name in ['docs/task.md', 'specs/HARNESS.md', 'scripts/launcher_product/FixtureApp.swift']:
+                write(name)
+                self.assertEqual(checks.fixture_inputs('design-ui')['sha256'], initial)
+            for name in ['App/FileMint/NewUntrackedView.swift', 'CorePackage/Sources/FileMintCore/Policy.swift',
+                         'scripts/design_ui_smoke.swift', 'scripts/build_design_ui_harness.sh',
+                         'CorePackage/Tests/FileMintCoreTests/Fixtures/update-release-notes.md', 'Resources/icon.png']:
+                before = checks.fixture_inputs('design-ui')['sha256']
+                write(name)
+                self.assertNotEqual(checks.fixture_inputs('design-ui')['sha256'], before, name)
+
+    def test_source_link_target_changes_are_detected_and_escaping_links_are_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / 'target.swift').write_text('before')
+            link = root / 'alias.swift'
+            link.symlink_to('target.swift')
+            with patch.object(checks, 'ROOT', root):
+                before = checks.file_manifest([link])
+                (root / 'target.swift').write_text('after')
+                self.assertNotEqual(checks.file_manifest([link]), before)
+                link.unlink()
+                link.symlink_to(root.parent)
+                with self.assertRaises(checks.qa.QAError):
+                    checks.file_manifest([root])
 
 
 class ProcessTests(unittest.TestCase):
@@ -207,20 +245,28 @@ class ReportTests(unittest.TestCase):
         self.assertEqual(execute.call_count, 1)
         verify.assert_not_called()
 
-    def test_successful_subprocess_is_recorded_and_source_changes_block_completion(self):
+    def test_successful_subprocess_and_documentation_updates_remain_valid(self):
         original = checks.execute
         def child(arguments, log, timeout, markers=(), environment=None):
+            (self.root / 'docs').mkdir(exist_ok=True)
+            (self.root / 'docs/task.md').write_text('Progress updated during QA')
             return original([sys.executable, '-c', "print('PASS favorite model fixture')"], log, timeout, markers)
         with patch.object(checks, 'preflight'), patch.object(checks, 'execute', side_effect=child), redirect_stdout(io.StringIO()):
             report = checks.run_plan(checks.plan_checks([], explicit=['favorite-model']))
         self.assertEqual(report['status'], 'passed')
         self.assertEqual(report['checks'][0]['exitCode'], 0)
-        states = [{'commit': 'before'}, {'commit': 'before'}, {'commit': 'after'}]
-        with patch.object(checks, 'preflight'), patch.object(checks, 'execute', side_effect=child), \
-             patch.object(checks, 'source_state', side_effect=states), redirect_stdout(io.StringIO()):
+    def test_relevant_source_edit_blocks_observed_success(self):
+        original = checks.execute
+        def child(arguments, log, timeout, markers=(), environment=None):
+            path = self.root / 'scripts/favorite_model_smoke.swift'
+            path.parent.mkdir(exist_ok=True)
+            path.write_text('Changed during this check')
+            return original([sys.executable, '-c', "print('PASS favorite model fixture')"], log, timeout, markers)
+        with patch.object(checks, 'preflight'), patch.object(checks, 'execute', side_effect=child), redirect_stdout(io.StringIO()):
             changed = checks.run_plan(checks.plan_checks([], explicit=['favorite-model']))
         self.assertEqual(changed['status'], 'blocked')
-        self.assertIn('Working source changed', changed['error'])
+        self.assertEqual(changed['checks'][0]['observedStatus'], 'passed')
+        self.assertIn('inputs changed', changed['checks'][0]['reason'])
 
     def test_a_concurrent_runner_cannot_share_the_same_report_or_execute(self):
         base = self.root / 'build/native-checks.noindex'
@@ -238,6 +284,143 @@ class ReportTests(unittest.TestCase):
             with self.assertRaisesRegex(checks.qa.QAError, 'stale'):
                 checks.verify_fixture('batch-rename', previous_run='run.old')
         verify.assert_not_called()
+
+
+class BuildReuseTests(unittest.TestCase):
+    """Use real child processes and bundle files; only the macOS signer is injected."""
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(patch.stopall)
+        self.root = Path(temporary.name)
+        self.app = self.root / 'build/native-qa.noindex/file-tools-settings/QA.app'
+        self.app.parent.mkdir(parents=True)
+        self.executions = self.root / 'executions'
+        self.executions.mkdir()
+        self.builds = 0
+        self.fail_build = self.fail_runtime = False
+        self.identity = 'Developer ID Application: Fixture'
+        self.requirement = 'designated => fixture'
+        self.original_execute = checks.execute
+        patch.object(checks, 'ROOT', self.root).start()
+        patch.object(checks, 'source_state', return_value={'commit': 'fixture'}).start()
+        patch.object(checks, 'preflight', return_value={'xcode': 'fixture compiler', 'swift': 'fixture swift'}).start()
+        patch.object(checks.qa, 'app_path', return_value=self.app).start()
+        patch.object(checks.qa, 'assert_stopped').start()
+        patch.object(checks.qa, 'signing_identity', return_value=self.identity).start()
+        self.signer = patch.object(checks.qa, 'verified_requirement', return_value=self.requirement).start()
+        patch.object(checks, 'execute', side_effect=self.execute).start()
+
+    def execute(self, arguments, log, timeout, markers=(), environment=None):
+        if list(arguments)[:2] == ['bash', checks.BUILDERS['file-tools-settings']]:
+            self.builds += 1
+            if self.fail_build:
+                return self.original_execute([sys.executable, '-c', 'raise SystemExit(65)'], log, timeout)
+            resources = self.app / 'Contents/Resources'
+            resources.mkdir(parents=True, exist_ok=True)
+            (resources / 'fixture.txt').write_text('sealed build resource')
+            workspace = self.root / f'build/fixture-run-{self.builds}'
+            workspace.mkdir()
+            info = {'CFBundleIdentifier': checks.qa.KINDS['file-tools-settings'][1],
+                    'CFBundleExecutable': 'fixture', 'FixtureRunID': f'run.{self.builds}', 'FixturePath': str(workspace)}
+            (self.app / 'Contents/Info.plist').write_bytes(plistlib.dumps(info))
+            executable = self.app / 'Contents/MacOS/fixture'
+            executable.parent.mkdir(exist_ok=True)
+            executable.write_text(f'''#!{sys.executable}
+from pathlib import Path
+import uuid
+workspace = Path({str(self.executions)!r}) / uuid.uuid4().hex
+workspace.mkdir()
+(workspace / 'result.txt').write_text('new execution')
+print('PASS native icon styles')
+''')
+            executable.chmod(0o755)
+            checks.qa.write_json(self.app.parent / 'identity.json', dict(workspace=str(self.root), appPath=str(self.app),
+                bundleID=info['CFBundleIdentifier'], signingIdentity=self.identity, designatedRequirement=self.requirement))
+            return self.original_execute([sys.executable, '-c', "print('Built disposable fixture')"], log, timeout)
+        if self.fail_runtime:
+            return self.original_execute([sys.executable, '-c', "print('PASS native icon styles'); raise SystemExit(1)"], log, timeout, markers)
+        return self.original_execute(arguments, log, timeout, markers, environment)
+
+    def run_checks(self, rebuild=False, suites=('file-tools-settings',)):
+        with redirect_stdout(io.StringIO()):
+            return checks.run_plan(checks.plan_checks([], explicit=suites), rebuild=rebuild)
+
+    def test_matching_build_is_verified_and_reused_but_checks_and_data_are_new(self):
+        first = self.run_checks()
+        second = self.run_checks()
+        self.assertEqual([first['status'], second['status']], ['passed', 'passed'])
+        self.assertEqual(self.builds, 1)
+        self.assertEqual(second['builds'][0]['mode'], 'reused')
+        self.assertEqual(first['checks'][0]['fixture']['runID'], second['checks'][0]['fixture']['runID'])
+        self.assertNotEqual(first['report'], second['report'])
+        self.assertEqual(len(list(self.executions.iterdir())), 2)
+        self.assertGreaterEqual(self.signer.call_count, 4)
+
+    def test_source_or_signed_resource_changes_rebuild_instead_of_using_stale_code(self):
+        self.assertEqual(self.run_checks()['status'], 'passed')
+        path = self.root / 'App/FileMint/Changed.swift'
+        path.parent.mkdir(parents=True)
+        path.write_text('new source')
+        self.assertEqual(self.run_checks()['status'], 'passed')
+        self.assertEqual(self.builds, 2)
+        (self.app / 'Contents/Resources/fixture.txt').write_text('replaced resource')
+        self.assertEqual(self.run_checks()['status'], 'passed')
+        self.assertEqual(self.builds, 3)
+
+    def test_forced_failed_build_preserves_app_and_invalidates_cache_without_fallback(self):
+        self.assertEqual(self.run_checks()['status'], 'passed')
+        original = checks.file_manifest([self.app], self.app)
+        self.fail_build = True
+        self.assertEqual(self.run_checks(rebuild=True)['status'], 'failed')
+        self.assertEqual(checks.file_manifest([self.app], self.app), original)
+        self.assertFalse((self.app.parent / 'build-cache.json').exists())
+        self.assertEqual(self.run_checks()['status'], 'failed')
+        self.assertEqual(self.builds, 3)
+        self.assertEqual(len(list(self.executions.iterdir())), 1)
+
+    def test_cached_build_does_not_hide_failed_execution(self):
+        self.assertEqual(self.run_checks()['status'], 'passed')
+        self.fail_runtime = True
+        report = self.run_checks()
+        self.assertEqual(report['builds'][0]['mode'], 'reused')
+        self.assertEqual(report['status'], 'failed')
+        self.assertEqual(report['checks'][0]['exitCode'], 1)
+
+    def test_toolchain_or_build_flags_require_a_new_build(self):
+        self.assertEqual(self.run_checks()['status'], 'passed')
+        with patch.dict(os.environ, {'CFLAGS': '-DQA_CHANGED'}):
+            self.assertEqual(self.run_checks()['status'], 'passed')
+        self.assertEqual(self.builds, 2)
+
+    def test_reused_build_still_rejects_bad_identity_and_symlink_cache(self):
+        self.assertEqual(self.run_checks()['status'], 'passed')
+        with patch.object(checks.qa, 'verified_requirement', side_effect=checks.qa.QAError('Bad signature')):
+            self.assertEqual(self.run_checks()['status'], 'blocked')
+        cache = self.app.parent / 'build-cache.json'
+        cache.unlink()
+        target = self.root / 'untouched.json'
+        target.write_text('preserve')
+        cache.symlink_to(target)
+        self.assertEqual(self.run_checks()['status'], 'blocked')
+        self.assertEqual(target.read_text(), 'preserve')
+        self.assertEqual(self.builds, 1)
+        self.assertEqual(len(list(self.executions.iterdir())), 1)
+
+    def test_only_changed_fixture_results_are_invalidated(self):
+        original_execute = self.execute
+        def changed(arguments, log, timeout, markers=(), environment=None):
+            if list(arguments)[:2] == ['bash', 'scripts/verify_favorite_model.sh']:
+                path = self.root / 'scripts/file_tools_settings_smoke.swift'
+                path.parent.mkdir(exist_ok=True)
+                path.write_text('Changed after icons completed')
+                return self.original_execute([sys.executable, '-c', "print('PASS favorite model fixture')"], log, timeout, markers)
+            return original_execute(arguments, log, timeout, markers, environment)
+        with patch.object(checks, 'execute', side_effect=changed):
+            report = self.run_checks(suites=('file-tools-settings', 'favorite-model'))
+        states = {item['suite']: item['status'] for item in report['checks']}
+        self.assertEqual(states, {'file-tools-settings': 'blocked', 'favorite-model': 'passed'})
+        self.assertEqual(report['checks'][0]['observedStatus'], 'passed')
 
 
 if __name__ == '__main__':

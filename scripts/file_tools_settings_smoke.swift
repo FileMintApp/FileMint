@@ -129,12 +129,15 @@ private func verifyIconStyles() {
         }
     }
     if let directory = Bundle.main.object(forInfoDictionaryKey: "FixturePath") as? String {
+        let output = URL(fileURLWithPath: directory).appendingPathComponent("invocation-\(UUID().uuidString)", isDirectory: true)
+        try! FileManager.default.createDirectory(at: output, withIntermediateDirectories: false)
+        print("QA_RUNTIME_ROOT \(output.path)")
         let result = ["passed": true, "styles": FinderMenuIconStyle.allCases.map(\.rawValue),
                       "slots": MenuIconSlot.allCases.count, "templates": TemplateCatalog.builtInTemplates.count,
                       "menuAppearances": ["aqua", "darkAqua"], "menuScales": [1, 2],
                       "menuTransfer": "TIFF", "menuImagesAreTemplates": false] as [String: Any]
         let data = try! JSONSerialization.data(withJSONObject: result, options: [.sortedKeys])
-        try! data.write(to: URL(fileURLWithPath: directory).appendingPathComponent("icon-rendering-checks.json"))
+        try! data.write(to: output.appendingPathComponent("icon-rendering-checks.json"))
     }
     print("PASS native icon styles and light/dark 1x/2x monochrome menu pixels after TIFF transfer")
 }

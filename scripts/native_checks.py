@@ -51,6 +51,29 @@ SUITES = {
 ALL = tuple(SUITES)
 BUILDERS = {kind: f"scripts/build_{kind.replace('-', '_')}_harness.sh"
             for kind in {suite.kind for suite in SUITES.values() if suite.kind}}
+# Conservative compilation inputs; unrelated docs and other QA adapters are
+# deliberately excluded. Do not infer dependencies by parsing shell commands.
+COMMON_INPUTS = (
+    "CorePackage/Package.swift", "CorePackage/Package.resolved", "CorePackage/Sources",
+    "CorePackage/Artifacts", "App/FileMint", "SharedUI", "Resources", "project.yml",
+    "Makefile", "scripts/native_checks.py", "scripts/native_qa.py",
+    "scripts/native_qa_running.swift", "scripts/native_qa_preferences.swift",
+    "scripts/image_compression_link.sh",
+    "FinderSyncExtension/FileMintFinderSync/FinderIntegrationStatus.swift",
+)
+FIXTURE_INPUTS = {
+    "batch-rename": ("scripts/batch_rename_smoke.swift",),
+    "template-workflow": ("scripts/template_workflow_smoke.swift", "scripts/creation_opening_checks.swift",
+                          "scripts/quick_search_checks.swift", "scripts/file_visibility_checks.swift",
+                          "scripts/run_creation_opening_checks.sh"),
+    "open-with": ("scripts/open_with_smoke.swift",),
+    "file-tools-settings": ("scripts/file_tools_settings_smoke.swift",),
+    "file-info": ("scripts/file_info_smoke.swift", "scripts/file_content_copy_checks.swift"),
+    "resource-tools": ("scripts/resource_tools_smoke.swift",),
+    "design-ui": ("scripts/design_ui_smoke.swift", "CorePackage/Tests/FileMintCoreTests/Fixtures/update-release-notes.md"),
+    "hotkey-sandbox": ("scripts/hotkey_sandbox",),
+    "favorite-model": ("scripts/verify_favorite_model.sh", "scripts/favorite_model_smoke.swift"),
+}
 MANUAL = {
     "finder": "Installed Finder menu/callback delivery needs the affected Finder QA scenario.",
     "folder-grants": "External folder picker and saved access across process restarts need signed installed-app checks.",
@@ -77,8 +100,9 @@ RULES = (
     (("scripts/launcher_product/*", "scripts/build_launcher_product_harness.sh", "App/FileMint/Intents/*",
       "App/FileMint/ExternalInvocationCoordinator.swift", "App/FileMint/IntegrationsModel.swift",
       "App/FileMint/IntegrationsPane.swift", "SharedUI/ExternalDraftPresentation.swift"), (), ("launcher-product",)),
-    (("scripts/native_checks.py", "scripts/test_native_checks.py", "scripts/native_qa.py", "scripts/test_native_qa.py",
-      "scripts/native_qa_running.swift", "scripts/native_qa_preferences.swift", "scripts/image_compression_link.sh", "Makefile"), ALL, ()),
+    (("scripts/native_checks.py", "scripts/test_native_checks.py", "scripts/test_native_qa.py", "Makefile"), (), ()),
+    (("scripts/native_qa.py",
+      "scripts/native_qa_running.swift", "scripts/native_qa_preferences.swift", "scripts/image_compression_link.sh"), ALL, ()),
     (("scripts/batch_rename_smoke.swift", "scripts/build_batch_rename_harness.sh", "App/FileMint/BatchRename*.swift"), ("batch-rename",), ()),
     (("scripts/file_info_smoke.swift", "scripts/build_file_info_harness.sh", "App/FileMint/FileInfo*.swift"), ("file-info",), ("folder-grants",)),
     (("scripts/file_content_copy_checks.swift", "App/FileMint/FileContent*.swift"), ("file-info",), ("folder-grants",)),
@@ -148,6 +172,102 @@ def source_state():
     return dict(commit=git("rev-parse", "HEAD").decode().strip(),
                 workingDiffSHA256=hashlib.sha256(git("diff", "--binary", "HEAD", "--")).hexdigest(),
                 untrackedSHA256=untracked)
+
+
+def digest_json(value):
+    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def file_manifest(paths, boundary=None):
+    boundary = Path(boundary or ROOT).absolute()
+    entries = {}
+    for root in paths:
+        root = Path(root).absolute()
+        if not root.resolve().is_relative_to(boundary.resolve()):
+            raise qa.QAError("QA fingerprint input escapes its owned directory")
+        if root.is_symlink() and root.is_dir():
+            raise qa.QAError("QA fingerprint input root must not be a directory link")
+        candidates = [root, *sorted(root.rglob("*"))] if root.is_dir() and not root.is_symlink() else [root]
+        for path in candidates:
+            relative = str(path.relative_to(boundary))
+            if path.is_symlink():
+                target = path.resolve()
+                if not target.is_relative_to(boundary.resolve()) or (path.is_dir() and not target.is_relative_to(root.resolve())):
+                    raise qa.QAError("QA fingerprint link escapes its input tree")
+                entries[relative] = dict(link=os.readlink(path))
+                if not path.is_file():
+                    continue
+            elif not path.exists():
+                entries[relative] = dict(missing=True)
+                continue
+            elif not path.is_file():
+                continue
+            digest = hashlib.sha256()
+            with path.open("rb") as source:
+                for block in iter(lambda: source.read(1024 * 1024), b""):
+                    digest.update(block)
+            entries.setdefault(relative, {}).update(sha256=digest.hexdigest(), mode=path.stat().st_mode & 0o777)
+    return entries
+
+
+def fixture_inputs(kind):
+    paths = [ROOT / name for name in (*COMMON_INPUTS, *FIXTURE_INPUTS[kind])]
+    if kind in BUILDERS:
+        paths.append(ROOT / BUILDERS[kind])
+    if kind in ("template-workflow", "design-ui"):
+        paths += [ROOT / "scripts/bootstrap_project.sh",
+                  ROOT / "FileMint.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved",
+                  ROOT / "build/SourcePackages/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework"]
+    files = file_manifest(paths)
+    return dict(sha256=digest_json(files), files=files)
+
+
+def build_key(inputs, environment):
+    keys = ("DEVELOPER_DIR", "PATH", "SDKROOT", "TOOLCHAINS", "SWIFT_EXEC", "MACOSX_DEPLOYMENT_TARGET",
+            "CC", "CXX", "CFLAGS", "CXXFLAGS", "LDFLAGS", "SWIFTFLAGS", "OTHER_SWIFT_FLAGS",
+            "CPATH", "LIBRARY_PATH", "DYLD_LIBRARY_PATH", "DYLD_FRAMEWORK_PATH", "LANG", "LC_ALL")
+    return digest_json(dict(schemaVersion=1, inputs=inputs["sha256"], environment=environment,
+                            buildEnvironment={key: child_environment().get(key) for key in keys},
+                            signingIdentity=qa.signing_identity()))
+
+
+def build_cache_path(kind):
+    app = qa.app_path(kind)
+    path = app.parent / "build-cache.json"
+    if any(item.is_symlink() for item in (ROOT / "build", ROOT / "build/native-qa.noindex", app.parent, app, path)):
+        raise qa.QAError("Stable fixture directories and build cache must not be symlinks")
+    return path
+
+
+def cached_fixture(kind, key):
+    app = qa.app_path(kind)
+    path = build_cache_path(kind)
+    if not app.parent.exists():
+        return None
+    with lock_file(app.parent / "publish.lock"):
+        try:
+            cached = json.loads(path.read_text())
+        except (FileNotFoundError, ValueError):
+            return None
+        if not isinstance(cached, dict) or cached.get("key") != key:
+            return None
+        fixture = verify_fixture(kind)
+        workspace = qa.read_info(app).get("FixturePath")
+        if workspace is not None and (not isinstance(workspace, str)
+                or not Path(workspace).resolve().is_relative_to((ROOT / "build").resolve())
+                or not Path(workspace).is_dir() or Path(workspace).is_symlink()):
+            return None
+        if (cached.get("fixture") != fixture
+                or cached.get("artifactSHA256") != digest_json(file_manifest([app], app))):
+            return None
+        return fixture
+
+
+def cache_fixture(kind, key, fixture):
+    app = qa.app_path(kind)
+    path = build_cache_path(kind)
+    qa.write_json(path, dict(schemaVersion=1, key=key, fixture=fixture,
+                             artifactSHA256=digest_json(file_manifest([app], app))))
 
 
 def plan_checks(paths, explicit=(), all_suites=False):
@@ -286,7 +406,7 @@ def preflight(names):
             "swift": subprocess.check_output(["swift", "--version"], text=True, stderr=subprocess.STDOUT, env=environment, timeout=15).strip()}
 
 
-def run_plan(plan, timeout=180, build_timeout=600):
+def run_plan(plan, timeout=180, build_timeout=600, rebuild=False):
     base = ROOT / "build/native-checks.noindex"
     for directory in (ROOT / "build", base):
         if directory.is_symlink():
@@ -295,7 +415,7 @@ def run_plan(plan, timeout=180, build_timeout=600):
     output = Path(tempfile.mkdtemp(prefix="run.", dir=base))
     report = dict(plan=plan, source=source_state(), startedAt=datetime.now(timezone.utc).isoformat(),
                   environment=dict(system=platform.system(), architecture=platform.machine(), macOS=platform.mac_ver()[0]),
-                  status="running", checks=[], builds=[], report=str(output / "report.json"))
+                  status="running", checks=[], builds=[], inputs={}, report=str(output / "report.json"))
 
     def save():
         qa.write_json(output / "report.json", report)
@@ -315,6 +435,15 @@ def run_plan(plan, timeout=180, build_timeout=600):
         report["finishedAt"] = datetime.now(timezone.utc).isoformat()
         save()
         return report
+
+    def block_kind(kind, reason):
+        observed = {check["suite"] for check in report["checks"]}
+        for name in plan["suites"]:
+            if (SUITES[name].kind or name) == kind and name not in observed:
+                report["checks"].append(dict(suite=name, status="blocked", reason=reason))
+        for check in report["checks"]:
+            if (SUITES[check["suite"]].kind or check["suite"]) == kind and check["status"] == "passed":
+                check.update(observedStatus="passed", status="blocked", reason=reason)
 
     save()
     try:
@@ -338,28 +467,57 @@ def run_plan(plan, timeout=180, build_timeout=600):
                     save()
                     if result["status"] != "passed":
                         return finish()
+            # Capture actual inputs after dependency preparation. Whole-worktree
+            # metadata remains in the report, without invalidating unrelated work.
+            snapshots = {kind: fixture_inputs(kind) for kind in dict.fromkeys(
+                SUITES[name].kind or name for name in plan["suites"])}
+            for kind, inputs in snapshots.items():
+                report["inputs"][kind] = inputs["sha256"]
+                qa.write_json(output / f"inputs-{kind}.json", inputs)
+
+            def inputs_match(kind):
+                return fixture_inputs(kind)["sha256"] == snapshots[kind]["sha256"]
+
             built = {}
             for name in plan["suites"]:
                 suite = SUITES[name]
-                if source_state() != report["source"]:
-                    raise qa.QAError("Working source changed during native QA; rerun the affected checks")
+                kind = suite.kind or name
+                if suite.kind and suite.kind in built and built[suite.kind] is None:
+                    continue
+                if not inputs_match(kind):
+                    block_kind(kind, "Fixture inputs changed during native QA; rerun only affected checks")
+                    if suite.kind:
+                        built[suite.kind] = None
+                    continue
                 if suite.kind and suite.kind not in built:
+                    key = build_key(snapshots[kind], report["environment"])
+                    fixture = None if rebuild else cached_fixture(suite.kind, key)
+                    if fixture:
+                        built[suite.kind] = fixture
+                        report["builds"].append(dict(kind=kind, status="passed", mode="reused", runID=fixture["runID"]))
+                    else:
+                        built[suite.kind] = None
+                if suite.kind and built[suite.kind] is None:
                     app = qa.app_path(suite.kind)
                     previous = qa.read_info(app).get("FixtureRunID") if app.exists() else None
+                    # A requested rebuild supersedes its old receipt even when
+                    # compilation fails. Preserve the app, never its cache claim.
+                    build_cache_path(suite.kind).unlink(missing_ok=True)
                     result = execute(["bash", BUILDERS[suite.kind]], output / f"build-{suite.kind}.log", build_timeout, environment=environment)
-                    report["builds"].append(dict(kind=suite.kind, **result))
+                    report["builds"].append(dict(kind=suite.kind, mode="fresh", **result))
                     save()
                     if result["status"] != "passed":
-                        for affected in plan["suites"]:
-                            if SUITES[affected].kind == suite.kind:
-                                report["checks"].append(dict(suite=affected, status="blocked", reason="Fresh fixture build failed"))
-                        built[suite.kind] = None
+                        block_kind(kind, "Fresh fixture build failed; retained app not used")
                         if result["status"] == "blocked" or result.get("interrupted"):
                             return finish()
                         continue
-                    built[suite.kind] = verify_fixture(suite.kind, previous)
-                if suite.kind and built[suite.kind] is None:
-                    continue
+                    with lock_file(app.parent / "publish.lock"):
+                        fixture = verify_fixture(suite.kind, previous)
+                        if not inputs_match(kind):
+                            block_kind(kind, "Fixture inputs changed during build; rebuilt app not run")
+                            continue
+                        cache_fixture(suite.kind, key, fixture)
+                        built[suite.kind] = fixture
                 if not suite.kind:
                     result = execute(["bash", "scripts/verify_favorite_model.sh"], output / f"{name}.log", build_timeout,
                                      (suite.marker,), environment)
@@ -377,12 +535,17 @@ def run_plan(plan, timeout=180, build_timeout=600):
                             command = [sys.executable, "scripts/hotkey_sandbox/run_checks.py", fixture["app"]]
                         result = execute(command, output / f"{name}.log", timeout, (suite.marker,), child_environment(suite))
                         report["checks"].append(dict(suite=name, fixture=fixture, **result))
-                print(f"{result['status'].upper()} native {name}", flush=True)
+                if not inputs_match(kind):
+                    block_kind(kind, "Fixture inputs changed during execution; observed results retained")
+                observed = next(check for check in report["checks"] if check["suite"] == name)
+                print(f"{observed['status'].upper()} native {name}", flush=True)
                 save()
                 if result["status"] == "blocked" or result.get("interrupted"):
                     return finish()
-            if source_state() != report["source"]:
-                raise qa.QAError("Working source changed during native QA; results belong to the earlier source")
+            for kind in snapshots:
+                if not inputs_match(kind):
+                    block_kind(kind, "Fixture inputs changed during native QA; unrelated results remain valid")
+            report["sourceAfter"] = source_state()
     except (qa.QAError, OSError, ValueError, subprocess.SubprocessError) as error:
         report["error"] = str(error)
     return finish()
@@ -398,6 +561,8 @@ def main(argv=None):
     parser.add_argument("--all", action="store_true", help="Explicitly run all automatic suites")
     parser.add_argument("--timeout", type=float, default=180)
     parser.add_argument("--build-timeout", type=float, default=600)
+    parser.add_argument("--rebuild", action="store_true", default=os.environ.get("NATIVE_QA_REBUILD") == "1",
+                        help="Force fresh fixture builds instead of verified build reuse")
     arguments = parser.parse_args(argv)
     if arguments.timeout <= 0 or arguments.build_timeout <= 0:
         parser.error("Timeouts must be positive")
@@ -407,7 +572,7 @@ def main(argv=None):
         if arguments.mode == "plan":
             print(json.dumps(plan, ensure_ascii=False, indent=2))
             return 0
-        report = run_plan(plan, arguments.timeout, arguments.build_timeout)
+        report = run_plan(plan, arguments.timeout, arguments.build_timeout, arguments.rebuild)
         print(f"Native QA {report['status']}: {report['report']}")
         if report.get("error"):
             print(report["error"], file=sys.stderr)

@@ -42,6 +42,30 @@ native QA as a routine prerequisite. Release verification still follows the
 distribution contract. Broaden checks only for additional affected surfaces,
 new failures or a concrete unresolved concern.
 
+### Bounded acceptance rounds
+
+- Before involving the user, state the changed behavior, selected checks and
+  completion condition. Prepare the build, synthetic examples, isolated folders
+  and automatic result checks first. Ask for user actions only at a system or
+  subjective interaction that automation cannot cover.
+- Budget one user-assisted round for 15–30 minutes. When a tool cannot observe
+  the required state or the budget is reached, preserve the evidence and isolate
+  the unresolved issue for diagnosis. Do not keep extending the user's checklist,
+  retry an unavailable environment repeatedly or turn an unobserved check green.
+- Run automated coverage once after the relevant implementation is complete.
+  Repeat only for changed inputs, an observed failure or an explicit rerun.
+  Keep a failed result when a focused diagnostic later passes; do not silently
+  retry until green or restart unrelated passing scenarios.
+- Technical correctness, first-time-user research and publicity assets have
+  separate completion states. Schedule agreed experience/material requirements
+  at their phase boundary; an ordinary fix does not restart them. Signing,
+  installation, publication and file/authorization safety gates still apply.
+- Reuse evidence only after comparing its relevant source/configuration and
+  environment with the current change. Keep its original revision and run ID;
+  describe it as retained evidence, not a new execution. Fixture/screenshot-only
+  fixes require their affected checks, rather than replaying unchanged product
+  paths. Missing environments remain explicit gaps with their delivery impact.
+
 For affected native surfaces, use `make native-qa-plan`, then
 `make verify-native-affected` for the selected automatic fixtures. See
 [native execution and scope selection](verification/native-qa.md#automated-local-checks)
@@ -129,10 +153,14 @@ nor FileMint's runtime sandbox entitlements or system security settings.
   `build/native-qa.noindex`, and a stable Developer ID designated requirement.
   Reuse existing fixture identifiers where they were already stable. Each kind
   keeps its own identity; never use the production FileMint identity as a fixture.
-- Build and sign in a fresh per-run staging directory, then publish only the
+- When rebuilding, build and sign in a fresh staging directory, then publish only the
   completed verified application to its stable QA path. Refuse replacement while
   that kind or its receiver is running, or another publisher owns its lock.
   Build/signing failures preserve the last good QA app. Do not force-quit apps.
+- Automatic native checks may reuse a verified QA build when its conservative
+  input fingerprint, toolchain/build environment and pinned signed artifact all
+  match. Each check still executes with fresh runtime data and logs. A cache miss
+  or explicit rebuild must complete a fresh build; never fall back after failure.
 - Keep fixture files, preferences, pending work and sandbox event logs separate
   for each run. Retain sandbox and entitlement behavior; do not broaden folder
   grants, clear privacy databases or write the user's FileMint stores.

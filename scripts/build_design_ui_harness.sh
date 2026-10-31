@@ -24,6 +24,7 @@ plutil -insert CFBundleShortVersionString -string 0.6.1 "$DESIGN_APP/Contents/In
 plutil -insert CFBundleVersion -string 20 "$DESIGN_APP/Contents/Info.plist"
 plutil -insert FixturePath -string "$DESIGN_FIXTURE" "$DESIGN_APP/Contents/Info.plist"
 cp Resources/IconSource/FileMint-AppIcon-1024.png "$DESIGN_FIXTURE/AppIcon.png"
+cp "$DESIGN_FIXTURE/AppIcon.png" "$DESIGN_APP/Contents/Resources/QAAppIcon.png"
 DESIGN_SOURCES=()
 for source in App/FileMint/*.swift; do
   case "$source" in */FileMintApp.swift|*/AppDelegate.swift) ;; *) DESIGN_SOURCES+=("$source") ;; esac
