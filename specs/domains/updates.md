@@ -101,6 +101,12 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   draft, file operation or modal sheet is active. Preserve the draft and let the
   user choose Update and Restart after finishing it. Do not force-kill Finder,
   discard work, alter preferences/bookmarks or silently enable the Finder extension.
+- Updates preserve the bundle and signing identity, sandbox capabilities and
+  private bookmark locations and formats needed to reuse existing grants. The
+  relaunched app resolves those grants on demand under the current scope and
+  macOS permissions. Changes to signing, sandbox permissions or bookmark
+  handling need a reuse check after replacement and relaunch, in addition to
+  comparing the stored bytes.
 - An explicit update/restart cancels a running File Info checksum or Copy File
   Contents read and waits
   for its worker/access cleanup before rechecking the other restart guards. An

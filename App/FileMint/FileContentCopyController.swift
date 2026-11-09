@@ -10,12 +10,11 @@ final class FileContentCopyController: NSObject, ObservableObject, NSWindowDeleg
     private(set) var panel: NSPanel?
     private(set) var didCopy = false
     private let preferencesFile: URL?
+    private let readAccess: FileInfoReadAccess
     private let pasteboard: NSPasteboard
     private let reader: Reader
     private var cancellation: FileDigestCancellation?
     private var worker: Task<(FileContentRead, FileContentClipboardPayload), Error>?
-    private var authorizationPanel: NSOpenPanel?
-    private var grants: [URL] = []
     private var closeRequested = false
     private var cleanupWaiters: [CheckedContinuation<Void, Never>] = []
     private var generation = UUID()
@@ -24,6 +23,7 @@ final class FileContentCopyController: NSObject, ObservableObject, NSWindowDeleg
     init(preferencesFile: URL? = nil, pasteboard: NSPasteboard = .general,
          reader: @escaping Reader = { try FileContentRead.read($0, cancellation: $1) }) {
         self.preferencesFile = preferencesFile; self.pasteboard = pasteboard; self.reader = reader
+        readAccess = FileInfoReadAccess(preferencesFile: preferencesFile)
         super.init()
     }
 
@@ -50,8 +50,8 @@ final class FileContentCopyController: NSObject, ObservableObject, NSWindowDeleg
         }
         defer {
             delayedPanel.cancel()
-            for url in grants { url.stopAccessingSecurityScopedResource() }
-            grants = []; worker = nil; cancellation = nil; authorizationPanel = nil; isWorking = false
+            readAccess.release()
+            worker = nil; cancellation = nil; isWorking = false
             if closeRequested { panel?.close(); panel = nil }
             let waiters = cleanupWaiters; cleanupWaiters = []
             waiters.forEach { $0.resume() }
@@ -60,20 +60,22 @@ final class FileContentCopyController: NSObject, ObservableObject, NSWindowDeleg
             try Task.checkCancellation()
             try validatePolicy(selection)
             guard pasteboard.changeCount == expectedChangeCount else { throw FileContentCopyError.clipboardChanged }
-            guard try await authorize(selection) else { throw FileInfoError.cancelled }
-            try token.check(); try validatePolicy(selection)
-            let roots = preferences.monitoredFolderURLs
-            let reader = self.reader
-            let operation = Task.detached(priority: .userInitiated) {
-                guard FolderScope.containsResolvedItem(selection.source, in: roots) else { throw FileInfoError.disabled }
-                let contents = try reader(selection, token)
-                try token.check()
-                let payload = try FileContentClipboard.prepare(contents)
-                try token.check(); try contents.validate()
-                return (contents, payload)
+            readAccess.restore(for: selection, preferences: preferences)
+            let contents: FileContentRead
+            let payload: FileContentClipboardPayload
+            do {
+                (contents, payload) = try await read(selection, cancellation: token)
+            } catch where FolderAccess.isPermissionError(error) {
+                try token.check(); try validatePolicy(selection)
+                guard pasteboard.changeCount == expectedChangeCount else { throw FileContentCopyError.clipboardChanged }
+                let authorized = try readAccess.request(for: selection, language: language) {
+                    try token.check(); try validatePolicy(selection)
+                    return preferences.monitoredFolderURLs
+                }
+                guard authorized else { throw FileInfoError.cancelled }
+                try token.check(); try validatePolicy(selection)
+                (contents, payload) = try await read(selection, cancellation: token)
             }
-            worker = operation
-            let (contents, payload) = try await operation.value
             try token.check(); try validatePolicy(selection)
             let latestRoots = preferences.monitoredFolderURLs
             try await Task.detached(priority: .userInitiated) {
@@ -112,7 +114,7 @@ final class FileContentCopyController: NSObject, ObservableObject, NSWindowDeleg
 
     func requestClose() {
         closeRequested = true
-        cancellation?.cancel(); worker?.cancel(); authorizationPanel?.cancel(nil)
+        cancellation?.cancel(); worker?.cancel(); readAccess.cancelPicker()
         if !isWorking { panel?.close(); panel = nil }
         else { message = text("Cancelling…", "正在取消…") }
     }
@@ -129,47 +131,21 @@ final class FileContentCopyController: NSObject, ObservableObject, NSWindowDeleg
         guard FileContentCopyPolicy.isEnabled(for: selection, preferences: preferences) else { throw FileInfoError.disabled }
     }
 
-    private func authorize(_ selection: FileInfoSelection) async throws -> Bool {
-        let snapshot = preferences
-        for root in snapshot.monitoredFolderURLs where FolderScope.contains(selection.parent, in: [root]) {
-            guard let data = snapshot.monitoredFolderBookmarks[root.path] else { continue }
-            var stale = false
-            if let url = try? URL(resolvingBookmarkData: data, options: [.withSecurityScope, .withoutUI],
-                relativeTo: nil, bookmarkDataIsStale: &stale), url.startAccessingSecurityScopedResource() {
-                grants.append(url)
-            }
+    private func read(_ selection: FileInfoSelection, cancellation: FileDigestCancellation) async throws
+        -> (FileContentRead, FileContentClipboardPayload) {
+        let roots = preferences.monitoredFolderURLs
+        let reader = self.reader
+        let operation = Task.detached(priority: .userInitiated) {
+            try cancellation.check()
+            try selection.validate(in: roots)
+            let contents = try reader(selection, cancellation)
+            try cancellation.check()
+            let payload = try FileContentClipboard.prepare(contents)
+            try cancellation.check(); try contents.validate()
+            return (contents, payload)
         }
-        let readable = try await Task.detached(priority: .userInitiated) {
-            do {
-                try selection.validate()
-                return FileManager.default.isReadableFile(atPath: selection.source.path)
-            } catch FileInfoError.accessDenied { return false }
-        }.value
-        try cancellation?.check()
-        if readable { return true }
-        let picker = NSOpenPanel()
-        picker.title = title
-        picker.message = text("Choose this exact file to allow read access.", "请选择同一文件以授予读取权限。")
-        picker.directoryURL = selection.parent
-        picker.canChooseFiles = true; picker.canChooseDirectories = false
-        picker.allowsMultipleSelection = false; picker.canCreateDirectories = false; picker.resolvesAliases = false
-        authorizationPanel = picker
-        defer { authorizationPanel = nil }
-        NSApp.activate(ignoringOtherApps: true)
-        guard picker.runModal() == .OK, let chosen = picker.url,
-              chosen.standardizedFileURL == selection.source.standardizedFileURL
-                || chosen.standardizedFileURL == selection.parent.appendingPathComponent(selection.source.lastPathComponent) else {
-            return false
-        }
-        let started = chosen.startAccessingSecurityScopedResource()
-        defer { if started { chosen.stopAccessingSecurityScopedResource() } }
-        let data = try chosen.bookmarkData(options: [.withSecurityScope, .securityScopeAllowOnlyReadAccess],
-                                           includingResourceValuesForKeys: nil, relativeTo: nil)
-        var stale = false
-        let restored = try URL(resolvingBookmarkData: data, options: [.withSecurityScope, .withoutUI],
-                               relativeTo: nil, bookmarkDataIsStale: &stale)
-        if restored.startAccessingSecurityScopedResource() { grants.append(restored) }
-        return true
+        worker = operation
+        return try await operation.value
     }
 
     private func showPanel() {
@@ -209,6 +185,7 @@ final class FileContentCopyController: NSObject, ObservableObject, NSWindowDeleg
                         "拷贝文件内容已关闭，或文件不在配置的 Finder 范围内。")
         case FileInfoError.placeholder: return FileInfoText.placeholder.text(language)
         case FileInfoError.accessDenied: return FileInfoText.accessDenied.text(language)
+        case FileInfoError.accessSaveFailed: return FileInfoText.accessSaveFailed.text(language)
         default: return FileInfoText.readFailed.text(language)
         }
     }

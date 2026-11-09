@@ -166,7 +166,8 @@ final class ExternalInvocationCoordinator: ObservableObject {
                 didChange: { [weak self] in self?.creation.externalDirectoryDidChange(session) })
         } else {
             let preferences = model.committedPreferences
-            access.prepare(using: { try FolderAccess.externalDirectory(directory, preferences: preferences) },
+            let remembered = model.rememberedFileAccess
+            access.prepare(using: { try FolderAccess.externalDirectory(directory, preferences: preferences, remembered: remembered) },
                 didChange: { [weak self] in self?.creation.externalDirectoryDidChange(session) })
         }
         let deadline = ContinuousClock.now.advanced(by: .seconds(2))

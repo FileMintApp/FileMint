@@ -4,6 +4,25 @@ Status: complete — 2026-10-29 silent success feedback verified
 Next action: None for the requested changes. Installed Finder acceptance
 remains a separately recorded runtime boundary.
 
+## Saved folder access — 2026-11-09
+
+Copy restores bookmarks for the selected file's configured ancestors and
+checks that they cover the real parent. It requests exact-file access when the
+read encounters a permission error. The shared reader pins the parent using
+search access, which also lets an exact-file grant work when directory reads
+are denied.
+
+Tested on arm64 macOS 27.2 (26B123), Xcode 27.2 (27B52), at `5c334ee` plus the
+working fix.
+
+| Check | Status | Observed result |
+| --- | --- | --- |
+| `make verify` | passed | 407 Core and 23 image tests. The restricted file-only scenario copied and hashed the selected file while denying directory reads and another file. [Log](../../build/copy-folder-access.noindex/run.7PFx7r/verify.log) |
+| Unsigned `make build` | passed | Main app and Finder extension executables produced. [Log](../../build/copy-folder-access.noindex/run.7PFx7r/build.log) |
+| `NATIVE_QA_SUITES=file-info make verify-native-affected` | passed | Signed fixture exercised saved ancestor restoration, nested TypeScript copy to a private pasteboard, and mismatched bookmark rejection. [Report](../../build/native-checks.noindex/run.z2rhzvrt/report.json) |
+| Local Debug installation | passed | Version 0.8.1 (30) signed with the existing Developer ID, backed up the previous app, and started from `/Applications/FileMint.app`. [Backup](../../build/copy-folder-access.noindex/run.7PFx7r/previous-FileMint.app.zip) |
+| Real Finder copy with existing external grants | not-run | Startup and signed fixture results cover the installation and isolated read paths respectively. |
+
 ## Objective and scope
 
 - Copy complete code/plain-text contents from Finder without opening an editor.

@@ -1,4 +1,5 @@
 import AppKit
+import Darwin
 import SwiftUI
 import FileMintCore
 import FileMintImages
@@ -176,37 +177,51 @@ final class ResourceToolsController: NSObject, ObservableObject, NSWindowDelegat
         return true
     }
 
-    private func authorizeOutputs() -> Bool {
+    private func authorizeOutputs() throws -> [URL]? {
         let directories = tool == .stitch ? [destination ?? inputs[0].url.deletingLastPathComponent()]
             : inputs.map { destination ?? $0.url.deletingLastPathComponent() }
+        let preferences = FileMintPreferencesStore(fileURL: preferencesFile).load()
+        let remembered = RememberedFileAccess(preferencesFile: preferencesFile)
+        var scopes: [URL] = []
+        var authorized = false
+        defer { if !authorized { scopes.forEach { $0.stopAccessingSecurityScopedResource() } } }
         var seen = Set<URL>()
         for directory in directories where seen.insert(directory.standardizedFileURL).inserted {
-            if FileManager.default.isWritableFile(atPath: directory.path) { continue }
-            let picker = NSOpenPanel()
-            picker.canChooseFiles = false
-            picker.canChooseDirectories = true
-            picker.allowsMultipleSelection = false
-            picker.directoryURL = directory
-            picker.message = FileMintStrings.text(.fileOperationAuthorize, language: language)
-            guard picker.runModal() == .OK, let chosen = picker.url else { return false }
+            let roots = fromFinder && destination == nil ? preferences.monitoredFolderURLs : [directory]
+            scopes += FolderAccess.startSavedAccess(to: directory, in: preferences)
+            scopes += remembered.start(for: directory, folder: true, mode: .write, roots: roots)
+            do { try FolderAccess.checkDirectory(directory, mode: W_OK); continue }
+            catch where FolderAccess.isPermissionError(error) {}
+            let picker = FolderAccess.authorizationPanel(for: directory, selection: .folder, language: language)
+            guard picker.runModal() == .OK, let chosen = picker.url else { return nil }
             guard chosen.resolvingSymlinksInPath().standardizedFileURL == directory.resolvingSymlinksInPath().standardizedFileURL else {
                 message = FileMintStrings.text(.moveChooseExactFolder, language: language)
-                return false
+                return nil
             }
-            if chosen.startAccessingSecurityScopedResource() { grantedFolders.append(chosen) }
-            guard FileManager.default.isWritableFile(atPath: directory.path) else {
-                message = ResourceError.accessDenied.message(language)
-                return false
-            }
+            if chosen.startAccessingSecurityScopedResource() { scopes.append(chosen) }
+            try FolderAccess.checkDirectory(directory, mode: W_OK)
+            let canonical = directory.resolvingSymlinksInPath().standardizedFileURL
+            let currentRoots = fromFinder && destination == nil
+                ? FileMintPreferencesStore(fileURL: preferencesFile).load().monitoredFolderURLs : [directory]
+            scopes.append(try remembered.remember(chosen, target: canonical, folder: true, mode: .write, roots: currentRoots))
         }
-        return true
+        authorized = true
+        return scopes
     }
 
     func run() {
         guard !isRunning, !isPreparing, result == nil, !inputs.isEmpty else { return }
         do { try options.validate(for: tool) }
         catch { message = ResourceError.invalidOptions.message(language); return }
-        if tool != .ocr, !authorizeOutputs() { return }
+        let outputScopes: [URL]
+        do {
+            guard let scopes = try tool == .ocr ? [] : authorizeOutputs() else { return }
+            outputScopes = scopes
+        } catch {
+            if (error as? FileInfoError) == .accessSaveFailed { message = FileInfoText.accessSaveFailed.text(language) }
+            else { message = FolderAccess.isPermissionError(error) ? ResourceError.accessDenied.message(language) : error.localizedDescription }
+            return
+        }
         let inputs = inputs, options = options, tool = tool, destination = destination
         let selection = inputs.map(\.url)
         let preferencesFile = preferencesFile
@@ -232,6 +247,7 @@ final class ResourceToolsController: NSObject, ObservableObject, NSWindowDelegat
         }
         self.worker = worker
         Task {
+            defer { outputScopes.forEach { $0.stopAccessingSecurityScopedResource() } }
             let result = await worker.value
             self.result = result
             completed = result.completed

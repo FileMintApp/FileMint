@@ -209,8 +209,8 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case noClipboardText
     case contentHint
     case creating
-    case allowFolder
     case authorizeFolderHint
+    case authorizationTitle, authorizeAccess, authorizeNamedFile, authorizeNamedFolder, authorizeNamedItem, authorizeSelectedFolders
     case folderHint
     case authorize
     case ready
@@ -525,8 +525,13 @@ public enum FileMintStrings {
         .noClipboardText: ("The clipboard does not contain text.", "剪贴板中没有文本内容。"),
         .contentHint: ("Optional. Paste or type text; it is saved exactly as entered.", "可选。粘贴或输入文本，内容会原样保存。"),
         .creating: ("Creating…", "正在创建…"),
-        .allowFolder: ("Allow Folder", "允许访问"),
         .authorizeFolderHint: ("Select this folder to let FileMint create files here.", "选择此文件夹，允许 FileMint 在这里创建文件。"),
+        .authorizationTitle: ("Allow FileMint Access", "允许 FileMint 访问"),
+        .authorizeAccess: ("Authorize", "授权"),
+        .authorizeNamedFile: ("Allow FileMint to read the file “%@”.", "允许 FileMint 读取文件“%@”。"),
+        .authorizeNamedFolder: ("Allow FileMint to access the folder “%@”.", "允许 FileMint 访问文件夹“%@”。"),
+        .authorizeNamedItem: ("Allow FileMint to read “%@”.", "允许 FileMint 读取“%@”。"),
+        .authorizeSelectedFolders: ("Allow FileMint to access the selected folders.", "允许 FileMint 访问选中的文件夹。"),
         .folderHint: ("Menus include your home folder and its subfolders by default. Add other locations here; access is remembered after you choose a folder.", "默认包含当前用户主目录及其子目录的菜单。可在这里添加其他位置，选择后会记住访问权限。"),
         .authorize: ("Authorize…", "授权访问…"),
         .ready: ("Ready", "已就绪"),

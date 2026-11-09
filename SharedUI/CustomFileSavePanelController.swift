@@ -39,6 +39,8 @@ final class CustomFileSavePanelController: NSObject {
     private var formatHintView: NSView?
     private var documentTemplates = DocumentTemplateStore()
     // Injected by the main app; SharedUI never imports the app's settings model.
+    var startFolderAccess: ((URL) -> [URL])?
+    var rememberAuthorizedFolder: ((URL) throws -> Void)?
     var snapshotFollowUp: ((FileTemplate?, CreationActionSelection, CreationApplication?) -> CreationFollowUp?)?
     var completeCreation: ((FileCreationResult, CreationFollowUp?, AppLanguage) async -> Void)?
     var chooseApplication: (() async throws -> CreationApplication?)?
@@ -841,6 +843,8 @@ final class CustomFileSavePanelController: NSObject {
         let basicReveal = revealAfterCreation
         Task {
             defer { externalAccess?.endOperation() }
+            let configuredAccess = startFolderAccess?(directoryURL) ?? []
+            defer { configuredAccess.forEach { $0.stopAccessingSecurityScopedResource() } }
             let accessed = directoryURL.startAccessingSecurityScopedResource()
             defer { if accessed { directoryURL.stopAccessingSecurityScopedResource() } }
             let outcome = await Task.detached(priority: .userInitiated) {
@@ -867,15 +871,13 @@ final class CustomFileSavePanelController: NSObject {
 
     private func authorizeForRetry(_ directory: URL) {
         guard let panel else { return }
-        let picker = NSOpenPanel()
-        picker.canChooseFiles = false
-        picker.canChooseDirectories = true
-        picker.directoryURL = directory
-        picker.message = FileMintStrings.text(.authorizeFolderHint, language: language)
-        picker.prompt = FileMintStrings.text(.allowFolder, language: language)
+        let picker = FolderAccess.authorizationPanel(for: directory, selection: .folder, language: language,
+            detail: FileMintStrings.text(.authorizeFolderHint, language: language))
         picker.beginSheetModal(for: panel) { [weak self] response in
             guard let self, self.panel === panel, response == .OK, let url = picker.url else { return }
             if self.externalPresentation != nil {
+                do { try self.rememberAuthorizedFolder?(url) }
+                catch { self.showError(error); return }
                 self.selectExternalDirectory(url)
                 return
             }
@@ -1072,6 +1074,7 @@ final class CustomFileSavePanelController: NSObject {
         alert.messageText = FileMintStrings.text(.createFileErrorTitle, language: language)
         alert.informativeText = (error as? DocumentTemplateError).map { FileMintStrings.text($0.textKey, language: language) }
             ?? (error as? ExternalInvocationError)?.message(language)
+            ?? (error as? FileInfoError)?.text.text(language)
             ?? error.localizedDescription
         if externalPresentation != nil, case FileMintError.destinationChanged = error {
             alert.informativeText = ExternalInvocationError.destinationUnavailable.message(language)

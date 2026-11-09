@@ -19,14 +19,12 @@ final class FileInfoController: NSObject, ObservableObject, NSWindowDelegate {
     private(set) var language: AppLanguage = .system
     private(set) var panel: NSPanel?
     private let preferencesFile: URL?
+    private let readAccess: FileInfoReadAccess
     private let acquire: @MainActor () -> Bool
     private let release: @MainActor () -> Void
     private let reader: Reader
     private var worker: Task<FileDigestResult, Error>?
     private var cancellation: FileDigestCancellation?
-    private var grants: [URL] = []
-    private var itemBookmark: Data?
-    private var authorizationPanel: NSOpenPanel?
     private var closeRequested = false
     private var cleanupWaiters: [CheckedContinuation<Void, Never>] = []
 
@@ -34,6 +32,7 @@ final class FileInfoController: NSObject, ObservableObject, NSWindowDelegate {
          release: @escaping @MainActor () -> Void,
          reader: @escaping Reader = { try FileDigestService.calculate($0, choice: $1, cancellation: $2, progress: $3) }) {
         self.preferencesFile = preferencesFile; self.acquire = acquire; self.release = release; self.reader = reader
+        readAccess = FileInfoReadAccess(preferencesFile: preferencesFile)
         super.init()
     }
 
@@ -52,21 +51,20 @@ final class FileInfoController: NSObject, ObservableObject, NSWindowDelegate {
     func present(_ selected: FileInfoSelection) async throws {
         guard !isWorking else { showBusy(); return }
         selection = selected; metadata = nil; result = nil; progress = nil
-        choice = .sha256; expectedChecksum = ""; feedback = nil; itemBookmark = nil
+        choice = .sha256; expectedChecksum = ""; feedback = nil
         closeRequested = false; isPreparing = true; isCancelling = false
         language = preferences.language
         let token = FileDigestCancellation(); cancellation = token
         makePanel()
         defer { finishActivity() }
         do {
-            try validatePolicy(selected)
-            guard try await authorize(selected, readContent: false) else { throw FileInfoError.cancelled }
-            try token.check()
-            let roots = preferences.monitoredFolderURLs
-            metadata = try await Task.detached(priority: .userInitiated) {
-                try Self.validate(selected, roots: roots)
-                return try FileDigestService.inspect(selected)
-            }.value
+            metadata = try await withReadAccess(to: selected, cancellation: token) {
+                let roots = preferences.monitoredFolderURLs
+                return try await Task.detached(priority: .userInitiated) {
+                    try selected.validate(in: roots)
+                    return try FileDigestService.inspect(selected)
+                }.value
+            }
             try token.check()
             try validatePolicy(selected)
         } catch { feedback = ((error as? FileInfoError) ?? .unavailable).text }
@@ -82,11 +80,6 @@ final class FileInfoController: NSObject, ObservableObject, NSWindowDelegate {
         Task {
             defer { finishActivity(); release() }
             do {
-                try validatePolicy(selection)
-                guard try await authorize(selection, readContent: true) else { throw FileInfoError.cancelled }
-                try token.check()
-                try validatePolicy(selection)
-                let roots = preferences.monitoredFolderURLs
                 let reader = self.reader
                 let report: @Sendable (FileDigestProgress) -> Void = { [self] value in
                     Task { @MainActor [self] in
@@ -94,12 +87,15 @@ final class FileInfoController: NSObject, ObservableObject, NSWindowDelegate {
                         progress = value
                     }
                 }
-                let operation = Task.detached(priority: .userInitiated) {
-                    try Self.validate(selection, roots: roots)
-                    return try reader(selection, frozen, token, report)
+                let calculated = try await withReadAccess(to: selection, cancellation: token) {
+                    let roots = preferences.monitoredFolderURLs
+                    let operation = Task.detached(priority: .userInitiated) {
+                        try selection.validate(in: roots)
+                        return try reader(selection, frozen, token, report)
+                    }
+                    worker = operation
+                    return try await operation.value
                 }
-                worker = operation
-                let calculated = try await operation.value
                 try token.check()
                 try validatePolicy(selection)
                 // Selection identity remains fixed; content can legitimately
@@ -114,7 +110,7 @@ final class FileInfoController: NSObject, ObservableObject, NSWindowDelegate {
     func cancel() {
         guard isWorking else { return }
         isCancelling = true; result = nil
-        authorizationPanel?.cancel(nil)
+        readAccess.cancelPicker()
         cancellation?.cancel(); worker?.cancel()
     }
 
@@ -175,60 +171,26 @@ final class FileInfoController: NSObject, ObservableObject, NSWindowDelegate {
         }
     }
 
-    nonisolated private static func validate(_ selection: FileInfoSelection, roots: [URL]) throws {
-        try selection.validate()
-        guard FolderScope.containsResolvedItem(selection.source, in: roots) else { throw FileInfoError.disabled }
-    }
-
-    private func authorize(_ selection: FileInfoSelection, readContent: Bool) async throws -> Bool {
-        // Reuse only existing configured grants or this window's explicit exact
-        // item bookmark. Never persist a new folder or expand observation scope.
-        var bookmarks = preferences.monitoredFolderURLs.compactMap { url -> Data? in
-            guard FolderScope.contains(selection.parent, in: [url]) else { return nil }
-            return preferences.monitoredFolderBookmarks[url.path]
-        }
-        if let itemBookmark { bookmarks.append(itemBookmark) }
-        for data in bookmarks {
-            var stale = false
-            if let url = try? URL(resolvingBookmarkData: data, options: [.withSecurityScope, .withoutUI],
-                relativeTo: nil, bookmarkDataIsStale: &stale), url.startAccessingSecurityScopedResource() {
-                grants.append(url)
+    private func withReadAccess<T>(to selection: FileInfoSelection, cancellation: FileDigestCancellation,
+                                   perform: () async throws -> T) async throws -> T {
+        try validatePolicy(selection)
+        readAccess.restore(for: selection, preferences: preferences)
+        do { return try await perform() }
+        catch where FolderAccess.isPermissionError(error) {
+            try cancellation.check(); try validatePolicy(selection)
+            let authorized = try readAccess.request(for: selection, language: language) {
+                try cancellation.check(); try validatePolicy(selection)
+                return preferences.monitoredFolderURLs
             }
+            guard authorized else { throw FileInfoError.cancelled }
+            try cancellation.check(); try validatePolicy(selection)
+            return try await perform()
         }
-        let permitted = try await Task.detached(priority: .userInitiated) {
-            do {
-                try selection.validate()
-                return !readContent || FileManager.default.isReadableFile(atPath: selection.resolvedSourceForAccess.path)
-            } catch FileInfoError.accessDenied { return false }
-        }.value
-        try cancellation?.check()
-        if permitted { return true }
-        let picker = NSOpenPanel()
-        picker.title = text(.title); picker.message = text(.authorize)
-        picker.directoryURL = selection.parent
-        picker.canChooseFiles = true; picker.canChooseDirectories = true
-        picker.allowsMultipleSelection = false; picker.canCreateDirectories = false
-        picker.resolvesAliases = false
-        authorizationPanel = picker
-        defer { authorizationPanel = nil }
-        guard picker.runModal() == .OK, let chosen = picker.url,
-              chosen.standardizedFileURL == selection.source.standardizedFileURL
-                || chosen.standardizedFileURL == selection.resolvedSourceForAccess else { return false }
-        let started = chosen.startAccessingSecurityScopedResource()
-        defer { if started { chosen.stopAccessingSecurityScopedResource() } }
-        let bookmark = try chosen.bookmarkData(options: [.withSecurityScope, .securityScopeAllowOnlyReadAccess],
-            includingResourceValuesForKeys: nil, relativeTo: nil)
-        var stale = false
-        let restored = try URL(resolvingBookmarkData: bookmark, options: [.withSecurityScope, .withoutUI],
-            relativeTo: nil, bookmarkDataIsStale: &stale)
-        if restored.startAccessingSecurityScopedResource() { grants.append(restored) }
-        itemBookmark = bookmark
-        return true
     }
 
     private func finishActivity() {
-        for url in grants { url.stopAccessingSecurityScopedResource() }
-        grants = []; worker = nil; cancellation = nil
+        readAccess.release()
+        worker = nil; cancellation = nil
         isPreparing = false; isRunning = false; isCancelling = false
         if closeRequested { panel?.close() }
         let waiters = cleanupWaiters; cleanupWaiters = []
@@ -261,13 +223,9 @@ final class FileInfoController: NSObject, ObservableObject, NSWindowDelegate {
         return true
     }
     func windowWillClose(_ notification: Notification) {
-        itemBookmark = nil; result = nil; selection = nil; metadata = nil
+        result = nil; selection = nil; metadata = nil
         expectedChecksum = ""; progress = nil; panel = nil
     }
-}
-
-private extension FileInfoSelection {
-    var resolvedSourceForAccess: URL { parent.appendingPathComponent(source.lastPathComponent) }
 }
 
 @MainActor

@@ -144,10 +144,11 @@ Load for: Optional Finder file/folder actions, batch rename, selection snapshots
   bytes, fonts, colors and paragraph attributes, plus rejection of unsupported or
   malformed RTF without changing the clipboard. Extend this subset only with
   explicit SPEC changes and corresponding integrity/native-receiver evidence.
-- Reuse configured access or request the exact file with a native read-only
-  picker. Do not expand Finder scope, add persistent grant stores or request Full
-  Disk Access. Known undownloaded placeholders require downloading in Finder first;
-  unknown providers may materialize during ordinary reads. Report actual errors.
+- Reuse configured and remembered read access. On denial, the authorization
+  picker accepts the exact file or its direct parent as described in
+  [Finder permissions](finder-permissions.md#file-information-authorization).
+  Known undownloaded placeholders require downloading in Finder first; unknown
+  providers may materialize during ordinary reads. Report actual errors.
 - Capture only the clipboard change counter on the click and check it again on
   publication; no polling or content inspection. If another copy has occurred,
   discard the old request instead of overwriting it. Prepare every representation

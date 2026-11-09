@@ -1,4 +1,5 @@
 import AppKit
+import Darwin
 import FileMintCore
 
 /// One operation's read-only access. Saving is explicit so cancellation and
@@ -8,21 +9,28 @@ final class OpenWithFolderAccess {
     private let store: OpenWithFolderAccessStore
     private let original: [String: Data]
     private var bookmarks: [String: Data]
+    private let remembered: RememberedFileAccess?
     private var active: [URL] = []
     private let chooseDirectory: @MainActor (URL, AppLanguage) -> URL?
     private static let bookmarkOptions: URL.BookmarkCreationOptions = [.withSecurityScope, .securityScopeAllowOnlyReadAccess]
     private static let identityKeys: Set<URLResourceKey> = [.fileResourceIdentifierKey, .volumeUUIDStringKey, .creationDateKey]
 
-    init(store: OpenWithFolderAccessStore,
+    init(store: OpenWithFolderAccessStore, remembered: RememberedFileAccess? = nil,
          chooseDirectory: @escaping @MainActor (URL, AppLanguage) -> URL? = OpenWithFolderAccess.chooseDirectory) throws {
         self.store = store
         let stored = try store.load()
         self.original = stored
         self.bookmarks = stored
+        self.remembered = remembered
         self.chooseDirectory = chooseDirectory
     }
 
-    func authorize(_ directory: URL, folders: [URL], language: AppLanguage) throws -> Bool {
+    func authorize(_ directory: URL, folders: [URL], language: AppLanguage,
+                   configuredBookmarks: [String: Data] = [:], reading items: [URL] = []) throws -> Bool {
+        func check() throws {
+            if items.isEmpty { try FolderAccess.checkDirectory(directory, mode: R_OK) }
+            else { for item in items { try FolderAccess.checkAccess(to: item, mode: R_OK) } }
+        }
         var rejectedIdentity = false
         for savedDirectory in OpenWithFolderAccessStore.candidateDirectories(for: directory,
             bookmarks: bookmarks, folders: folders) {
@@ -46,17 +54,29 @@ final class OpenWithFolderAccess {
             }
             active.append(restored)
             if stale { bookmarks[savedDirectory.path] = try bookmark(for: restored) }
-            if FileManager.default.isReadableFile(atPath: directory.path) { return true }
+            do { try check(); return true }
+            catch where FolderAccess.isPermissionError(error) { continue }
         }
-        // Configured folder grants held by PreferencesModel also cover this case.
-        if !rejectedIdentity && FileManager.default.isReadableFile(atPath: directory.path) { return true }
+        let configured = FolderAccess.startSavedAccess(to: directory, roots: folders, bookmarks: configuredBookmarks)
+        let shared = remembered?.start(for: items.isEmpty ? [directory] : items, folders: items.isEmpty,
+                                       mode: .read, roots: folders) ?? []
+        active += configured + shared
+        do {
+            try check()
+            let sharedParent = shared.contains { FolderScope.containsResolvedDirectory(directory, in: [$0]) }
+            if !rejectedIdentity || !configured.isEmpty || sharedParent { return true }
+        } catch where FolderAccess.isPermissionError(error) {}
+        guard FolderScope.directoryAccess(directory, in: folders) != .outsideScope else {
+            throw OpenWithError.folderAccessFailed
+        }
         guard let chosen = chooseDirectory(directory, language) else { return false }
         if chosen.startAccessingSecurityScopedResource() { active.append(chosen) }
         guard chosen.resolvingSymlinksInPath().standardizedFileURL ==
                 directory.resolvingSymlinksInPath().standardizedFileURL else {
             throw OpenWithError.wrongAuthorizationFolder
         }
-        guard FileManager.default.isReadableFile(atPath: directory.path) else { throw OpenWithError.folderAccessFailed }
+        do { try check() }
+        catch where FolderAccess.isPermissionError(error) { throw OpenWithError.folderAccessFailed }
         bookmarks[directory.standardizedFileURL.path] = try bookmark(for: chosen)
         return true
     }
@@ -95,15 +115,8 @@ final class OpenWithFolderAccess {
     }
 
     static func chooseDirectory(_ directory: URL, language: AppLanguage) -> URL? {
-        let panel = NSOpenPanel()
-        panel.title = FileMintStrings.text(.openWithApps, language: language)
-        panel.message = FileMintStrings.text(.openWithAuthorizeFolder, language: language)
-        panel.prompt = FileMintStrings.text(.allowFolder, language: language)
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = false
-        panel.canCreateDirectories = false
-        panel.directoryURL = directory
+        let panel = FolderAccess.authorizationPanel(for: directory, selection: .folder, language: language,
+            detail: FileMintStrings.text(.openWithAuthorizeFolder, language: language))
         NSApp.activate(ignoringOtherApps: true)
         return panel.runModal() == .OK ? panel.url : nil
     }

@@ -312,9 +312,9 @@ This fixture does not prove that Finder has loaded the new extension.
 - Remove/move the target app or source file, cancel any exact-parent authorization,
   and use an app that cannot open folders. Verify clear errors, no default-app or
   clipboard changes, and no remaining busy guard after completion/cancellation.
-- Start with an unapproved in-scope folder. The picker explains saved access and
-  uses Allow Folder / 允许访问; cancellation and choosing a different folder must
-  not open the app or save a grant. Approve, quit and relaunch FileMint, then open
+- Start with an unapproved in-scope folder. The picker names that folder, explains
+  saved access and uses Authorize / 授权. Verify cancellation and choosing a different
+  folder preserve grants and skip dispatch. Approve, quit and relaunch FileMint, then open
   the same directory and its descendants without another picker. Repeat for a
   file selection's parent. Removing a configured root must prevent its saved
   grant from restoring access, including after narrowing scope to a descendant.

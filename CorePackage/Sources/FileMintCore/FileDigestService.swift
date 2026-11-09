@@ -3,12 +3,12 @@ import Darwin
 import Foundation
 
 public enum FileInfoError: Error, Equatable, Sendable {
-    case invalidSelection, changed, unsupported, placeholder, accessDenied, unavailable, cancelled, disabled
+    case invalidSelection, changed, unsupported, placeholder, accessDenied, accessSaveFailed, unavailable, cancelled, disabled
     public var text: FileInfoText {
         switch self {
         case .invalidSelection: .invalidSelection; case .changed: .changed
         case .unsupported: .unsupported; case .placeholder: .placeholder
-        case .accessDenied: .accessDenied; case .unavailable: .readFailed
+        case .accessDenied: .accessDenied; case .accessSaveFailed: .accessSaveFailed; case .unavailable: .readFailed
         case .cancelled: .cancelled; case .disabled: .disabled
         }
     }
@@ -57,7 +57,16 @@ public struct FileInfoSelection: Codable, Equatable, Sendable {
               parentIdentity.kind == UInt16(S_IFDIR),
               FileInfoIdentity(try fileInfoStat(resolvedSource)) == identity else { throw FileInfoError.changed }
     }
-    var resolvedSource: URL { parent.appendingPathComponent(source.lastPathComponent) }
+    public var resolvedSource: URL { parent.appendingPathComponent(source.lastPathComponent) }
+
+    public func validate(in folders: [URL]) throws {
+        try validate()
+        switch FolderScope.directoryAccess(source.deletingLastPathComponent(), in: folders) {
+        case .allowed: break
+        case .requiresAuthorization: throw FileInfoError.accessDenied
+        case .outsideScope: throw FileInfoError.disabled
+        }
+    }
 }
 
 public enum FileInfoKind: Equatable, Sendable { case file, directory, unsupported }
@@ -212,8 +221,8 @@ public enum FileDigestService {
         let fresh = try inspect(selection)
         guard fresh.canCalculate, fresh.stamp == initial.stamp else { throw FileInfoError.changed }
         let version = generation(of: selection.resolvedSource)
-        // O_EVTONLY pins parent identity without asking to read its directory contents.
-        let parent = open(selection.parent.path, O_EVTONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+        // A file-only grant permits search of the parent, but may deny a read open.
+        let parent = open(selection.parent.path, O_SEARCH | O_NOFOLLOW | O_CLOEXEC)
         guard parent >= 0 else { throw fileInfoPOSIXError() }
         defer { close(parent) }
         var parentInfo = stat()
@@ -302,5 +311,6 @@ private func fileInfoPOSIXError() -> FileInfoError {
 private func fileInfoError(_ error: NSError) -> FileInfoError {
     if error.domain == NSCocoaErrorDomain, error.code == NSUserCancelledError { return .cancelled }
     if error.domain == NSCocoaErrorDomain, error.code == NSFileReadNoPermissionError { return .accessDenied }
+    if error.domain == NSPOSIXErrorDomain, [Int(EACCES), Int(EPERM)].contains(error.code) { return .accessDenied }
     return .unavailable
 }

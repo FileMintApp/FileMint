@@ -23,8 +23,12 @@ items = root / 'items'
 (items / 'link').symlink_to('file.txt')
 (root / 'capture.sb').write_text('(version 1)\n(allow default)\n'
     '(deny file-read-data file-write* (subpath ' + json.dumps(str(items)) + '))\n')
+(root / 'file-only.sb').write_text('(version 1)\n(allow default)\n'
+    f'(deny file-write* (subpath {json.dumps(str(items))}))\n'
+    f'(deny file-read-data (literal {json.dumps(str(items))}) (subpath {json.dumps(str(items / "folder"))}))\n')
 PY
 sandbox-exec -f "$FILE_INFO_WORK/capture.sb" "$FILE_INFO_WORK/smoke" "$FILE_INFO_WORK/items"
+sandbox-exec -f "$FILE_INFO_WORK/file-only.sb" "$FILE_INFO_WORK/smoke" "$FILE_INFO_WORK/items" file-only
 python3 - "$FILE_INFO_WORK" <<'PY'
 import pathlib, sys
 items = pathlib.Path(sys.argv[1]) / 'items'

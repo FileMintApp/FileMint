@@ -82,6 +82,15 @@ final class PreferencesModel: ObservableObject {
         CustomFileSavePanelController.shared.updateFeatures(preferences)
     }
     private func configureCreationPanel() {
+        CustomFileSavePanelController.shared.startFolderAccess = { [weak self] directory in
+            self?.startCreationAccess(to: directory) ?? []
+        }
+        CustomFileSavePanelController.shared.rememberAuthorizedFolder = { [weak self] chosen in
+            guard let self else { return }
+            let target = chosen.resolvingSymlinksInPath().standardizedFileURL
+            let scope = try self.rememberedFileAccess.remember(chosen, target: target, folder: true, mode: .write, roots: [target])
+            scope.stopAccessingSecurityScopedResource()
+        }
         CustomFileSavePanelController.shared.loadApplicationIcon = { application in
             await CreationApplicationPresentation.icon(for: application)
         }
@@ -504,13 +513,10 @@ final class PreferencesModel: ObservableObject {
     }
 
     func addMonitoredFolder(initial: URL? = nil) {
-        let picker = NSOpenPanel()
-        picker.canChooseFiles = false
-        picker.canChooseDirectories = true
+        let picker = FolderAccess.authorizationPanel(selection: .folder, language: preferences.language)
         picker.allowsMultipleSelection = true
         picker.directoryURL = initial
-        picker.message = text(.authorizeFolderHint)
-        picker.prompt = text(.allowFolder)
+        picker.resolvesAliases = true
         guard picker.runModal() == .OK else { return }
         rememberMonitoredFolders(picker.urls)
     }
@@ -712,6 +718,8 @@ final class PreferencesModel: ObservableObject {
                 guard externalInvocations.pendingRequestCount == 0, launcherWork.isEmpty,
                       CustomFileSavePanelController.shared.externalWindow == nil else { return }
                 let originalFollowUp = CreationFollowUp(template: snapshot.templates.first { $0.id == ticket.templateID }, preferences: snapshot, gate: originalGate)
+                let configuredAccess = startCreationAccess(to: ticket.directory)
+                defer { configuredAccess.forEach { $0.stopAccessingSecurityScopedResource() } }
                 let access = FolderScope.directoryAccess(ticket.directory, in: preferences.monitoredFolderURLs)
                 guard access != .outsideScope else { return }
                 if access == .requiresAuthorization, intent == .template {
@@ -730,6 +738,14 @@ final class PreferencesModel: ObservableObject {
                 }
             } catch { lastError = error.localizedDescription }
         }
+    }
+
+    var rememberedFileAccess: RememberedFileAccess { RememberedFileAccess(preferencesFile: store.location) }
+
+    private func startCreationAccess(to directory: URL) -> [URL] {
+        FolderAccess.startSavedAccess(to: directory, in: committedPreferences)
+            + rememberedFileAccess.start(for: directory, folder: true, mode: .write,
+                                         roots: committedPreferences.monitoredFolderURLs + [directory])
     }
 
     private func quickCreate(_ ticket: QuickCreationTicket, originalFollowUp: CreationFollowUp? = nil) async {

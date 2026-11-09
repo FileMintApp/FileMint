@@ -170,6 +170,12 @@ final class BatchRenameSmoke: NSObject, NSApplicationDelegate {
         try require(cancelled == nil && pickerCount == 1, "Invalid saved authority did not request renewed consent")
         invalid.release()
         try require(try Data(contentsOf: cache.file) == invalidBytes, "Cancelled renewal changed remembered authority")
+        let independent = BatchRenameAccess(store: cache, chooseDirectory: { _, _ in pickerCount += 1; return nil })
+        let accepted = try await independent.authorize(parent: captured.parent, identity: captured.parentIdentity,
+            bookmark: bookmark, allowRelocation: false, language: .english, hasIndependentAccess: true)
+        independent.release()
+        try require(accepted?.0.path == captured.parent.path && pickerCount == 1,
+                    "Rejected cache entry hid independently confirmed parent access")
 
         try Data("damaged".utf8).write(to: cache.file)
         let recovery = BatchRenameAccess(chooseDirectory: { _, _ in pickerCount += 1; return nil })
@@ -192,6 +198,15 @@ final class BatchRenameSmoke: NSObject, NSApplicationDelegate {
         try require(denied == nil && pickerCount == 2, "Replacement parent reused another directory's saved authority")
         replaced.release()
 
+        let stale = BatchRenameAccess(chooseDirectory: { _, _ in pickerCount += 1; return nil })
+        defer { stale.release() }
+        do {
+            _ = try await stale.authorize(parent: captured.parent, identity: captured.parentIdentity,
+                bookmark: nil, allowRelocation: false, language: .english)
+            throw RenameSmokeFailure(message: "A replaced captured parent needs a new selection")
+        } catch BatchRenameError.parentChanged {
+            try require(pickerCount == 2, "A replaced captured parent triggered an authorization prompt")
+        }
     }
 
     private func renumberedAuthorizationScenarios(root: URL) async throws {

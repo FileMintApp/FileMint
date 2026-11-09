@@ -1,4 +1,5 @@
 import AppKit
+import Darwin
 import FileMintCore
 
 /// Each operation owns its active scopes. Normal batches also restore remembered
@@ -21,7 +22,7 @@ final class BatchRenameAccess {
     }
 
     func authorize(parent: URL, identity: BatchRenameIdentity, bookmark: Data?,
-                   allowRelocation: Bool, language: AppLanguage) async throws -> (URL, Data)? {
+                   allowRelocation: Bool, language: AppLanguage, hasIndependentAccess: Bool = false) async throws -> (URL, Data)? {
         var renewalRequired = false
         if let store {
             let saved = try await Task.detached(priority: .userInitiated) { try store.load() }.value
@@ -31,14 +32,17 @@ final class BatchRenameAccess {
                 renewalRequired = true
             }
         }
-        // A rejected remembered grant needs renewed consent, even if a temporary
-        // Powerbox grant still makes the old pathname accessible in this process.
-        if !renewalRequired {
+        // A rejected grant cannot use ambient access as consent. A separately
+        // saved covering grant still applies to the current captured identity.
+        if !renewalRequired || hasIndependentAccess {
             if let bookmark, let grant = await restore(bookmark, parent: parent, identity: identity,
                                                        allowRelocation: allowRelocation) { return grant }
-            if let grant = try await usable(parent, expected: parent, identity: identity,
-                                            allowRelocation: allowRelocation),
-               let held = try await retain(grant, identity: identity) { return held }
+            do {
+                guard let grant = try await usable(parent, expected: parent, identity: identity,
+                                                  allowRelocation: allowRelocation),
+                      let held = try await retain(grant, identity: identity) else { throw BatchRenameError.invalidBookmark }
+                return held
+            } catch where FolderAccess.isPermissionError(error) {}
         }
 
         guard let chosen = chooseDirectory(parent, language) else { return nil }
@@ -73,16 +77,10 @@ final class BatchRenameAccess {
     }
 
     static func chooseDirectory(_ parent: URL, language: AppLanguage) -> URL? {
-        let picker = NSOpenPanel()
-        picker.title = BatchRenameText.title.text(language)
-        picker.message = language.resolved() == .chinese
-            ? "请选择这次操作原来的父文件夹。将记住此文件夹的授权，不会扩大 Finder 菜单范围。"
-            : "Choose this operation’s original parent folder. Access will be remembered without expanding Finder menu scope."
-        picker.directoryURL = parent
-        picker.canChooseDirectories = true
-        picker.canChooseFiles = false
-        picker.canCreateDirectories = false
-        picker.allowsMultipleSelection = false
+        let detail = language.resolved() == .chinese
+            ? "请选择这次操作原来的父文件夹。FileMint 会记住此授权。"
+            : "Select the original parent folder to remember access for this operation."
+        let picker = FolderAccess.authorizationPanel(for: parent, selection: .folder, language: language, detail: detail)
         NSApp.activate(ignoringOtherApps: true)
         return picker.runModal() == .OK ? picker.url : nil
     }
@@ -113,24 +111,21 @@ final class BatchRenameAccess {
 
     private func usable(_ candidate: URL, expected: URL, identity: BatchRenameIdentity,
                         allowRelocation: Bool, savedGrant: BatchRenameAccessGrant? = nil) async throws -> (URL, Data)? {
-        await Task.detached(priority: .userInitiated) {
-            do {
-                let resolved = candidate.resolvingSymlinksInPath().standardizedFileURL
-                guard allowRelocation || resolved == expected.standardizedFileURL,
-                      try identity.matchesDirectory(at: resolved),
-                      FileManager.default.isReadableFile(atPath: resolved.path),
-                      FileManager.default.isWritableFile(atPath: resolved.path) else { return nil }
-                if let savedGrant {
-                    // Resolved bookmark URLs can cache old resource values.
-                    var fresh = URL(fileURLWithPath: resolved.path, isDirectory: true)
-                    fresh.removeAllCachedResourceValues()
-                    let volume = try fresh.resourceValues(forKeys: [.volumeUUIDStringKey]).volumeUUIDString
-                    guard savedGrant.matchesIdentity(identity, volumeUUID: volume) else { return nil }
-                }
-                let data = try candidate.bookmarkData(options: .withSecurityScope,
-                    includingResourceValuesForKeys: [.volumeUUIDStringKey], relativeTo: nil)
-                return (resolved, data)
-            } catch { return nil }
+        try await Task.detached(priority: .userInitiated) {
+            let resolved = candidate.resolvingSymlinksInPath().standardizedFileURL
+            guard allowRelocation || resolved == expected.standardizedFileURL,
+                  try identity.matchesDirectory(at: resolved) else { throw BatchRenameError.parentChanged }
+            try FolderAccess.checkDirectory(resolved, mode: W_OK)
+            if let savedGrant {
+                // Resolved bookmark URLs can cache old resource values.
+                var fresh = URL(fileURLWithPath: resolved.path, isDirectory: true)
+                fresh.removeAllCachedResourceValues()
+                let volume = try fresh.resourceValues(forKeys: [.volumeUUIDStringKey]).volumeUUIDString
+                guard savedGrant.matchesIdentity(identity, volumeUUID: volume) else { return nil }
+            }
+            let data = try candidate.bookmarkData(options: .withSecurityScope,
+                includingResourceValuesForKeys: [.volumeUUIDStringKey], relativeTo: nil)
+            return (resolved, data)
         }.value
     }
 }

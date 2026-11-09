@@ -1,4 +1,5 @@
 import AppKit
+import Darwin
 import FileMintCore
 import UniformTypeIdentifiers
 
@@ -50,6 +51,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
     private let tickets: FileOperationTicketStore
     private let ticketClock: @Sendable () -> Date
     private let preferencesFile: URL?
+    private let rememberedAccess: RememberedFileAccess
     private let aliasAccessStore: DesktopAliasAccessStore
     private let openWithAccessStore: OpenWithFolderAccessStore
     private let desktopDirectory: URL
@@ -75,6 +77,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
         self.tickets = tickets
         self.ticketClock = ticketClock
         self.preferencesFile = preferencesFile
+        rememberedAccess = RememberedFileAccess(preferencesFile: preferencesFile)
         self.aliasAccessStore = aliasAccessStore
         self.openWithAccessStore = openWithAccessStore
         self.desktopDirectory = desktopDirectory
@@ -283,10 +286,8 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             guard FileVisibilityPolicy.isEnabled(for: selection, preferences: currentPreferences) else {
                 throw FileVisibilityError.disabled
             }
-            var bookmarks = currentPreferences.monitoredFolderBookmarks
-            for parent in uniqueParents(selection) {
-                guard try authorize(parent, bookmarks: &bookmarks) else { return }
-            }
+            var bookmarks: [String: Data] = [:]
+            guard try authorizeParents(of: selection, bookmarks: &bookmarks) else { return }
             try requireResolvedSelection(selection)
             let preferencesFile = self.preferencesFile
             try await Task.detached(priority: .userInitiated) {
@@ -300,9 +301,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             guard FavoriteLocationsPolicy.canAdd(selection, isItemMenu: true,
                 preferences: currentPreferences) else { throw FavoriteLocationError.invalidSelection }
             var bookmarks: [String: Data] = [:]
-            for parent in uniqueParents(selection) {
-                guard try authorize(parent, bookmarks: &bookmarks, readOnly: true) else { return }
-            }
+            guard try authorizeParents(of: selection, bookmarks: &bookmarks, readOnly: true) else { return }
             try requireResolvedSelection(selection)
             guard FavoriteLocationsPolicy.canAdd(selection, isItemMenu: true,
                 preferences: currentPreferences) else { throw FavoriteLocationError.invalidSelection }
@@ -331,19 +330,20 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             let applicationURL = try OpenWithApplicationAccess.resolve(application)
             if applicationURL.startAccessingSecurityScopedResource() { access.append(applicationURL) }
             try OpenWithApplicationAccess.validate(application, at: applicationURL)
-            let folderAccess = try OpenWithFolderAccess(store: openWithAccessStore)
+            let folderAccess = try OpenWithFolderAccess(store: openWithAccessStore, remembered: rememberedAccess)
             defer { folderAccess.release() }
+            let preferences = currentPreferences
+            let groups = Dictionary(grouping: selection) { $0.deletingLastPathComponent().standardizedFileURL }
             for parent in uniqueParents(selection) {
-                guard try folderAccess.authorize(parent, folders: currentPreferences.monitoredFolderURLs,
-                    language: currentPreferences.language) else { return }
+                guard try folderAccess.authorize(parent, folders: preferences.monitoredFolderURLs,
+                    language: preferences.language, configuredBookmarks: preferences.monitoredFolderBookmarks,
+                    reading: groups[parent, default: []]) else { return }
             }
             try requireResolvedSelection(selection)
             guard OpenWithPolicy.application(for: reference, selection: selection,
                 preferences: currentPreferences) != nil else { throw OpenWithError.changedConfiguration }
             try OpenWithApplicationAccess.validate(application, at: applicationURL)
-            guard selection.allSatisfy({ FileManager.default.isReadableFile(atPath: $0.path) }) else {
-                throw OpenWithError.missingSelection
-            }
+            for item in selection { try FolderAccess.checkAccess(to: item, mode: R_OK) }
             try folderAccess.save()
             try await OpenWithApplicationAccess.open(selection, with: applicationURL)
 
@@ -356,10 +356,11 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             let applicationURL = try OpenWithApplicationAccess.resolve(application)
             if applicationURL.startAccessingSecurityScopedResource() { access.append(applicationURL) }
             try OpenWithApplicationAccess.validate(application, at: applicationURL)
-            let folderAccess = try OpenWithFolderAccess(store: openWithAccessStore)
+            let folderAccess = try OpenWithFolderAccess(store: openWithAccessStore, remembered: rememberedAccess)
             defer { folderAccess.release() }
-            guard try folderAccess.authorize(directory, folders: currentPreferences.monitoredFolderURLs,
-                language: currentPreferences.language) else { return }
+            let preferences = currentPreferences
+            guard try folderAccess.authorize(directory, folders: preferences.monitoredFolderURLs,
+                language: preferences.language, configuredBookmarks: preferences.monitoredFolderBookmarks) else { return }
             let values = try? directory.resourceValues(forKeys: [.isDirectoryKey, .isPackageKey, .isSymbolicLinkKey, .isAliasFileKey])
             guard values?.isDirectory == true, values?.isPackage != true,
                   values?.isSymbolicLink != true, values?.isAliasFile != true else {
@@ -379,9 +380,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             guard ResourceToolsPolicy.availableTools(selection: selection, isItemMenu: true,
                 preferences: currentPreferences).contains(tool) else { throw ResourceError.disabled }
             var bookmarks: [String: Data] = [:]
-            for parent in uniqueParents(selection) {
-                guard try authorize(parent, bookmarks: &bookmarks, readOnly: true) else { return }
-            }
+            guard try authorizeParents(of: selection, bookmarks: &bookmarks, readOnly: true) else { return }
             try requireResolvedSelection(selection)
             guard ResourceToolsPolicy.availableTools(selection: selection, isItemMenu: true,
                 preferences: currentPreferences).contains(tool) else { throw ResourceError.disabled }
@@ -391,9 +390,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             guard FileToolsPolicy.availableTools(selection: selection, isItemMenu: true,
                 preferences: currentPreferences).contains(.move) else { throw FileMoveError.disabled }
             var bookmarks: [String: Data] = [:]
-            for parent in uniqueParents(selection) {
-                guard try authorize(parent, bookmarks: &bookmarks) else { return }
-            }
+            guard try authorizeParents(of: selection, bookmarks: &bookmarks) else { return }
             try requireResolvedSelection(selection)
             guard FileToolsPolicy.availableTools(selection: selection, isItemMenu: true,
                 preferences: currentPreferences).contains(.move) else { throw FileMoveError.disabled }
@@ -408,9 +405,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             let selection = items.map(\.source)
             try require(.permanentDelete, selection: selection)
             var bookmarks: [String: Data] = [:]
-            for parent in uniqueParents(selection) {
-                guard try authorize(parent, bookmarks: &bookmarks) else { return }
-            }
+            guard try authorizeParents(of: selection, bookmarks: &bookmarks) else { return }
             try requireResolvedSelection(selection)
             try require(.permanentDelete, selection: selection)
             try await Task.detached(priority: .userInitiated) { try FileDeletionService.validate(items) }.value
@@ -443,9 +438,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
         case .airDrop(let selection):
             try require(.airDrop, selection: selection)
             var bookmarks: [String: Data] = [:]
-            for parent in uniqueParents(selection) {
-                guard try authorize(parent, bookmarks: &bookmarks, readOnly: true) else { return }
-            }
+            guard try authorizeParents(of: selection, bookmarks: &bookmarks, readOnly: true) else { return }
             try requireResolvedSelection(selection)
             try require(.airDrop, selection: selection)
             guard let service = NSSharingService(named: .sendViaAirDrop), service.canPerform(withItems: selection) else {
@@ -465,8 +458,10 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             let selection = items.map(\.source)
             try require(.desktopAlias, selection: selection)
             var bookmarks = try aliasAccessStore.load()
-            for parent in uniqueParents(selection) {
-                guard try authorize(parent, bookmarks: &bookmarks, readOnly: true) else { return }
+            let desktop = desktopDirectory.resolvingSymlinksInPath().standardizedFileURL.path
+            let groups = Dictionary(grouping: selection) { $0.deletingLastPathComponent().standardizedFileURL }
+            for parent in uniqueParents(selection) where parent.resolvingSymlinksInPath().standardizedFileURL.path != desktop {
+                guard try authorize(parent, bookmarks: &bookmarks, reading: groups[parent, default: []]) else { return }
                 try aliasAccessStore.save(bookmarks)
             }
             guard try authorize(desktopDirectory, bookmarks: &bookmarks,
@@ -489,9 +484,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             guard var pending = try store.load(), pending.id == batchID else { throw FileMoveError.staleRequest }
             try validate(pending, destination: destination)
             var bookmarks = pending.bookmarks
-            for parent in uniqueParents(pending.items.map(\.source)) {
-                guard try authorize(parent, bookmarks: &bookmarks) else { return }
-            }
+            guard try authorizeParents(of: pending.items.map(\.source), bookmarks: &bookmarks) else { return }
             guard try authorize(destination, bookmarks: &bookmarks) else { return }
             try requireResolvedSelection(pending.items.map(\.source))
             guard FolderScope.containsResolvedDirectory(destination, in: currentPreferences.monitoredFolderURLs) else {
@@ -559,12 +552,26 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             .filter { seen.insert($0.path).inserted }
     }
 
-    /// Grants never expand the configured Finder menu scope. Existing folder
-    /// bookmarks are already held by PreferencesModel; additional grants belong
-    /// to the operation's private store (pending moves or desktop aliases).
-    /// Active access is released after the request.
-    private func authorize(_ directory: URL, bookmarks: inout [String: Data], readOnly: Bool = false,
+    private func authorizeParents(of selection: [URL], bookmarks: inout [String: Data], readOnly: Bool = false) throws -> Bool {
+        let groups = Dictionary(grouping: selection) { $0.deletingLastPathComponent().standardizedFileURL }
+        for parent in uniqueParents(selection) {
+            let items = readOnly ? groups[parent, default: []] : []
+            guard try authorize(parent, bookmarks: &bookmarks, reading: items) else { return false }
+        }
+        return true
+    }
+
+    /// Keep settings and operation-specific grants alive through worker cleanup.
+    private func authorize(_ directory: URL, bookmarks: inout [String: Data], reading items: [URL] = [],
                            message: FileMintTextKey = .fileOperationAuthorize) throws -> Bool {
+        let isReadOnly = !items.isEmpty
+        let preferences = currentPreferences
+        access += FolderAccess.startSavedAccess(to: directory, in: preferences)
+        let mode: RememberedFileAccess.Mode = isReadOnly ? .read : .write
+        access += rememberedAccess.start(for: items.isEmpty ? [directory] : items, folders: items.isEmpty,
+                                         mode: mode, roots: preferences.monitoredFolderURLs)
+        let savedAncestors = bookmarks.keys.filter { $0 != directory.path }.map { URL(fileURLWithPath: $0, isDirectory: true) }
+        access += FolderAccess.startSavedAccess(to: directory, roots: savedAncestors, bookmarks: bookmarks)
         if let data = bookmarks[directory.path] {
             var stale = false
             if let restored = try? URL(resolvingBookmarkData: data, options: [.withSecurityScope, .withoutUI],
@@ -572,23 +579,26 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
                restored.standardizedFileURL.path == directory.standardizedFileURL.path,
                restored.startAccessingSecurityScopedResource() {
                 access.append(restored)
-                if stale {
+                if stale && !isReadOnly {
                     bookmarks[directory.path] = try restored.bookmarkData(options: .withSecurityScope,
                         includingResourceValuesForKeys: nil, relativeTo: nil)
                 }
             }
         }
-        let manager = FileManager.default
-        if manager.isReadableFile(atPath: directory.path) && (readOnly || manager.isWritableFile(atPath: directory.path)) { return true }
-        let language = currentPreferences.language
-        let panel = NSOpenPanel()
-        panel.title = FileMintStrings.text(operationTitle, language: language)
-        panel.message = FileMintStrings.text(message, language: language)
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = false
-        panel.canCreateDirectories = false
-        panel.directoryURL = directory
+        func check() throws {
+            if items.isEmpty { try FolderAccess.checkDirectory(directory, mode: R_OK | W_OK) }
+            else { for item in items { try FolderAccess.checkAccess(to: item, mode: R_OK, followSymbolicLinks: false) } }
+        }
+        do { try check(); return true }
+        catch where FolderAccess.isPermissionError(error) {
+            let roots = preferences.monitoredFolderURLs
+            if FolderScope.contains(directory, in: roots), FolderScope.directoryAccess(directory, in: roots) == .outsideScope {
+                throw FileMoveError.disabled
+            }
+        }
+        let language = preferences.language
+        let panel = FolderAccess.authorizationPanel(for: directory, selection: .folder, language: language,
+                                                     detail: FileMintStrings.text(message, language: language))
         NSApp.activate(ignoringOtherApps: true)
         guard panel.runModal() == .OK, let chosen = panel.url else { return false }
         guard chosen.resolvingSymlinksInPath().standardizedFileURL.path ==
@@ -598,7 +608,14 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
         }
         let started = chosen.startAccessingSecurityScopedResource()
         if started { access.append(chosen) }
-        bookmarks[directory.path] = try chosen.bookmarkData(options: .withSecurityScope,
+        try check()
+        let roots = currentPreferences.monitoredFolderURLs
+        let canonical = directory.resolvingSymlinksInPath().standardizedFileURL
+        if FolderScope.containsResolvedDirectory(canonical, in: roots) {
+            access.append(try rememberedAccess.remember(chosen, target: canonical, folder: true, mode: mode, roots: roots))
+        }
+        let options: URL.BookmarkCreationOptions = isReadOnly ? [.withSecurityScope, .securityScopeAllowOnlyReadAccess] : .withSecurityScope
+        bookmarks[directory.path] = try chosen.bookmarkData(options: options,
             includingResourceValuesForKeys: nil, relativeTo: nil)
         return true
     }
@@ -609,6 +626,14 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
     }
 
     private func show(_ error: Error) {
+        if (error as? FileInfoError) == .accessSaveFailed {
+            let alert = NSAlert()
+            alert.messageText = text(operationTitle)
+            alert.informativeText = FileInfoText.accessSaveFailed.text(currentPreferences.language)
+            NSApp.activate(ignoringOtherApps: true)
+            alert.runModal()
+            return
+        }
         if operationTitle == .fileVisibility {
             let failure = error as? FileVisibilityFailure
             let reason = failure?.underlying ?? error

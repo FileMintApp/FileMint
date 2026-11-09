@@ -74,10 +74,15 @@ final class BatchRenameOperations: ObservableObject {
         }.value
         let previousBookmark = previousAuthority?.parentIdentity == selection.parentIdentity
             ? previousAuthority?.parentBookmark : nil
+        let sourceParent = selection.items.first?.source.deletingLastPathComponent() ?? selection.parent
+        let configuredAccess = FolderAccess.startSavedAccess(to: sourceParent, resolved: selection.parent, in: preferences)
+            + RememberedFileAccess(preferencesFile: preferencesFile).start(for: selection.parent, folder: true, mode: .write,
+                                                                          roots: preferences.monitoredFolderURLs)
+        defer { configuredAccess.forEach { $0.stopAccessingSecurityScopedResource() } }
         guard let (_, bookmark) = try await access.authorize(parent: selection.parent,
             identity: selection.parentIdentity,
             bookmark: preferences.monitoredFolderBookmarks[selection.parent.path] ?? previousBookmark,
-            allowRelocation: false, language: language) else { return }
+            allowRelocation: false, language: language, hasIndependentAccess: !configuredAccess.isEmpty) else { return }
         let service = BatchRenameService(store: store)
         let roots = observationRoots(preferences)
         let locations = privateLocations

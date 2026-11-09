@@ -1,4 +1,5 @@
 import AppKit
+import Darwin
 import FileMintCore
 
 private struct ContentCheckFailure: Error { let message: String }
@@ -20,6 +21,167 @@ private final class ContentReadGate: @unchecked Sendable {
 }
 
 @MainActor
+private func checkAuthorizationPanelAndDenial(in root: URL) throws {
+    let file = root.appendingPathComponent("authorization.txt")
+    try Data("fixture".utf8).write(to: file)
+    let filePanel = FolderAccess.authorizationPanel(for: file, selection: .file, language: .chinese)
+    try contentCheck(filePanel.prompt == "授权" && filePanel.message.contains("允许 FileMint 读取文件“authorization.txt”")
+        && filePanel.canChooseFiles && !filePanel.canChooseDirectories, "Chinese authorization panel names the file and confirms authorization")
+    let folderPanel = FolderAccess.authorizationPanel(for: root, selection: .folder, language: .english)
+    try contentCheck(folderPanel.prompt == "Authorize" && folderPanel.message.contains(root.lastPathComponent)
+        && !folderPanel.canChooseFiles && folderPanel.canChooseDirectories, "English authorization panel names the folder and confirms authorization")
+
+    try FolderAccess.checkDirectory(root, mode: W_OK)
+    try FolderAccess.checkAccess(to: file, mode: R_OK)
+    try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: file.path)
+    do {
+        try FolderAccess.checkAccess(to: file, mode: R_OK)
+        throw ContentCheckFailure(message: "Fixture did not deny access")
+    } catch where FolderAccess.isPermissionError(error) {}
+
+    let missing = root.appendingPathComponent("missing-folder", isDirectory: true)
+    var prompts = 0
+    let access = try OpenWithFolderAccess(store: OpenWithFolderAccessStore(file: root.appendingPathComponent("test-access.json")),
+        chooseDirectory: { _, _ in prompts += 1; return nil })
+    defer { access.release() }
+    do {
+        _ = try access.authorize(missing, folders: [root], language: .english)
+        throw ContentCheckFailure(message: "Missing directory did not report its own failure")
+    } catch let error as NSError where error.domain == NSPOSIXErrorDomain && error.code == Int(ENOENT) {
+        try contentCheck(prompts == 0 && !FolderAccess.isPermissionError(error), "Missing directories never request authorization")
+    }
+    print("PASS native file/folder authorization labels and permission-only fallback")
+}
+
+@MainActor
+private func checkRememberedReadAccess(in root: URL, pasteboard: NSPasteboard) async throws {
+    let workspace = root.appendingPathComponent("remembered-read-access", isDirectory: true)
+    let parent = workspace.appendingPathComponent("parent", isDirectory: true)
+    let child = parent.appendingPathComponent("nested", isDirectory: true)
+    try FileManager.default.createDirectory(at: child, withIntermediateDirectories: true)
+    let first = parent.appendingPathComponent("first.txt")
+    let second = child.appendingPathComponent("second.txt")
+    let text = "remembered authorization\n"
+    for url in [first, second] { try Data(text.utf8).write(to: url) }
+    let firstSelection = try FileInfoSelection.capture([first])
+    let secondSelection = try FileInfoSelection.capture([second])
+    let preferencesURL = workspace.appendingPathComponent("preferences.json")
+    var preferences = FileMintPreferences.default
+    preferences.monitoredFolderURLs = [workspace]
+    preferences.fileTools.isEnabled = true; preferences.fileTools.copyContents = true
+    try FileMintPreferencesStore(fileURL: preferencesURL).save(preferences)
+    let store = ScopedBookmarkStore(file: workspace.appendingPathComponent("file-read-access.json"))
+    let granted = FileInfoReadAccess(preferencesFile: preferencesURL)
+    defer { granted.release() }
+    try granted.remember(first, for: firstSelection, in: preferences.monitoredFolderURLs)
+    granted.release()
+    let reopened = FileInfoReadAccess(preferencesFile: preferencesURL)
+    defer { reopened.release() }
+    reopened.restore(for: firstSelection, preferences: preferences)
+    try contentCheck(reopened.activeScopes.map(\.path) == [firstSelection.resolvedSource.path], "Fresh read restores exact file grant")
+    reopened.release()
+    reopened.restore(for: secondSelection, preferences: preferences)
+    try contentCheck(reopened.activeScopes.isEmpty, "Exact file grant does not cover siblings")
+    let saved = try Data(contentsOf: store.file)
+    do {
+        try granted.remember(workspace, for: firstSelection, in: preferences.monitoredFolderURLs)
+        throw ContentCheckFailure(message: "Picker accepted an unrelated ancestor")
+    } catch FileInfoError.invalidSelection {}
+    try contentCheck(try Data(contentsOf: store.file) == saved, "Rejected selection preserves existing grants")
+
+    try granted.remember(parent, for: firstSelection, in: preferences.monitoredFolderURLs)
+    granted.release()
+    reopened.restore(for: secondSelection, preferences: preferences)
+    try contentCheck(reopened.activeScopes.map(\.path) == [firstSelection.parent.path], "Saved parent covers nested file after scope release")
+    reopened.release()
+    let shared = RememberedFileAccess(preferencesFile: preferencesURL)
+    let writeFromRead = shared.start(for: child, folder: true, mode: .write, roots: preferences.monitoredFolderURLs)
+    defer { writeFromRead.forEach { $0.stopAccessingSecurityScopedResource() } }
+    try contentCheck(writeFromRead.isEmpty, "Read-only grant cannot satisfy a write")
+
+    let openWithStore = OpenWithFolderAccessStore(file: workspace.appendingPathComponent("open-with-access.json"))
+    let unrelated = try workspace.bookmarkData(options: [.withSecurityScope, .securityScopeAllowOnlyReadAccess],
+                                               includingResourceValuesForKeys: nil, relativeTo: nil)
+    try openWithStore.save([child.standardizedFileURL.path: unrelated])
+    var openWithPrompts = 0
+    let openWith = try OpenWithFolderAccess(store: openWithStore, remembered: shared,
+        chooseDirectory: { _, _ in openWithPrompts += 1; return nil })
+    defer { openWith.release() }
+    try contentCheck(try openWith.authorize(child, folders: preferences.monitoredFolderURLs, language: .english)
+        && openWithPrompts == 0, "Independently authorized parent satisfies another read tool despite a rejected legacy entry")
+    openWith.release()
+    var narrowed = preferences
+    narrowed.monitoredFolderURLs = [child]
+    reopened.restore(for: secondSelection, preferences: narrowed)
+    try contentCheck(reopened.activeScopes.isEmpty, "Saved parent outside current Finder scope was ignored")
+
+    let copy = FileContentCopyController(preferencesFile: preferencesURL, pasteboard: pasteboard)
+    defer { copy.requestClose() }
+    await copy.copy(secondSelection, expectedChangeCount: pasteboard.changeCount)
+    try contentCheck(copy.didCopy && pasteboard.string(forType: .string) == text, "Fresh copy controller can use saved parent")
+
+    let writeScope = try shared.remember(parent, target: firstSelection.parent, folder: true, mode: .write,
+                                         roots: preferences.monitoredFolderURLs)
+    writeScope.stopAccessingSecurityScopedResource()
+    do {
+        let restoredWrites = shared.start(for: child, folder: true, mode: .write, roots: preferences.monitoredFolderURLs)
+        defer { restoredWrites.forEach { $0.stopAccessingSecurityScopedResource() } }
+        try contentCheck(restoredWrites.map(\.path) == [firstSelection.parent.path], "Explicit write grant covers nested destination")
+    }
+
+    try FileManager.default.moveItem(at: parent, to: workspace.appendingPathComponent("moved-parent"))
+    try FileManager.default.createDirectory(at: child, withIntermediateDirectories: true)
+    try Data(text.utf8).write(to: second)
+    reopened.restore(for: try FileInfoSelection.capture([second]), preferences: preferences)
+    try contentCheck(reopened.activeScopes.isEmpty, "Replacement folder does not inherit the old folder's bookmark")
+    let attributes = try FileManager.default.attributesOfItem(atPath: store.file.path)
+    try contentCheck(attributes[.posixPermissions] as? Int == 0o600, "Remembered bookmark store is private")
+    print("PASS remembered grants: file-only, nested reuse, cross-tool read, separate write authority, scope and identity")
+}
+
+@MainActor
+private func checkSavedAncestorCopy(in root: URL, pasteboard: NSPasteboard) async throws {
+    let folder = root.appendingPathComponent("saved-folder", isDirectory: true)
+    let child = folder.appendingPathComponent("nested", isDirectory: true)
+    let alias = root.appendingPathComponent("saved-alias", isDirectory: true)
+    try FileManager.default.createDirectory(at: child, withIntermediateDirectories: true)
+    try FileManager.default.createSymbolicLink(at: alias, withDestinationURL: folder)
+    let source = alias.appendingPathComponent("nested/vite.config.ts")
+    let expected = "export default { value: '中文' };\n"
+    try Data(expected.utf8).write(to: source)
+    let selection = try FileInfoSelection.capture([source])
+    let bookmark = try folder.bookmarkData(options: [.withSecurityScope, .securityScopeAllowOnlyReadAccess],
+                                           includingResourceValuesForKeys: nil, relativeTo: nil)
+    var preferences = FileMintPreferences.default
+    preferences.fileTools.isEnabled = true
+    preferences.fileTools.copyContents = true
+    preferences.monitoredFolderURLs = [alias]
+    preferences.monitoredFolderBookmarks = [alias.path: bookmark]
+    let parent = source.deletingLastPathComponent()
+    try contentCheck(!FolderScope.contains(selection.parent, in: [alias]), "Fixture needs different configured and real path spellings")
+    do {
+        let scopes = FolderAccess.startSavedAccess(to: parent, resolved: selection.parent, in: preferences)
+        defer { scopes.forEach { $0.stopAccessingSecurityScopedResource() } }
+        try contentCheck(scopes.count == 1, "A saved folder bookmark covers the captured nested parent")
+    }
+    var mismatched = preferences
+    mismatched.monitoredFolderBookmarks[alias.path] = try child.bookmarkData(options: .withSecurityScope,
+        includingResourceValuesForKeys: nil, relativeTo: nil)
+    let scopes = FolderAccess.startSavedAccess(to: parent, resolved: selection.parent, in: mismatched)
+    defer { scopes.forEach { $0.stopAccessingSecurityScopedResource() } }
+    try contentCheck(scopes.isEmpty, "A bookmark resolving to a different folder cannot authorize the configured root")
+
+    let preferencesURL = root.appendingPathComponent("ancestor-preferences.json")
+    try FileMintPreferencesStore(fileURL: preferencesURL).save(preferences)
+    let controller = FileContentCopyController(preferencesFile: preferencesURL, pasteboard: pasteboard)
+    defer { controller.requestClose() }
+    await controller.copy(selection, expectedChangeCount: pasteboard.changeCount)
+    try contentCheck(controller.didCopy && controller.panel == nil && pasteboard.string(forType: .string) == expected,
+                     "Nested TypeScript source copies with the saved ancestor bookmark")
+    print("PASS Copy File Contents reuses a saved ancestor bookmark for a nested selection and rejects mismatched bookmarks")
+}
+
+@MainActor
 func runFileContentCopyChecks(in root: URL) async throws {
     func wait(_ description: String, until predicate: @MainActor () -> Bool) async throws {
         let deadline = Date().addingTimeInterval(15)
@@ -33,6 +195,10 @@ func runFileContentCopyChecks(in root: URL) async throws {
     func seed(_ text: String = "keep previous clipboard") {
         board.clearContents(); precondition(board.setString(text, forType: .string))
     }
+    seed()
+    try checkAuthorizationPanelAndDenial(in: root)
+    try await checkRememberedReadAccess(in: root, pasteboard: board)
+    try await checkSavedAncestorCopy(in: root, pasteboard: board)
 
     // Independently authored RTF, not a round trip through the importer/exporter.
     let rtf = Data(#"{\rtf1\ansi\ansicpg1252\deff0\uc1{\fonttbl{\f0\fnil Helvetica;}}{\colortbl;\red255\green0\blue0;}\f0\fs24\qc\b\cf1 Bold \u20013?\u25991?\b0\cf0\par\ql\i Italic\i0\tab last}"#.utf8)

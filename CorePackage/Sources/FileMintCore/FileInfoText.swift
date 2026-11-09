@@ -6,7 +6,8 @@ public enum FileInfoText: Equatable, Sendable {
     case calculate, recalculate, cancel, close, copy, copyAll, copyPath, copied, copyFailed
     case notCalculated, preparing, waiting, reading, stopping, cancelled, complete, readScope
     case comparison, expected, emptyComparison, chooseSingle, invalidComparison, calculateFirst, match, mismatch
-    case directoryHint, unsupported, placeholder, invalidSelection, changed, accessDenied, readFailed, disabled, busy, authorize
+    case directoryHint, unsupported, placeholder, invalidSelection, changed, accessDenied, readFailed, disabled, busy
+    case authorizeFileOrParent, accessSaveFailed
 
     public func text(_ language: AppLanguage) -> String {
         let pair: (String, String) = switch self {
@@ -60,11 +61,12 @@ public enum FileInfoText: Equatable, Sendable {
         case .placeholder: ("Download this item in Finder first, then try again. FileMint does not request cloud downloads.", "请先在 Finder 下载此项目后重试。FileMint 不主动请求云端下载。")
         case .invalidSelection: ("Select one local file or folder in Finder and try again.", "请在 Finder 选择一个本地文件或文件夹后重试。")
         case .changed: ("The file or its folder changed. No checksum was kept. Recalculate, or select the item again if it was replaced.", "文件或所在文件夹已变化，未保留校验值。请重新计算；若项目已被替换，请重新选择。")
-        case .accessDenied: ("Read access was denied. Choose the exact item when prompted, or check its permissions in Finder.", "读取权限不足。请在授权时选择同一项目，或在 Finder 检查读取权限。")
+        case .accessDenied: ("Read access was denied. Authorize the item or its parent folder, or check permissions in Finder.", "读取权限不足。请授权此项目或其父文件夹，或在 Finder 检查读取权限。")
+        case .authorizeFileOrParent: ("Choose “%@” or its parent folder “%@”. FileMint remembers this read-only access.", "请选择“%@”或它的父文件夹“%@”。FileMint 会记住此只读授权。")
+        case .accessSaveFailed: ("FileMint could not save access. Check available disk space and access to FileMint’s settings.", "FileMint 无法保存授权，请检查磁盘空间和 FileMint 设置的访问权限。")
         case .readFailed: ("Could not finish reading. Check that the file and its volume are available, then try again.", "无法完成读取。请检查文件及所在磁盘是否可用后重试。")
         case .disabled: ("File Info is disabled or this item is outside the configured Finder folders.", "文件信息功能已关闭，或项目已不在配置的 Finder 范围内。")
         case .busy: ("Another file operation is in progress. Finish or cancel it, then try again.", "另一项文件操作正在进行，请完成或取消后重试。")
-        case .authorize: ("Choose this exact item to allow read access. FileMint will not change it.", "请选择同一项目以授予读取权限。FileMint 不会修改它。")
         }
         return language.resolved() == .chinese ? pair.1 : pair.0
     }

@@ -44,9 +44,15 @@ isolated stores. Neither proves installed Finder delivery, external-folder picke
 grants, real cloud placeholders or macOS 13 runtime behavior.
 
 The same restricted fixture verifies that Copy File Contents can build a menu
-candidate without opening content and fails when a content read is denied. The
-signed `file-info` fixture also runs `file_content_copy_checks.swift`: real private
-pasteboard writes, exact Unicode/whitespace text, unchanged RTF bytes, rich/plain
+candidate without opening content and fails when a content read is denied. A
+file-only profile permits the selected file while denying parent directory reads
+and access to an ungranted file. Copy and checksum must still succeed for the
+selected file. The signed `file-info` fixture checks file and folder authorization
+labels, permission-denial classification, and that a missing folder skips the
+picker. It also covers saved ancestor reuse for a nested selection, rejection of
+a mismatched bookmark, persistence and reuse across file tools, and separate
+read-only and write grants. It verifies private pasteboard writes, exact Unicode and whitespace,
+unchanged RTF bytes, rich/plain
 `NSTextView` paste and font/color/paragraph attributes, source changes, clipboard
 changes, revoked policy, cancellation cleanup and busy request consumption.
 It also verifies silent text/RTF success, no delayed panel after completion,

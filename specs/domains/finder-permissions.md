@@ -76,6 +76,31 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   Accessibility access, send keys, change Finder preferences or restart Finder.
   There is no Finder-wide hidden-item toggle in settings or the menu bar.
 
+## Authorization for file operations
+
+- For each captured item or destination, restore applicable saved grants for the
+  exact target and its authorized ancestors. Match the configured root and real
+  parent after resolution. Hold the grants through operation and worker cleanup.
+  Keep feature-specific grants within their original purpose and access mode.
+- Remember explicit, in-scope general file and folder authorization for later
+  operations. Share grants at compatible access levels within current resolved
+  Finder scope. A read-only grant never satisfies a write. General read and
+  write bookmarks use separate private stores. Existing configured and
+  feature-specific bookmarks retain their storage and authority. A separately
+  authorized, valid ancestor can still cover an operation when another saved
+  grant needs renewal.
+- When safe, attempt the requested read or transactional creation first. Before
+  multi-item writes or external dispatch that cannot safely be repeated, check the
+  required native access without touching user data. Only a permission denial can
+  trigger the exact-file or exact-folder authorization picker. Missing, replaced,
+  unsupported and out-of-scope targets report their own failure. Never replay a
+  partial operation. Explicit authorization setup and documented identity-bound
+  grant renewal or recovery still require the user's selection.
+- Authorization uses the native sandbox selection panel. Name the file or folder
+  in its message and use Authorize / 授权 for confirmation. An explicit setup
+  picker may ask for folders the user selects. Recheck the selected target and
+  the operation's current scope before using or persisting access.
+
 ## External draft destinations
 
 - Saved bookmarks for explicitly exported launcher scripts authorize only those
@@ -91,6 +116,10 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   missing or denied target preserves the draft and offers explicit recovery.
   Missing access uses the existing exact-directory picker. Cancelling preserves
   input; choosing another directory updates the panel and requires Create again.
+  A folder explicitly authorized in that picker can be remembered for later
+  writes. An external request outside Finder scope can restore an exact saved
+  destination grant. A request path or an Intent's temporary grant alone never
+  creates that record.
   External drafts never weaken Finder ticket/scope checks or scan folders.
 
 ## File information authorization
@@ -103,13 +132,22 @@ clipboard publication described in [file tools](file-tools.md#copy-file-contents
   type metadata to hide unsupported resources. It captures item/real-parent
   identities off the UI thread only after explicit invocation. It reads no content
   and cannot replace a failed capture with post-authorization identity.
-- The main app reuses configured security-scoped access when valid; otherwise
-  request the exact selected resource or necessary parent with a native picker,
-  using read-only bookmark options. No new persistent grant database, write
-  authority, Full Disk Access request or observation-root expansion. Keep grants
-  through worker cleanup, release them on completion/cancel, and reauthorize on
-  recalculation if needed. Validate current scope and both captured identities
-  after authorization and around coordinated reads; never follow a replaced item.
+- Reuse configured security-scoped access and valid remembered read grants.
+  On permission denial, the native picker accepts the exact selected item or
+  its direct parent. Explain the choice and that FileMint remembers read access.
+  Verify the current scope and captured item and parent identities before saving
+  an explicitly chosen grant. Cancellation preserves the previous grants.
+- Copy File Contents and File Info share general read-only bookmarks across
+  Finder windows and app relaunches. Store at most 1,024 grants and 4 MiB, publish
+  atomically with 0600 file permissions, and preserve corrupt or redirected
+  storage. A file grant covers the exact file. A directory grant covers its
+  resolved descendants that remain in Finder scope. Verify saved resource and
+  volume identities against fresh metadata. Moved, replaced or unusable grants
+  require authorization only when the operation is denied. A remembered grant
+  adds neither observation roots nor write access.
+- Keep active scopes through worker cleanup and release them on completion or
+  cancellation. Check current scope and captured identities around coordinated
+  reads. A storage failure reports an error before publishing new clipboard data.
 - Metadata and digest work probes only the selected item and its real parent.
   No folder enumeration, automatic cloud-download API or provider discovery.
   Unsupported links/aliases/packages have no new menu entry; an older capture
@@ -163,10 +201,10 @@ owns selection, naming, storage support and recovery semantics.
   version-1 bookmarks participate without a format reset; bookmarks lacking a
   volume UUID retain strict device matching. Click-time snapshots, pinned handles
   and operation/undo/recovery records retain their existing strict identity checks.
-- Unresolvable, denied or identity-mismatched saved grants require the exact-parent
-  picker again; do not treat a stale pathname or an ambient temporary grant as
-  proof that a rejected saved grant remains valid. A matching still-valid prior
-  rename receipt or configured folder grant may seed the independent store.
+- A rejected saved grant needs exact-parent renewal unless another valid,
+  independently authorized folder grant covers the current captured parent.
+  A stale pathname or ambient temporary grant supplies no renewal consent.
+  A valid prior receipt or configured folder grant can seed the independent store.
   Cancelled renewal preserves existing records and changes no user entries.
   Corrupt/unsupported/oversized or redirected grant-store bytes are preserved and
   reported, not silently reset. Create and finish a private 0600 temporary file

@@ -3,6 +3,46 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Sparkle bookmark restoration — 2026-11-09
+
+Signed sandbox builds 1 and 2 of the isolated UpgradeQA app established an
+exact-file and a parent read grant before a real loopback Sparkle replacement.
+Build 2 relaunched at the same path with identical stored bookmark bytes. The
+production copy controller restored both grants through direct QA tickets and
+copied exact text from the original file and the parent's nested descendant.
+The upgraded QA Finder extension loaded. Automated Finder menu delivery was
+blocked by window switching. See the
+[Sparkle record](tasks/2026-11-09-file-access-authorization.md#sparkle-authorization-verification).
+
+## Shared file authorization — 2026-11-09
+
+The signed fixture observed the localized authorization button and target message,
+verified nested folder bookmark reuse, and rejected a missing folder before the
+picker. Offline verification and the final unsigned build passed. The signed
+Debug replacement started from Applications. Native batch-rename and resource
+fixtures stopped at window focus. In a separate installed run, FileMint quit and
+reopened with a new PID. The real Finder menu copied exact fixture text from a
+Downloads descendant without a picker, then showed an authorization panel with
+an 授权 button for an ungranted Documents file. Cancelling preserved the
+clipboard count. See the [task evidence](tasks/2026-11-09-file-access-authorization.md#decisions-and-evidence).
+
+The final cross-tool authorization audit passed the six affected signed suites,
+including batch rename and resource tools. A subsequent same-identity Debug
+replacement preserved the signed entitlements and captured authorization digests.
+After relaunch, Finder reused the existing Downloads grant to copy exact text
+from a nested fixture without a picker. See the
+[replacement evidence](tasks/2026-11-09-file-access-authorization.md#installed-replacement-evidence).
+
+## Copy file contents with saved folder access — 2026-11-09
+
+On `5c334ee` plus the local fix, the restricted file-only read, full offline
+verification, unsigned app/extension compilation and signed `file-info` fixture
+passed. The fixture restored a saved ancestor bookmark for a nested TypeScript
+file and rejected a bookmark targeting a different directory. The signed Debug
+app replaced the previous installation after backup and started successfully.
+Installed Finder callbacks and existing external grants remain open for live
+acceptance. See the [task evidence](tasks/2026-10-21-copy-file-contents.md#saved-folder-access--2026-11-09).
+
 ## Installed local Debug — 2026-10-31
 
 At the user's explicit request, the feedback worktree was built as Debug with
