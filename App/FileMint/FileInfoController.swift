@@ -172,7 +172,7 @@ final class FileInfoController: NSObject, ObservableObject, NSWindowDelegate {
     }
 
     private func withReadAccess<T>(to selection: FileInfoSelection, cancellation: FileDigestCancellation,
-                                   perform: () async throws -> T) async throws -> T {
+                                   perform: @MainActor () async throws -> T) async throws -> T {
         try validatePolicy(selection)
         readAccess.restore(for: selection, preferences: preferences)
         do { return try await perform() }
