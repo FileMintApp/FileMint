@@ -3,6 +3,17 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## FileMint 0.8.2 release — 2026-11-10
+
+Source `e2884d8a64ccf39211412a19b1fd732d26bbd06c` / `v0.8.2`, build 31.
+The Swift 6.1 CI repair passed both hosted macOS environments. The signed
+Release build, Apple notarization and tickets, two archives and feeds, exact
+draft validation, Pages deployment, and official tap CI all passed. GitHub
+confirmed Latest at 11:15:22 Asia/Shanghai. See the
+[release evidence](tasks/release-0.8.2.md#evidence) for the manifest and run IDs.
+This standard release did not repeat installed-update or Homebrew lifecycle
+acceptance on a Mac.
+
 ## Finder hidden-file display — 2026-11-10
 
 The production Quartz sender toggled the real Finder display in both directions

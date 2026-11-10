@@ -29,6 +29,8 @@ jobs:
       - name: Register checkout for validation
         run: |
           brew tap --custom-remote filemintapp/tap "$GITHUB_WORKSPACE"
+          # readall loads the whole tap, so trust this checkout on the disposable runner.
+          brew trust --tap filemintapp/tap
       - name: Validate syntax, metadata and upstream discovery
         env:
           HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
