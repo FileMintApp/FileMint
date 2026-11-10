@@ -1,6 +1,6 @@
 ---
 title: FileMint User Guide
-description: Learn to create files in Finder, reuse templates, batch rename, calculate checksums, compress images and run OCR. Includes menu and folder access troubleshooting.
+description: Create Word, Excel and text files from Finder's right-click menu. Learn to reuse templates, batch rename, check file hashes and process images with FileMint.
 pageClass: guide-page
 ---
 
@@ -25,6 +25,8 @@ Prefer to work without Finder menus? **New File…** in the app sidebar and **Re
 
 Right-click the desktop or a folder background in Finder, open **New File**, then choose an enabled format such as **Text (.txt)** or **Markdown (.md)**. FileMint creates the file immediately in the location you clicked. If that name already exists, the default behavior is to add a number.
 
+For `.docx` and `.xlsx`, follow the [Word and Excel steps](#create-word-excel-in-finder).
+
 ### Choose the name and starter content
 
 For a specific filename, destination or first paragraph, choose **New File → New File…**. Enter a full filename such as `project-kickoff.md`, check the format and destination, optionally type starter content, then click **Create**. **Cancel** writes nothing.
@@ -43,6 +45,20 @@ App, menu-bar and Quick Search creation entries also open this panel directly, w
 
 Copy one plain-text item, then choose **New File from Clipboard…** in Finder's **New File** menu, the app or the menu bar. FileMint reads the text once and prefills the creation panel. You can change the name, format, destination and text. Only **Create** writes a file; cancelling saves nothing. File references, multiple clipboard items and empty content are not created as text files.
 
+### Create a Word or Excel file from Finder's right-click menu {#create-word-excel-in-finder}
+
+1. In **Templates & Types** in FileMint, enable **Word Document** or **Excel Workbook**. Both are enabled on new installations. If you upgraded from an older version and either template is unchecked, enable it here.
+2. After first-time setup, open a configured Finder folder and right-click its background. From **New File**, choose **Word Document (.docx)** or **Excel Workbook (.xlsx)**. If you placed a template in the main menu, choose it directly from the context menu.
+3. Find the new file in the current folder. The Word document is blank and the Excel workbook contains one empty worksheet. FileMint adds a number if the filename is already taken, by default.
+
+FileMint includes both blank templates, so you can create the files without installing Microsoft Office.
+
+![FileMint Templates and Types settings with checkboxes for enabled templates and the Import Document Template button](/images/file-types-en.jpg)
+
+<p class="guide-caption">Use Templates & Types to enable formats or import a document as a template.</p>
+
+To start from your own weekly report or budget sheet, click **Import Document Template…** and choose an existing `.docx` or `.xlsx`. FileMint stores an independent template locally. Choosing it in Finder creates a new document with the source formatting and content and leaves the original alone.
+
 ## Find actions, templates and settings with Quick Search
 
 Choose **File → Quick Search…** or press Command-Shift-K in FileMint. Type a query and narrow it with Actions, Templates, Favorite Locations or Settings. Use arrow keys to select, Return to execute and Esc to close. Command-1 through Command-5 select All and the four categories. Dismissal retains the session's query and selection; successful execution resets them.
@@ -59,13 +75,7 @@ Quick Search finds creation actions, enabled templates, saved files and folders,
 
 Open **Templates & Types**, enable and reorder the formats you use. Click **New Text Template…** to add a template name, default filename and starter content. You can keep several templates for one suffix and choose a default. Select the template later from Finder or the creation panel.
 
-![Templates and Types settings with New Text Template, Import Document Template and the format list](/images/file-types-en.jpg)
-
-<p class="guide-caption">Enabled formats appear in Finder's quick creation menu.</p>
-
-New installations enable **Word Document** and **Excel Workbook** by default. Select either to create a blank `.docx` or an `.xlsx` with one empty worksheet. Upgrades append these templates disabled; enable them in Templates & Types when needed. Creation requires neither an import nor an Office installation.
-
-To reuse an existing Word or Excel document, click **Import Document Template…** and select a `.docx` or `.xlsx`. FileMint keeps an independent local copy. Choosing that template creates a new document with the original formatting and content; it does not change the source. An existing output name is numbered automatically.
+You can also [import an existing Word or Excel document as a template](#create-word-excel-in-finder).
 
 ## Save a clipboard image as PNG
 

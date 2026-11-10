@@ -1,14 +1,17 @@
 <p align="center"><img src="Resources/IconSource/FileMint-AppIcon-1024.png" width="112" alt="FileMint"></p>
 <h1 align="center">FileMint</h1>
-<p align="center"><strong>Put file tools back in Finder.</strong><br>A small native macOS app for creating, processing and organizing files and images.</p>
+<p align="center"><strong>Create files from Finder's right-click menu.</strong><br>Start a Markdown note, Word document or Excel workbook in the folder you already have open.</p>
 <p align="center"><strong>English</strong> ｜ <a href="README.zh-CN.md"><strong>简体中文 →</strong></a></p>
-<p align="center"><a href="https://github.com/FileMintApp/FileMint/releases/latest">Download for macOS</a> · <a href="https://filemintapp.github.io/FileMint/en/">Website</a> · <a href="website/">Website source</a> · <a href="docs/INSTALL.md">Installation help</a> · <a href="https://github.com/FileMintApp/FileMint/issues">Report an issue</a></p>
-<p align="center"><sub>Swift + AppKit + SwiftUI · Offline file creation</sub></p>
+<p align="center"><a href="https://github.com/FileMintApp/FileMint/releases/latest"><strong>Get the DMG</strong></a> · <a href="docs/INSTALL.md">Installation help</a> · <a href="https://filemintapp.github.io/FileMint/en/">Website</a> · <a href="website/">Website source</a> · <a href="https://github.com/FileMintApp/FileMint/issues">Report an issue</a></p>
+<p align="center"><sub>Apple Silicon · macOS 13+ · Apple-notarized DMG</sub></p>
 
-Creating a file should not require opening an editor, choosing Save As and finding your folder again.
+Right-click the background of a Finder folder configured in FileMint, then choose **New File → Markdown (.md)** to create a file there. Choose **New File…** when you want to set the filename and starter content first.
 
-FileMint puts the action back in Finder: **right-click, choose a type and your file is there.**
-Use this native **macOS Finder extension** for right-click file creation, reusable templates, batch rename, SHA-256 checksums, image compression and OCR.
+<p align="center">
+  <img src="website/public/images/create-panel-en.png" width="600" alt="FileMint New File panel with project-kickoff.md and starter content">
+</p>
+
+FileMint is a native **macOS Finder extension** with reusable templates and optional tools for batch renaming, SHA-256 checksums, image compression and OCR. File creation and processing run on your Mac.
 
 [What's new in the latest stable release](https://github.com/FileMintApp/FileMint/releases/latest)
 
@@ -51,10 +54,6 @@ This is a real installed-build Finder example. With `longmao.navigator.png` sele
 ### 2. Keep the context when you create
 
 Set the full filename, suffix, destination and starter content before creation. Enter `project-kickoff.md`, paste the first Markdown lines and create it without an empty-file detour.
-
-<p align="center">
-  <img src="website/public/images/create-panel-en.png" width="760" alt="FileMint New File panel with project-kickoff.md and starter content">
-</p>
 
 The creation panel supports:
 
@@ -133,7 +132,7 @@ Read the complete [privacy policy](PRIVACY.md).
 
 ## Install
 
-The 0.8.0 stable installer supports **M-series Macs on macOS 13+** only. Intel Macs cannot install or update to this version. Published installers through 0.5.10 keep their original compatibility.
+Current stable installers support **Apple Silicon Macs on macOS 13 or later**. Published installers through 0.5.10 keep their original compatibility.
 
 **Stable installers from 0.5.9 onward are Developer ID signed, Apple notarized and stapled.** First use still follows macOS prompts for Finder enablement and folder authorization.
 
