@@ -373,21 +373,21 @@ This fixture does not prove that Finder has loaded the new extension.
   same-path item. Test the menu-bar quick panel with settings closed. A corrupt
   catalog must block writes and offer a confirmed backup-and-reset operation;
   read back the backup bytes before clearing the fixture.
-- Enable Hide & Unhide in File & Folder Tools. Right-click one visible file or
-  folder: one Hide This Item action; a hidden selection gives Unhide This Item.
-  Uniform multi-selection uses the plural label; mixed/unknown states offer both
-  actions at the configured menu level. Change the selection while the menu is
-  open and confirm the captured entries, not the new selection, receive the
-  explicit requested attribute. Repeat an already matching action: no toggle.
-  Check source bytes/names/other flags and directory descendants remain unchanged.
-- Hide selected entries, temporarily reveal hidden items with Finder's ⌘⇧., then
-  right-click and unhide them. A name beginning with a period must report the
-  name-hidden limitation before any batch changes; never rename it. Missing or
-  replaced entries, symlinks, revoked switches/scope and denied writes must fail
-  explicitly. Success opens no settings, permission or completion window. No
-  Accessibility access, Finder preference changes or Finder restart is involved.
-  Repeat after quitting/relaunching with configured external-folder grants; the
-  own-container sandbox fixture is not proof of those grants or Finder callbacks.
+- Enable Toggle Hidden Files in File & Folder Tools. In a disposable configured
+  folder, check that the background, one selected item and a mixed selection
+  all show the same single command at the configured menu level. Repeat for the
+  Desktop and check menu scope and module/child disablement.
+- On a signed test identity without keystroke access, invoke the command and
+  cancel the explanation. The display stays in its initial state. On the next
+  invocation use Open System Settings and check that it opens Device Control and
+  Data Access on macOS 27 and later, or Accessibility on earlier versions. Grant
+  access for the test app, then quit and reopen it. Confirm Finder changes display
+  only after a fresh menu click.
+- Alternate menu clicks and Finder's ⌘⇧. shortcut. Check that a dot-prefixed
+  fixture and a file with the BSD hidden flag appear and disappear together.
+  Compare names, metadata and contents before and after. Success stays in Finder
+  with no permission or completion window. Repeat after relaunch and after
+  revoking the test app's permission. Restore the initial Finder display state.
 
 ## Distribution
 

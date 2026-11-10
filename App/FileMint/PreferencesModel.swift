@@ -692,7 +692,7 @@ final class PreferencesModel: ObservableObject {
             externalInvocations.receive(url)
             return
         }
-        if url.scheme == "filemint", url.host == "move" || url.host == "rename" || url.host == "file-info" || url.host == "copy-contents" {
+        if FileOperationTicketStore.handlesRoute(url) {
             FileOperationCoordinator.shared.enqueue(url)
             return
         }

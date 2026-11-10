@@ -23,17 +23,12 @@ A Core test does not prove a visible menu, native authorization, Dock state or
 a successful installation. Record the tested build, environment, scenario and
 observed result; mark unavailable checks as not run.
 
-`FileVisibilityTests` verifies dynamic explicit menu actions, actual BSD hidden
-flags, dot-name rejection, identity preservation, stale captures, scope, partial
-failures and one-use tickets. `make verify-file-visibility` additionally checks
-production metadata capture with content/directory reads denied. macOS requires
-read access to open even an O_EVTONLY descriptor; a separate child denies content
-writes and runs hide/unhide through production's metadata APIs. Denied
-metadata writes must preserve the sources. The `file-visibility` native suite reuses the signed
-sandboxed template fixture to run the production operation coordinator with
-private files/stores, preserving descendants/later selections and silent success.
-Installed Finder callbacks and external-folder authorization still need the
-affected Finder QA scenario.
+`FinderHiddenFilesTests` covers context-menu parity, saved switch and placement,
+and route-bound single-use tickets. The `finder-hidden-files` suite uses the
+signed sandboxed template fixture to check the full Quartz key sequence and the
+production dispatch gate with an injected receiver. Live Finder menu delivery,
+keystroke permission and the change in Finder display need the affected signed
+runtime scenario in [Finder QA](../../docs/FINDER_QA.md#file-and-folder-tools).
 
 `make verify-file-info-capture` denies fixture content/directory reads and all
 writes in a headless child sandbox. Production capture/metadata inspection still

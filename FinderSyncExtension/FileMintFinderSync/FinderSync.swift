@@ -108,11 +108,9 @@ final class FinderSync: FIFinderSync {
             // Root-level entry; Finder owns placement relative to system rows.
             moveHereItem = item
         }
-        let fileToolTarget = FileToolsPolicy.target(directory: directory, selection: selection,
-            isItemMenu: menuKind == .contextualMenuForItems, isContainer: isContainer)
-        let tools = fileToolTarget.map {
-            FileToolsPolicy.availableTools(target: $0, preferences: preferences)
-        } ?? []
+        let toolActions = FileToolsPolicy.menuActions(directory: directory, selection: selection,
+            isItemMenu: menuKind == .contextualMenuForItems, isContainer: isContainer, preferences: preferences)
+        let tools = toolActions.compactMap(\.tool)
         let layout = FileToolsMenuLayout(tools: tools, hasMoveDestination: moveHereItem != nil,
                                          preferences: preferences.fileTools)
         let toolsMenu = NSMenu(title: text(.fileTools))
@@ -122,32 +120,11 @@ final class FinderSync: FIFinderSync {
                 toolsMenu.addItem(moveHereItem)
             }
         }
-        let toolTags = fileToolTarget.map { target in
-            actions.register(tools.map {
-                FileMenuAction(directory: directory, tool: $0, target: target)
-            })
-        } ?? []
-        for (index, tool) in tools.enumerated() {
-            if tool == .fileVisibility {
-                let visibilityActions = FileVisibilityService.menuActions(for: selection)
-                let tags = actions.register(visibilityActions.map { visibilityAction in
-                    var action = FileMenuAction(directory: directory, tool: .fileVisibility, selection: selection)
-                    action.visibilityAction = visibilityAction
-                    return action
-                })
-                for (actionIndex, action) in visibilityActions.enumerated() {
-                    let item = NSMenuItem(title: text(action.title(selectionCount: selection.count)),
-                                         action: #selector(performFileVisibility(_:)), keyEquivalent: "")
-                    item.image = menuIcon(.fileVisibility)
-                    item.tag = tags[actionIndex]
-                    if layout.main.contains(tool) { menu.addItem(item) }
-                    else { toolsMenu.addItem(item) }
-                }
-                continue
-            }
+        for (action, tag) in zip(toolActions, actions.register(toolActions)) {
+            guard let tool = action.tool else { continue }
             let item = NSMenuItem(title: text(tool.title), action: #selector(performFileTool(_:)), keyEquivalent: "")
             item.image = menuIcon(tool.menuIconSlot)
-            item.tag = toolTags[index]
+            item.tag = tag
             if layout.main.contains(tool) { menu.addItem(item) }
             else { toolsMenu.addItem(item) }
         }
@@ -289,21 +266,17 @@ final class FinderSync: FIFinderSync {
         }
     }
 
-    @objc private func performFileVisibility(_ item: NSMenuItem) {
-        guard let action = actions.take(item.tag), let visibilityAction = action.visibilityAction else { return }
-        let selection = action.selection
-        Task { @MainActor in
-            guard FileVisibilityPolicy.isEnabled(for: selection, preferences: FileMintPreferencesStore().load()) else { return }
-            FinderActions.shared.setVisibility(selection, action: visibilityAction)
-        }
-    }
-
     @objc private func performFileTool(_ item: NSMenuItem) {
         guard let action = actions.take(item.tag), let tool = action.tool,
               let target = action.fileToolTarget else { return }
         let selection = action.selection
         Task { @MainActor in
             let preferences = FileMintPreferencesStore().load()
+            if tool == .fileVisibility {
+                guard FileToolsPolicy.allowsHiddenFilesToggle(in: action.directory, preferences: preferences) else { return }
+                FinderActions.shared.perform(.toggleHiddenFiles(directory: action.directory), errorTitle: .fileVisibility)
+                return
+            }
             guard FileToolsPolicy.availableTools(target: target, preferences: preferences).contains(tool) else { return }
             if tool == .move {
                 FinderActions.shared.perform(.prepare(selection))
@@ -534,18 +507,6 @@ private final class FinderActions {
         }
     }
 
-    func setVisibility(_ selection: [URL], action: FileVisibilityAction) {
-        Task {
-            do {
-                let url = try await Task.detached(priority: .userInitiated) {
-                    let captured = try FileVisibilityService.capture(selection)
-                    return try FileOperationTicketStore().enqueue(.fileVisibility(items: captured, action: action))
-                }.value
-                open(url, activate: false)
-            } catch { showError(error, title: .fileVisibility) }
-        }
-    }
-
     func perform(_ request: FileOperationRequest, activate: Bool = false, errorTitle: FileMintTextKey = .fileToolsErrorTitle) {
         Task {
             do {
@@ -574,9 +535,7 @@ private final class FinderActions {
         let alert = NSAlert()
         let language = FileMintPreferencesStore().load().language
         alert.messageText = FileMintStrings.text(title, language: language)
-        if let error = error as? FileVisibilityError {
-            alert.informativeText = FileMintStrings.text(error.messageKey, language: language)
-        } else if let error = error as? OpenWithError {
+        if let error = error as? OpenWithError {
             alert.informativeText = FileMintStrings.text(error.messageKey, language: language)
         } else if let error = error as? FileOperationTicketError {
             alert.informativeText = FileMintStrings.text(error.messageKey, language: language)

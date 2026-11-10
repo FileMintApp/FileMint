@@ -1,5 +1,7 @@
 # Hide and unhide selected Finder items — 2026-10-29
 
+Current behavior is documented in [Toggle hidden files in Finder](../../specs/domains/file-tools.md#toggle-hidden-files-in-finder).
+
 ## Current state
 
 Selection-scoped implementation, applicable automated/native checks and website
@@ -20,7 +22,7 @@ remain a separate acceptance boundary.
 
 ## Scope and implementation
 
-- Owning contracts: [file tools](../../specs/domains/file-tools.md#hide-and-unhide-selected-items),
+- Owning contracts at the time: [file tools](../../specs/domains/file-tools.md),
   [Finder/permissions](../../specs/domains/finder-permissions.md), and
   [startup/settings](../../specs/domains/startup.md), and
   [presentation](../../specs/domains/presentation.md) for guide/privacy copy and icons. Finder transport follows the

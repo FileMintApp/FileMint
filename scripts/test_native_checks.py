@@ -31,11 +31,12 @@ class SelectionTests(unittest.TestCase):
         self.assertEqual([item['id'] for item in plan['manualChecks']], ['launcher-product'])
         self.assertEqual(plan['requiresReview'], [])
 
-    def test_visibility_uses_existing_sandbox_identity_and_keeps_finder_boundary(self):
-        plan = checks.plan_checks(['CorePackage/Sources/FileMintCore/FileVisibility.swift'])
-        self.assertCountEqual(plan['suites'], ['file-visibility', 'file-tools-settings'])
-        self.assertEqual([item['id'] for item in plan['manualChecks']], ['finder'])
-        self.assertEqual(checks.SUITES['file-visibility'].kind, 'template-workflow')
+    def test_hidden_files_reuses_sandbox_fixture_and_requires_live_finder_acceptance(self):
+        plan = checks.plan_checks(['App/FileMint/FinderHiddenFilesService.swift'])
+        self.assertCountEqual(plan['suites'], ['finder-hidden-files', 'file-tools-settings'])
+        self.assertEqual([item['id'] for item in plan['manualChecks']], ['finder-hidden-files'])
+        self.assertEqual(checks.SUITES['finder-hidden-files'].kind, 'template-workflow')
+
     def test_hotkey_prototype_keeps_interactive_keyboard_boundary_explicit(self):
         plan = checks.plan_checks(['scripts/hotkey_sandbox/HotKeyService.swift',
                                   'scripts/build_hotkey_sandbox_harness.sh'])

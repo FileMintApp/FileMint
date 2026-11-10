@@ -35,7 +35,7 @@ An empty plan is `not-applicable`, not a successful native test.
 
 Automatic suites are `batch-rename`, `template-workflow`, `creation-opening`,
 `update-scheduling`, `open-with`, `file-tools-settings`, `file-info`, `resource-tools`,
-`design-ui`, `update-summary`, `hotkey-sandbox`, `quick-search`, `file-visibility`, and the headless `favorite-model`. Template scenarios share one
+`design-ui`, `update-summary`, `hotkey-sandbox`, `quick-search`, `finder-hidden-files`, and the headless `favorite-model`. Template scenarios share one
 verified build in a run and each create their own runtime workspace. Design QA uses
 `--verify-automation`; ordinary interactive modes remain available.
 The focused `update-summary` suite reuses the design fixture with `--verify-updates`,

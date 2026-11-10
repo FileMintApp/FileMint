@@ -31,7 +31,7 @@ final class TemplateWorkflowSmoke: NSObject, NSApplicationDelegate {
         Task {
             do {
                 try await run()
-                if ProcessInfo.processInfo.environment["FILEMINT_TEMPLATE_QA_MODE"] == "file-visibility" {
+                if ProcessInfo.processInfo.environment["FILEMINT_TEMPLATE_QA_MODE"] == "finder-hidden-files" {
                     fflush(nil); cleanup(); exit(0)
                 }
                 if ProcessInfo.processInfo.environment["FILEMINT_TEMPLATE_QA_MODE"] == "quick-search" {
@@ -79,8 +79,8 @@ final class TemplateWorkflowSmoke: NSObject, NSApplicationDelegate {
         let root=FileManager.default.temporaryDirectory.appendingPathComponent("FileMint-template-qa-"+UUID().uuidString,isDirectory:true)
         try FileManager.default.createDirectory(at:root,withIntermediateDirectories:false)
         fixture=root
-        if ProcessInfo.processInfo.environment["FILEMINT_TEMPLATE_QA_MODE"] == "file-visibility" {
-            try await FileVisibilityChecks.run(root: root)
+        if ProcessInfo.processInfo.environment["FILEMINT_TEMPLATE_QA_MODE"] == "finder-hidden-files" {
+            try await FinderHiddenFilesChecks.run(root: root)
             return
         }
         if ["quick-search", "quick-search-ui"].contains(ProcessInfo.processInfo.environment["FILEMINT_TEMPLATE_QA_MODE"] ?? "") {

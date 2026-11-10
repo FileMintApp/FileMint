@@ -39,7 +39,7 @@ swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.0 \
   App/FileMint/ClipboardTextReader.swift App/FileMint/OpenWithApplicationAccess.swift App/FileMint/OpenWithFolderAccess.swift \
   App/FileMint/TerminalDirectoryLauncher.swift App/FileMint/BatchRenameController.swift \
   App/FileMint/BatchRenameView.swift App/FileMint/BatchRenameText.swift App/FileMint/BatchRenameAccess.swift \
-  App/FileMint/BatchRenameOperations.swift App/FileMint/FileOperationCoordinator.swift \
+  App/FileMint/BatchRenameOperations.swift App/FileMint/FileOperationCoordinator.swift App/FileMint/FinderHiddenFilesService.swift \
   App/FileMint/FileInfoController.swift App/FileMint/FileInfoReadAccess.swift App/FileMint/FileInfoView.swift \
   App/FileMint/FileContentCopyController.swift App/FileMint/FileContentClipboard.swift \
   scripts/file_info_smoke.swift scripts/file_content_copy_checks.swift "${FILE_INFO_LINK[@]}" -o "$FILE_INFO_APP/Contents/MacOS/FileInfoSmoke"

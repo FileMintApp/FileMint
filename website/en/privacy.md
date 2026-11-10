@@ -14,7 +14,7 @@ FileMint creates files, stores document templates, batch renames items, calculat
 
 - **Favorite Locations** stores bookmarks and display details only for local items you add. It does not crawl folders or read file contents.
 - **Remove Private Metadata** processes only local images you choose and writes a new copy after a readback check. Images are not uploaded and the original stays unchanged.
-- **Hide & Unhide** reads metadata only for selected files or folders and changes their hidden attributes after the explicit context-menu action. It does not read file contents or traverse subfolders, and preserves names and unrelated flags. Access uses existing folder grants or a system picker.
+- **Toggle Hidden Files** sends `⌘⇧.` only to Finder when you choose the context-menu command. Finder changes the display. You manage the permission to send the shortcut under Device Control and Data Access on macOS 27 or later, or Accessibility on earlier versions.
 - **Batch Rename** acts only on files or folders you select and confirm, without reading their contents or traversing subfolders. Operation records needed for recovery and the most recent undo stay on your Mac and are not uploaded.
 - **File Info and checksums** reads metadata when opened and file contents only after you click Calculate. Results stay in the current window without a saved checksum history. Copying results and comparing an expected value require your action.
 - **Copy File Contents** reads the selected text file only after its explicit Finder action. Source and decoded text are each limited to 8 MiB. Content is fully validated before clipboard publication and is not uploaded, logged or cached. Failure or cancellation does not publish partial results.

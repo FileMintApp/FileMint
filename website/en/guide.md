@@ -145,12 +145,11 @@ In the app, open **Extensions → Resource Tools → Use Tools** and choose loca
 
 Convert between JPEG, PNG, HEIC and TIFF; compress or resize; generate icons; stitch at least two images; or extract text with OCR. The processing panel shows a preview and output location before you run an action. Originals stay unchanged and results are saved separately. You can edit OCR text, then explicitly copy it or save a TXT file.
 
-## Hide or unhide selected items
+## Toggle hidden files in Finder
 
-1. In **Extensions → File &amp; Folder Tools**, enable the module and **Hide &amp; Unhide**. Choose the main context menu or the tools submenu for its placement.
-2. Select files or folders in a configured Finder folder and right-click. Visible items offer **Hide This Item**; hidden items offer **Unhide This Item**. Multiple selection uses **Selected Items**; mixed or unknown visibility offers both explicit actions.
-3. FileMint changes only the captured entries' hidden attributes, preserving names, contents, other flags and folder descendants. A system picker requests directory access if needed. Accessibility permission is not required.
-4. After hiding an item, press `⌘⇧.` in Finder to reveal hidden items temporarily, then right-click to unhide it. Clearing hidden attributes cannot reveal a name beginning with a period, such as `.env`; FileMint explains the limitation and preserves its name.
+1. In **Extensions → File &amp; Folder Tools**, enable the module and **Toggle Hidden Files**. Choose the main context menu or the tools submenu for the command.
+2. In a configured Finder folder, right-click the background or selected items and choose **Toggle Hidden Files**. It works like `⌘⇧.` in Finder, including for names that start with a period, such as `.env`.
+3. On first use, follow the prompt to enable FileMint in **System Settings → Privacy & Security → Device Control and Data Access** on macOS 27 or later, or **Accessibility** on earlier versions. Once the switch is on, quit and reopen FileMint, then choose the command again.
 
 ## Save and find Favorite Locations
 

@@ -8,7 +8,7 @@ public enum FileOperationRequest: Codable, Equatable, Sendable {
     case batchRename(selection: BatchRenameSelection)
     case fileInfo(FileInfoSelection)
     case copyContents(selection: FileInfoSelection, pasteboardChangeCount: Int)
-    case fileVisibility(items: [FileInfoSelection], action: FileVisibilityAction)
+    case toggleHiddenFiles(directory: URL)
     case resource(tool: ResourceTool, selection: [URL])
     case openWith(application: OpenWithApplicationReference, selection: [URL])
     case openDirectory(application: OpenWithApplicationReference, directory: URL, mode: TerminalOpenMode)
@@ -16,6 +16,16 @@ public enum FileOperationRequest: Codable, Equatable, Sendable {
     case favoriteLocate(UUID)
     case favoriteSearch
     case perform(batchID: UUID, destination: URL)
+
+    fileprivate var ticketHost: String {
+        switch self {
+        case .batchRename: "rename"
+        case .fileInfo: "file-info"
+        case .copyContents: "copy-contents"
+        case .toggleHiddenFiles: "toggle-hidden-files"
+        default: "move"
+        }
+    }
 }
 
 private struct FileOperationTicket: Codable {
@@ -43,18 +53,14 @@ public struct FileOperationTicketStore: Sendable {
     }
 
     public func enqueue(_ request: FileOperationRequest, now: Date = Date()) throws -> URL {
-        if case .fileVisibility(let items, _) = request,
-           !FileVisibilityPolicy.canSelect(items.map(\.source)) { throw FileVisibilityError.invalidSelection }
-        let isBatchRename: Bool
         if case .batchRename(let selection) = request {
             guard FileToolsPolicy.canBatchRename(selection.items.map(\.source)) else {
                 throw FileOperationTicketError.batchRenameSelectionLimit
             }
-            isBatchRename = true
-        } else { isBatchRename = false }
+        }
         let data = try JSONEncoder().encode(FileOperationTicket(request: request, issuedAt: now))
         guard data.count <= 1_048_576 else {
-            if isBatchRename { throw FileOperationTicketError.batchRenameTicketLimit }
+            if case .batchRename = request { throw FileOperationTicketError.batchRenameTicketLimit }
             throw FileMoveError.invalidSelection
         }
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true,
@@ -63,11 +69,7 @@ public struct FileOperationTicketStore: Sendable {
         let file = directory.appendingPathComponent("\(id.uuidString).json")
         try data.write(to: file, options: .withoutOverwriting)
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.path)
-        let route: String
-        if case .copyContents = request { route = "copy-contents" }
-        else if case .fileInfo = request { route = "file-info" }
-        else { route = isBatchRename ? "rename" : "move" }
-        return URL(string: "filemint://\(route)?id=\(id.uuidString)")!
+        return URL(string: "filemint://\(request.ticketHost)?id=\(id.uuidString)")!
     }
 
     /// Separate intake lets the app consume rename requests immediately while
@@ -84,12 +86,17 @@ public struct FileOperationTicketStore: Sendable {
         ticketID(url, expectedHost: "copy-contents") != nil
     }
 
+    public static func isToggleHiddenFilesURL(_ url: URL) -> Bool {
+        ticketID(url, expectedHost: "toggle-hidden-files") != nil
+    }
+
+    public static func handlesRoute(_ url: URL) -> Bool {
+        url.scheme == "filemint" && ["move", "rename", "file-info", "copy-contents", "toggle-hidden-files"].contains(url.host ?? "")
+    }
+
     public func consume(_ url: URL, now: Date = Date()) throws -> FileOperationRequest? {
-        let isBatchRename = Self.isBatchRenameURL(url)
-        let isFileInfo = Self.isFileInfoURL(url)
-        let isCopyContents = Self.isCopyContentsURL(url)
-        let host = isBatchRename ? "rename" : isFileInfo ? "file-info" : isCopyContents ? "copy-contents" : "move"
-        guard let id = Self.ticketID(url, expectedHost: host) else { return nil }
+        guard Self.handlesRoute(url), let host = url.host,
+              let id = Self.ticketID(url, expectedHost: host) else { return nil }
         let source = directory.appendingPathComponent("\(id.uuidString).json")
         let claimed = directory.appendingPathComponent("\(id.uuidString).consumed")
         guard let info = try? source.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey]),
@@ -99,16 +106,7 @@ public struct FileOperationTicketStore: Sendable {
         catch CocoaError.fileNoSuchFile { return nil }
         defer { try? FileManager.default.removeItem(at: claimed) }
         let ticket = try JSONDecoder().decode(FileOperationTicket.self, from: Data(contentsOf: claimed))
-        guard (0...60).contains(now.timeIntervalSince(ticket.issuedAt)) else { return nil }
-        if case .fileVisibility(let items, _) = ticket.request,
-           !FileVisibilityPolicy.canSelect(items.map(\.source)) { return nil }
-        if case .batchRename = ticket.request {
-            guard isBatchRename else { return nil }
-        } else if case .fileInfo = ticket.request {
-            guard isFileInfo else { return nil }
-        } else if case .copyContents = ticket.request {
-            guard isCopyContents else { return nil }
-        } else if isBatchRename || isFileInfo || isCopyContents { return nil }
+        guard (0...60).contains(now.timeIntervalSince(ticket.issuedAt)), ticket.request.ticketHost == host else { return nil }
         return ticket.request
     }
 

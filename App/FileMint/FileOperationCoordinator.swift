@@ -50,6 +50,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
     private let store: PendingFileMoveStore
     private let tickets: FileOperationTicketStore
     private let ticketClock: @Sendable () -> Date
+    private let hiddenFilesToggle: @MainActor (AppLanguage) -> Void
     private let preferencesFile: URL?
     private let rememberedAccess: RememberedFileAccess
     private let aliasAccessStore: DesktopAliasAccessStore
@@ -72,10 +73,12 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
          fileInfoReader: @escaping FileInfoController.Reader = {
              try FileDigestService.calculate($0, choice: $1, cancellation: $2, progress: $3)
          }, contentPasteboard: NSPasteboard = .general,
-         contentReader: @escaping FileContentCopyController.Reader = { try FileContentRead.read($0, cancellation: $1) }) {
+         contentReader: @escaping FileContentCopyController.Reader = { try FileContentRead.read($0, cancellation: $1) },
+         hiddenFilesToggle: @escaping @MainActor (AppLanguage) -> Void = { FinderHiddenFilesService.toggle(language: $0) }) {
         self.store = store
         self.tickets = tickets
         self.ticketClock = ticketClock
+        self.hiddenFilesToggle = hiddenFilesToggle
         self.preferencesFile = preferencesFile
         rememberedAccess = RememberedFileAccess(preferencesFile: preferencesFile)
         self.aliasAccessStore = aliasAccessStore
@@ -89,6 +92,18 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
     }
 
     func enqueue(_ url: URL) {
+        if FileOperationTicketStore.isToggleHiddenFilesURL(url) {
+            let release = reserveExternalPresentation()
+            let intake = consumeTicket(url)
+            Task {
+                defer { release?() }
+                guard case .toggleHiddenFiles(let directory) = try? await intake.value, release != nil else { return }
+                let preferences = currentPreferences
+                guard FileToolsPolicy.allowsHiddenFilesToggle(in: directory, preferences: preferences) else { return }
+                hiddenFilesToggle(preferences.language)
+            }
+            return
+        }
         if FileOperationTicketStore.isCopyContentsURL(url) || contentCopyTask != nil {
             let accepted = FileOperationTicketStore.isCopyContentsURL(url) && !isBusy && queue.isEmpty
             if accepted { operationIsBusy = true }
@@ -260,7 +275,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
                         case .batchRename: operationTitle = .batchRename
                         case .fileInfo: operationTitle = .fileInfo
                         case .copyContents: operationTitle = .copyFileContents
-                        case .fileVisibility: operationTitle = .fileVisibility
+                        case .toggleHiddenFiles: operationTitle = .fileVisibility
                         case .permanentDelete: operationTitle = .permanentDelete
                         case .airDrop: operationTitle = .airDrop
                         case .desktopAlias: operationTitle = .sendAliasToDesktop
@@ -278,25 +293,9 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
 
     private func handle(_ request: FileOperationRequest) async throws {
         switch request {
-        case .batchRename, .fileInfo, .copyContents:
-            // Rename payloads are valid only on the immediate-intake route.
+        case .batchRename, .fileInfo, .copyContents, .toggleHiddenFiles:
+            // These payloads are valid only on their immediate-intake routes.
             throw FileMoveError.staleRequest
-        case .fileVisibility(let items, let action):
-            let selection = items.map(\.source)
-            guard FileVisibilityPolicy.isEnabled(for: selection, preferences: currentPreferences) else {
-                throw FileVisibilityError.disabled
-            }
-            var bookmarks: [String: Data] = [:]
-            guard try authorizeParents(of: selection, bookmarks: &bookmarks) else { return }
-            try requireResolvedSelection(selection)
-            let preferencesFile = self.preferencesFile
-            try await Task.detached(priority: .userInitiated) {
-                try FileVisibilityService.perform(items, action: action) { url in
-                    let preferences = FileMintPreferencesStore(fileURL: preferencesFile).load()
-                    return FileVisibilityPolicy.isEnabled(for: [url], preferences: preferences)
-                        && FolderScope.containsResolvedItem(url, in: preferences.monitoredFolderURLs)
-                }
-            }.value
         case .favoriteAdd(let selection):
             guard FavoriteLocationsPolicy.canAdd(selection, isItemMenu: true,
                 preferences: currentPreferences) else { throw FavoriteLocationError.invalidSelection }
@@ -630,20 +629,6 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             let alert = NSAlert()
             alert.messageText = text(operationTitle)
             alert.informativeText = FileInfoText.accessSaveFailed.text(currentPreferences.language)
-            NSApp.activate(ignoringOtherApps: true)
-            alert.runModal()
-            return
-        }
-        if operationTitle == .fileVisibility {
-            let failure = error as? FileVisibilityFailure
-            let reason = failure?.underlying ?? error
-            let message = (reason as? FileVisibilityError).map { text($0.messageKey) }
-                ?? reason.localizedDescription
-            let alert = NSAlert()
-            alert.messageText = text(.fileVisibility)
-            alert.informativeText = failure.map {
-                String(format: text(.fileVisibilityPartial), $0.processed, $0.total) + "\n" + message
-            } ?? message
             NSApp.activate(ignoringOtherApps: true)
             alert.runModal()
             return

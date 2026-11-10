@@ -25,6 +25,9 @@ sharing service only when you explicitly choose it.
   stays in memory for the current app session. The optional global shortcut
   registers only its configured key combination with macOS while FileMint runs;
   it does not record unrelated keys or require Input Monitoring or Accessibility.
+- Toggle Hidden Files sends `⌘⇧.` to Finder after an explicit context-menu click.
+  You control the permission under Device Control and Data Access on macOS 27
+  or later, or Accessibility on earlier versions.
 - Resource Tools reads only explicitly selected local images. Conversion,
   compression, resizing, icons, stitching and Vision text recognition run on the
   Mac without uploading images or recognized text. Previews and OCR results are

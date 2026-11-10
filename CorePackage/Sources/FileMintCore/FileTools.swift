@@ -107,6 +107,26 @@ public enum FileToolTarget: Equatable, Sendable {
 }
 
 public enum FileToolsPolicy {
+    public static func menuActions(directory: URL, selection: [URL], isItemMenu: Bool, isContainer: Bool,
+                                   preferences: FileMintPreferences) -> [FileMenuAction] {
+        let toolTarget = target(directory: directory, selection: selection, isItemMenu: isItemMenu, isContainer: isContainer)
+        var actions = toolTarget.map { target in
+            availableTools(target: target, preferences: preferences).map {
+                FileMenuAction(directory: directory, tool: $0, target: target)
+            }
+        } ?? []
+        if (isItemMenu || isContainer), allowsHiddenFilesToggle(in: directory, preferences: preferences) {
+            actions.append(FileMenuAction(directory: directory, tool: .fileVisibility, target: .directory(directory)))
+        }
+        return actions
+    }
+
+    public static func allowsHiddenFilesToggle(in directory: URL, preferences: FileMintPreferences) -> Bool {
+        preferences.fileTools.allows(.fileVisibility)
+            && (directory.host == nil || directory.host == "" || directory.host == "localhost")
+            && FolderScope.contains(directory, in: preferences.monitoredFolderURLs)
+    }
+
     public static func target(directory: URL, selection: [URL], isItemMenu: Bool,
                               isContainer: Bool) -> FileToolTarget? {
         if isContainer { return .directory(directory) }
@@ -133,10 +153,9 @@ public enum FileToolsPolicy {
               selection.allSatisfy({ $0.isFileURL && FolderScope.contains($0, in: preferences.monitoredFolderURLs) })
         else { return [] }
         return FileTool.allCases.filter {
-            preferences.fileTools.allows($0) && ($0 != .batchRename || canBatchRename(selection))
+            $0 != .fileVisibility && preferences.fileTools.allows($0) && ($0 != .batchRename || canBatchRename(selection))
                 && ($0 != .fileInfo || FileDigestService.supportsMenuSelection(selection))
                 && ($0 != .copyContents || FileContentCopyPolicy.supportsMenuSelection(selection))
-                && ($0 != .fileVisibility || FileVisibilityService.supportsMenuSelection(selection))
         }
     }
 

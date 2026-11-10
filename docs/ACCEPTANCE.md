@@ -3,6 +3,20 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Finder hidden-file display — 2026-11-10
+
+The production Quartz sender toggled the real Finder display in both directions
+using a diagnostic process with existing keystroke permission. Dot-prefixed and
+BSD-hidden fixtures appeared and disappeared together, with matching identity,
+flags and content before and after. The initial display was restored. Core,
+signed fixture, unsigned build and website checks passed. Signed Debug 0.8.1 (30)
+then launched with one enabled Finder extension from the installed bundle.
+On macOS 27.2.1, the existing permission worked after relaunch. The user
+confirmed that the installed Finder menu toggled hidden files. First consent
+with the updated prompt still needs an installed check. See the
+[live check](tasks/2026-11-10-finder-hidden-files-toggle.md#live-finder-delivery)
+and [relaunch evidence](tasks/2026-11-10-finder-hidden-files-toggle.md#existing-keystroke-grant-after-relaunch).
+
 ## Sparkle bookmark restoration — 2026-11-09
 
 Signed sandbox builds 1 and 2 of the isolated UpgradeQA app established an

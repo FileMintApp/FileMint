@@ -27,7 +27,8 @@ Load for: Optional Finder file/folder actions, batch rename, selection snapshots
 - Selection tools appear only for selected items in configured folder scope.
   Copy Paths also appears when right-clicking a folder's background in scope,
   including a configured root, and copies that current folder's path. No other
-  selection tool uses the background directory. Do not use a background, toolbar
+  selection tool uses the background directory. The hidden-files display command
+  is independent of selection. Do not use a background, toolbar
   or sidebar menu's stale selection. All selected URLs must be local file URLs
   in scope; never silently operate on a subset.
 - Capture the selection in Finder's reported order, or the background container
@@ -44,43 +45,27 @@ Load for: Optional Finder file/folder actions, batch rename, selection snapshots
 - Chinese product copy uses 拷贝 consistently, including 文件（夹）名称 and
   文件（夹）路径; English uses Copy.
 
-## Hide and unhide selected items
+## Toggle hidden files in Finder
 
-- Hide & Unhide / 隐藏与取消隐藏 is a File & Folder Tools child with an independent
-  switch, initially off for new/missing/invalid settings, and the usual submenu/main
-  placement. It replaces the Finder-wide hidden-item toggle in settings/menu bar.
-- Operate only on the complete captured selection of 1–1,000 ordinary local files
-  or directories in configured scope. Packages and aliases are opaque entries;
-  never inspect their contents or follow aliases. Reject symbolic links, special
-  files, duplicate objects and missing/replaced entries. Background/toolbar/sidebar
-  contexts never use a stale selection for this action.
-- Read bounded selected-entry metadata to name the menu. All visible gives one
-  **Hide This Item / 隐藏此项目** (plural **Hide Selected Items / 隐藏所选项目**).
-  All hidden gives one **Unhide This Item / 取消隐藏此项目** (plural **Unhide Selected
-  Items / 取消隐藏所选项目**). Mixed or unknown visibility offers both explicit
-  actions at the same configured menu level. Never label an attribute action
-  “Show Hidden Files”, “Display” or “Toggle”.
-- Capture item and real-parent identities only after the click, then transfer
-  them with the existing private single-use ticket. The main app rechecks switches,
-  resolved scope, complete selection and identities after exact-parent write
-  authorization and around mutation. Reuse existing folder grants; additional
-  picker grants last only for the operation and never expand monitored roots.
-- Use no-follow descriptors and metadata APIs to set/clear the BSD hidden flag
-  on the captured objects. Read the bounded 32-byte FinderInfo metadata as well;
-  Unhide also clears its legacy invisible bit. Pin parent/item identities, preserve other flags and FinderInfo fields,
-  filenames, contents and directory descendants, and verify the result. No shell,
-  simulated input, Accessibility permission, Finder preference change or restart.
-  Already matching attributes are idempotent; the menu's explicit requested state
-  remains authoritative if another action changed visibility after menu creation.
-- Names beginning with a period stay name-hidden. Reject an Unhide request
-  containing such a name before changing any selected item, and explain that this
-  action never renames it. Reject other known hidden mechanisms that cannot be
-  removed through these metadata operations, rather than reporting them as visible. Unsupported
-  filesystems/permissions fail explicitly. Preflight the complete batch before
-  edits; a later failure reports processed/total counts without claiming atomicity.
-- Success is silent. Serialize with existing file operations and keep access alive
-  through worker cleanup. Settings explain that Finder's Command-Shift-Period
-  shortcut can temporarily reveal hidden items so they can be selected and unhidden.
+- Toggle Hidden Files / 切换隐藏文件显示 is an opt-in File & Folder Tools child.
+  Keep the saved `fileVisibility` switch, main/submenu placement and icon slot.
+  Missing or invalid settings default off. Show the same single command in
+  configured folder and Desktop context menus with or without selected items.
+  Finder's toolbar and sidebar menus do not offer it.
+- Capture only the menu directory for the private single-use request. Recheck
+  the current module, child switch and configured menu path at dispatch. This
+  display command requires no file or folder authorization. Consume busy or
+  expired requests without a deferred toggle.
+- The main app checks the macOS permission for sending keystrokes on each click.
+  If access is missing, explain its purpose and link to Device Control and Data
+  Access on macOS 27 and later, or Accessibility on earlier versions. Tell the
+  user to quit and reopen FileMint once access is enabled so the new process can
+  read the grant. Only a fresh Finder menu click can toggle the display.
+- Send one complete Command-Shift-Period sequence, including modifier key
+  presses and releases, to the running system Finder's process. Finder owns
+  the live display state, including dot-prefixed entries.
+  Keep one stable action label. Success is silent. No event monitoring, global
+  key posting, Finder preference edits or restarts, file reads or item mutations.
 
 ## Copy file contents
 

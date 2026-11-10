@@ -135,8 +135,8 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case creationSettings
     case templatesAndTypes
     case finderAndFolders
-    case fileVisibility, fileVisibilityHint, hideItem, hideSelectedItems, unhideItem, unhideSelectedItems
-    case fileVisibilityUnsupported, fileVisibilityNameHidden, fileVisibilityOtherHidden, fileVisibilityPartial
+    case fileVisibility, fileVisibilityHint, hiddenFilesPermission, hiddenFilesUnavailable
+    case accessibilitySettingsPath, deviceControlSettingsPath, openSystemSettings
     case generalSettingsHint
     case creationSettingsHint
     case finderFoldersHint
@@ -419,16 +419,13 @@ public enum FileMintStrings {
         .creationSettings: ("Creation", "创建行为"),
         .templatesAndTypes: ("Templates & Types", "模板与类型"),
         .finderAndFolders: ("Finder & Folders", "Finder 与文件夹"),
-        .fileVisibility: ("Hide & Unhide", "隐藏与取消隐藏"),
-        .fileVisibilityHint: ("The Finder menu follows the selected items' hidden state and changes only their hidden attribute. Names stay unchanged. Press ⌘⇧. in Finder to reveal hidden items before unhiding them. Names beginning with a period remain hidden.", "右键菜单按所选项目的隐藏状态显示操作，只修改隐藏属性，保留文件名。在 Finder 按 ⌘⇧. 可临时查看隐藏项目，再右键取消隐藏。以句点开头的名称仍会隐藏。"),
-        .hideItem: ("Hide This Item", "隐藏此项目"),
-        .hideSelectedItems: ("Hide Selected Items", "隐藏所选项目"),
-        .unhideItem: ("Unhide This Item", "取消隐藏此项目"),
-        .unhideSelectedItems: ("Unhide Selected Items", "取消隐藏所选项目"),
-        .fileVisibilityUnsupported: ("Select up to 1,000 files or folders. Symbolic links, special files and duplicate objects are not supported.", "请选择不超过 1,000 个文件或文件夹；不支持符号链接、特殊文件或重复对象。"),
-        .fileVisibilityNameHidden: ("A selected name begins with a period. Changing its hidden attribute cannot make it visible. No items were changed; FileMint does not rename these items.", "所选项目中有名称以句点开头的文件（夹），更改隐藏属性无法让它显示。本次未修改任何项目，FileMint 不会为此更改文件名。"),
-        .fileVisibilityOtherHidden: ("A selected item is hidden by another system attribute. This action cannot remove that attribute. No items were changed.", "所选项目由其他系统属性隐藏，此操作无法移除该属性。本次未修改任何项目。"),
-        .fileVisibilityPartial: ("Processed %d of %d items. The operation could not be fully completed or verified.", "已处理 %d/%d 个项目，操作未能全部完成或确认。"),
+        .fileVisibility: ("Toggle Hidden Files", "切换隐藏文件显示"),
+        .fileVisibilityHint: ("Show or hide hidden files in Finder, just like pressing ⌘⇧. macOS asks for permission to send the shortcut on first use.", "和按下 ⌘⇧. 一样，可以切换 Finder 中隐藏文件的显示。首次使用需在 macOS 中允许发送快捷键。"),
+        .hiddenFilesPermission: ("To let FileMint send ⌘⇧. to Finder, turn on FileMint in %@. Once the switch is on, quit and reopen FileMint, then choose this command again.", "要让 FileMint 向 Finder 发送 ⌘⇧.，请在「%@」中打开 FileMint 的开关。开关开启后，请退出并重新打开 FileMint，再选择此命令。"),
+        .hiddenFilesUnavailable: ("Could not send the shortcut to Finder. Open Finder and try again, or press ⌘⇧. directly in Finder.", "无法向 Finder 发送快捷键。请打开 Finder 后重试，或直接在 Finder 中按 ⌘⇧.。"),
+        .accessibilitySettingsPath: ("System Settings → Privacy & Security → Accessibility", "系统设置 → 隐私与安全性 → 辅助功能"),
+        .deviceControlSettingsPath: ("System Settings → Privacy & Security → Device Control and Data Access", "系统设置 → 隐私与安全 → 设备控制和数据访问"),
+        .openSystemSettings: ("Open System Settings…", "打开系统设置…"),
         .generalSettingsHint: ("Make FileMint fit the way you work.", "设置语言、启动方式与更新偏好。"),
         .creationSettingsHint: ("Choose what happens when you create a file.", "设置同名处理与创建完成后的行为。"),
         .finderFoldersHint: ("Manage Finder integration and the folders you work in.", "管理 Finder 扩展、菜单范围与文件夹访问权限。"),

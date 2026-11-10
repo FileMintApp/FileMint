@@ -19,7 +19,7 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   scope; unrelated home folders receive no FileMint menu. Never scan directory
   contents or badge files, and do not request broad filesystem entitlements.
 - Menu construction may use path-only scope checks to stay fast in Finder. Before
-  the main app executes a request, resolve the configured roots and the selected
+  the main app accesses files, resolve the configured roots and the selected
   item's parent or destination directory on disk. Reject a path that enters an
   unconfigured folder through a symlink. A selected symlink itself belongs to its
   parent folder and may still be moved or deleted as a link. Resolution failure
@@ -70,11 +70,11 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   compiled into both app and extension.
 - Menu icon choices are read from the cached preferences snapshot while building
   the menu. Rendering a symbol never reads user files or changes captured targets.
-- Hiding/unhiding is a selection-scoped [file tool](file-tools.md#hide-and-unhide-selected-items).
-  Finder captures metadata identities only after the explicit menu click; the main
-  app owns exact-parent authorization and hidden-attribute writes. Do not request
-  Accessibility access, send keys, change Finder preferences or restart Finder.
-  There is no Finder-wide hidden-item toggle in settings or the menu bar.
+- The [Finder hidden-files command](file-tools.md#toggle-hidden-files-in-finder)
+  uses the captured menu path for scope and sends Finder its shortcut on demand.
+  Ask for the keystroke-posting permission from the main app after the user
+  chooses the command. The grant appears under Device Control and Data Access
+  in macOS 27 and later, and under Accessibility in earlier versions.
 
 ## Authorization for file operations
 

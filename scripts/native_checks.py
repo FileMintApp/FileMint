@@ -46,7 +46,7 @@ SUITES = {
     "favorite-model": Suite("", "PASS favorite model"),
     "hotkey-sandbox": Suite("hotkey-sandbox", "PASS hotkey sandbox:", ("--verify-automation",)),
     "quick-search": Suite("template-workflow", "PASS quick search:", environment=(("FILEMINT_TEMPLATE_QA_MODE", "quick-search"),)),
-    "file-visibility": Suite("template-workflow", "PASS file visibility:", environment=(("FILEMINT_TEMPLATE_QA_MODE", "file-visibility"),)),
+    "finder-hidden-files": Suite("template-workflow", "PASS Finder hidden files:", environment=(("FILEMINT_TEMPLATE_QA_MODE", "finder-hidden-files"),)),
 }
 ALL = tuple(SUITES)
 BUILDERS = {kind: f"scripts/build_{kind.replace('-', '_')}_harness.sh"
@@ -64,7 +64,7 @@ COMMON_INPUTS = (
 FIXTURE_INPUTS = {
     "batch-rename": ("scripts/batch_rename_smoke.swift",),
     "template-workflow": ("scripts/template_workflow_smoke.swift", "scripts/creation_opening_checks.swift",
-                          "scripts/quick_search_checks.swift", "scripts/file_visibility_checks.swift",
+                          "scripts/quick_search_checks.swift", "scripts/finder_hidden_files_checks.swift",
                           "scripts/run_creation_opening_checks.sh"),
     "open-with": ("scripts/open_with_smoke.swift",),
     "file-tools-settings": ("scripts/file_tools_settings_smoke.swift",),
@@ -76,6 +76,7 @@ FIXTURE_INPUTS = {
 }
 MANUAL = {
     "finder": "Installed Finder menu/callback delivery needs the affected Finder QA scenario.",
+    "finder-hidden-files": "Live hidden-file display and permission need an authorized signed app and real Finder context menus.",
     "folder-grants": "External folder picker and saved access across process restarts need signed installed-app checks.",
     "move-sandbox": "The existing move fixture still requires explicit external-folder authorization.",
     "update-sandbox": "The legacy update fixture requires a real save panel; also run the applicable update-client checks.",
@@ -91,8 +92,8 @@ MANUAL = {
 
 # Shared-file rules are conservative; --suite is the reviewed behavior-based override.
 RULES = (
-    (("CorePackage/Sources/FileMintCore/FileVisibility.swift", "scripts/file_visibility_checks.swift",
-      "scripts/file_visibility_capture_smoke.swift", "scripts/verify_file_visibility.sh"), ("file-visibility", "file-tools-settings"), ("finder",)),
+    (("App/FileMint/FinderHiddenFilesService.swift", "scripts/finder_hidden_files_checks.swift"),
+      ("finder-hidden-files", "file-tools-settings"), ("finder-hidden-files",)),
     (("App/FileMint/GlobalShortcut*.swift", "CorePackage/Sources/FileMintCore/GlobalShortcut.swift"), ("hotkey-sandbox", "quick-search", "design-ui"), ("global-hotkey",)),
     (("App/FileMint/QuickSearch*.swift", "scripts/quick_search_checks.swift", "CorePackage/Sources/FileMintCore/QuickSearch.swift"), ("quick-search",), ("favorite-search",)),
     (("scripts/hotkey_sandbox/*", "scripts/build_hotkey_sandbox_harness.sh"), ("hotkey-sandbox",), ("global-hotkey",)),
@@ -129,7 +130,7 @@ RULES = (
     (("App/FileMint/TerminalDirectoryLauncher.swift",), ("open-with",), ("terminal-apps",)),
     (("App/FileMint/FavoriteQuickPanelController.swift", "App/FileMint/FavoriteFeedbackController.swift"), ("design-ui", "favorite-model", "quick-search"), ("favorite-search",)),
     (("FinderSyncExtension/*",), ("file-tools-settings", "batch-rename", "open-with", "creation-opening", "file-info"), ("finder",)),
-    (("App/FileMint/AppDelegate.swift", "App/FileMint/FileMintApp.swift", "App/FileMint/FinderHiddenItemsService.swift"), ("design-ui", "creation-opening", "update-scheduling"), ("finder",)),
+    (("App/FileMint/AppDelegate.swift", "App/FileMint/FileMintApp.swift"), ("design-ui", "creation-opening", "update-scheduling"), ("finder",)),
     (("App/FileMint/AppDelegate.swift", "App/FileMint/FileMintApp.swift"), ("quick-search",), ("global-hotkey",)),
     (("App/FileMint/LoginItemService.swift",), ("design-ui",), ("login-items",)),
     (("App/FileMint/UpdateClient.swift", "scripts/update_sandbox_smoke.swift", "scripts/build_update_sandbox_harness.sh"), (), ("update-sandbox",)),

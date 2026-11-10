@@ -161,11 +161,10 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   All. Resource Tools adds a
   seventh card for private metadata removal and shows progress/results without
   an extra Run button after the user's explicit selection.
-- Hide & Unhide uses the existing file-tool switch/placement/icon row with an
-  indigo/purple `eye.slash` default symbol. Its Finder entries use the explicit
-  selection-based [file-tool labels](file-tools.md#hide-and-unhide-selected-items).
-  The guide and privacy copy describe selected-item metadata changes and the
-  dot-name limit; remove the old global-toggle permission flow and screenshots.
+- Toggle Hidden Files uses the existing file-tool switch/placement/icon row with
+  an indigo/purple `eye.slash` default symbol and one label across Finder contexts.
+  The guide and privacy copy explain the Finder shortcut and its on-demand
+  keystroke permission. See [file tools](file-tools.md#toggle-hidden-files-in-finder).
 
 ## File information presentation
 
