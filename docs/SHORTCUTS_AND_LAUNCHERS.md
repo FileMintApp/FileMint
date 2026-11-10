@@ -2,7 +2,7 @@
 
 [中文指南](SHORTCUTS_AND_LAUNCHERS.zh-CN.md)
 
-This guide describes the **unreleased integration build**. It opens a draft for
+This guide covers the initial integration in FileMint 0.8.2. It opens a draft for
 you to review. Only **Create** writes a file. An action returning “draft opened”
 does not mean the file was created.
 
@@ -18,19 +18,19 @@ for exact builds, remaining environments and first-time-user acceptance.
 
 ## New project note
 
-For a recurring destination, first authorize it in **Settings → Finder & Folders**.
-That saves folder access and also changes Finder menu scope. A folder chosen only
-for one draft does not silently become a monitored folder.
+For a recurring destination, first authorize it in **Settings → File Access**.
+Finder menu locations are configured separately in **Finder & Folders**.
 
-In **Settings → Shortcuts & Launchers**, start **New project note**:
+Under **Extensions**, find **New project note** on the **Shortcuts** or **Launchers** page:
 
 1. For Shortcuts, open the Shortcuts app, create a shortcut and add FileMint's
    **Open File Draft** action. Select an enabled text template, such as Markdown,
    and a fixed save location. Set Filename to **Ask Each Time**. Keep Initial
    Content on **Template Content**.
-2. For Raycast, select **Raycast…**. Choose a template and location, leave Filename
-   on **Enter in Raycast**, then export the script to a folder you control. In
-   Raycast Settings → Extensions → Script Commands, add that folder.
+2. For Raycast, select **Create command…** on the Launchers page. Choose a
+   template and location, leave Filename on **Enter in Raycast**, then export
+   the script to a folder you control. In Raycast Settings → Extensions →
+   Script Commands, add that folder.
 3. Each day, run the command and enter only the note name. Check the template,
    destination and content in the draft; choose Create or Cancel.
 
@@ -128,5 +128,4 @@ Headless/background-only workflows are outside this interactive draft workflow.
 
 The app, Finder extension and appcasts retain macOS 13.0. Homebrew retains its
 Ventura dependency without an additional 13.3 installation gate. Feature
-availability is checked inside FileMint and does not restrict application
-updates. This guide does not imply a new release, tap push or website publication.
+availability is checked inside FileMint and does not restrict application updates.

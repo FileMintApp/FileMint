@@ -10,13 +10,7 @@ Creating a file should not require opening an editor, choosing Save As and findi
 FileMint puts the action back in Finder: **right-click, choose a type and your file is there.**
 Use this native **macOS Finder extension** for right-click file creation, reusable templates, batch rename, SHA-256 checksums, image compression and OCR.
 
-<!-- #region release -->
-## What's new in 0.8.1
-
-Open creation drafts directly, use a compact clipboard-image window and switch settings smoothly with arrow keys. Quick Search finds creation actions, templates, favorites and settings, with an optional global shortcut. Copy File Contents adds an opt-in Finder action for supported text files. Existing templates, grants and settings are retained.
-
-[0.8.1 release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.8.1)
-<!-- #endregion release -->
+[What's new in the latest stable release](https://github.com/FileMintApp/FileMint/releases/latest)
 
 ## Recent features
 
@@ -33,8 +27,6 @@ Open creation drafts directly, use a compact clipboard-image window and switch s
 - **Multiple templates per format**: Keep separate content and filenames for one format, with a configurable default template.
 - **Word / Excel templates**: Create blank `.docx` and `.xlsx` files from built-in templates, or import your own documents and create independent copies with their formatting and content intact.
 - **Themes and settings**: General now offers Follow System, Light and Dark, with consistent control alignment and interaction styles.
-
-[Full release notes](https://github.com/FileMintApp/FileMint/releases/tag/v0.8.1)
 
 ## Why FileMint
 

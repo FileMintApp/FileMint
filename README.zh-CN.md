@@ -10,13 +10,7 @@
 FileMint 把这件事放回 Finder：**右键，选一种类型，文件就在这里。**
 这个原生 **macOS Finder 扩展**支持右键新建文件、复用模板、批量重命名、SHA-256 文件校验、图片压缩和 OCR 文字识别。
 
-<!-- #region release -->
-## 0.8.1 更新
-
-新建操作直接进入创建面板，图片弹窗更紧凑，设置侧栏上下键切换更顺畅。快捷搜索集中查找新建操作、模板、常用文件与设置，并可按需开启全局快捷键。新增默认关闭的“拷贝文件内容”Finder 操作。已有模板、授权和开关设置保留。
-
-[0.8.1 发布说明](https://github.com/FileMintApp/FileMint/releases/tag/v0.8.1)
-<!-- #endregion release -->
+[查看最新正式版的更新说明](https://github.com/FileMintApp/FileMint/releases/latest)
 
 ## 近期功能
 
@@ -33,8 +27,6 @@ FileMint 把这件事放回 Finder：**右键，选一种类型，文件就在�
 - **同格式多模板**：为同一种格式保存不同内容和默认文件名，并指定默认模板。
 - **Word / Excel 模板**：内置空白 `.docx`、`.xlsx`，也可导入自己的文档，创建保留原格式和内容的独立副本。
 - **主题与设置**：通用页新增跟随系统、浅色和深色，统一控件对齐与交互样式。
-
-[完整发布说明](https://github.com/FileMintApp/FileMint/releases/tag/v0.8.1)
 
 ## 为什么是 FileMint
 
