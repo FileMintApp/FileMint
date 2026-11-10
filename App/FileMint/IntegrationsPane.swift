@@ -44,10 +44,10 @@ struct IntegrationsPane: View {
                 if let guide = state.guide, (guide == .shortcuts) == (page == .shortcuts) { guidance(guide) }
                 if page == .shortcuts { shortcutsTools } else { launcherTools; scriptManagement }
                 SettingsSection(title: state.text("Reuse folder access", "长期复用目录访问")) {
-                    Text(state.text("For a repeatable command, use a folder already authorized in Finder & Folders. Adding a folder there saves access and also changes Finder menu scope. A temporary selection may need authorization again after relaunch.",
-                        "固定工作流请使用已在“Finder 与文件夹”中授权的目录。在那里添加目录会保存访问权限，也会调整 Finder 菜单范围；临时选择的位置在重启后可能需要再次授权。"))
+                    Text(state.text("For a repeatable command, authorize its destination folder in File Access. A temporary selection may need authorization again after relaunch.",
+                        "固定工作流可在「文件访问」中授权保存目标文件夹。临时选择的目录在重启后可能需要再次授权。"))
                         .font(.system(size: 12)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                    Button(settings.text(.finderAndFolders)) { settings.selectedPane = .folders }
+                    Button(settings.text(.fileAccess)) { settings.selectedPane = .fileAccess }
                 }
                 DisclosureGroup(state.text("Limits and help", "限制与帮助")) {
                     VStack(alignment: .leading, spacing: 9) {

@@ -15,7 +15,6 @@ final class AccessMigrationSmoke: NSObject, NSApplicationDelegate, SPUUpdaterDel
     private var updater: SPUUpdater?
     private var busy = false
     private var events: [[String: Any]] = []
-    private let folderAccess = FolderAccess()
     private var sandboxed: Bool { Bundle.main.object(forInfoDictionaryKey: "FixtureSandboxed") as? Bool == true }
     private var build: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?" }
     private var store: FileMintPreferencesStore { FileMintPreferencesStore(fileURL: AccessQA.preferences) }
@@ -168,7 +167,6 @@ final class AccessMigrationSmoke: NSObject, NSApplicationDelegate, SPUUpdaterDel
         guard !loaded.requiresRecovery, preferences.templates.contains(AccessQA.template),
               !preferences.launchAtLogin, !preferences.showMenuBar, !preferences.automaticallyChecksForUpdates,
               preferences.newFileMenuPlacement == .main, !preferences.favoriteLocations.showListInFinder else { throw failure(11) }
-        folderAccess.restore(preferences)
         var stale = false
         let bookmark = preferences.monitoredFolderBookmarks[control.path]!
         let restored = try URL(resolvingBookmarkData: bookmark, options: [.withSecurityScope, .withoutUI, .withoutMounting],

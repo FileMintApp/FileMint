@@ -178,6 +178,7 @@ struct ContentView: View {
         case .creation: CreationSettingsPane()
         case .fileTypes: TypesPane()
         case .folders: FoldersPane()
+        case .fileAccess: FileAccessPane()
         case .fileTools: FileToolsPane()
         case .resourceTools: ResourceToolsPane(launchTool: launchResourceTool)
         case .openWith: OpenWithPane()
@@ -259,6 +260,7 @@ extension PreferencesModel.Pane {
         case .creation: InterfaceText.creationSubtitle.text(language)
         case .fileTypes: InterfaceText.typesSubtitle.text(language)
         case .folders: InterfaceText.foldersSubtitle.text(language)
+        case .fileAccess: FileMintStrings.text(.fileAccessHint, language: language)
         case .fileTools: InterfaceText.filesSubtitle.text(language)
         case .resourceTools: InterfaceText.resourceSubtitle.text(language)
         case .openWith: FileMintStrings.text(.openWithAppsHint, language: language)
@@ -274,6 +276,7 @@ extension PreferencesModel.Pane {
         case .creation: .creationSettings
         case .fileTypes: .templatesAndTypes
         case .folders: .finderAndFolders
+        case .fileAccess: .fileAccess
         case .fileTools: .fileTools
         case .resourceTools: .resourceTools
         case .openWith: .openWithApps
@@ -289,6 +292,7 @@ extension PreferencesModel.Pane {
         case .creation: .creationSettingsHint
         case .fileTypes: .fileTypeHint
         case .folders: .finderFoldersHint
+        case .fileAccess: .fileAccessHint
         case .fileTools: .fileToolsHint
         case .resourceTools: .resourceToolsHint
         case .openWith: .openWithAppsHint
@@ -305,6 +309,7 @@ extension PreferencesModel.Pane {
         case .creation: "doc.badge.plus"
         case .fileTypes: "doc.on.doc"
         case .folders: "folder"
+        case .fileAccess: "lock.shield"
         case .fileTools: "wrench.and.screwdriver"
         case .resourceTools: "photo.on.rectangle"
         case .openWith: FileToolAppearance.openWithSymbol

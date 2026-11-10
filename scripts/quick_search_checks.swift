@@ -74,7 +74,7 @@ enum QuickSearchChecks {
         let key = GlobalShortcut(keyCode: 40, modifiers: GlobalShortcut.control | GlobalShortcut.option)
         model.setGlobalShortcutEnabled(true)
         try check(model.globalShortcuts.isRegistered && store.load().globalShortcut.combination == .suggested,
-                  "first enable did not fill and register the suggested combination")
+                  "first enable did not fill and register the suggested combination (\(String(describing: model.globalShortcuts.failure)))")
         model.setGlobalShortcutEnabled(false)
         model.setGlobalShortcutCombination(nil)
         model.setGlobalShortcutCombination(key)

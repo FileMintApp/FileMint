@@ -187,13 +187,15 @@ final class ResourceToolsController: NSObject, ObservableObject, NSWindowDelegat
         defer { if !authorized { scopes.forEach { $0.stopAccessingSecurityScopedResource() } } }
         var seen = Set<URL>()
         for directory in directories where seen.insert(directory.standardizedFileURL).inserted {
-            let roots = fromFinder && destination == nil ? preferences.monitoredFolderURLs : [directory]
-            scopes += FolderAccess.startSavedAccess(to: directory, in: preferences)
+            let requiresFinderScope = fromFinder && destination == nil
+            let roots = requiresFinderScope ? preferences.monitoredFolderURLs : nil
+            scopes += FolderAccess.startSavedAccess(to: directory, in: preferences, requiresFinderScope: requiresFinderScope)
             scopes += remembered.start(for: directory, folder: true, mode: .write, roots: roots)
             do { try FolderAccess.checkDirectory(directory, mode: W_OK); continue }
             catch where FolderAccess.isPermissionError(error) {}
-            let picker = FolderAccess.authorizationPanel(for: directory, selection: .folder, language: language)
+            let picker = FolderAccess.directoryWritePanel(for: directory, language: language)
             guard picker.runModal() == .OK, let chosen = picker.url else { return nil }
+            defer { chosen.stopAccessingSecurityScopedResource() }
             guard chosen.resolvingSymlinksInPath().standardizedFileURL == directory.resolvingSymlinksInPath().standardizedFileURL else {
                 message = FileMintStrings.text(.moveChooseExactFolder, language: language)
                 return nil
@@ -201,8 +203,8 @@ final class ResourceToolsController: NSObject, ObservableObject, NSWindowDelegat
             if chosen.startAccessingSecurityScopedResource() { scopes.append(chosen) }
             try FolderAccess.checkDirectory(directory, mode: W_OK)
             let canonical = directory.resolvingSymlinksInPath().standardizedFileURL
-            let currentRoots = fromFinder && destination == nil
-                ? FileMintPreferencesStore(fileURL: preferencesFile).load().monitoredFolderURLs : [directory]
+            let currentRoots = requiresFinderScope
+                ? FileMintPreferencesStore(fileURL: preferencesFile).load().monitoredFolderURLs : nil
             scopes.append(try remembered.remember(chosen, target: canonical, folder: true, mode: .write, roots: currentRoots))
         }
         authorized = true

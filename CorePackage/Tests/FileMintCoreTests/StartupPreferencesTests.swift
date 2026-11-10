@@ -213,7 +213,7 @@ struct StartupPreferencesTests {
         #expect(AppLanguage.english.resolved(preferredLanguages: ["zh-Hant-TW"]) == .english)
         #expect(FileMintStrings.text(.newFile, language: .chinese) == "新建文件")
         #expect(FileMintStrings.text(.newFile, language: .english) == "New File")
-        for key in [FileMintTextKey.launchAtLogin, .showMenuBar, .fullDiskAccess, .fullDiskAccessHint] {
+        for key in [FileMintTextKey.launchAtLogin, .showMenuBar] {
             #expect(FileMintStrings.text(key, language: .chinese) != FileMintStrings.text(key, language: .english))
         }
     }
@@ -226,7 +226,9 @@ struct StartupPreferencesTests {
                     .appearance, .theme, .lightAppearance, .darkAppearance,
                     .viewUpdateSettings, .quickCreation, .newFileMenuPosition, .newFileMenuPositionHint,
                     .quickCollisionHint,
-                    .afterCreationHint, .manageTemplates, .finderExtension, .menuFolders, .enabledTypes] {
+                    .afterCreationHint, .manageTemplates, .finderExtension, .menuFolders, .enabledTypes,
+                    .fileAccess, .fileAccessHint, .directoryWriteAccess, .authorizeHomeDirectory,
+                    .authorizeOtherDirectory, .removeDirectoryAccess] {
             let english = FileMintStrings.text(key, language: .english)
             let chinese = FileMintStrings.text(key, language: .chinese)
             #expect(english != key.rawValue && chinese != key.rawValue)
@@ -236,32 +238,21 @@ struct StartupPreferencesTests {
         #expect(FileMintStrings.text(.quickCollisionHint, language: .chinese).contains("替换已有文件前询问"))
     }
 
-    @Test("permission guidance explains granted, off and unreadable status in both languages",
+    @Test("folder authorization guidance explains descendant coverage and removal in both languages",
           arguments: [AppLanguage.english, .chinese])
     func permissionGuidance(language: AppLanguage) {
-        let status = FileMintStrings.text(.fullDiskAccessStatus, language: language)
-        let explanation = FileMintStrings.text(.fullDiskAccessStatusHint, language: language)
-        let enabled = FileMintStrings.text(.fullDiskAccessEnabledHint, language: language)
-        let disabled = FileMintStrings.text(.fullDiskAccessHint, language: language)
+        let scope = FileMintStrings.text(.directoryWriteAuthorizationHint, language: language)
+        let removal = FileMintStrings.text(.directoryAccessRemovalHint, language: language)
         let folder = FileMintStrings.text(.folderAccessSaved, language: language)
-        let reminder = FileMintStrings.text(.folderAccessReminder, language: language)
 
         if language == .chinese {
-            #expect(status.contains("以系统设置开关为准"))
-            #expect(explanation.contains("无法自动读取") && explanation.contains("不代表你尚未授权"))
-            #expect(enabled.contains("开关已开启：已授予权限") && enabled.contains("重新打开"))
-            #expect(enabled.contains("无需重复"))
-            #expect(disabled.contains("开关关闭或没有 FileMint"))
+            #expect(scope.contains("所选文件夹及其子文件夹") && scope.contains("读写授权"))
+            #expect(removal.contains("后续操作") && removal.contains("其余授权"))
             #expect(folder.contains("文件夹") && folder.contains("已保存"))
-            #expect(reminder.contains("即使已开启完全磁盘访问"))
         } else {
-            #expect(status.contains("system switch"))
-            #expect(explanation.contains("cannot read") && explanation.contains("does not mean access is denied"))
-            #expect(enabled.contains("Switch on: permission is granted") && enabled.contains("reopen"))
-            #expect(enabled.contains("no need to add it again"))
-            #expect(disabled.contains("Switch off or FileMint missing"))
+            #expect(scope.contains("selected folder and its subfolders") && scope.contains("read and write access"))
+            #expect(removal.contains("future operations") && removal.contains("Other grants"))
             #expect(folder.contains("Folder") && folder.contains("saved"))
-            #expect(reminder.contains("Even with Full Disk Access"))
         }
         #expect(folder != FileMintStrings.text(.ready, language: language))
     }

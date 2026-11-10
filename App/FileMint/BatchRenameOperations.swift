@@ -68,25 +68,19 @@ final class BatchRenameOperations: ObservableObject {
             try await perform(action, preferencesFile: preferencesFile)
             return
         }
-        let operationStore = store
-        let previousAuthority = try await Task.detached(priority: .userInitiated) {
-            try operationStore.undoAuthorization()
-        }.value
-        let previousBookmark = previousAuthority?.parentIdentity == selection.parentIdentity
-            ? previousAuthority?.parentBookmark : nil
         let sourceParent = selection.items.first?.source.deletingLastPathComponent() ?? selection.parent
         let configuredAccess = FolderAccess.startSavedAccess(to: sourceParent, resolved: selection.parent, in: preferences)
             + RememberedFileAccess(preferencesFile: preferencesFile).start(for: selection.parent, folder: true, mode: .write,
                                                                           roots: preferences.monitoredFolderURLs)
         defer { configuredAccess.forEach { $0.stopAccessingSecurityScopedResource() } }
         guard let (_, bookmark) = try await access.authorize(parent: selection.parent,
-            identity: selection.parentIdentity,
-            bookmark: preferences.monitoredFolderBookmarks[selection.parent.path] ?? previousBookmark,
+            identity: selection.parentIdentity, bookmark: nil,
             allowRelocation: false, language: language, hasIndependentAccess: !configuredAccess.isEmpty) else { return }
         let service = BatchRenameService(store: store)
         let roots = observationRoots(preferences)
         let locations = privateLocations
         let accessStore = self.accessStore
+        let shouldRememberParentGrant = access.shouldRememberParentGrant
         let session = try await Task.detached(priority: .userInitiated) {
             guard Self.allowsForward(parent: selection.parent, preferencesFile: preferencesFile) else {
                 throw BatchRenameError.disabled
@@ -96,7 +90,9 @@ final class BatchRenameOperations: ObservableObject {
             guard Self.allowsForward(parent: session.parentURL, preferencesFile: preferencesFile) else {
                 throw BatchRenameError.disabled
             }
-            try accessStore.remember(parent: session.parentURL, identity: selection.parentIdentity, bookmark: bookmark)
+            if shouldRememberParentGrant {
+                try accessStore.remember(parent: session.parentURL, identity: selection.parentIdentity, bookmark: bookmark)
+            }
             return session
         }.value
         let controlStore = store

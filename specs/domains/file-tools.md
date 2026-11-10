@@ -229,6 +229,9 @@ Load for: Optional Finder file/folder actions, batch rename, selection snapshots
   when available, otherwise ask for the exact folder via the main app's native
   directory picker. Cancelling authorization leaves pending state intact; this
   is not a separate cancellation feature. No broad entitlements or keyboard hooks.
+  Recheck saved access when executing a pending batch, including after relaunch.
+  Older pending records load, but their embedded bookmarks do not restore a
+  removed grant or authorize a new write.
 - Reject missing/replaced sources, root items, overlapping selections, same-folder
   destinations, and moving a folder into itself/descendants (including aliases
   through symbolic-link parents). Never overwrite or merge existing targets.

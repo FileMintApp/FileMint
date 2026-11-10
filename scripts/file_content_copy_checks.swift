@@ -113,7 +113,11 @@ private func checkRememberedReadAccess(in root: URL, pasteboard: NSPasteboard) a
     var narrowed = preferences
     narrowed.monitoredFolderURLs = [child]
     reopened.restore(for: secondSelection, preferences: narrowed)
-    try contentCheck(reopened.activeScopes.isEmpty, "Saved parent outside current Finder scope was ignored")
+    try contentCheck(reopened.activeScopes.map(\.path) == [firstSelection.parent.path], "Ancestor grant covers a target inside narrower Finder scope")
+    reopened.release()
+    narrowed.monitoredFolderURLs = [workspace.appendingPathComponent("elsewhere")]
+    reopened.restore(for: secondSelection, preferences: narrowed)
+    try contentCheck(reopened.activeScopes.isEmpty, "Saved grant does not expand Finder scope")
 
     let copy = FileContentCopyController(preferencesFile: preferencesURL, pasteboard: pasteboard)
     defer { copy.requestClose() }
@@ -128,6 +132,12 @@ private func checkRememberedReadAccess(in root: URL, pasteboard: NSPasteboard) a
         defer { restoredWrites.forEach { $0.stopAccessingSecurityScopedResource() } }
         try contentCheck(restoredWrites.map(\.path) == [firstSelection.parent.path], "Explicit write grant covers nested destination")
     }
+    try shared.forgetDirectoryWrite(at: firstSelection.parent.path)
+    let afterRemoval = RememberedFileAccess(preferencesFile: preferencesURL)
+    let writesAfterRemoval = afterRemoval.start(for: child, folder: true, mode: .write, roots: preferences.monitoredFolderURLs)
+    defer { writesAfterRemoval.forEach { $0.stopAccessingSecurityScopedResource() } }
+    try contentCheck(writesAfterRemoval.isEmpty, "Removing a saved write grant stops reuse")
+    try contentCheck(try afterRemoval.directoryWritePaths().isEmpty, "Removed grants stay absent from fresh store instances")
 
     try FileManager.default.moveItem(at: parent, to: workspace.appendingPathComponent("moved-parent"))
     try FileManager.default.createDirectory(at: child, withIntermediateDirectories: true)

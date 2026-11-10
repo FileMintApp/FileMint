@@ -36,6 +36,10 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   An existing draft is focused unchanged; cancelling or a stale template creates
   nothing. Finder retains its captured destination; if it needs authorization,
   show the draft first and request access only when Create needs it.
+- An explicit directory authorization during Create is saved through File Access,
+  independently of the Finder menu locations. Authorizing the original target
+  can retry the denied creation. Choosing a different destination updates the
+  draft and requires Create again.
 - Creation requests open or focus only the single creation panel. A Finder URL
   must not open or restore settings, including a cold launch or a request after
   settings was closed. Closing/cancelling the panel leaves settings closed.

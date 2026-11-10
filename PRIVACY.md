@@ -46,7 +46,7 @@ sharing service only when you explicitly choose it.
 - Draft filenames and pasted contents are not persisted by FileMint. Creating a
   file writes the requested content to the destination you selected.
 - Launch at login is managed through macOS ServiceManagement; the switch can
-  remove the registration. FileMint never enables Full Disk Access itself.
+  remove the registration.
 - Delete Permanently acts only after an explicit Finder action. It deletes selected
   items locally, bypassing Trash after the configured confirmation choice, and does
   not log their paths or contents. AirDrop is started only by an explicit Finder

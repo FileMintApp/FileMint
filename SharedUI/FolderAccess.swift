@@ -2,26 +2,28 @@ import AppKit
 import Darwin
 import FileMintCore
 
-/// Holds sandbox access for exactly the folders selected by the user.
 @MainActor
-final class FolderAccess {
+enum FolderAccess {
     enum Selection: Equatable { case file, folder, item }
-    private var activeURLs: [URL] = []
 
-    func restore(_ preferences: FileMintPreferences) {
-        for url in activeURLs { url.stopAccessingSecurityScopedResource() }
-        activeURLs = preferences.monitoredFolderURLs.compactMap { pathURL in
-            guard let data = preferences.monitoredFolderBookmarks[pathURL.path] else { return nil }
-            return Self.startSavedAccess(to: pathURL, bookmark: data)
-        }
+    /// Legacy Finder bookmarks are still usable and individually removable.
+    /// Scope applies to the requested directory, independently of the grant root.
+    nonisolated static func startSavedAccess(to directory: URL, resolved: URL? = nil,
+                                             in preferences: FileMintPreferences,
+                                             requiresFinderScope: Bool = true) -> [URL] {
+        startLegacyAccess(to: directory, resolved: resolved, bookmarks: preferences.monitoredFolderBookmarks,
+                          finderRoots: requiresFinderScope ? preferences.monitoredFolderURLs : nil)
     }
 
-    /// Match both path spellings, then verify the grant covers the real parent.
-    /// The caller owns the returned access until its read worker finishes.
-    nonisolated static func startSavedAccess(to directory: URL, resolved: URL? = nil,
-                                             in preferences: FileMintPreferences) -> [URL] {
-        startSavedAccess(to: directory, resolved: resolved, roots: preferences.monitoredFolderURLs,
-                         bookmarks: preferences.monitoredFolderBookmarks)
+    nonisolated static func startLegacyAccess(to directory: URL, resolved: URL? = nil,
+                                               bookmarks: [String: Data], finderRoots: [URL]?) -> [URL] {
+        let grantRoots = bookmarks.keys.filter { $0.hasPrefix("/") }.sorted().map { URL(fileURLWithPath: $0, isDirectory: true) }
+        let scopes = startSavedAccess(to: directory, resolved: resolved, roots: grantRoots, bookmarks: bookmarks)
+        if let finderRoots, !scopes.isEmpty, !FolderScope.containsResolvedDirectory(directory, in: finderRoots) {
+            scopes.forEach { $0.stopAccessingSecurityScopedResource() }
+            return []
+        }
+        return scopes
     }
 
     nonisolated static func startSavedAccess(to directory: URL, resolved: URL? = nil,
@@ -30,7 +32,7 @@ final class FolderAccess {
         return roots.compactMap { root in
             guard FolderScope.contains(directory, in: [root]) || FolderScope.contains(realParent, in: [root]),
                   let data = bookmarks[root.path],
-                  let url = startSavedAccess(to: root, bookmark: data) else { return nil }
+                  let url = startSavedAccess(to: root, bookmark: data, withoutMounting: true) else { return nil }
             guard FolderScope.containsResolvedDirectory(directory, in: [url]) else {
                 url.stopAccessingSecurityScopedResource()
                 return nil
@@ -53,14 +55,6 @@ final class FolderAccess {
             return nil
         }
         return url
-    }
-
-    static func remember(_ url: URL, in preferences: inout FileMintPreferences) throws {
-        let accessing = url.startAccessingSecurityScopedResource()
-        defer { if accessing { url.stopAccessingSecurityScopedResource() } }
-        let data = try url.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil)
-        if !preferences.monitoredFolderURLs.contains(url) { preferences.monitoredFolderURLs.append(url) }
-        preferences.monitoredFolderBookmarks[url.path] = data
     }
 
     nonisolated static func isPermissionError(_ error: Error) -> Bool {
@@ -117,51 +111,19 @@ final class FolderAccess {
         return panel
     }
 
-    /// Reacquire a matching saved grant for one external session rather than
-    /// relying on the settings controller's grant surviving later preference edits.
-    nonisolated static func externalDirectory(_ directory: URL, preferences: FileMintPreferences,
-                                              remembered: RememberedFileAccess? = nil) throws -> ExternalDirectoryResolution {
-        let resolvedPath = directory.resolvingSymlinksInPath().standardizedFileURL
-        let roots = preferences.monitoredFolderURLs.filter {
-            FolderScope.contains(directory, in: [$0]) || FolderScope.contains(resolvedPath, in: [$0])
-        }
-            .sorted { $0.path.count > $1.path.count }
-        for root in roots {
-            guard let data = preferences.monitoredFolderBookmarks[root.path],
-                  let resolved = startSavedAccess(to: root, bookmark: data, withoutMounting: true) else { continue }
-            do {
-                guard FolderScope.containsResolvedDirectory(directory, in: [resolved]) else {
-                    resolved.stopAccessingSecurityScopedResource()
-                    continue
-                }
-                let target = directory.resolvingSymlinksInPath().standardizedFileURL
-                return try .init(url: target, identity: CreationDirectoryIdentity.capture(target), startedScopeURL: resolved)
-            } catch {
-                resolved.stopAccessingSecurityScopedResource()
-                throw error
-            }
-        }
-        let scopes = remembered?.start(for: directory, folder: true, mode: .write,
-                                       roots: preferences.monitoredFolderURLs + [directory]) ?? []
-        if let scope = scopes.first {
-            scopes.dropFirst().forEach { $0.stopAccessingSecurityScopedResource() }
-            do {
-                let target = directory.resolvingSymlinksInPath().standardizedFileURL
-                return try .init(url: target, identity: CreationDirectoryIdentity.capture(target), startedScopeURL: scope)
-            } catch {
-                scope.stopAccessingSecurityScopedResource()
-                throw error
-            }
-        }
-        return try ExternalDraftDirectoryAccess.resolveDirectory(directory)
+    static func directoryWritePanel(for target: URL? = nil, language: AppLanguage) -> NSOpenPanel {
+        authorizationPanel(for: target, selection: .folder, language: language,
+                           detail: FileMintStrings.text(.directoryWriteAuthorizationHint, language: language))
     }
 
-    static func persist(_ directory: URL) throws {
-        let store = FileMintPreferencesStore()
-        try store.update { try remember(directory, in: &$0) }
-        DistributedNotificationCenter.default().post(
-            name: Notification.Name(FileMintAppGroup.preferencesDidChangeNotification), object: nil
-        )
+    /// Saved grants only cover metadata preparation here. Create reacquires
+    /// them so an open draft cannot keep a forgotten grant alive.
+    nonisolated static func externalDirectory(_ directory: URL, preferences: FileMintPreferences,
+                                              remembered: RememberedFileAccess? = nil) throws -> ExternalDirectoryResolution {
+        let scopes = startSavedAccess(to: directory, in: preferences) + (remembered?.start(for: directory,
+            folder: true, mode: .write, roots: preferences.monitoredFolderURLs, allowExactOutsideScope: true) ?? [])
+        defer { scopes.forEach { $0.stopAccessingSecurityScopedResource() } }
+        return try ExternalDraftDirectoryAccess.resolveDirectory(directory)
     }
 }
 
@@ -169,6 +131,7 @@ final class FolderAccess {
 /// stores are independent of Finder configuration and tool-specific records.
 struct RememberedFileAccess: Sendable {
     enum Mode: Sendable { case read, write }
+    static let directoryWritesChanged = Notification.Name("FileMintDirectoryWritesChanged")
     private static let identityKeys: Set<URLResourceKey> = [.fileResourceIdentifierKey, .creationDateKey, .volumeUUIDStringKey]
     private let directory: URL
 
@@ -180,21 +143,59 @@ struct RememberedFileAccess: Sendable {
         ScopedBookmarkStore(file: directory.appendingPathComponent(mode == .read ? "file-read-access.json" : "file-write-access.json"))
     }
 
-    func start(for target: URL, folder: Bool, mode: Mode, roots: [URL]) -> [URL] {
-        start(for: [target], folders: folder, mode: mode, roots: roots)
+    func directoryWritePaths() throws -> [String] { try store(.write).load().keys.sorted() }
+
+    @MainActor
+    func forgetDirectoryWrite(at path: String) throws {
+        let store = store(.write)
+        var bookmarks = try store.load()
+        guard bookmarks.removeValue(forKey: path) != nil else { return }
+        try store.save(bookmarks)
+        NotificationCenter.default.post(name: Self.directoryWritesChanged, object: nil)
     }
 
-    func start(for targets: [URL], folders: Bool, mode: Mode, roots: [URL]) -> [URL] {
-        var seen = Set<String>()
-        let candidates = targets.flatMap { Self.candidates(for: $0, folder: folders) }.filter { seen.insert($0.url.path).inserted }
-        let modes: [Mode] = mode == .read ? [.write, .read] : [.write]
-        return modes.flatMap { savedMode -> [URL] in
-            guard let bookmarks = try? store(savedMode).load() else { return [] }
-            return candidates.compactMap { target in
-                guard let bookmark = bookmarks[target.url.path] else { return nil }
-                return Self.start(bookmark, target: target.url, folder: target.folder, roots: roots)
-            }
+    @MainActor
+    func rememberWriteDirectory(_ chosen: URL, expected: URL? = nil) throws {
+        let target = chosen.resolvingSymlinksInPath().standardizedFileURL
+        if let expected, target.path != expected.resolvingSymlinksInPath().standardizedFileURL.path {
+            throw FileInfoError.invalidSelection
         }
+        let scope = try remember(chosen, target: target, folder: true, mode: .write, roots: nil)
+        scope.stopAccessingSecurityScopedResource()
+    }
+
+    func start(for target: URL, folder: Bool, mode: Mode, roots: [URL]?, allowExactOutsideScope: Bool = false) -> [URL] {
+        start(for: [target], folders: folder, mode: mode, roots: roots, allowExactOutsideScope: allowExactOutsideScope)
+    }
+
+    func start(for targets: [URL], folders: Bool, mode: Mode, roots: [URL]?, allowExactOutsideScope: Bool = false) -> [URL] {
+        var seen = Set<String>()
+        let modes: [Mode] = mode == .read ? [.read, .write] : [.write]
+        let stores = modes.compactMap { try? store($0).load() }
+        return targets.compactMap { target in
+            let candidates = Self.candidates(for: target, folder: folders)
+            for (index, bookmarks) in stores.enumerated() {
+                for (offset, candidate) in candidates.enumerated() {
+                    guard let bookmark = bookmarks[candidate.url.path],
+                          let scope = Self.start(bookmark, target: candidate.url, folder: candidate.folder) else { continue }
+                    // Validate the request after acquiring the grant. Validating
+                    // its ancestor against the menu list would reject wider grants.
+                    let coverage = Self.contains(target, folder: folders, in: [scope])
+                    let allowed = roots.map { Self.contains(target, folder: folders, in: $0) } ?? true
+                    if coverage && (allowed || (allowExactOutsideScope && offset == 0)) {
+                        if seen.insert("\(index):\(candidate.url.path)").inserted { return scope }
+                        scope.stopAccessingSecurityScopedResource()
+                        return nil
+                    }
+                    scope.stopAccessingSecurityScopedResource()
+                }
+            }
+            return nil
+        }
+    }
+
+    private static func contains(_ target: URL, folder: Bool, in roots: [URL]) -> Bool {
+        folder ? FolderScope.containsResolvedDirectory(target, in: roots) : FolderScope.containsResolvedItem(target, in: roots)
     }
 
     private static func candidates(for target: URL, folder: Bool) -> [(url: URL, folder: Bool)] {
@@ -212,15 +213,17 @@ struct RememberedFileAccess: Sendable {
         return candidates
     }
 
-    func remember(_ chosen: URL, target: URL, folder: Bool, mode: Mode, roots: [URL],
+    @MainActor
+    func remember(_ chosen: URL, target: URL, folder: Bool, mode: Mode, roots: [URL]?,
                   validate: () throws -> Void = {}) throws -> URL {
         let started = chosen.startAccessingSecurityScopedResource()
         defer { if started { chosen.stopAccessingSecurityScopedResource() } }
         try validate()
         let options: URL.BookmarkCreationOptions = mode == .read ? [.withSecurityScope, .securityScopeAllowOnlyReadAccess] : .withSecurityScope
         let bookmark = try chosen.bookmarkData(options: options, includingResourceValuesForKeys: Self.identityKeys, relativeTo: nil)
-        guard let scope = Self.start(bookmark, target: target, folder: folder, roots: roots) else { throw FileInfoError.accessDenied }
+        guard let scope = Self.start(bookmark, target: target, folder: folder) else { throw FileInfoError.accessDenied }
         do {
+            if let roots, !Self.contains(target, folder: folder, in: roots) { throw FileInfoError.accessDenied }
             try validate()
             let store = store(mode)
             do {
@@ -228,6 +231,7 @@ struct RememberedFileAccess: Sendable {
                 bookmarks[target.path] = bookmark
                 try store.save(bookmarks)
             } catch { throw FileInfoError.accessSaveFailed }
+            if mode == .write { NotificationCenter.default.post(name: Self.directoryWritesChanged, object: nil) }
             return scope
         } catch {
             scope.stopAccessingSecurityScopedResource()
@@ -235,11 +239,9 @@ struct RememberedFileAccess: Sendable {
         }
     }
 
-    private static func start(_ bookmark: Data, target: URL, folder: Bool, roots: [URL]) -> URL? {
+    private static func start(_ bookmark: Data, target: URL, folder: Bool) -> URL? {
         guard let url = FolderAccess.startSavedAccess(to: target, bookmark: bookmark, withoutMounting: true) else { return nil }
-        let inScope = folder ? FolderScope.containsResolvedDirectory(target, in: roots)
-            : FolderScope.containsResolvedItem(target, in: roots)
-        guard inScope, matchesIdentity(target, bookmark: bookmark, folder: folder) else {
+        guard matchesIdentity(target, bookmark: bookmark, folder: folder) else {
             url.stopAccessingSecurityScopedResource()
             return nil
         }

@@ -9,7 +9,7 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - Approved UI/UX v1 uses three explicit sidebar groups: File Creation (Templates
   & Types, Creation), Extensions (File & Folder Tools, Resource Tools, Open with App,
   Favorite Locations, Shortcuts, Launchers), and
-  Preferences (General, Finder & Folders, About). Arrow-key navigation follows
+  Preferences (General, Finder & Folders, File Access, About). Arrow-key navigation follows
   that visual order. Future implemented tools join Extensions without placeholders.
 - Use restrained adaptive porcelain/graphite surfaces and a muted mint accent,
   shared row/section/button spacing, a quiet breadcrumb and a fixed New File action.
@@ -49,7 +49,7 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - Native controls and adaptive system colors. Settings switches use the native
   small control size, preserving readable labels and keyboard/accessibility support. Settings use a persistent leading
   sidebar and a resizable detail area, with General, Creation, Templates & Types,
-  Finder & Folders, File & Folder Tools, Resource Tools and Open with App under Extensions, and About, grouped as above. Each page has a title, concise explanation and
+  Finder & Folders, File Access, File & Folder Tools, Resource Tools and Open with App under Extensions, and About, grouped as above. Each page has a title, concise explanation and
   functional sections; list actions stay next to their list. No decorative cards
   or disabled placeholders for future roadmap features. Follow system language
   by default; English and Chinese can be selected explicitly.
@@ -63,7 +63,8 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   section headings and secondary actions share the same sizing and spacing.
   Creation owns New File menu location, quick-creation collisions and reveal-after-creation. Templates &
   Types owns the existing enabled/order/custom-type management. Finder & Folders
-  owns extension status, folder scope/access and optional Full Disk Access guidance.
+  owns extension status and menu locations. File Access owns saved directory
+  authorization.
   About retains its credits and update actions. New File remains reachable from
   every page. Settings navigation itself never writes preferences or creates files.
 - Use a 1040 × 720 initial content size and a 960 × 680 minimum where the display

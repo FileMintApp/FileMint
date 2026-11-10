@@ -7,6 +7,7 @@ import FileMintCore
 @MainActor
 final class BatchRenameAccess {
     private var active: [URL] = []
+    private(set) var shouldRememberParentGrant = false
     private let store: BatchRenameAccessStore?
     private let chooseDirectory: @MainActor (URL, AppLanguage) -> URL?
 
@@ -28,7 +29,10 @@ final class BatchRenameAccess {
             let saved = try await Task.detached(priority: .userInitiated) { try store.load() }.value
             for candidate in BatchRenameAccessStore.candidates(for: parent, identity: identity, grants: saved) {
                 if let grant = await restore(candidate.grant.bookmark, parent: parent, identity: identity,
-                                             allowRelocation: allowRelocation, savedGrant: candidate.grant) { return grant }
+                                             allowRelocation: allowRelocation, savedGrant: candidate.grant) {
+                    shouldRememberParentGrant = true
+                    return grant
+                }
                 renewalRequired = true
             }
         }
@@ -54,6 +58,7 @@ final class BatchRenameAccess {
         guard let held = try await retain(grant, identity: identity) else {
             throw BatchRenameError.invalidBookmark
         }
+        shouldRememberParentGrant = true
         return held
     }
 

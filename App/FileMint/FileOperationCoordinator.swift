@@ -393,10 +393,9 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             try requireResolvedSelection(selection)
             guard FileToolsPolicy.availableTools(selection: selection, isItemMenu: true,
                 preferences: currentPreferences).contains(.move) else { throw FileMoveError.disabled }
-            let savedBookmarks = bookmarks
             let store = self.store
             try await Task.detached(priority: .userInitiated) {
-                let pending = try PendingFileMove.capture(selection: selection, bookmarks: savedBookmarks)
+                let pending = try PendingFileMove.capture(selection: selection)
                 try store.save(pending)
             }.value
 
@@ -480,18 +479,15 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             }.value
 
         case .perform(let batchID, let destination):
-            guard var pending = try store.load(), pending.id == batchID else { throw FileMoveError.staleRequest }
+            guard let pending = try store.load(), pending.id == batchID else { throw FileMoveError.staleRequest }
             try validate(pending, destination: destination)
-            var bookmarks = pending.bookmarks
+            var bookmarks: [String: Data] = [:]
             guard try authorizeParents(of: pending.items.map(\.source), bookmarks: &bookmarks) else { return }
             guard try authorize(destination, bookmarks: &bookmarks) else { return }
             try requireResolvedSelection(pending.items.map(\.source))
             guard FolderScope.containsResolvedDirectory(destination, in: currentPreferences.monitoredFolderURLs) else {
                 throw FileMoveError.disabled
             }
-            // Preserve new folder grants even if a later item cannot be moved.
-            pending.bookmarks = bookmarks
-            try store.save(pending)
             let store = self.store
             let preferencesFile = self.preferencesFile
             try await Task.detached(priority: .userInitiated) {
@@ -564,11 +560,12 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
     private func authorize(_ directory: URL, bookmarks: inout [String: Data], reading items: [URL] = [],
                            message: FileMintTextKey = .fileOperationAuthorize) throws -> Bool {
         let isReadOnly = !items.isEmpty
+        let requiresFinderScope = message != .desktopAliasAuthorize
         let preferences = currentPreferences
-        access += FolderAccess.startSavedAccess(to: directory, in: preferences)
+        access += FolderAccess.startSavedAccess(to: directory, in: preferences, requiresFinderScope: requiresFinderScope)
         let mode: RememberedFileAccess.Mode = isReadOnly ? .read : .write
         access += rememberedAccess.start(for: items.isEmpty ? [directory] : items, folders: items.isEmpty,
-                                         mode: mode, roots: preferences.monitoredFolderURLs)
+                                         mode: mode, roots: requiresFinderScope ? preferences.monitoredFolderURLs : nil)
         let savedAncestors = bookmarks.keys.filter { $0 != directory.path }.map { URL(fileURLWithPath: $0, isDirectory: true) }
         access += FolderAccess.startSavedAccess(to: directory, roots: savedAncestors, bookmarks: bookmarks)
         if let data = bookmarks[directory.path] {
@@ -596,10 +593,13 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             }
         }
         let language = preferences.language
+        let detail = isReadOnly ? FileMintStrings.text(message, language: language)
+            : FileMintStrings.text(message, language: language) + "\n" + FileMintStrings.text(.directoryWriteAuthorizationHint, language: language)
         let panel = FolderAccess.authorizationPanel(for: directory, selection: .folder, language: language,
-                                                     detail: FileMintStrings.text(message, language: language))
+                                                     detail: detail)
         NSApp.activate(ignoringOtherApps: true)
         guard panel.runModal() == .OK, let chosen = panel.url else { return false }
+        defer { chosen.stopAccessingSecurityScopedResource() }
         guard chosen.resolvingSymlinksInPath().standardizedFileURL.path ==
             directory.resolvingSymlinksInPath().standardizedFileURL.path else {
             showMessage(.moveChooseExactFolder)
@@ -610,7 +610,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
         try check()
         let roots = currentPreferences.monitoredFolderURLs
         let canonical = directory.resolvingSymlinksInPath().standardizedFileURL
-        if FolderScope.containsResolvedDirectory(canonical, in: roots) {
+        if requiresFinderScope, FolderScope.containsResolvedDirectory(canonical, in: roots) {
             access.append(try rememberedAccess.remember(chosen, target: canonical, folder: true, mode: mode, roots: roots))
         }
         let options: URL.BookmarkCreationOptions = isReadOnly ? [.withSecurityScope, .securityScopeAllowOnlyReadAccess] : .withSecurityScope

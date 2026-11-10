@@ -33,6 +33,7 @@ final class FileInfoReadAccess {
         defer { panel = nil }
         NSApp.activate(ignoringOtherApps: true)
         guard withExtendedLifetime(delegate, { picker.runModal() }) == .OK, let chosen = picker.url else { return false }
+        defer { chosen.stopAccessingSecurityScopedResource() }
         try remember(chosen, for: selection, in: currentRoots())
         return true
     }

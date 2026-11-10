@@ -57,7 +57,7 @@ final class OpenWithFolderAccess {
             do { try check(); return true }
             catch where FolderAccess.isPermissionError(error) { continue }
         }
-        let configured = FolderAccess.startSavedAccess(to: directory, roots: folders, bookmarks: configuredBookmarks)
+        let configured = FolderAccess.startLegacyAccess(to: directory, bookmarks: configuredBookmarks, finderRoots: folders)
         let shared = remembered?.start(for: items.isEmpty ? [directory] : items, folders: items.isEmpty,
                                        mode: .read, roots: folders) ?? []
         active += configured + shared

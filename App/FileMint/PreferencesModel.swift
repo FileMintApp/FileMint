@@ -9,7 +9,7 @@ import SwiftUI
 final class PreferencesModel: ObservableObject {
     static let shared = PreferencesModel()
     enum Pane: String, CaseIterable, Identifiable {
-        case fileTypes, creation, fileTools, resourceTools, openWith, favoriteLocations, shortcuts, launchers, general, folders, about
+        case fileTypes, creation, fileTools, resourceTools, openWith, favoriteLocations, shortcuts, launchers, general, folders, fileAccess, about
         var id: String { rawValue }
     }
     @Published var selectedPane: Pane = .general
@@ -29,7 +29,6 @@ final class PreferencesModel: ObservableObject {
     private let quickCreationTickets: QuickCreationTicketStore
     let documentTemplates: DocumentTemplateStore
     @Published var isImportingDocument = false
-    private let folderAccess = FolderAccess()
     private var preferenceObserver: NSObjectProtocol?
     private var isImportingSettings = false
     private(set) var openingGate = CreationOpeningGate(enabled: false)
@@ -82,14 +81,12 @@ final class PreferencesModel: ObservableObject {
         CustomFileSavePanelController.shared.updateFeatures(preferences)
     }
     private func configureCreationPanel() {
-        CustomFileSavePanelController.shared.startFolderAccess = { [weak self] directory in
-            self?.startCreationAccess(to: directory) ?? []
+        CustomFileSavePanelController.shared.startFolderAccess = { [weak self] directory, external in
+            self?.startCreationAccess(to: directory, external: external) ?? []
         }
         CustomFileSavePanelController.shared.rememberAuthorizedFolder = { [weak self] chosen in
-            guard let self else { return }
-            let target = chosen.resolvingSymlinksInPath().standardizedFileURL
-            let scope = try self.rememberedFileAccess.remember(chosen, target: target, folder: true, mode: .write, roots: [target])
-            scope.stopAccessingSecurityScopedResource()
+            guard let self else { throw FileInfoError.accessSaveFailed }
+            try self.rememberedFileAccess.rememberWriteDirectory(chosen)
         }
         CustomFileSavePanelController.shared.loadApplicationIcon = { application in
             await CreationApplicationPresentation.icon(for: application)
@@ -127,7 +124,6 @@ final class PreferencesModel: ObservableObject {
             lastError = FileMintStrings.text(.preferencesRecoveryRequired, language: loaded.preferences.language)
         }
         applyAppearance()
-        folderAccess.restore(preferences)
         refreshStatus()
         templateRecoveryError = workflowText(.recoveryNeeded)
         Task { await recoverTemplateTransactions(); await startupPreparation?(); isStartupReady = true }
@@ -140,7 +136,6 @@ final class PreferencesModel: ObservableObject {
                 guard loaded != self.preferences else { return }
                 self.preferences = loaded
                 self.commitFeatureState()
-                self.folderAccess.restore(loaded)
             }
         }
     }
@@ -247,14 +242,6 @@ final class PreferencesModel: ObservableObject {
 
     func openLoginSettings() { loginItemService.openSettings() }
 
-    func openFullDiskAccessSettings() {
-        // EndpointSecurity/ESClient.h documents this pane URL for macOS 13+.
-        let url = URL(string: "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_AllFiles")!
-        if !NSWorkspace.shared.open(url) {
-            NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/System Settings.app"))
-        }
-    }
-
     @discardableResult
     func save(recoveringInvalidFile: Bool = false, allowingTemplateMutation: Bool = false,
               acceptingUnavailableShortcut: Bool = false) -> Bool {
@@ -290,7 +277,6 @@ final class PreferencesModel: ObservableObject {
                     let loaded = store.loadWithStatus()
                     guard !loaded.requiresRecovery else { return }
                     preferences = loaded.preferences; commitFeatureState()
-                    folderAccess.restore(preferences)
                 }
             }
             lastError = (error as? GlobalShortcutFailure)?.message(preferences.language) ?? error.localizedDescription
@@ -512,36 +498,61 @@ final class PreferencesModel: ObservableObject {
         }
     }
 
-    func addMonitoredFolder(initial: URL? = nil) {
-        let picker = FolderAccess.authorizationPanel(selection: .folder, language: preferences.language)
+    func addMonitoredFolder() {
+        let picker = NSOpenPanel()
+        picker.title = text(.menuFolders)
+        picker.prompt = text(.addFolder)
+        picker.message = text(.folderHint)
+        picker.canChooseFiles = false
+        picker.canChooseDirectories = true
         picker.allowsMultipleSelection = true
-        picker.directoryURL = initial
-        picker.resolvesAliases = true
         guard picker.runModal() == .OK else { return }
+        defer { picker.urls.forEach { $0.stopAccessingSecurityScopedResource() } }
         rememberMonitoredFolders(picker.urls)
     }
 
-    /// Capture the whole picker selection before publishing it. Active grants
-    /// follow saved settings, including when disk writes or a bookmark fail.
     @discardableResult
     func rememberMonitoredFolders(_ urls: [URL]) -> Bool {
         let previous = preferences
-        do {
-            var candidate = previous
-            for url in urls { try FolderAccess.remember(url, in: &candidate) }
-            preferences = candidate
-            guard save() else { preferences = previous; return false }
-            folderAccess.restore(preferences)
-            return true
-        } catch { lastError = error.localizedDescription; return false }
+        var paths = Set(preferences.monitoredFolderURLs.map(\.path))
+        let locations = urls.filter(\.isFileURL).map { URL(fileURLWithPath: $0.path, isDirectory: true) }
+        preferences.monitoredFolderURLs += locations.filter { paths.insert($0.path).inserted }
+        guard save() else { preferences = previous; return false }
+        return true
     }
 
     func removeFolder(_ url: URL) {
         let previous = preferences
         preferences.monitoredFolderURLs.removeAll { $0 == url }
-        preferences.monitoredFolderBookmarks.removeValue(forKey: url.path)
         guard save() else { preferences = previous; return }
-        folderAccess.restore(preferences)
+    }
+
+    func chooseDirectoryWriteAccess(home: Bool) {
+        let expected = home ? DefaultFolders.resolvedUserHomeDirectory(fileManager: .default) : nil
+        let picker = FolderAccess.directoryWritePanel(for: expected, language: preferences.language)
+        guard picker.runModal() == .OK, let chosen = picker.url else { return }
+        defer { chosen.stopAccessingSecurityScopedResource() }
+        do {
+            try rememberedFileAccess.rememberWriteDirectory(chosen, expected: expected)
+            lastError = nil
+        } catch FileInfoError.invalidSelection {
+            lastError = text(.moveChooseExactFolder)
+        } catch { lastError = text(.directoryAccessChangeFailed) }
+    }
+
+    @discardableResult
+    func forgetDirectoryWriteAccess(path: String, legacy: Bool) -> Bool {
+        if legacy {
+            let previous = preferences
+            preferences.monitoredFolderBookmarks.removeValue(forKey: path)
+            guard save() else { preferences = previous; return false }
+            return true
+        }
+        do {
+            try rememberedFileAccess.forgetDirectoryWrite(at: path)
+            lastError = nil
+            return true
+        } catch { lastError = text(.directoryAccessChangeFailed); return false }
     }
 
     func newFile(templateID: String? = nil) {
@@ -593,7 +604,6 @@ final class PreferencesModel: ObservableObject {
             let launchAtLogin = preferences.launchAtLogin
             guard save(recoveringInvalidFile: true, allowingTemplateMutation: true,
                        acceptingUnavailableShortcut: true) else { preferences = previous; return }
-            folderAccess.restore(preferences)
             Task { await setLaunchAtLogin(launchAtLogin) }
             Task { await recoverTemplateTransactions() }
         } catch { lastError = error.localizedDescription }
@@ -718,7 +728,7 @@ final class PreferencesModel: ObservableObject {
                 guard externalInvocations.pendingRequestCount == 0, launcherWork.isEmpty,
                       CustomFileSavePanelController.shared.externalWindow == nil else { return }
                 let originalFollowUp = CreationFollowUp(template: snapshot.templates.first { $0.id == ticket.templateID }, preferences: snapshot, gate: originalGate)
-                let configuredAccess = startCreationAccess(to: ticket.directory)
+                let configuredAccess = startCreationAccess(to: ticket.directory, fromFinder: true)
                 defer { configuredAccess.forEach { $0.stopAccessingSecurityScopedResource() } }
                 let access = FolderScope.directoryAccess(ticket.directory, in: preferences.monitoredFolderURLs)
                 guard access != .outsideScope else { return }
@@ -742,10 +752,11 @@ final class PreferencesModel: ObservableObject {
 
     var rememberedFileAccess: RememberedFileAccess { RememberedFileAccess(preferencesFile: store.location) }
 
-    private func startCreationAccess(to directory: URL) -> [URL] {
-        FolderAccess.startSavedAccess(to: directory, in: committedPreferences)
+    private func startCreationAccess(to directory: URL, fromFinder: Bool = false, external: Bool = false) -> [URL] {
+        let requiresFinderScope = fromFinder || external
+        return FolderAccess.startSavedAccess(to: directory, in: committedPreferences, requiresFinderScope: requiresFinderScope)
             + rememberedFileAccess.start(for: directory, folder: true, mode: .write,
-                                         roots: committedPreferences.monitoredFolderURLs + [directory])
+                roots: requiresFinderScope ? committedPreferences.monitoredFolderURLs : nil, allowExactOutsideScope: external)
     }
 
     private func quickCreate(_ ticket: QuickCreationTicket, originalFollowUp: CreationFollowUp? = nil) async {

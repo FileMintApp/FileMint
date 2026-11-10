@@ -173,7 +173,7 @@ enum InterfaceText {
         case .generalSubtitle: ("Quietly at work, just the way you like.", "按你的习惯，安静地工作。")
         case .creationSubtitle: ("A few thoughtful details for every new file.", "照顾每一次新建的小细节。")
         case .typesSubtitle: ("Keep your everyday starting points close.", "把常用的起点，留在手边。")
-        case .foldersSubtitle: ("You decide where FileMint can work.", "你决定 FileMint 可以在哪里工作。")
+        case .foldersSubtitle: ("Choose where FileMint appears in Finder.", "选择 FileMint 菜单在 Finder 中的显示位置。")
         case .filesSubtitle: ("Just the tools you need in the context menu.", "让右键菜单，恰好够用。")
         case .interface: ("Interface", "界面")
         case .enabledFinder: ("Finder extension enabled", "Finder 扩展已启用")

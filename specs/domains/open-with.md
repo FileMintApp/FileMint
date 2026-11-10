@@ -74,10 +74,9 @@ Terminal, iTerm2 and Ghostty use their published macOS folder Services with a pr
   Cancellation, choosing a different folder or failed post-authorization checks
   must neither dispatch the request nor save new grants. Release restored access
   at request completion, including failures. Storage errors must be visible.
-- Settings explain that initial folder authorization may be required and saved
-  access is reused. Provide a shortcut to the existing folder settings for users
-  who want to authorize a configured folder in advance; Full Disk Access does
-  not replace sandbox folder authorization.
+- Open with App settings explain when initial folder authorization may be
+  required and that saved access is reused. Link to File Access for users who
+  want to authorize a working directory in advance.
 - Report missing apps, changed configuration, missing files and native open
   failures clearly. Do not change default file associations, clipboard, selected
   file contents, settings-window ownership or existing creation behavior. No shell

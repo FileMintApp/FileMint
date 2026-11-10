@@ -9,8 +9,8 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - Finder menus include the current user's real home directory and its children
   by default, plus folders explicitly added by the user. Resolve the home URL
   from the operating system, never by a username, display label or fixed
-  `/Users/...` path. Keep Desktop, Documents and Downloads as separate folder
-  authorization entries. Older settings retaining all three original defaults
+  `/Users/...` path. Keep Desktop, Documents and Downloads as separate menu
+  locations. Older settings retaining all three original defaults
   gain the dynamic home entry once; restricted folder selections and subsequent
   removal of the home entry remain authoritative. When Desktop or Documents is in
   scope, register the real user's home as a Finder observation ancestor so
@@ -28,11 +28,9 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   Item menus keep their complete selected-item snapshot. Recheck resolved scope
   and target type before a directory open; a later Finder location never replaces
   the captured target.
-- Folder selection uses NSOpenPanel. Persist security-scoped bookmarks alongside
-  paths, restore access on launch, and release access when folders are removed.
-  Apply additions/removals to active grants only after saving succeeds. Failed
-  bookmark capture or persistence restores the previous complete folder settings
-  and leaves existing grants active; never retain a partially added selection.
+- Finder menu location selection uses NSOpenPanel and saves only paths.
+  Adding or removing a menu location does not change saved file access. A
+  failed settings save keeps the previous complete selection.
 - Preferences are an atomically replaced private JSON file in
   `~/Library/Application Support/FileMint`. Both sandboxed targets have an
   exception scoped only to this application-owned directory. No App Group or
@@ -57,10 +55,6 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   opens a broader settings page. The card disappears only after the system API
   reports the extension enabled, refreshed when FileMint becomes active. Do not
   persist a separate onboarding-complete flag or treat opening Settings as consent.
-- General also presents an immediately visible Full Disk Access setup action on
-  first launch and later visits. It opens the macOS privacy pane only on the
-  user's request and states that the system switch is authoritative, FileMint
-  cannot read it, and sandbox folder selection may still be needed.
 - macOS discovers and loads the bundled Finder extension; its enabled state is
   controlled by the user. Explain this in the setup guide and open the system
   extension management UI on request. Do not use private APIs or `pluginkit` to
@@ -78,17 +72,30 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 
 ## Authorization for file operations
 
+- File Access settings let the user save read/write access to the real home
+  directory or another explicitly selected directory. Use the native picker and
+  explain descendant coverage before consent. List saved directory write grants
+  and legacy Finder folder bookmarks with their sources. Removing one record
+  removes its saved authority without deleting files or changing Finder menus.
+  Another explicit covering grant, native session access or system access can
+  still apply. Report save/remove failures and preserve the prior record.
+- Present saved folder access and on-demand native authorization in file access
+  setup and troubleshooting. File Access rows describe saved directory grants;
+  Finder & Folders rows describe menu locations. Actual access depends on the
+  target, the operation and macOS permissions.
 - For each captured item or destination, restore applicable saved grants for the
-  exact target and its authorized ancestors. Match the configured root and real
-  parent after resolution. Hold the grants through operation and worker cleanup.
-  Keep feature-specific grants within their original purpose and access mode.
-- Remember explicit, in-scope general file and folder authorization for later
-  operations. Share grants at compatible access levels within current resolved
-  Finder scope. A read-only grant never satisfies a write. General read and
-  write bookmarks use separate private stores. Existing configured and
-  feature-specific bookmarks retain their storage and authority. A separately
-  authorized, valid ancestor can still cover an operation when another saved
-  grant needs renewal.
+  exact target and its authorized ancestors. Resolve the operation target against
+  the current Finder roots and separately verify coverage by the authorized
+  object. An ancestor grant may start above the menu root. Use explicit app
+  destinations without requiring Finder menu registration. Hold saved scopes
+  only for the operation and worker cleanup, with no startup-wide activation.
+  New operations reload saved authority. Keep feature-specific grants within
+  their original purpose and access mode.
+- Share explicit file and folder grants at compatible access levels. A read-only
+  grant never satisfies a write. General read and write bookmarks use separate
+  private stores. Existing legacy Finder and feature-specific bookmarks keep
+  their format and permission level. A valid, independently authorized ancestor
+  can still cover an operation when another saved grant needs renewal.
 - When safe, attempt the requested read or transactional creation first. Before
   multi-item writes or external dispatch that cannot safely be repeated, check the
   required native access without touching user data. Only a permission denial can
@@ -204,7 +211,10 @@ owns selection, naming, storage support and recovery semantics.
 - A rejected saved grant needs exact-parent renewal unless another valid,
   independently authorized folder grant covers the current captured parent.
   A stale pathname or ambient temporary grant supplies no renewal consent.
-  A valid prior receipt or configured folder grant can seed the independent store.
+  Only an explicit parent selection or a previously saved rename grant can
+  seed or refresh the rename grant store. A reusable general grant may cover
+  a batch but never creates a second reusable grant or reuses an undo receipt
+  as authority for a new batch.
   Cancelled renewal preserves existing records and changes no user entries.
   Corrupt/unsupported/oversized or redirected grant-store bytes are preserved and
   reported, not silently reset. Create and finish a private 0600 temporary file
@@ -224,26 +234,6 @@ owns selection, naming, storage support and recovery semantics.
   the panel, commit or recovery; release active access on close. Restore consent
   comes from the explicit recovery action, not startup, ticket replay or opening
   a status card. Legacy creation, moves and other tools retain their own rules.
-
-## Privacy permission guidance
-
-- Folder settings include an optional Full Disk Access guide and a button to
-  open its macOS privacy pane using the macOS 13+ Settings link, with a general
-  System Settings fallback if opening that link fails: add the installed
-  FileMint.app, enable it, then quit and reopen FileMint. Never silently change
-  this system permission.
-- The Full Disk Access guide explicitly says that FileMint cannot automatically
-  read the system switch, and that the guide remaining visible does not mean
-  access is denied. System Settings is the authority: an enabled FileMint switch
-  means permission was granted; quit and reopen after enabling, without adding
-  the app again. Explain the off/missing-entry case separately. Never infer this
-  permission from folder access, saved preferences, or opening System Settings.
-- Folder rows describe only their own saved folder authorization, using
-  “Folder access saved” or “Choose this folder once”; neither label represents
-  Full Disk Access or guarantees a future write will succeed.
-- Explain the difference between privacy access and sandbox folder access:
-  Full Disk Access does not remove sandbox requirements; folder bookmarks are
-  remembered so normal use should not require repeated folder selection.
 
 ## Local extension maintenance
 

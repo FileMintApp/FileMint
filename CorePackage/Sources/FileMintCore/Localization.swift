@@ -49,15 +49,10 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case loginRegistrationFailed
     case openLoginSettings
     case retry
-    case fullDiskAccess
-    case openFullDiskAccess
-    case fullDiskAccessStatus
-    case fullDiskAccessStatusHint
-    case fullDiskAccessEnabledHint
-    case fullDiskAccessHint
-    case fullDiskSetupHint
-    case folderAccessReminder
     case folderAccessSaved
+    case fileAccess, fileAccessHint, directoryWriteAccess, directoryWriteAuthorizationHint
+    case authorizeHomeDirectory, authorizeOtherDirectory, removeDirectoryAccess, directoryAccessRemovalHint
+    case noDirectoryWriteAccess, legacyDirectoryAccess, directoryAccessLoadFailed, directoryAccessChangeFailed
     case importSettings
 
     case settingsLabel
@@ -349,7 +344,7 @@ public enum FileMintStrings {
         .openWithUnavailable: ("Unavailable · add again to repair", "App 不可用 · 请重新添加"),
         .openWithReorderHint: ("Drag the handle to set app order in Finder. You can also use the arrow buttons.", "拖动把手调整 App 在 Finder 菜单中的顺序，也可使用上下按钮。"),
         .openWithAuthorizeFolder: ("Allow FileMint to access this folder so it can open it or its selected items with your app. This folder access will be remembered for future use.", "允许 FileMint 访问当前文件夹，以使用所选 App 打开目录或其中的项目。授权会被记住，后续会复用有效授权。"),
-        .openWithFolderAccessHint: ("The first open may ask you to allow folder access. FileMint remembers it for later use, including after relaunch. You can also authorize folders in Finder & Folders settings. Full Disk Access does not replace this authorization.", "首次打开时可能需要允许访问文件夹，FileMint 会记住授权，重启后也可复用。也可前往「Finder 与文件夹」提前授权；完全磁盘访问不能替代文件夹授权。"),
+        .openWithFolderAccessHint: ("The first open may ask you to allow folder access. FileMint remembers it for later use, including after relaunch. File Access settings also let you authorize working folders ahead of time.", "首次打开时可能需要允许访问文件夹，FileMint 会记住授权，重启后也可复用。也可前往「文件访问」提前授权工作目录。"),
         .openWithFolderSettings: ("Folder Access Settings…", "设置文件夹访问权限…"),
         .openWithFolderAccessFailed: ("Folder access could not be restored or saved. Check folder permissions and available disk space, then try again.", "无法恢复或保存文件夹授权。请检查文件夹权限和剩余磁盘空间后重试。"),
         .newFileMenuPosition: ("New File menu location", "新建文件菜单位置"),
@@ -428,7 +423,7 @@ public enum FileMintStrings {
         .openSystemSettings: ("Open System Settings…", "打开系统设置…"),
         .generalSettingsHint: ("Make FileMint fit the way you work.", "设置语言、启动方式与更新偏好。"),
         .creationSettingsHint: ("Choose what happens when you create a file.", "设置同名处理与创建完成后的行为。"),
-        .finderFoldersHint: ("Manage Finder integration and the folders you work in.", "管理 Finder 扩展、菜单范围与文件夹访问权限。"),
+        .finderFoldersHint: ("Manage the Finder extension and where its menus appear.", "管理 Finder 扩展和菜单显示范围。"),
         .interfaceLanguage: ("Interface language", "界面语言"),
         .startupAndAccess: ("Startup & menu bar", "启动与菜单栏"),
         .viewUpdateSettings: ("View version and updates…", "查看版本与更新…"),
@@ -452,15 +447,19 @@ public enum FileMintStrings {
         .loginRegistrationFailed: ("Launch at login could not be enabled. Retry or check macOS Login Items.", "未能启用开机启动，可重试或检查 macOS 登录项设置。"),
         .openLoginSettings: ("Login Items Settings…", "打开登录项设置…"),
         .retry: ("Retry", "重试"),
-        .fullDiskAccess: ("Full Disk Access", "完全磁盘访问权限"),
-        .openFullDiskAccess: ("Check in System Settings…", "在系统设置中确认…"),
-        .fullDiskAccessStatus: ("Status: check the system switch", "授权状态：以系统设置开关为准"),
-        .fullDiskAccessStatusHint: ("FileMint cannot read this switch automatically. This guide remaining visible does not mean access is denied.", "FileMint 无法自动读取此开关。此说明仍然显示，不代表你尚未授权。"),
-        .fullDiskAccessEnabledHint: ("Switch on: permission is granted. Quit and reopen FileMint after enabling it; no need to add it again.", "开关已开启：已授予权限。开启后退出并重新打开 FileMint，无需重复添加或授权。"),
-        .fullDiskAccessHint: ("Switch off or FileMint missing: add the installed FileMint.app in Privacy & Security → Full Disk Access, then turn it on.", "开关关闭或没有 FileMint：在“隐私与安全性 → 完全磁盘访问权限”中添加已安装的 FileMint.app 并开启。"),
-        .fullDiskSetupHint: ("Working in protected folders? Open macOS Full Disk Access, add the installed FileMint.app if needed, and switch it on. Quit and reopen FileMint afterward. FileMint cannot read this switch; working folders may still need to be chosen once in Finder & Folders.", "需要处理受保护文件夹？打开 macOS“完全磁盘访问权限”，必要时添加已安装的 FileMint.app 并开启。随后退出并重新打开 FileMint。FileMint 无法读取此开关；工作文件夹仍可能需要在“Finder 与文件夹”中选择一次。"),
-        .folderAccessReminder: ("The folder list shows saved access only. Even with Full Disk Access, choose each working folder once to let FileMint remember access.", "列表仅显示各文件夹的授权记录。即使已开启完全磁盘访问，仍需首次选择工作文件夹以记住访问权限。"),
         .folderAccessSaved: ("Folder access saved", "已保存此文件夹的授权"),
+        .fileAccess: ("File Access", "文件访问"),
+        .fileAccessHint: ("Authorize folders and manage saved access.", "管理文件夹的读写授权。"),
+        .directoryWriteAccess: ("Saved Folder Access", "已保存的目录授权"),
+        .directoryWriteAuthorizationHint: ("FileMint will remember read and write access to the selected folder and its subfolders.", "FileMint 会记住所选文件夹及其子文件夹的读写授权。"),
+        .authorizeHomeDirectory: ("Authorize Home Folder…", "授权主文件夹…"),
+        .authorizeOtherDirectory: ("Authorize Other Folder…", "授权其他文件夹…"),
+        .removeDirectoryAccess: ("Remove Access", "移除授权"),
+        .directoryAccessRemovalHint: ("Removing a saved grant takes it out of use for future operations. Other grants and macOS permissions can still apply.", "移除后，后续操作会按其余授权重新判断访问权限。上级目录授权和 macOS 权限仍可能适用。"),
+        .noDirectoryWriteAccess: ("No saved folder access.", "还没有保存的目录授权。"),
+        .legacyDirectoryAccess: ("From Finder folder settings", "来自旧 Finder 文件夹设置"),
+        .directoryAccessLoadFailed: ("Saved folder access could not be loaded.", "无法读取已保存的目录授权。"),
+        .directoryAccessChangeFailed: ("Folder access could not be changed. The previous records were kept.", "无法更新目录授权，已保留原有记录。"),
         .importSettings: ("Import Settings…", "导入设置…"),
 
         .general: ("General", "通用"),
@@ -529,7 +528,7 @@ public enum FileMintStrings {
         .authorizeNamedFolder: ("Allow FileMint to access the folder “%@”.", "允许 FileMint 访问文件夹“%@”。"),
         .authorizeNamedItem: ("Allow FileMint to read “%@”.", "允许 FileMint 读取“%@”。"),
         .authorizeSelectedFolders: ("Allow FileMint to access the selected folders.", "允许 FileMint 访问选中的文件夹。"),
-        .folderHint: ("Menus include your home folder and its subfolders by default. Add other locations here; access is remembered after you choose a folder.", "默认包含当前用户主目录及其子目录的菜单。可在这里添加其他位置，选择后会记住访问权限。"),
+        .folderHint: ("Choose where FileMint menus appear. Saved folder access is managed in File Access.", "选择 FileMint 菜单的显示位置。目录授权在「文件访问」中单独管理。"),
         .authorize: ("Authorize…", "授权访问…"),
         .ready: ("Ready", "已就绪"),
         .needsAccess: ("Choose this folder once", "需首次选择此文件夹以授权"),

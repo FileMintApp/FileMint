@@ -43,7 +43,7 @@ Record actual results in ACCEPTANCE.md.
   and restore a built-in. Restoration retains imported documents and defaults.
 
 - Confirm File Creation (Templates & Types / Creation), Extensions (file tools /
-  resources / Open with App / Favorite Locations), and Preferences (General / Finder & Folders / About) remain distinct
+  resources / Open with App / Favorite Locations), and Preferences (General / Finder & Folders / File Access / About) remain distinct
   at 840×600. Sidebar arrow navigation follows this visual ordering.
 
 - Navigate General, Creation, Templates & Types, Finder & Folders and About
@@ -54,17 +54,13 @@ Record actual results in ACCEPTANCE.md.
   bottom inset remains visible, including below the Templates & Types actions;
   lower controls remain reachable and unclipped.
 - At the 840×600 minimum content size, check both languages, list actions, editor
-  sheets and scrolling of the expanded Full Disk Access guide. New File remains
-  accessible from each page. About menu commands reuse the same settings window.
+  sheets and the saved folder list. New File remains accessible from each page.
+  About menu commands reuse the same settings window.
 - With the Finder extension disabled, open General in both languages and confirm
   the setup card and manual Settings button are visible at 840×600. Open system
   settings from the button; return without enabling and confirm the card remains.
   Enable FileMint there, return to the app and confirm its actual status refreshes
   and the card disappears. Disable it again and confirm the card returns.
-- On General at first launch, confirm the Full Disk Access action is visible
-  alongside the extension setup path. The copy must direct the user to the
-  system switch, avoid claiming its status, and explain folder selection and
-  relaunch after enabling. Returning from System Settings alone changes no status.
 - Add `.toml` with starter content; verify it appears in the selector and Finder.
 - Edit, disable, reorder and remove that custom type. Select a built-in template:
   its selection should use the muted mint surface and its Edit and Remove actions
@@ -73,7 +69,10 @@ Record actual results in ACCEPTANCE.md.
 - Restore built-ins after confirmation; verify removed presets return with their
   original content while custom types remain. Drag a template and inspect the
   insertion line, then check the animated final order. Repeat with Reduce Motion.
-- Choose a working folder once, relaunch, and verify access is remembered.
+- In File Access, authorize the real home folder and a separate QA working
+  folder. Check reuse after relaunch and remove each authorization. Finder
+  menu locations and the selected folders' contents stay independent. Add and
+  remove a Finder menu location and verify the saved grants stay independent.
 - Switch Follow System/English/Chinese; verify settings, Finder menus and panel labels agree.
 - In General, Theme and Interface language pickers share the switches' trailing
   edge in both languages. Check the same alignment in Creation and tool settings.
@@ -87,15 +86,10 @@ Record actual results in ACCEPTANCE.md.
   ServiceManagement status. Disable/re-enable through both app and macOS
   settings; confirm the app never silently re-registers an externally disabled item.
 - With settings closed and the menu bar hidden, test both Finder creation routes.
-- Open the Full Disk Access guide in Chinese and English. Confirm it explicitly
-  says the system switch is authoritative and that a visible guide does not mean
-  access is denied. Both the enabled and off/missing-entry instructions must be
-  readable, with the folder list and its action buttons still usable.
-- “Check in System Settings…” must open Full Disk Access. Observe the existing
-  FileMint switch without changing it; returning to FileMint must not claim that
-  merely visiting settings granted or revoked access.
-- Folder labels must describe only a saved folder authorization or a request to
-  choose that folder once, separately from the Full Disk Access guide.
+- File Access lists saved directory grants and older Finder folder bookmarks.
+  Finder & Folders lists menu locations and links to File Access. Confirm the
+  picker explains access to the selected folder and its subfolders, and that the
+  saved record identifies its source.
 - Confirm no file-icon setting is exposed. Favorite Locations has its own page,
   search, group/type filters, bulk actions, pin reorder, and separate Finder
   add/list switches at 840×600 in both languages and appearances.

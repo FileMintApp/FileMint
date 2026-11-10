@@ -11,10 +11,11 @@ Start by creating one file in Finder, then turn on the other features as you nee
 ## Complete the first-time setup
 
 1. Open FileMint from Applications. If the **General** page says the Finder extension is off, click **Open Extension Settings**, enable FileMint in macOS, then return to the app to check its status.
-2. Open **Finder & Folders**. Check that your working folder is in the menu scope. If its row says **Choose this folder once**, click **Authorize…** and select that folder in the system picker.
-3. Return to Finder. Right-click the **desktop or the background of a configured folder** and look for **New File**.
+2. Open **Finder & Folders** and check that your working folder is in the menu scope.
+3. To save read and write access in advance, authorize your home folder or a working folder in **File Access**. You can also grant access when an operation asks for it.
+4. Return to Finder. Right-click the **desktop or the background of a configured folder** and look for **New File**.
 
-On macOS 15 and later, the extension switch is usually under **System Settings → General → Login Items & Extensions → Finder**. On older systems, look under **Privacy & Security → Extensions**. Finder enablement and folder access are separate. Even with Full Disk Access enabled, select your working folder when FileMint asks so it can remember sandbox access.
+On macOS 15 and later, the extension switch is usually under **System Settings → General → Login Items & Extensions → Finder**. On older systems, look under **Privacy & Security → Extensions**.
 
 Prefer to work without Finder menus? **New File…** in the app sidebar and **Resource Tools → Use Tools** work directly in the main app.
 
@@ -180,7 +181,7 @@ Under **General → Appearance**, choose Follow System, Light or Dark, plus Engl
 
 **No New File menu in Finder:** Check the Finder extension status in FileMint and enable its macOS switch if needed. Confirm that you clicked inside the configured menu scope. If the menu has not refreshed after a permission change, relaunch Finder. You can still use **New File…** in the main app.
 
-**The menu appears, but saving asks for access:** Follow FileMint's prompt and select the working folder in the system folder picker. Full Disk Access and FileMint's saved folder authorization are different. The Full Disk Access guide staying visible does not mean its system switch is off.
+**What if saving asks for access?** Follow FileMint's prompt and select the working folder in the system folder picker. You can review or remove saved folder grants in **File Access**.
 
 **An action is missing:** Right-click in the right place: a folder background for creation, selected items for most File & Folder Tools, a selected item or folder background for Copy Paths and Open with App, and supported selected images for Resource Tools. Then check the module switch, action switch and main-menu/submenu placement.
 

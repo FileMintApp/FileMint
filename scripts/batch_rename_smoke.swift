@@ -750,6 +750,8 @@ final class BatchRenameSmoke: NSObject, NSApplicationDelegate {
         preferences.fileTools.batchRename = true
         preferences.language = .english
         try FileMintPreferencesStore(fileURL: preferencesFile).save(preferences)
+        let sharedAccess = RememberedFileAccess(preferencesFile: preferencesFile)
+        try sharedAccess.rememberWriteDirectory(directory)
         let ticketsDirectory = directory.appendingPathComponent("tickets", isDirectory: true)
         let tickets = FileOperationTicketStore(directory: ticketsDirectory)
         let pending = PendingFileMoveStore(file: directory.appendingPathComponent("pending-move.json"))
@@ -770,8 +772,7 @@ final class BatchRenameSmoke: NSObject, NSApplicationDelegate {
         try await waitUntil { !feedback.isEmpty || !controller.isChecking && controller.rows.count == 2 }
         try require(feedback.isEmpty, "Initial coordinator request failed: \(feedback.joined(separator: "; "))")
         let remembered = try BatchRenameAccessStore(file: directory.appendingPathComponent("rename-folder-access.json")).load()
-        try require(remembered[captures.0.parent.path]?.identity == captures.0.parentIdentity,
-                    "An eligible new preview did not persist its independent parent grant")
+        try require(remembered.isEmpty, "Using a shared directory grant created a second reusable rename grant")
         let firstRows = controller.rows.map(\.id)
         let secondURL = try tickets.enqueue(.batchRename(selection: captures.1))
         coordinator.enqueue(secondURL)
@@ -787,6 +788,7 @@ final class BatchRenameSmoke: NSObject, NSApplicationDelegate {
         try require(FileManager.default.fileExists(atPath: ticketsDirectory.appendingPathComponent("\(id).json").path), "Other operation ticket consumed before rename closed")
         controller.requestClose()
         try await waitUntil { !coordinator.isBusy }
+        try sharedAccess.forgetDirectoryWrite(at: directory.resolvingSymlinksInPath().standardizedFileURL.path)
         try require(try pending.load()?.items.map(\.source) == later, "Existing move queue did not resume after rename closed")
         let expired = try tickets.enqueue(.batchRename(selection: captures.1), now: Date().addingTimeInterval(-61))
         coordinator.enqueue(expired)

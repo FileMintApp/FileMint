@@ -210,10 +210,12 @@ final class LauncherProductRuntime: NSObject {
         picker.canChooseDirectories = true
         picker.canCreateDirectories = false
         picker.directoryURL = hostDirectory
-        picker.message = "Choose only the reserved FileMint launcher QA folder. This saves access in this fixture's private preferences."
+        picker.message = "Choose only the reserved FileMint launcher QA folder. This saves access in this fixture's private grant store."
         guard picker.runModal() == .OK, let url = picker.url,
               url.standardizedFileURL == hostDirectory.standardizedFileURL else { record("folder-choice-cancelled-or-rejected"); return }
-        guard model.rememberMonitoredFolders([url]) else { record("folder-remember-failed"); return }
+        defer { url.stopAccessingSecurityScopedResource() }
+        do { try model.rememberedFileAccess.rememberWriteDirectory(url) }
+        catch { record("folder-remember-failed"); return }
         model.preferences.monitoredFolderURLs.removeAll { $0 == url }
         model.preferences.monitoredFolderURLs.insert(url, at: 0)
         _ = model.save()

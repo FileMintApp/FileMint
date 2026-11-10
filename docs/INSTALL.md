@@ -73,7 +73,7 @@ shasum -a 256 -c FileMint-VERSION.dmg.sha256
 发布时尚未取得公证结果，之后 Apple 已接受同一份 DMG；公开文件没有内嵌票据。
 SHA-256、Developer ID 签名、在线公证票据和内嵌票据是不同的验证。
 
-## 登录启动、菜单栏与完全磁盘访问
+## 登录启动、菜单栏与文件访问
 
 安装到“应用程序”并首次启动后，FileMint 会请求注册为 macOS 原生登录项。
 “通用”中的“开机自动启动”和“显示在菜单栏”默认开启，关闭后会保存选择。
@@ -81,15 +81,9 @@ SHA-256、Developer ID 签名、在线公证票据和内嵌票据是不同的验
 和 DMG 内的副本不会自动注册为登录项。隐藏菜单栏后仍可从应用程序打开；打开
 设置时会显示在 Dock，关闭设置后会回到后台工具状态。
 
-需要确认完全磁盘访问时，在“Finder 与文件夹”页点击“在系统设置中确认…”，在
-系统设置 → 隐私与安全性 → 完全磁盘访问权限中添加 `/Applications/FileMint.app`
-并开启，随后退出并重新打开 FileMint。此权限由你在 macOS 中选择，应用不会代为启用。
-如果 FileMint 的开关已经开启，就表示已授予权限，无需重复添加或授权。
-FileMint 无法自动读取此系统开关，因此应用内的说明会保留；说明仍然显示不代表
-授权失败或尚未授权，实际状态以系统设置为准。
-完全磁盘访问和 App Sandbox 授权是独立机制；文件夹可能仍需首次选择授权，
-FileMint 会用书签记住它，而不是每次创建都重新选择。下方“已保存此文件夹的授权”
-仅说明此文件夹的授权记录已保存，不表示完全磁盘访问状态，也不保证任何位置都可写入。
+在“文件访问”中可以提前授权主文件夹或自选工作目录，也可以在操作提示时通过系统
+选择器授权。FileMint 会保存目录授权，供后续操作复用。“Finder 与文件夹”用于设置
+右键菜单出现的位置。实际能否读写取决于目标、操作范围和 macOS 权限。
 
 ## 旧开发版设置
 
@@ -124,8 +118,11 @@ review System Settings → Privacy & Security → Open Anyway for this specific 
 Do not disable Gatekeeper globally. Managed devices may prohibit this build.
 
 Enable FileMint under General → Login Items & Extensions → Finder on macOS 15+,
-or Privacy & Security → Extensions on older systems. Authorize your working
-folders in FileMint. Finder extension loading remains subject to macOS policy.
+or Privacy & Security → Extensions on older systems. Authorize your home folder
+or a working folder in FileMint's File Access settings, or select the target in
+the system picker when an operation asks for access. FileMint remembers saved
+folder grants. Use Finder & Folders to choose where Finder menus appear.
+Finder extension loading remains subject to macOS policy.
 The app's New File… action works independently of Finder integration.
 
 ### File & Folder Tools
@@ -138,12 +135,6 @@ File & Folder Tools is disabled by default. Open Settings → Extensions → Fil
 - A new source selection replaces the previous batch; unfinished items survive a FileMint relaunch. Existing names, changed sources, the current folder and a folder's own descendant are all rejected without overwrite or merge.
 - Delete Permanently asks for confirmation by default, then bypasses Trash. You can explicitly choose Delete silently; this skips only FileMint's dialog, never folder authorization. A symbolic link is removed without touching its target.
 - AirDrop starts disabled. When enabled, it opens macOS's native AirDrop UI so you choose a recipient. Cancelling, an unavailable service or a sending failure never falls back to another sharing service.
-
-In Finder & Folders, use “Check in System Settings…” to confirm Full Disk Access. An
-enabled FileMint switch means permission is granted; quit and reopen after
-enabling it, without adding the app again. FileMint cannot automatically read
-this switch, so the guide remaining visible does not mean access is denied.
-The folder list describes saved folder access separately from Full Disk Access.
 
 Use the checksum command above to verify the download. GitHub build attestations
 apply to published versions through 0.5.1, not to locally built releases from 0.5.3.

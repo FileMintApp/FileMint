@@ -39,7 +39,7 @@ final class CustomFileSavePanelController: NSObject {
     private var formatHintView: NSView?
     private var documentTemplates = DocumentTemplateStore()
     // Injected by the main app; SharedUI never imports the app's settings model.
-    var startFolderAccess: ((URL) -> [URL])?
+    var startFolderAccess: ((URL, Bool) -> [URL])?
     var rememberAuthorizedFolder: ((URL) throws -> Void)?
     var snapshotFollowUp: ((FileTemplate?, CreationActionSelection, CreationApplication?) -> CreationFollowUp?)?
     var completeCreation: ((FileCreationResult, CreationFollowUp?, AppLanguage) async -> Void)?
@@ -115,14 +115,18 @@ final class CustomFileSavePanelController: NSObject {
         refreshDestinationMenu()
         refreshExternalNotice()
     }
-    private func selectExternalDirectory(_ url: URL) {
+    private func selectExternalDirectory(_ url: URL, nativeSelection: Bool = true) {
         guard let current = externalPresentation else { return }
         current.directory.releaseWhenIdle()
-        let access = ExternalDraftDirectoryAccess(url: url, nativeGrantURL: url)
+        let access = ExternalDraftDirectoryAccess(url: url, nativeGrantURL: nativeSelection ? url : nil)
         let sessionID = current.sessionID
         externalPresentation?.directory = access
         locationSelection?.selectDirectory(url)
-        access.prepare(using: { try ExternalDraftDirectoryAccess.resolveDirectory(url) }, didChange: { [weak self, weak access] in
+        let scopes = nativeSelection ? [] : (startFolderAccess?(url, true) ?? [])
+        access.prepare(using: {
+            defer { scopes.forEach { $0.stopAccessingSecurityScopedResource() } }
+            return try ExternalDraftDirectoryAccess.resolveDirectory(url)
+        }, didChange: { [weak self, weak access] in
             guard let self, let access, self.externalPresentation?.directory === access else { return }
             self.externalDirectoryDidChange(sessionID)
         })
@@ -816,7 +820,8 @@ final class CustomFileSavePanelController: NSObject {
     private func createFile(
         named fileName: String,
         in directoryURL: URL,
-        replacingExistingFile: Bool
+        replacingExistingFile: Bool,
+        allowsAuthorization: Bool = true
     ) {
         guard !isCreating else { return }
         isCreating = true
@@ -843,7 +848,7 @@ final class CustomFileSavePanelController: NSObject {
         let basicReveal = revealAfterCreation
         Task {
             defer { externalAccess?.endOperation() }
-            let configuredAccess = startFolderAccess?(directoryURL) ?? []
+            let configuredAccess = startFolderAccess?(directoryURL, externalAccess != nil) ?? []
             defer { configuredAccess.forEach { $0.stopAccessingSecurityScopedResource() } }
             let accessed = directoryURL.startAccessingSecurityScopedResource()
             defer { if accessed { directoryURL.stopAccessingSecurityScopedResource() } }
@@ -863,7 +868,7 @@ final class CustomFileSavePanelController: NSObject {
             case .failure(FileMintError.fileAlreadyExists(let url)):
                 confirmReplacement(of: url)
             case .failure(let error):
-                if FolderAccess.isPermissionError(error) { authorizeForRetry(directoryURL) }
+                if allowsAuthorization, FolderAccess.isPermissionError(error) { authorizeForRetry(directoryURL) }
                 else { showError(error) }
             }
         }
@@ -872,21 +877,25 @@ final class CustomFileSavePanelController: NSObject {
     private func authorizeForRetry(_ directory: URL) {
         guard let panel else { return }
         let picker = FolderAccess.authorizationPanel(for: directory, selection: .folder, language: language,
-            detail: FileMintStrings.text(.authorizeFolderHint, language: language))
+            detail: FileMintStrings.text(.directoryWriteAuthorizationHint, language: language))
         picker.beginSheetModal(for: panel) { [weak self] response in
-            guard let self, self.panel === panel, response == .OK, let url = picker.url else { return }
+            guard response == .OK, let url = picker.url else { return }
+            defer { url.stopAccessingSecurityScopedResource() }
+            guard let self, self.panel === panel, let remember = self.rememberAuthorizedFolder else { return }
+            let selectedPath = url.resolvingSymlinksInPath().standardizedFileURL.path
+            let selected = URL(fileURLWithPath: selectedPath, isDirectory: true)
+            do { try remember(url) }
+            catch { self.showError(error); return }
             if self.externalPresentation != nil {
-                do { try self.rememberAuthorizedFolder?(url) }
-                catch { self.showError(error); return }
-                self.selectExternalDirectory(url)
+                self.selectExternalDirectory(selected, nativeSelection: false)
                 return
             }
-            do { try FolderAccess.persist(url) }
-            catch { self.showError(error); return }
-            self.locationSelection?.selectDirectory(url)
+            self.locationSelection?.selectDirectory(selected)
             self.refreshDestinationMenu()
-            // A different folder is a new create request, never an implicit replace.
-            self.createRequestedFile(nil)
+            if selected.path == directory.resolvingSymlinksInPath().standardizedFileURL.path,
+               let name = self.resolvedFileName() {
+                self.createFile(named: name, in: selected, replacingExistingFile: false, allowsAuthorization: false)
+            }
         }
     }
 

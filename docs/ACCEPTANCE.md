@@ -17,6 +17,30 @@ with the updated prompt still needs an installed check. See the
 [live check](tasks/2026-11-10-finder-hidden-files-toggle.md#live-finder-delivery)
 and [relaunch evidence](tasks/2026-11-10-finder-hidden-files-toggle.md#existing-keystroke-grant-after-relaunch).
 
+## File access settings guidance — 2026-11-10
+
+The signed design fixture showed the Finder extension setup in General and
+the directory grant list in File Access in Chinese and English, with the old
+Full Disk Access guidance removed. Bilingual folder-access search, offline
+checks, unsigned compilation and the site build passed. The November 10 Debug
+installation includes this cleanup. See the
+[verification record](tasks/2026-11-09-file-access-authorization.md#full-disk-access-guidance-removal).
+
+## Directory access management — 2026-11-09
+
+On arm64 macOS 27.2, a Developer ID signed sandbox fixture exercised actual
+reads and exclusive writes with and without a saved home grant and with Full
+Disk Access off and on. Both probe directories required the saved grant in
+these four cases. A custom directory grant also survived relaunch and stopped
+working after removal. The out-of-menu sibling stayed excluded, and the QA
+permission was removed from System Settings. See the
+[matrix and revocation evidence](tasks/2026-11-09-file-access-authorization.md#directory-access-management-and-signed-matrix).
+
+The signed Debug app was subsequently installed for user testing. The live
+app opened File Access and Finder reloaded the one enabled extension from the
+installed bundle. See the
+[local installation record](tasks/2026-11-09-file-access-authorization.md#installed-debug-for-user-acceptance).
+
 ## Sparkle bookmark restoration — 2026-11-09
 
 Signed sandbox builds 1 and 2 of the isolated UpgradeQA app established an

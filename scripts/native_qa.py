@@ -20,6 +20,7 @@ KINDS = {
     "open-with": ("OpenWithSmoke.app", "io.github.daigua.filemint.open-with-smoke", ("io.github.daigua.filemint.open-with-receiver",)),
     "file-tools-settings": ("FileMintToolsUIQA.app", "io.github.daigua.filemint.tools-ui-qa", ()),
     "file-info": ("FileInfoSmoke.app", "io.github.daigua.filemint.file-info-smoke", ()),
+    "folder-access": ("FileMintFolderAccessQA.app", "io.github.daigua.filemint.folder-access-qa", ()),
     "batch-rename": ("BatchRenameSmoke.app", "io.github.daigua.filemint.batch-rename-smoke", ()),
     "move-sandbox": ("FileMintMoveSandboxSmoke.app", "io.github.daigua.filemint.move-smoke", ()),
     "update-sandbox": ("FileMintUpdateSandboxSmoke.app", "io.github.daigua.filemint.update-smoke", ()),

@@ -81,6 +81,7 @@ All paths below are relative to that stable root.
 | open-with | OpenWithSmoke.app | io.github.daigua.filemint.open-with-smoke |
 | file-tools-settings | FileMintToolsUIQA.app | io.github.daigua.filemint.tools-ui-qa |
 | file-info | FileInfoSmoke.app | io.github.daigua.filemint.file-info-smoke |
+| folder-access | FileMintFolderAccessQA.app | io.github.daigua.filemint.folder-access-qa |
 | batch-rename | BatchRenameSmoke.app | io.github.daigua.filemint.batch-rename-smoke |
 | move-sandbox | FileMintMoveSandboxSmoke.app | io.github.daigua.filemint.move-smoke |
 | update-sandbox | FileMintUpdateSandboxSmoke.app | io.github.daigua.filemint.update-smoke |
@@ -258,6 +259,28 @@ window stay isolated. Existing P0 evidence remains tied to its original run.
   access reuses approval; fixed ID/path/signature alone is structural evidence.
   Initial approvals remain a user action. This workflow does not set app access
   policy, remove macOS permission prompts or prove installed Finder behavior.
+
+## Directory access matrix
+
+Run `bash scripts/build_folder_access_harness.sh` to build the Developer ID
+signed sandbox host. It compiles the production directory picker, bookmark
+store/resolver, and file creation service. Read the published bundle's
+`FixtureRunID`. Prepare synthetic `seed.txt` files containing
+`FileMint folder access QA` and a final newline in `~/FileMint-FolderAccessQA-<run>/Included`,
+`~/FileMint-FolderAccessQA-<run>/Excluded`, and `~/Documents/FileMint-FolderAccessQA-<run>`.
+Use a fresh run and create these test locations exclusively.
+
+Launch only the stable host with `open -n -W APP --args ACTION FDA LABEL`.
+`FDA` is `off`, `on`, or `unknown`, observed separately in System Settings.
+Record `probe` with no grant, then `authorize-custom`, `probe`, `revoke-custom`,
+and `probe` again. Run `authorize-home` and probe with FDA off. The user then
+enables FDA for the QA host in System Settings. Repeat the probe with the home
+grant, `revoke-home`, and probe again in a new process. Remove the QA-only system
+permission when finished. Do not inspect the TCC database. The probes record
+actual reads and exclusive writes, separate process IDs, saved grant counts,
+and the unchanged menu preference bytes. The outside-menu sibling cannot use
+the grant through a Finder request even when its ancestor is authorized.
+Collect the named reports from `~/Library/Application Support/FileMintFolderAccessQA/<run>`.
 
 ## Access migration prototype
 

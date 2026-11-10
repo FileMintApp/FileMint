@@ -21,7 +21,7 @@ struct OpenWithPane: View {
                 if !model.save() { model.preferences.openWith = previous }
             }), language: model.preferences.language, isChoosing: model.isChoosingOpenWithApp,
                addApplication: model.addOpenWithApplications,
-               showFolderSettings: { model.selectedPane = .folders })
+               showFolderSettings: { model.selectedPane = .fileAccess })
         }
     }
 }

@@ -1,7 +1,7 @@
 # Task: File access authorization
 
-Status: verified for local replacement and Sparkle bookmark restoration
-Next action: Verify both post-Sparkle actions through the visible Finder menu.
+Status: directory authorization matrix and guidance removal verified
+Next action: User acceptance of File Access and Finder menus on the [installed Debug build](2026-11-10-finder-hidden-files-toggle.md#installed-debug-for-acceptance).
 
 ## Objective and scope
 
@@ -18,6 +18,14 @@ Next action: Verify both post-Sparkle actions through the visible Finder menu.
 - [Verification matrix](../../specs/HARNESS.md) and [Finder checks](../../specs/verification/finder.md)
 
 ## Decisions and evidence
+
+- Directory write authorization for the real home or user-selected locations
+  belongs to File Access. Finder settings change menu locations independently.
+  The existing write store and legacy Finder bookmark records are managed
+  without copying them into a new store. Saved scopes are opened for operations.
+- Recheck current authorization at pending move execution and keep rename
+  recovery authority separate. Signed matrix probes use only isolated state and
+  synthetic files. Record the macOS switch state separately from I/O results.
 
 - Restore configured ancestor grants for the life of the operation. Reads use
   the actual result. Multi-item writes and external dispatch use a native check
@@ -102,3 +110,98 @@ used as the fixture.
 
 - [Runtime events with request origins](../../build/sparkle-installation-harness.noindex/run.ND1bRW/runtime-events.jsonl)
 - [Verified Sparkle and direct copy results](../../build/sparkle-installation-harness.noindex/run.ND1bRW/probe-result.json)
+
+## Directory access management and signed matrix
+
+On arm64 macOS 27.2 (26B123), at `c7407e0` plus the local changes, the
+Developer ID signed [directory fixture](../../specs/verification/native-qa.md#directory-access-matrix)
+used the production picker, bookmark store/resolver and file creation service.
+The System Settings row was absent before the off runs. The user enabled the
+QA-only row for the on runs, and its enabled switch was observed in Settings.
+All rows used a new process and synthetic files in a normal home subfolder and
+in Documents. Each successful write was verified by reading its exact bytes.
+
+| Full Disk Access | Saved home grant | Ordinary folder | Documents | Evidence |
+| --- | --- | --- | --- | --- |
+| Off | Absent | Read and write denied | Read and write denied | [Baseline](../../build/folder-access-harness.noindex/run.BYE3kWE7/off-none.json) |
+| Off | Present | Read and write passed | Read and write passed | [Relaunch](../../build/folder-access-harness.noindex/run.BYE3kWE7/off-home-relaunch.json) |
+| On | Absent | Read and write denied | Read and write denied | [Relaunch after revoke](../../build/folder-access-harness.noindex/run.BYE3kWE7/on-none.json) |
+| On | Present | Read and write passed | Read and write passed | [Both enabled](../../build/folder-access-harness.noindex/run.BYE3kWE7/on-home.json) |
+
+The saved custom parent restored access to its included child after relaunch.
+The Finder policy rejected its excluded sibling. Removing the custom grant
+denied reads and writes immediately and after a fresh launch with FDA off.
+Removing the home grant denied reads and writes with FDA still on. After the
+QA system entry was removed in Settings, a fresh process continued to deny
+access. All cases retained identical Finder preference bytes. The first picker
+attempt returned the wrong directory and saved no grant. The successful run
+opened each picker at its intended target.
+The QA-only system entry and both runs' synthetic targets were removed after
+verifying the QA grant stores were empty.
+
+- [Custom folder relaunch](../../build/folder-access-harness.noindex/run.BYE3kWE7/off-custom-relaunch.json)
+- [Custom folder revoked](../../build/folder-access-harness.noindex/run.BYE3kWE7/off-custom-revoked-relaunch.json)
+- [Final denial after removing QA system access](../../build/folder-access-harness.noindex/run.BYE3kWE7/off-home-revoked-final.json)
+- [Offline verification](../../build/folder-access-implementation.noindex/verify.log)
+- [Unsigned app and Finder extension build](../../build/folder-access-implementation.noindex/build.log)
+
+`make verify` passed 407 Core tests, 23 image tests and the offline restricted
+subprocess checks. The unsigned build produced the app and its embedded Finder
+extension. The local bilingual guide build passed all 27 site checks and rendered
+the new steps at the repository base path.
+
+Signed batch rename, Open with App, file information, resource tools and file
+visibility passed in the [affected run](../../build/native-checks.noindex/run.z6hq7qrt/report.json).
+The settings check in that run identified a path-spelling change when making
+menu locations plain URLs. The [focused rerun](../../build/native-checks.noindex/run.epd84vjj/report.json)
+passed after preserving the menu path and making the authorized draft path a
+plain URL. It covered creation, authorization add/remove, settings rollback,
+and the bilingual search result for File Access. The final integration copy
+and link were compiled with the same settings destination. The signed matrix
+uses the unchanged picker, store, scope resolver and creation service.
+
+The full Quick Search native check stopped at global registration of the
+default shortcut. Carbon returned `eventHotKeyExistsErr` (`-9878`).
+[Quick Search runtime log](../../build/native-checks.noindex/run.z6hq7qrt/quick-search.log)
+
+## Installed Debug for user acceptance
+
+The user requested a local Debug installation from the current worktree.
+FileMint 0.8.1 (30) was built for arm64 with `ENABLE_DEBUG_DYLIB=NO`, signed
+with the installed Developer ID team, and installed at `/Applications/FileMint.app`.
+The app and Finder extension retained their designated requirements. The old
+app quit normally and was archived before the atomic replacement. The first
+install command stopped before replacement because a zsh variable masked the
+command path. The retry used the prepared staging copy. LaunchServices briefly
+discovered the swapped-out app, so its exact staging registration and bundle
+were removed. One enabled Finder extension remained and its new process ran
+from the installed path. The installed app opened File Access for the user.
+The user will exercise the authorization controls and Finder menu actions.
+
+- [Installation record](../../build/local-debug-install.noindex/run.G6aaiQAT/installation.json)
+- [Previous app backup](../../build/local-debug-install.noindex/run.G6aaiQAT/previous-FileMint.app.zip)
+
+## Full Disk Access guidance removal
+
+The signed directory matrix above supports using the native folder picker as
+the file access setup flow. Removed the Full Disk Access cards from General and
+File Access, their System Settings shortcut, and the corresponding public
+guidance. File Access is searchable by folder authorization terms in both
+languages.
+
+Tested `c7407e0` plus the working changes on arm64 macOS 27.2 (26B123) with
+Xcode 27.2 (27B52).
+
+- `make verify` passed 407 Core and 23 image tests and the offline subprocess
+  checks. [Log](../../build/file-access-guide-removal.noindex/run.odiO9T/verify.log)
+- The unsigned build produced the main app and embedded Finder extension
+  executables. The initial run stopped at denied SwiftPM cache writes; the
+  command-scoped retry passed. [Log](../../build/file-access-guide-removal.noindex/run.odiO9T/build-unsandboxed.log)
+- Signed `design-ui` passed settings search, grant management and rendering.
+  General showed the Finder setup card and File Access showed the directory
+  list and controls in Chinese/light and English/dark. [Report](../../build/native-checks.noindex/run.rkdbqsjv/report.json)
+- All 27 site checks passed. The rendered bilingual guides contained the updated
+  instructions and valid install links. [Log](../../build/file-access-guide-removal.noindex/run.odiO9T/site-final.log)
+
+The [November 10 Debug installation](2026-11-10-finder-hidden-files-toggle.md#installed-debug-for-acceptance)
+includes this cleanup.

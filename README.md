@@ -111,7 +111,7 @@ The persistent sidebar groups settings by job:
 
 - **File Creation**: Templates & Types, Creation.
 - **Extensions**: File & Folder Tools, Resource Tools, Open with App.
-- **Preferences**: General, Finder & Folders, About.
+- **Preferences**: General, Finder & Folders, File Access, About.
 
 Each page has a clear responsibility, optional modules can be disabled independently, and arrow keys move between pages. General → Appearance offers Follow System, Light and Dark; Follow System is the default.
 
@@ -135,7 +135,7 @@ The FileMint app and menu bar also offer New File… without Finder integration.
 - FileMint does not crawl folders, enumerate files, monitor the clipboard or keep image-processing history.
 - Finder actions operate only on the current local selection inside an authorized scope.
 - Creation and image processing work offline. The main app reaches GitHub only for update checks or downloads; the Finder extension stays offline.
-- Finder enablement, folder authorization and Full Disk Access are separate macOS capabilities. FileMint guides you, but never changes system permissions silently.
+- Enable the Finder extension in macOS System Settings and manage saved folder grants in FileMint's File Access settings.
 
 Read the complete [privacy policy](PRIVACY.md).
 

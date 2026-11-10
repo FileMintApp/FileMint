@@ -845,6 +845,12 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
             if !value { throw NSError(domain: "SettingsReview", code: 1, userInfo: [NSLocalizedDescriptionKey: message]) }
         }
         try await waitForSettingsReady()
+        for (language, query) in [(AppLanguage.english, "folder access"), (.chinese, "目录授权")] {
+            let results = QuickSearchCatalog.search(query, preferences: model.preferences, favorites: FavoriteLocationsCatalog(),
+                settings: QuickSearchSettingsCatalog.entries(language: language), scope: .settings)
+            try require(results.contains { $0.id == .settings(PreferencesModel.Pane.fileAccess.rawValue) },
+                        "File Access is missing from settings search")
+        }
         let original = model.preferences
         let templates = [model.preferences.templates.first { $0.document == nil }!,
                          model.preferences.templates.first { $0.document != nil }!]
@@ -929,7 +935,8 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
         initial.monitoredFolderURLs = [retained]
         initial.launchAtLogin = false
         initial.automaticallyChecksForUpdates = true
-        try FolderAccess.remember(retained, in: &initial)
+        initial.monitoredFolderBookmarks[retained.path] = try retained.bookmarkData(options: .withSecurityScope,
+            includingResourceValuesForKeys: nil, relativeTo: nil)
         try store.save(initial)
         let settings = PreferencesModel(store: store,
             documentTemplates: DocumentTemplateStore(directory: directory.appendingPathComponent("assets")))
@@ -941,10 +948,27 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
         try require(settings.rememberMonitoredFolders([added, second]), "Folder additions did not save")
         try require(store.load() == settings.preferences && settings.preferences.monitoredFolderURLs == [retained, added, second],
                     "Successful folder additions lost the complete selection")
+        try require(settings.preferences.monitoredFolderBookmarks == initial.monitoredFolderBookmarks,
+                    "Adding menu locations must not add authorization")
         settings.removeFolder(added)
         settings.removeFolder(second)
         try require(store.load() == settings.preferences && settings.preferences.monitoredFolderURLs == [retained],
                     "Successful folder removal did not persist")
+        settings.removeFolder(retained)
+        try require(settings.preferences.monitoredFolderURLs.isEmpty && settings.preferences.monitoredFolderBookmarks == initial.monitoredFolderBookmarks,
+                    "Removing a menu location must keep its legacy grant")
+        try require(settings.rememberMonitoredFolders([retained]), "Restoring a menu location did not save")
+        try require(settings.forgetDirectoryWriteAccess(path: retained.path, legacy: true)
+                    && store.load().monitoredFolderBookmarks.isEmpty && store.load().monitoredFolderURLs == [retained],
+                    "Removing a legacy grant must keep the Finder menu location")
+        let savedMenuLocations = try Data(contentsOf: store.location!)
+        try settings.rememberedFileAccess.rememberWriteDirectory(added)
+        let addedPath = added.resolvingSymlinksInPath().standardizedFileURL.path
+        try require(try settings.rememberedFileAccess.directoryWritePaths() == [addedPath], "Saved directory is missing from the grant list")
+        try require(settings.forgetDirectoryWriteAccess(path: addedPath, legacy: false)
+                    && (try settings.rememberedFileAccess.directoryWritePaths()).isEmpty,
+                    "Settings did not remove the saved write grant")
+        try require(try Data(contentsOf: store.location!) == savedMenuLocations, "Grant changes rewrote menu preferences")
 
         var started = false
         var cancelled = false
