@@ -298,6 +298,10 @@ final class FinderSync: FIFinderSync {
                 FinderActions.shared.fileInfo(selection)
                 return
             }
+            if tool == .defaultApplication {
+                FinderActions.shared.changeDefaultApplication(selection)
+                return
+            }
             if tool == .copyContents {
                 FinderActions.shared.copyContents(selection)
                 return
@@ -507,6 +511,18 @@ private final class FinderActions {
         }
     }
 
+    func changeDefaultApplication(_ selection: [URL]) {
+        Task {
+            do {
+                let url = try await Task.detached(priority: .userInitiated) {
+                    let captured = try DefaultApplicationSelection.capture(selection)
+                    return try FileOperationTicketStore().enqueue(.defaultApplication(captured))
+                }.value
+                open(url, activate: true)
+            } catch { showError(error, title: .changeDefaultApplication) }
+        }
+    }
+
     func perform(_ request: FileOperationRequest, activate: Bool = false, errorTitle: FileMintTextKey = .fileToolsErrorTitle) {
         Task {
             do {
@@ -541,6 +557,8 @@ private final class FinderActions {
             alert.informativeText = FileMintStrings.text(error.messageKey, language: language)
         } else if title == .fileInfo {
             alert.informativeText = ((error as? FileInfoError)?.text ?? .readFailed).text(language)
+        } else if title == .changeDefaultApplication {
+            alert.informativeText = FileMintStrings.text(.defaultApplicationInvalidSelection, language: language)
         } else if title == .batchRename {
             let key: FileMintTextKey
             switch error as? BatchRenameError {

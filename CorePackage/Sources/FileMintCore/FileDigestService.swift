@@ -300,7 +300,7 @@ private struct FileDigestAccumulator {
     }
 }
 
-private func fileInfoStat(_ url: URL) throws -> stat {
+func fileInfoStat(_ url: URL) throws -> stat {
     var value = stat()
     guard lstat(url.path, &value) == 0 else { throw fileInfoPOSIXError() }
     return value

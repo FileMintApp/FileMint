@@ -24,7 +24,12 @@ final class OpenWithSmoke: NSObject, NSApplicationDelegate {
         #if !OPEN_WITH_RECEIVER
         Task {
             do {
-                if let path = ProcessInfo.processInfo.environment["FILEMINT_OPEN_WITH_ACCESS_FIXTURE"] {
+                if CommandLine.arguments.dropFirst().first == "--verify-default-application" {
+                    try await DefaultApplicationChecks.run()
+                } else if CommandLine.arguments.dropFirst().first == "--default-application-fixture",
+                          CommandLine.arguments.count == 3 {
+                    try await DefaultApplicationChecks.runFixture(CommandLine.arguments[2])
+                } else if let path = ProcessInfo.processInfo.environment["FILEMINT_OPEN_WITH_ACCESS_FIXTURE"] {
                     try runFolderAccess(fixture: URL(fileURLWithPath: path, isDirectory: true))
                 } else if let mode = ProcessInfo.processInfo.environment["FILEMINT_TERMINAL_MODE"],
                    let requested = TerminalOpenMode(rawValue: mode) {

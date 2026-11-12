@@ -92,6 +92,29 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
     }
 
     func enqueue(_ url: URL) {
+        if FileOperationTicketStore.isDefaultApplicationURL(url) {
+            let release = reserveExternalPresentation()
+            let intake = consumeTicket(url)
+            Task {
+                defer { release?() }
+                let language = currentPreferences.language
+                let operation = DefaultApplicationOperation(preferencesFile: preferencesFile)
+                guard release != nil else {
+                    _ = try? await intake.value
+                    FavoriteFeedbackController.show(FileInfoText.busy.text(language), symbol: "exclamationmark.circle")
+                    return
+                }
+                do {
+                    let request = try await intake.value
+                    guard case .defaultApplication(let selection) = request else { throw FileInfoError.invalidSelection }
+                    try await operation.present(selection)
+                } catch FileInfoError.cancelled {
+                } catch {
+                    operation.showError(error, language: language)
+                }
+            }
+            return
+        }
         if FileOperationTicketStore.isToggleHiddenFilesURL(url) {
             let release = reserveExternalPresentation()
             let intake = consumeTicket(url)
@@ -274,6 +297,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
                         case .prepare, .perform: operationTitle = .moveFailed
                         case .batchRename: operationTitle = .batchRename
                         case .fileInfo: operationTitle = .fileInfo
+                        case .defaultApplication: operationTitle = .changeDefaultApplication
                         case .copyContents: operationTitle = .copyFileContents
                         case .toggleHiddenFiles: operationTitle = .fileVisibility
                         case .permanentDelete: operationTitle = .permanentDelete
@@ -293,7 +317,7 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
 
     private func handle(_ request: FileOperationRequest) async throws {
         switch request {
-        case .batchRename, .fileInfo, .copyContents, .toggleHiddenFiles:
+        case .batchRename, .fileInfo, .defaultApplication, .copyContents, .toggleHiddenFiles:
             // These payloads are valid only on their immediate-intake routes.
             throw FileMoveError.staleRequest
         case .favoriteAdd(let selection):

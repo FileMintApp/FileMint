@@ -134,6 +134,9 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 Copy File Contents follows the same captured identity and read-only authorization
 boundary below. Its explicit menu click authorizes the bounded content read and
 clipboard publication described in [file tools](file-tools.md#copy-file-contents).
+Change Default App uses the same metadata-only capture and read authorization
+to confirm the selected type. The system association is a separate, explicit
+confirmation and never needs write access to the selected file.
 
 - Finder captures the menu's single selected URL and probes only that item's
   type metadata to hide unsupported resources. It captures item/real-parent
@@ -144,7 +147,7 @@ clipboard publication described in [file tools](file-tools.md#copy-file-contents
   its direct parent. Explain the choice and that FileMint remembers read access.
   Verify the current scope and captured item and parent identities before saving
   an explicitly chosen grant. Cancellation preserves the previous grants.
-- Copy File Contents and File Info share general read-only bookmarks across
+- Copy File Contents, File Info and Change Default App share general read-only bookmarks across
   Finder windows and app relaunches. Store at most 1,024 grants and 4 MiB, publish
   atomically with 0600 file permissions, and preserve corrupt or redirected
   storage. A file grant covers the exact file. A directory grant covers its

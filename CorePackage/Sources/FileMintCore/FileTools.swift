@@ -1,7 +1,7 @@
 import Foundation
 
 public enum FileTool: String, Codable, CaseIterable, Sendable {
-    case copyNames, copyPaths, copyContents, move, permanentDelete, airDrop, desktopAlias, batchRename, fileInfo, fileVisibility
+    case copyNames, copyPaths, copyContents, move, permanentDelete, airDrop, desktopAlias, batchRename, fileInfo, defaultApplication, fileVisibility
 
     public var title: FileMintTextKey {
         switch self {
@@ -14,6 +14,7 @@ public enum FileTool: String, Codable, CaseIterable, Sendable {
         case .desktopAlias: .sendAliasToDesktop
         case .batchRename: .batchRename
         case .fileInfo: .fileInfo
+        case .defaultApplication: .changeDefaultApplication
         case .fileVisibility: .fileVisibility
         }
     }
@@ -38,6 +39,7 @@ public struct FileToolsPreferences: Codable, Equatable, Sendable {
     public var desktopAlias = false
     public var batchRename = false
     public var fileInfo = false
+    public var defaultApplication = false
     public var fileVisibility = false
     public var mainMenuTools: Set<FileTool> = []
     public var moveHereInMainMenu = true
@@ -47,7 +49,7 @@ public struct FileToolsPreferences: Codable, Equatable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case isEnabled, copyNames, copyPaths, copyContents, move, permanentDelete, airDrop, desktopAlias, batchRename, fileInfo
-        case mainMenuTools, moveHereInMainMenu, deleteConfirmation, fileVisibility
+        case mainMenuTools, moveHereInMainMenu, deleteConfirmation, fileVisibility, defaultApplication
     }
 
     public init(from decoder: Decoder) throws {
@@ -62,6 +64,7 @@ public struct FileToolsPreferences: Codable, Equatable, Sendable {
         desktopAlias = (try? values.decode(Bool.self, forKey: .desktopAlias)) ?? false
         batchRename = (try? values.decode(Bool.self, forKey: .batchRename)) ?? false
         fileInfo = (try? values.decode(Bool.self, forKey: .fileInfo)) ?? false
+        defaultApplication = (try? values.decode(Bool.self, forKey: .defaultApplication)) ?? false
         fileVisibility = (try? values.decode(Bool.self, forKey: .fileVisibility)) ?? false
         mainMenuTools = (try? values.decode(Set<FileTool>.self, forKey: .mainMenuTools)) ?? []
         moveHereInMainMenu = (try? values.decode(Bool.self, forKey: .moveHereInMainMenu)) ?? true
@@ -81,6 +84,7 @@ public struct FileToolsPreferences: Codable, Equatable, Sendable {
         case .desktopAlias: desktopAlias = enabled
         case .batchRename: batchRename = enabled
         case .fileInfo: fileInfo = enabled
+        case .defaultApplication: defaultApplication = enabled
         case .fileVisibility: fileVisibility = enabled
         }
     }
@@ -96,6 +100,7 @@ public struct FileToolsPreferences: Codable, Equatable, Sendable {
         case .desktopAlias: return desktopAlias
         case .batchRename: return batchRename
         case .fileInfo: return fileInfo
+        case .defaultApplication: return defaultApplication
         case .fileVisibility: return fileVisibility
         }
     }
@@ -155,6 +160,7 @@ public enum FileToolsPolicy {
         return FileTool.allCases.filter {
             $0 != .fileVisibility && preferences.fileTools.allows($0) && ($0 != .batchRename || canBatchRename(selection))
                 && ($0 != .fileInfo || FileDigestService.supportsMenuSelection(selection))
+                && ($0 != .defaultApplication || DefaultApplicationSelection.supportsMenuSelection(selection))
                 && ($0 != .copyContents || FileContentCopyPolicy.supportsMenuSelection(selection))
         }
     }

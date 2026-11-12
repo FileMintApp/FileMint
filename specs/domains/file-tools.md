@@ -67,6 +67,36 @@ Load for: Optional Finder file/folder actions, batch rename, selection snapshots
   Keep one stable action label. Success is silent. No event monitoring, global
   key posting, Finder preference edits or restarts, file reads or item mutations.
 
+## Change the default app
+
+- Change Default App… / 更改默认应用… is an independent child switch, default
+  off for new, missing or malformed settings, with the usual submenu/main placement.
+  Offer it only for a single ordinary local file in scope with a declared,
+  concrete content type. Exclude directories, packages, aliases, symbolic links,
+  special files, unknown types and non-item menu contexts.
+- Finder probes only the selected item's metadata. On click, capture the item,
+  its real parent and the exact type in a private single-use operation ticket.
+  Recheck current switches, resolved scope, identities and type in the main app
+  before displaying the picker and before changing the association. Reuse the
+  [metadata read authorization](finder-permissions.md#file-information-authorization)
+  when denied. No contents, file writes, folder enumeration or app launches.
+- Use the system's type-wide candidate and default queries. Show all available
+  compatible apps in one list, with the current default first and labeled.
+  Show their native icons and names, and filter by localized and original app
+  names. Focus search on opening. Arrow keys select, Return applies the explicit
+  selection, and Escape clears search before closing. Respect input composition.
+  Keep the compact panel near 440 × 390 points, with about four rows visible
+  and only the list scrolling. Keep search and actions visible, including an
+  empty result. Other Apps… uses a native app picker and checks the selection
+  against the refreshed compatible apps before returning it to the list.
+- State the exact type and current account scope before confirmation. Only Set
+  as Default may change it. Use the public type-wide AppKit API, allow macOS to
+  ask for consent, and hold the busy guard until completion and readback.
+  Cancel and error do not trigger a retry or another app choice. Keep the
+  selection and show actionable feedback on failure. On verified success, close
+  and return to Finder with a brief, noninteractive confirmation. FileMint does
+  not persist its own association or change the one-time Open with App feature.
+
 ## Copy file contents
 
 - Copy File Contents / 拷贝文件内容 has an independent child switch, default off

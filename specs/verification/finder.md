@@ -23,6 +23,11 @@ A Core test does not prove a visible menu, native authorization, Dock state or
 a successful installation. Record the tested build, environment, scenario and
 observed result; mark unavailable checks as not run.
 
+`DefaultApplicationTests` covers menu eligibility, capture and stale one-use
+tickets. The signed `default-application` fixture exercises the main-app route
+and picker. The [Finder QA](../../docs/FINDER_QA.md#file-and-folder-tools) check
+remains the boundary for visible extension menu delivery.
+
 `FinderHiddenFilesTests` covers context-menu parity, saved switch and placement,
 and route-bound single-use tickets. The `finder-hidden-files` suite uses the
 signed sandboxed template fixture to check the full Quartz key sequence and the

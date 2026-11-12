@@ -9,11 +9,14 @@ enum OpenWithApplicationAccess {
         defer { if started { selectedURL.stopAccessingSecurityScopedResource() } }
         let url = selectedURL.resolvingSymlinksInPath().standardizedFileURL
         let identifier = try bundleIdentifier(at: url)
-        let displayName = FileManager.default.displayName(atPath: url.path)
-        let name = displayName.lowercased().hasSuffix(".app") ? String(displayName.dropLast(4)) : displayName
         let bookmark = try url.bookmarkData(options: [.withSecurityScope, .securityScopeAllowOnlyReadAccess],
                                             includingResourceValuesForKeys: nil, relativeTo: nil)
-        return OpenWithApplication(name: name, bundleIdentifier: identifier, url: url, bookmark: bookmark)
+        return OpenWithApplication(name: displayName(at: url), bundleIdentifier: identifier, url: url, bookmark: bookmark)
+    }
+
+    static func displayName(at url: URL) -> String {
+        let name = FileManager.default.displayName(atPath: url.path)
+        return name.lowercased().hasSuffix(".app") ? String(name.dropLast(4)) : name
     }
 
     static func resolve(_ application: OpenWithApplication) throws -> URL {

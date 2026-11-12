@@ -7,6 +7,7 @@ public enum FileOperationRequest: Codable, Equatable, Sendable {
     case desktopAlias([FileMoveItem])
     case batchRename(selection: BatchRenameSelection)
     case fileInfo(FileInfoSelection)
+    case defaultApplication(DefaultApplicationSelection)
     case copyContents(selection: FileInfoSelection, pasteboardChangeCount: Int)
     case toggleHiddenFiles(directory: URL)
     case resource(tool: ResourceTool, selection: [URL])
@@ -21,6 +22,7 @@ public enum FileOperationRequest: Codable, Equatable, Sendable {
         switch self {
         case .batchRename: "rename"
         case .fileInfo: "file-info"
+        case .defaultApplication: "default-application"
         case .copyContents: "copy-contents"
         case .toggleHiddenFiles: "toggle-hidden-files"
         default: "move"
@@ -82,6 +84,10 @@ public struct FileOperationTicketStore: Sendable {
         ticketID(url, expectedHost: "file-info") != nil
     }
 
+    public static func isDefaultApplicationURL(_ url: URL) -> Bool {
+        ticketID(url, expectedHost: "default-application") != nil
+    }
+
     public static func isCopyContentsURL(_ url: URL) -> Bool {
         ticketID(url, expectedHost: "copy-contents") != nil
     }
@@ -91,7 +97,8 @@ public struct FileOperationTicketStore: Sendable {
     }
 
     public static func handlesRoute(_ url: URL) -> Bool {
-        url.scheme == "filemint" && ["move", "rename", "file-info", "copy-contents", "toggle-hidden-files"].contains(url.host ?? "")
+        url.scheme == "filemint" && ["move", "rename", "file-info", "default-application",
+                                     "copy-contents", "toggle-hidden-files"].contains(url.host ?? "")
     }
 
     public func consume(_ url: URL, now: Date = Date()) throws -> FileOperationRequest? {

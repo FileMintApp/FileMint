@@ -34,10 +34,17 @@ manual Shortcuts/Raycast, installed Finder, persistent grants or update evidence
 An empty plan is `not-applicable`, not a successful native test.
 
 Automatic suites are `batch-rename`, `template-workflow`, `creation-opening`,
-`update-scheduling`, `open-with`, `file-tools-settings`, `file-info`, `resource-tools`,
+`update-scheduling`, `open-with`, `default-application`, `file-tools-settings`, `file-info`, `resource-tools`,
 `design-ui`, `update-summary`, `hotkey-sandbox`, `quick-search`, `finder-hidden-files`, and the headless `favorite-model`. Template scenarios share one
 verified build in a run and each create their own runtime workspace. Design QA uses
 `--verify-automation`; ordinary interactive modes remain available.
+`default-application` reuses the signed Open With fixture to open and cancel a
+real one-use request, then checks complete results, search, selection and failed
+apply with an injected write. It does not modify the host's default apps. For
+the system-confirmation boundary, run that fixture with `--default-application-fixture`
+and a registered, disposable `io.github.daigua.filemint.associationqa.*` type
+whose only handlers are the two test readers. Confirm the named test extension
+in the system dialog and require file and type readback to agree.
 The focused `update-summary` suite reuses the design fixture with `--verify-updates`,
 injected release metadata and isolated preferences. It covers language switching,
 missing-summary fallback, install availability and minimum-size About/sidebar

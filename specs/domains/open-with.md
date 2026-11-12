@@ -81,6 +81,7 @@ Terminal, iTerm2 and Ghostty use their published macOS folder Services with a pr
   failures clearly. Do not change default file associations, clipboard, selected
   file contents, settings-window ownership or existing creation behavior. No shell
   commands, AppleScript, directory crawling, or path/content logging.
+  [Change Default App](file-tools.md#change-the-default-app) is a separate Finder command.
 
 ## Creation application registry
 
