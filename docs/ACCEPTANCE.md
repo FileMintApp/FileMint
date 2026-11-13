@@ -3,6 +3,20 @@
 Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
 macOS 13. Release bundles contain arm64 and x86_64 executables.
 
+## Installed Debug cross-feature acceptance — 2026-11-13
+
+Clean source `d8e20c7b6b967d400284eca706950e9b56767347` was built as
+Developer ID signed Debug 0.8.2 (31) and installed on arm64 macOS 27.2.1.
+Offline verification and all 15 isolated native suites passed. Installed Finder
+creation, image conversion, rename/undo, move and VS Code handoff also passed
+with synthetic files. The user subsequently reported that manual Calculate and
+the shortcut work. Computer Use nevertheless encountered two File Info crashes
+while inspecting accessibility after Calculate, and its Finder hidden-files menu
+selections produced no observed toggle. Live update success and several system
+boundaries remain unverified. See the
+[acceptance record](tasks/2026-11-13-debug-acceptance.md) for reproduction,
+evidence and limits.
+
 ## FileMint 0.8.2 release — 2026-11-10
 
 Source `e2884d8a64ccf39211412a19b1fd732d26bbd06c` / `v0.8.2`, build 31.
