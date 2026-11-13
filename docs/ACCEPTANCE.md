@@ -2284,3 +2284,46 @@ Tested `684dba2` plus the existing favorite-location repair and this worktree's
 - Build/UI evidence is scoped to these fixtures. Installed Finder callbacks,
   macOS 13 runtime, TCC authorization prompts, actual notarization and public
   release/update acceptance were not exercised. No commit, push or publication.
+
+## 2026-11-13 — Default-app picker interaction
+
+Tested `fb57590` plus the default-app picker worktree changes on arm64 macOS
+27.2.1 with Xcode 27.2. No installed app or system file association was changed.
+
+- `make verify` and the unsigned Release app/extension build passed. The first
+  build attempt inside the shell sandbox failed because Swift and Clang caches
+  were not writable; the command-scoped retry outside that sandbox passed.
+- The signed, isolated `default-application` fixture passed with injected writes
+  ([report](../build/native-checks.noindex/run.6gbym62a/report.json)). It covers
+  direct choice, filtering, keyboard selection, failure, success and duplicate
+  submission prevention. Earlier fixture runs
+  ([first](../build/native-checks.noindex/run.58lhewd2/report.json),
+  [diagnostic](../build/native-checks.noindex/run.4n4z8e3s/report.json)) failed
+  while an experimental in-process accessibility traversal could not descend
+  into SwiftUI's nonconforming nodes; that traversal was removed.
+- Computer Use on the same isolated fixture observed labeled accessible buttons,
+  a single-click simulated write, search/Return, clearing stale feedback and an
+  Other Apps selection that immediately reached the injected write. The injected
+  write always returned an error; this check did not change the system default.
+- Installed Finder menu delivery, a real macOS consent dialog and association
+  readback, and macOS 13 runtime were not exercised in this interaction change.
+
+### Requested local Debug installation
+
+The user subsequently requested an installed build for hands-on evaluation.
+The same worktree was built as Debug 0.8.2 (31), signed with the existing
+Developer ID team, and installed at `/Applications/FileMint.app`. The previous
+app was backed up before atomic replacement. Source, staged and installed bundle
+checks passed; the installed app and Finder-extension executables match the build,
+and the user's preferences checksum remained unchanged through launch. The
+[installation record](../build/local-debug-install.noindex/run.o6XdP5/installation.json)
+and [previous app backup](../build/local-debug-install.noindex/run.o6XdP5/previous-FileMint.app.zip)
+are local ignored evidence.
+
+One enabled Finder extension was registered and running from the installed app.
+The real Finder menu delivered a selected YAML file to the new picker, where Zed
+was filtered and the new direct action was visible. The panel was left open for
+the user; no default association was changed. The first Computer Use launch call
+timed out although the new process had launched; a subsequent explicit reopen
+showed the settings window. The actual system-confirmation and association-change
+result remain for the user's evaluation.

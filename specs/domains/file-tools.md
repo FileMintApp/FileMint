@@ -83,15 +83,20 @@ Load for: Optional Finder file/folder actions, batch rename, selection snapshots
 - Use the system's type-wide candidate and default queries. Show all available
   compatible apps in one list, with the current default first and labeled.
   Show their native icons and names, and filter by localized and original app
-  names. Focus search on opening. Arrow keys select, Return applies the explicit
-  selection, and Escape clears search before closing. Respect input composition.
+  names. Each replacement row clearly offers Set as Default and applies on one
+  click; the current default cannot be applied again. Focus search on opening.
+  Arrow keys select and Return applies the selected replacement. When filtering
+  removes the selection, select the current default if visible, otherwise the
+  first match. Escape clears search before closing. Respect input composition.
   Keep the compact panel near 440 × 390 points, with about four rows visible
   and only the list scrolling. Keep search and actions visible, including an
-  empty result. Other Apps… uses a native app picker and checks the selection
-  against the refreshed compatible apps before returning it to the list.
+  empty result. Other Apps… uses a native app picker whose confirmation says Set
+  as Default; check the selection against refreshed compatible apps before
+  applying it. Selecting the current default does not change the association.
 - State the exact type and current account scope before confirmation. Only Set
-  as Default may change it. Use the public type-wide AppKit API, allow macOS to
-  ask for consent, and hold the busy guard until completion and readback.
+  as Default may change it, and explain that macOS may ask for confirmation.
+  Use the public type-wide AppKit API, allow macOS to ask for consent, and hold
+  the busy guard until completion and readback.
   Cancel and error do not trigger a retry or another app choice. Keep the
   selection and show actionable feedback on failure. On verified success, close
   and return to Finder with a brief, noninteractive confirmation. FileMint does

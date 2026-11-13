@@ -39,9 +39,12 @@ Automatic suites are `batch-rename`, `template-workflow`, `creation-opening`,
 verified build in a run and each create their own runtime workspace. Design QA uses
 `--verify-automation`; ordinary interactive modes remain available.
 `default-application` reuses the signed Open With fixture to open and cancel a
-real one-use request, then checks complete results, search, selection and failed
-apply with an injected write. It does not modify the host's default apps. For
-the system-confirmation boundary, run that fixture with `--default-application-fixture`
+real one-use request, then checks complete results, search, direct choice,
+keyboard selection, failure and success with an injected write. It does not
+modify the host's default apps. To inspect or operate the same simulated picker,
+launch its executable with `FILEMINT_DEFAULT_APPLICATION_INTERACTIVE=1` and
+`--verify-default-application`; its injected writes always fail and never change
+the system association. For the system-confirmation boundary, run that fixture with `--default-application-fixture`
 and a registered, disposable `io.github.daigua.filemint.associationqa.*` type
 whose only handlers are the two test readers. Confirm the named test extension
 in the system dialog and require file and type readback to agree.

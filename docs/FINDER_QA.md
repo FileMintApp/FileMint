@@ -154,9 +154,11 @@ For Change Default App, enable the child in File & Folder Tools. Check that the
 command appears once at the chosen menu level for one supported file in a
 configured folder and is absent for a link, unknown type, mixed selection and
 background. Open the picker from the visible Finder menu, check complete results,
-current default, keyboard search and Cancel. For an actual association change,
-use a disposable type with dedicated test viewers. Verify the system consent,
-the new default on a second file of that type, and the unchanged sample bytes.
+current default, keyboard search and Cancel. With a disposable type and dedicated
+test viewers, check that one click on a replacement's Set as Default action
+starts the change, and that search/Return and Other Apps use the same explicit
+action. Verify any system consent, the new default on a second file of that type,
+and the unchanged sample bytes.
 
 For batch rename, use synthetic items in a configured local folder without a
 saved parent grant. Invoke the actual Finder action and explicitly reopen

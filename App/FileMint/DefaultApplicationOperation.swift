@@ -134,6 +134,7 @@ enum DefaultApplicationError: Error, Equatable {
 
 enum DefaultApplicationText {
     case title, scope, compatible, current, search, other, choose, noApps, noMatches, apply, applying, success
+    case systemConfirmation
     case selectionChanged, incompatible, notApplied
 
     func text(_ language: AppLanguage) -> String {
@@ -149,6 +150,7 @@ enum DefaultApplicationText {
         case .noMatches: ("No matching apps", "未找到匹配的应用")
         case .apply: ("Set as Default", "设为默认")
         case .applying: ("Waiting for macOS…", "正在等待 macOS…")
+        case .systemConfirmation: ("macOS may ask for confirmation", "macOS 可能要求确认")
         case .success: ("%@ is now the default app for %@.", "已将 %@ 设为「%@」的默认应用。")
         case .selectionChanged: ("The file, its type, or Finder scope changed. Select the file again in Finder.",
                                  "文件、文件类型或 Finder 范围已变化。请在 Finder 中重新选择文件。")

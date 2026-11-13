@@ -22,27 +22,55 @@ enum DefaultApplicationChecks {
         let opened = Task { await picker.present() }
         defer { picker.cancel() }
         try await wait("picker window") { window != nil }
+        if ProcessInfo.processInfo.environment["FILEMINT_DEFAULT_APPLICATION_INTERACTIVE"] == "1" {
+            try await wait("interactive picker closure", timeout: .seconds(120)) { window == nil }
+            await opened.value
+            return
+        }
         try check(picker.results.count == 6 && picker.selectionID == apps[0].id && !picker.canApply,
                   "The unfiltered list or initial default is incomplete")
+        picker.choose(apps[0])
+        try check(writes.isEmpty && !picker.isApplying, "Choosing the current default started a write")
         picker.query = "PREVIEW"
         try check(picker.results.map(\.id) == [apps[0].id] && !picker.canApply, "Original-name search failed")
         picker.query = "图书"
-        try check(picker.results.map(\.id) == [apps[5].id] && !picker.canApply, "Localized search selected a replacement implicitly")
-        picker.move(1)
-        try check(picker.selectionID == apps[5].id && picker.canApply, "Arrow did not select the match")
-        picker.apply()
-        try check(picker.isApplying, "Apply did not reserve the picker")
+        try check(picker.results.map(\.id) == [apps[5].id] && picker.selectionID == apps[5].id
+                  && picker.canApply && writes.isEmpty, "Localized search did not focus its match without writing")
+        picker.choose(apps[5])
+        try check(picker.isApplying, "Choosing a replacement did not reserve the picker")
+        picker.choose(apps[5])
         picker.apply()
         try await wait("failed write") { !picker.isApplying && picker.feedback != nil }
         try check(writes == [apps[5].id] && picker.selectionID == apps[5].id && window != nil,
-                  "Failed apply closed the picker, lost its selection, or wrote twice")
+                  "Failed row action closed the picker, lost its selection, or wrote twice")
+        picker.query = "Reader Two"
+        try check(picker.selectionID == apps[1].id && picker.feedback == nil && writes.count == 1,
+                  "Changing the focused match kept stale feedback or started a write")
         picker.query = "unmatched"
         try check(picker.results.isEmpty && !picker.canApply, "Filtering away the selection left Apply enabled")
+        picker.choose(apps[1])
+        try check(writes.count == 1 && !picker.isApplying, "A filtered-out candidate started a write")
         picker.escape()
         try check(picker.query.isEmpty && picker.results.count == 6 && !picker.canApply, "Escape did not restore the list")
+        picker.move(1)
+        try check(picker.selectionID == apps[1].id && picker.canApply, "Arrow did not select the replacement")
+        picker.apply()
+        try await wait("failed keyboard write") { !picker.isApplying && writes.count == 2 }
+        try check(writes == [apps[5].id, apps[1].id] && picker.selectionID == apps[1].id && window != nil,
+                  "Keyboard apply did not use the selected replacement")
         picker.cancel()
         await opened.value
-        print("PASS default application: one-use ticket, compact panel, complete list, localized search, explicit selection, failure and cancellation")
+
+        let successful = DefaultApplicationPicker(type: .pdf, language: .english, snapshot: (apps, apps[0].id)) { app in
+            writes.append(app.id)
+        }
+        let successOpened = Task { await successful.present() }
+        try await wait("success picker window") { window != nil }
+        successful.choose(apps[2])
+        try await wait("successful row action") { window == nil }
+        await successOpened.value
+        try check(writes == [apps[5].id, apps[1].id, apps[2].id], "Successful row action wrote an unexpected app")
+        print("PASS default application: one-use ticket, compact panel, search, direct choice, keyboard, failure and cancellation")
     }
 
     static func runFixture(_ identifier: String) async throws {

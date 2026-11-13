@@ -15,7 +15,8 @@ final class DefaultApplicationPicker: NSObject, ObservableObject, NSWindowDelega
     @Published var query = "" {
         didSet {
             if !results.contains(where: { $0.id == selectionID }) {
-                selectionID = results.first(where: { $0.id == currentID })?.id
+                selectionID = (results.first(where: { $0.id == currentID }) ?? results.first)?.id
+                feedback = nil
             }
         }
     }
@@ -84,6 +85,12 @@ final class DefaultApplicationPicker: NSObject, ObservableObject, NSWindowDelega
         selectionID = app.id; feedback = nil
     }
 
+    func choose(_ app: DefaultApplicationCandidate) {
+        guard !isApplying, app.id != currentID, results.contains(where: { $0.id == app.id }) else { return }
+        select(app)
+        apply()
+    }
+
     func move(_ delta: Int) {
         guard !isApplying else { return }
         let matches = results
@@ -106,7 +113,7 @@ final class DefaultApplicationPicker: NSObject, ObservableObject, NSWindowDelega
     }
 
     func apply() {
-        guard !isApplying, let app = applicationToApply else { return }
+        guard canApply, let app = applicationToApply else { return }
         feedback = nil; isApplying = true
         searchField?.isEnabled = false
         Task {
@@ -127,7 +134,7 @@ final class DefaultApplicationPicker: NSObject, ObservableObject, NSWindowDelega
     func browse() {
         guard !isApplying, let panel, panel.attachedSheet == nil else { return }
         let picker = NSOpenPanel()
-        picker.title = text(.choose); picker.prompt = text(.choose)
+        picker.title = text(.choose); picker.prompt = text(.apply)
         picker.directoryURL = FileManager.default.urls(for: .applicationDirectory, in: .localDomainMask).first
         picker.allowedContentTypes = [.applicationBundle]
         picker.canChooseDirectories = false; picker.treatsFilePackagesAsDirectories = false
@@ -147,8 +154,8 @@ final class DefaultApplicationPicker: NSObject, ObservableObject, NSWindowDelega
             }
             apps = snapshot.apps; currentID = snapshot.currentID
             query = ""; feedback = nil
-            select(app)
-            panel.makeFirstResponder(searchField)
+            choose(app)
+            if !isApplying { panel.makeFirstResponder(searchField) }
         }
     }
 
@@ -182,9 +189,13 @@ private struct DefaultApplicationView: View {
             QuickSearchInputField(text: $model.query, placeholder: model.text(.search), move: model.move,
                 submit: model.apply, cancel: model.escape, onCreate: model.registerSearch)
                 .frame(height: 27).disabled(model.isApplying)
-            Text(String(format: model.text(.compatible), model.results.count))
-                .font(.system(size: 11, weight: .medium)).foregroundStyle(.secondary)
-                .accessibilityAddTraits(.isHeader)
+            HStack {
+                Text(String(format: model.text(.compatible), model.results.count))
+                    .accessibilityAddTraits(.isHeader)
+                Spacer(minLength: 6)
+                Text(model.text(.systemConfirmation))
+            }
+            .font(.system(size: 11, weight: .medium)).foregroundStyle(.secondary)
             results
             Spacer(minLength: 0)
             if let feedback = model.feedback {
@@ -233,7 +244,8 @@ private struct DefaultApplicationView: View {
                     }
                     ForEach(model.results) { app in
                         DefaultApplicationRow(app: app, isCurrent: app.id == model.currentID,
-                            isSelected: app.id == model.selectionID, currentLabel: model.text(.current)) { model.select(app) }
+                            isSelected: app.id == model.selectionID, currentLabel: model.text(.current),
+                            applyLabel: model.text(.apply)) { model.choose(app) }
                             .id(app.id)
                     }
                 }.padding(.trailing, 8)
@@ -255,16 +267,15 @@ private struct DefaultApplicationView: View {
                 .buttonStyle(.plain).foregroundStyle(FileMintStyle.strong).font(.system(size: 12))
                 .disabled(model.isApplying)
             Spacer(minLength: 6)
+            if model.isApplying {
+                HStack(spacing: 6) {
+                    ProgressView().controlSize(.small)
+                    Text(model.text(.applying))
+                }
+                .font(.system(size: 12)).foregroundStyle(.secondary)
+            }
             Button(FileInfoText.cancel.text(model.language), action: model.cancel)
                 .buttonStyle(MintButtonStyle()).disabled(model.isApplying)
-            Button(action: model.apply) {
-                HStack(spacing: 6) {
-                    if model.isApplying { ProgressView().controlSize(.small) }
-                    Text(model.text(model.isApplying ? .applying : .apply))
-                }
-            }
-            .buttonStyle(MintButtonStyle(primary: true)).disabled(!model.canApply)
-            .accessibilityIdentifier("defaultApplication.apply")
         }
     }
 }
@@ -274,26 +285,24 @@ private struct DefaultApplicationRow: View {
     let isCurrent: Bool
     let isSelected: Bool
     let currentLabel: String
-    let select: () -> Void
+    let applyLabel: String
+    let choose: () -> Void
     @State private var hovering = false
 
     var body: some View {
-        Button(action: select) {
+        Button(action: choose) {
             HStack(spacing: 9) {
                 Image(nsImage: NSWorkspace.shared.icon(forFile: app.url.path))
                     .resizable().aspectRatio(contentMode: .fit).frame(width: 28, height: 28)
                     .accessibilityHidden(true)
                 Text(app.name).font(.system(size: 13, weight: .medium)).lineLimit(1).help(app.name)
                 Spacer(minLength: 6)
-                if isCurrent {
-                    Text(currentLabel).font(.system(size: 10)).foregroundStyle(.secondary)
-                        .padding(.horizontal, 6).padding(.vertical, 3)
-                        .background(FileMintStyle.surface, in: RoundedRectangle(cornerRadius: 5))
-                }
-                Image(systemName: isSelected ? "largecircle.fill.circle" : "circle")
-                    .font(.system(size: 13))
-                    .foregroundStyle(isSelected ? FileMintStyle.strong : Color.secondary)
-                    .accessibilityHidden(true)
+                Text(isCurrent ? currentLabel : applyLabel)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(isCurrent ? Color.secondary : FileMintStyle.strong)
+                    .padding(.horizontal, 6).padding(.vertical, 3)
+                    .background(isCurrent ? FileMintStyle.surface : FileMintStyle.selection,
+                                in: RoundedRectangle(cornerRadius: 5))
             }
             .padding(.horizontal, 8).frame(height: 42)
             .background(isSelected ? FileMintStyle.selection : hovering ? FileMintStyle.soft : .clear,
@@ -301,7 +310,8 @@ private struct DefaultApplicationRow: View {
             .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(isSelected ? FileMintStyle.accent.opacity(0.5) : .clear))
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain).onHover { hovering = $0 }
+        .buttonStyle(.plain).disabled(isCurrent).onHover { hovering = $0 }
+        .accessibilityLabel(Text("\(isCurrent ? currentLabel : applyLabel)：\(app.name)"))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
