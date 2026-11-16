@@ -203,6 +203,7 @@ struct OpenWithTests {
         #expect(TerminalAdapter(bundleIdentifier: "com.googlecode.iterm2") == .iterm2)
         #expect(TerminalAdapter(bundleIdentifier: "com.mitchellh.ghostty") == .ghostty)
         #expect(TerminalAdapter(bundleIdentifier: "dev.warp.Warp-Stable") == .warp)
+        #expect(TerminalAdapter(bundleIdentifier: "io.appmakes.otty") == .otty)
         #expect(TerminalAdapter(bundleIdentifier: "example.terminal") == nil)
 
         var settings = OpenWithPreferences()
@@ -237,6 +238,32 @@ struct OpenWithTests {
         #expect(terminal.menuTitle(target: .directory(root), language: .english).contains("New Tab"))
         #expect(terminal.menuTitle(target: .selection([folder]), language: .english) ==
             terminal.menuTitle(language: .english))
+    }
+
+    @Test("Ghostty and Otty use their bundle identities and supported directory modes")
+    func terminalCapabilities() throws {
+        for (identifier, adapter) in [("com.mitchellh.ghostty", TerminalAdapter.ghostty),
+                                      ("io.appmakes.otty", .otty)] {
+            let terminal = OpenWithApplication(name: "Custom name", bundleIdentifier: identifier,
+                url: URL(fileURLWithPath: "/Applications/Test.app"), bookmark: Data([1]))
+            #expect(TerminalAdapter(bundleIdentifier: terminal.bundleIdentifier) == adapter)
+            #expect(terminal.terminalOpenMode == .newTab)
+            #expect(adapter.supports(.applicationDefault))
+            #expect(adapter.supports(.newTab))
+            #expect(adapter.supports(.newWindow) == (adapter == .ghostty))
+            #expect(terminal.menuTitle(target: .directory(root), language: .chinese).contains("新标签页"))
+            #expect(terminal.menuTitle(target: .selection([root]), language: .chinese) == terminal.menuTitle(language: .chinese))
+
+            var legacy = try JSONSerialization.jsonObject(with: JSONEncoder().encode(terminal)) as! [String: Any]
+            legacy.removeValue(forKey: "terminalOpenMode")
+            let restored = try JSONDecoder().decode(OpenWithApplication.self,
+                from: JSONSerialization.data(withJSONObject: legacy))
+            #expect(restored.terminalOpenMode == .applicationDefault)
+        }
+        #expect(TerminalAdapter(bundleIdentifier: "io.appmakes.other") == nil)
+        let lookalike = OpenWithApplication(name: "Otty", bundleIdentifier: "example.otty",
+            url: URL(fileURLWithPath: "/Applications/Otty.app"), bookmark: Data([1]))
+        #expect(lookalike.terminalOpenMode == .applicationDefault)
     }
 
     @Test("directory ticket keeps target and requested mode, expires and cannot replay")

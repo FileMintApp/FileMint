@@ -93,7 +93,7 @@ Open **Extensions → Open with App**, click **Add App**, choose a local applica
 
 <p class="guide-caption">These applications are an example. A new installation starts with an empty list.</p>
 
-Supported terminals offer **Follow App**, **New Tab** and **New Window** in the same settings row. File selections retain their existing opening behavior. Actual window behavior depends on the installed terminal and its macOS service. This does not change macOS default file associations. If an app is missing from the menu, check that it is still installed at its configured location and that the target folder is within the menu scope.
+Supported terminals offer directory opening modes in the same settings row. Otty supports **Follow App** and **New Tab**; the other supported terminals also offer **New Window**. File selections retain their existing opening behavior. Actual window behavior depends on the installed terminal. This does not change macOS default file associations. If an app is missing from the menu, check that it is still installed at its configured location and that the target folder is within the menu scope.
 
 ## Enable File & Folder Tools when needed
 

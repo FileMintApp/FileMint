@@ -198,11 +198,13 @@ private struct OpenWithApplicationRow: View {
                     Text(location).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle).help(location)
                 }
             }.font(.system(size: 10)).frame(maxWidth: .infinity, alignment: .leading)
-            if TerminalAdapter(bundleIdentifier: application.bundleIdentifier) != nil {
+            if let adapter = TerminalAdapter(bundleIdentifier: application.bundleIdentifier) {
                 Picker(text(.terminalOpenMode), selection: $terminalMode) {
                     Text(text(.terminalFollowApp)).tag(TerminalOpenMode.applicationDefault)
                     Text(text(.terminalNewTab)).tag(TerminalOpenMode.newTab)
-                    Text(text(.terminalNewWindow)).tag(TerminalOpenMode.newWindow)
+                    if adapter.supports(.newWindow) || terminalMode == .newWindow {
+                        Text(text(.terminalNewWindow)).tag(TerminalOpenMode.newWindow)
+                    }
                 }.settingsMenu(width: language.resolved() == .chinese ? 124 : 142)
                     .accessibilityLabel("\(application.name) — \(text(.terminalOpenMode))")
                     .accessibilityIdentifier("openWith.\(application.id).terminalMode")

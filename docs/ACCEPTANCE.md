@@ -2327,3 +2327,28 @@ the user; no default association was changed. The first Computer Use launch call
 timed out although the new process had launched; a subsequent explicit reopen
 showed the settings window. The actual system-confirmation and association-change
 result remain for the user's evaluation.
+
+## 2026-11-16 — Otty terminal adapter
+
+Tested `6e25b8f` plus the Otty worktree changes on arm64 macOS 27.2.1,
+Xcode 27.2 and Otty 1.6.5. Ghostty was already recognized; it was not installed
+for a real-app check. The installed FileMint app and its preferences were unchanged.
+
+- `make verify`, the unsigned Release app/extension build and the bilingual site
+  build passed. The signed `open-with` receiver fixture delivered the literal
+  special-character directory, preserved the clipboard, and rejected Otty's
+  unsupported New Window request. Its retained report is
+  `build/native-checks.noindex/run.n7zotjlk/report.json`; the subsequent UI-only
+  picker correction did not change the launcher or that fixture's assertions.
+- The signed fixture sent a synthetic folder containing spaces, quotes, symbols,
+  emoji and a newline to the running Otty app using the production New Tab path.
+  Computer Use observed the new terminal tab and `pwd` returned the exact folder.
+  Otty's CLI diagnostic could not connect to its external socket from the sandbox;
+  the implementation uses native application opening and does not invoke the CLI.
+- The isolated settings fixture showed Otty defaulting to New Tab. A first test
+  found that SwiftUI did not disable the New Window item in the macOS picker; after
+  hiding unsupported choices, the rebuilt UI offered Follow App and New Tab only.
+  The final design fixture passed in `build/native-checks.noindex/run.txb4sjps`.
+- Installed Finder delivery, Otty cold-start behavior, Ghostty's real Services,
+  macOS 13 and older Otty versions were not tested. No app installation,
+  publication or Finder-extension registration was performed for this change.

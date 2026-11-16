@@ -9,7 +9,7 @@ public enum TerminalOpenMode: String, Codable, CaseIterable, Sendable {
 }
 
 public enum TerminalAdapter: String, Sendable {
-    case terminal, iterm2, ghostty, warp
+    case terminal, iterm2, ghostty, warp, otty
 
     public init?(bundleIdentifier: String) {
         switch bundleIdentifier {
@@ -17,8 +17,13 @@ public enum TerminalAdapter: String, Sendable {
         case "com.googlecode.iterm2": self = .iterm2
         case "com.mitchellh.ghostty": self = .ghostty
         case "dev.warp.Warp-Stable": self = .warp
+        case "io.appmakes.otty": self = .otty
         default: return nil
         }
+    }
+
+    public func supports(_ mode: TerminalOpenMode) -> Bool {
+        self != .otty || mode != .newWindow
     }
 }
 

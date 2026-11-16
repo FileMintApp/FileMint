@@ -9,10 +9,14 @@ enum TerminalDirectoryLauncher {
             try await OpenWithApplicationAccess.open([directory], with: applicationURL)
             return
         }
-        guard let adapter = TerminalAdapter(bundleIdentifier: application.bundleIdentifier) else {
+        guard let adapter = TerminalAdapter(bundleIdentifier: application.bundleIdentifier),
+              adapter.supports(mode) else {
             throw OpenWithError.unsupportedTerminal
         }
         switch adapter {
+        case .otty:
+            // Otty opens a supplied folder as a terminal tab in the running app.
+            try await OpenWithApplicationAccess.open([directory], with: applicationURL)
         case .warp:
             let url = try warpURL(for: directory, mode: mode)
             try await OpenWithApplicationAccess.open([url], with: applicationURL)

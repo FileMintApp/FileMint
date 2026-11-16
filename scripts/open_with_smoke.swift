@@ -145,8 +145,14 @@ final class OpenWithSmoke: NSObject, NSApplicationDelegate {
         let folder = root.appendingPathComponent("空格 '\" # % ? : $ ; 🪴\nnext", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let kind = ProcessInfo.processInfo.environment["FILEMINT_TERMINAL_APP"] ?? "terminal"
-        let appURL = URL(fileURLWithPath: kind == "warp" ? "/Applications/Warp.app" :
-            "/System/Applications/Utilities/Terminal.app")
+        let appPath: String
+        switch kind {
+        case "warp": appPath = "/Applications/Warp.app"
+        case "otty": appPath = "/Applications/Otty.app"
+        case "ghostty": appPath = "/Applications/Ghostty.app"
+        default: appPath = "/System/Applications/Utilities/Terminal.app"
+        }
+        let appURL = URL(fileURLWithPath: appPath)
         let app = try OpenWithApplicationAccess.capture(appURL)
         let resolved = try OpenWithApplicationAccess.resolve(app)
         let started = resolved.startAccessingSecurityScopedResource()
@@ -218,7 +224,7 @@ final class OpenWithSmoke: NSObject, NSApplicationDelegate {
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let document = root.appendingPathComponent("资料 % & 🪴.txt")
-        let folder = root.appendingPathComponent("A folder", isDirectory: true)
+        let folder = root.appendingPathComponent("A folder ' # % 🪴", isDirectory: true)
         let content = Data("Open with App fixture".utf8)
         try content.write(to: document)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -297,6 +303,26 @@ final class OpenWithSmoke: NSObject, NSApplicationDelegate {
         guard directoryReceived == [folder], try tickets.consume(directoryTicket) == nil,
               NSPasteboard.general.changeCount == clipboardChangeCount else {
             throw SmokeFailure("Directory target, ticket or clipboard assertion failed")
+        }
+        try FileManager.default.removeItem(at: receipt)
+        // The receiver stands in for the already-validated configured Otty app.
+        var otty = app
+        otty.bundleIdentifier = "io.appmakes.otty"
+        do {
+            try await TerminalDirectoryLauncher.open(folder, with: otty, applicationURL: resolved, mode: .newWindow)
+            throw SmokeFailure("Otty accepted the unsupported new-window mode")
+        } catch OpenWithError.unsupportedTerminal {}
+        guard !FileManager.default.fileExists(atPath: receipt.path) else {
+            throw SmokeFailure("Unsupported Otty mode dispatched a folder")
+        }
+        try await TerminalDirectoryLauncher.open(folder, with: otty, applicationURL: resolved, mode: .newTab)
+        for _ in 0..<80 {
+            if FileManager.default.fileExists(atPath: receipt.path) { break }
+            try await Task.sleep(for: .milliseconds(125))
+        }
+        let ottyReceived = try JSONDecoder().decode([URL].self, from: Data(contentsOf: receipt))
+        guard ottyReceived == [folder], NSPasteboard.general.changeCount == clipboardChangeCount else {
+            throw SmokeFailure("Otty directory dispatch changed the folder or clipboard")
         }
         try await checkQueuedTicketIntake(root: root, first: document, second: folder)
     }

@@ -298,11 +298,12 @@ This fixture does not prove that Finder has loaded the new extension.
   A background container in scope also offers the same configured apps, once each,
   with the captured folder as target. Toolbar/sidebar and partly out-of-scope
   selections have no app entries.
-- Add Terminal, iTerm2, Ghostty and Warp one at a time where installed. The
+- Add Terminal, iTerm2, Ghostty, Warp and Otty one at a time where installed. The
   directory mode appears beside placement as a dropdown only for a recognized
   terminal. New entries default to New Tab, older saved entries retain Follow App.
-  Verify New Tab and New Window in an empty and a running terminal with one/multiple
-  windows; inspect the actual cwd and tab/window count. Missing service, app move,
+  Verify New Tab and, except for Otty, New Window in an empty and a running terminal with one/multiple
+  windows; inspect the actual cwd and tab/window count. Otty must not offer New
+  Window unless displaying an unsupported previously saved value. Missing service, app move,
   duplicate registration, disabled service and special-character paths must give
   a clear result without switching modes or touching the general clipboard.
 - With one ordinary selected folder, the directory mode applies to that folder.
