@@ -8,8 +8,9 @@
 在 FileMint 中配置好文件夹后，在 Finder 的文件夹空白处右键，选择 **新建文件 → Markdown (.md)**，文件就会出现在当前目录。想先填写文件名和内容，可以选择 **新建文件…**。
 
 <p align="center">
-  <img src="website/public/images/create-panel-zh.png" width="600" alt="FileMint 新建文件面板，填写 project-kickoff.md 和初始内容">
+  <img src="website/public/images/finder-create-menu-zh.jpg" width="700" alt="Finder 右键菜单中的 FileMint 新建文件子菜单，显示文本和 Markdown 模板">
 </p>
+<p align="center"><sub>Finder 菜单示例；可用模板和可选工具取决于你的设置。</sub></p>
 
 FileMint 是原生 **macOS Finder 扩展**，支持复用模板，还可按需开启批量重命名、SHA-256 文件校验、图片压缩和 OCR 文字识别。文件创建与处理都在本机完成。
 
@@ -43,17 +44,17 @@ FileMint 是原生 **macOS Finder 扩展**，支持复用模板，还可按需�
 
 ## 先看它怎么工作
 
-### 1. 右键菜单保持分层
+### 1. 从 Finder 文件夹新建
 
-下面是当前安装版的真实 Finder 示例：选中 `longmao.navigator.png` 后，**新建文件**、**文件（夹）工具**和**资源工具**各自有清楚的入口，彩色图标帮助快速区分。
-
-<p align="center">
-  <img src="website/public/images/finder-resource-menu-zh.png" width="360" alt="FileMint 当前安装版 Finder 右键菜单，展示新建文件、文件工具和资源工具">
-</p>
+上方是安装版在已配置文件夹中的真实菜单示例。选择已启用的模板即可快速创建；也可以打开 **新建文件…**，先核对文件名和内容。
 
 ### 2. 创建时保留上下文
 
 完整文件名、后缀、保存位置和初始内容在创建前一次完成。输入 `project-kickoff.md`，粘贴第一段 Markdown，然后创建；不必先生成空文件再打开其他应用。
+
+<p align="center">
+  <img src="website/public/images/create-panel-zh.png" width="600" alt="FileMint 新建文件面板，填写 project-kickoff.md 和初始内容">
+</p>
 
 创建面板支持：
 
@@ -74,9 +75,6 @@ FileMint 是原生 **macOS Finder 扩展**，支持复用模板，还可按需�
 - **提取图片文字**：使用系统 OCR，结果可编辑、复制或保存。
 - **移除隐私元数据**：清理 GPS、拍摄时间与设备等元数据，校验后另存副本，保留原图。
 
-<p align="center">
-  <img src="website/public/images/resource-tools-zh.png" width="760" alt="FileMint 资源工具页面，显示六个图片处理工具">
-</p>
 <p align="center">
   <img src="website/public/images/resource-panel-longmao-zh.png" width="760" alt="FileMint 使用 longmao.navigator.png 的图片格式转换面板">
 </p>

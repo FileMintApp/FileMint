@@ -8,8 +8,9 @@
 Right-click the background of a Finder folder configured in FileMint, then choose **New File → Markdown (.md)** to create a file there. Choose **New File…** when you want to set the filename and starter content first.
 
 <p align="center">
-  <img src="website/public/images/create-panel-en.png" width="600" alt="FileMint New File panel with project-kickoff.md and starter content">
+  <img src="website/public/images/finder-create-menu-en.jpg" width="700" alt="Finder context menu with FileMint's New File submenu showing Text and Markdown templates">
 </p>
+<p align="center"><sub>Example Finder menu; available templates and optional tools depend on your settings.</sub></p>
 
 FileMint is a native **macOS Finder extension** with reusable templates and optional tools for batch renaming, SHA-256 checksums, image compression and OCR. File creation and processing run on your Mac.
 
@@ -43,17 +44,17 @@ FileMint is a native **macOS Finder extension** with reusable templates and opti
 
 ## See the workflow
 
-### 1. A context menu with clear layers
+### 1. Create from a Finder folder
 
-This is a real installed-build Finder example. With `longmao.navigator.png` selected, **New File**, **File & Folder Tools** and **Resource Tools** remain distinct, with color icons for quick scanning.
-
-<p align="center">
-  <img src="website/public/images/finder-resource-menu-zh.png" width="360" alt="Current FileMint Finder context menu with New File, File and Folder Tools, and Resource Tools">
-</p>
+The installed-build example above shows **New File** and its submenu in a configured folder. Choose an enabled template for quick creation, or open **New File…** to review the filename and content first.
 
 ### 2. Keep the context when you create
 
 Set the full filename, suffix, destination and starter content before creation. Enter `project-kickoff.md`, paste the first Markdown lines and create it without an empty-file detour.
+
+<p align="center">
+  <img src="website/public/images/create-panel-en.png" width="600" alt="FileMint New File panel with project-kickoff.md and starter content">
+</p>
 
 The creation panel supports:
 
@@ -74,9 +75,6 @@ Select an image in Finder and open Resource Tools, or choose a local image expli
 - **Extract Text**: system OCR with editable, copyable and savable results.
 - **Remove Private Metadata**: Clear GPS, capture time and device metadata, then verify and save a separate copy while preserving the original.
 
-<p align="center">
-  <img src="website/public/images/resource-tools-en.png" width="760" alt="FileMint Resource Tools page with six image actions">
-</p>
 <p align="center">
   <img src="website/public/images/resource-panel-longmao-en.png" width="760" alt="FileMint Convert Image panel using longmao.navigator.png">
 </p>
