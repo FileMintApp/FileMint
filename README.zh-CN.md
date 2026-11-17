@@ -3,7 +3,7 @@
 <p align="center"><strong>在 Finder 当前文件夹右键新建文件。</strong><br>Markdown 笔记、Word 文档和 Excel 工作簿，都能在手边的文件夹里创建。</p>
 <p align="center"><a href="README.md"><strong>← English</strong></a> ｜ <strong>简体中文</strong></p>
 <p align="center"><a href="https://github.com/FileMintApp/FileMint/releases/latest"><strong>下载 DMG</strong></a> · <a href="docs/INSTALL.md">安装帮助</a> · <a href="https://filemintapp.github.io/FileMint/">官网</a> · <a href="website/">官网源码</a> · <a href="https://github.com/FileMintApp/FileMint/issues">反馈问题</a></p>
-<p align="center"><sub>Apple 芯片 · macOS 13 或更新版本 · DMG 已通过 Apple 公证</sub></p>
+<p align="center"><sub>M 系列 Mac · macOS 13 或更新版本 · DMG 已通过 Apple 公证</sub></p>
 
 在 FileMint 中配置好文件夹后，在 Finder 的文件夹空白处右键，选择 **新建文件 → Markdown (.md)**，文件就会出现在当前目录。想先填写文件名和内容，可以选择 **新建文件…**。
 
@@ -16,9 +16,10 @@ FileMint 是原生 **macOS Finder 扩展**，支持复用模板，还可按需�
 
 [查看最新正式版的更新说明](https://github.com/FileMintApp/FileMint/releases/latest)
 
-## 近期功能
+## 功能
 
 - **快捷搜索**：集中查找新建操作、启用的模板、常用文件和设置，可在通用页按需开启全局快捷键。
+- **快捷指令与 Raycast**：打开预填草稿或快捷搜索。需要 macOS 13.3 或更新版本，见[接入指南](docs/SHORTCUTS_AND_LAUNCHERS.zh-CN.md)。
 - **拷贝文件内容**：从 Finder 拷贝受支持文本文件的完整内容，保留空白和换行；在文件（夹）工具中启用。
 - **批量重命名**：在本地可写 APFS 上预览并重命名同一目录的 2–1,000 个项目，支持撤销和中断恢复，不覆盖已有项目。
 - **文件信息与校验值**：查看单个普通文件的信息，按需计算四种校验值，拷贝或粘贴比对。
@@ -30,7 +31,7 @@ FileMint 是原生 **macOS Finder 扩展**，支持复用模板，还可按需�
 - **图片粘贴为文件**：预览并命名拷贝的截图或图片，再保存为 PNG。
 - **同格式多模板**：为同一种格式保存不同内容和默认文件名，并指定默认模板。
 - **Word / Excel 模板**：内置空白 `.docx`、`.xlsx`，也可导入自己的文档，创建保留原格式和内容的独立副本。
-- **主题与设置**：通用页新增跟随系统、浅色和深色，统一控件对齐与交互样式。
+- **切换隐藏文件显示**：通过 Finder 右键切换显示状态，不改变文件属性。
 
 ## 为什么是 FileMint
 
@@ -80,72 +81,38 @@ FileMint 是原生 **macOS Finder 扩展**，支持复用模板，还可按需�
 </p>
 <p align="center"><sub>资源示例使用 longmao.navigator.png；预览、输出位置和“原文件始终保留”都在面板中明确显示。</sub></p>
 
-### 4. 六个可选文件（夹）工具
+### 4. 文件（夹）工具
 
-模块默认关闭。打开后，每项操作都能选择显示在 Finder 一级菜单或“文件（夹）工具”子菜单：
-
-- **拷贝文件（夹）名称 / 路径**：多选时每项一行；在菜单显示范围内的文件夹空白处也可拷贝当前路径。只有明确点按时才写入剪贴板。
-- **移动文件（夹）**：先捕获源项目，再到目标文件夹空白处选择“将所选项目移到此处”。两步操作不会悄悄移动。
-- **彻底删除**：默认二次确认并绕过废纸篓；符号链接只删除链接本身。
-- **隔空投送**：打开 macOS 原生接收设备选择界面，不自动发送。
-- **发送替身到桌面**：创建 Finder 原生替身，保留源项目，重名时自动编号。
+模块默认关闭。可按需启用动作，再选择它在 Finder 的菜单位置。拷贝名称和路径、移动、彻底删除、隔空投送及创建 Finder 替身的操作见[使用指南](https://filemintapp.github.io/FileMint/guide.html#按需开启文件-夹-工具)。
 
 <p align="center">
   <img src="website/public/images/file-tools-zh.png" width="760" alt="FileMint 文件与文件夹工具设置页面，显示菜单位置和独立开关">
 </p>
 
-## 设置按工作流分层
-
-固定侧栏把设置分成三组：
-
-- **文件创建**：模板与类型、创建行为。
-- **扩展功能**：文件（夹）工具、资源工具、使用 App 打开。
-- **偏好设置**：通用、Finder 与文件夹、文件访问、关于。
-
-每个页面有明确的职责，扩展模块可以单独关闭，方向键可在页面间移动。在「通用 → 外观」选择跟随系统、浅色或深色，默认跟随系统。
-
-Finder 菜单图标可选择彩色或系统单色；支持自定义的菜单和模板还可搜索系统符号、调整配色或恢复默认。单色模式保留已保存配色，切回彩色后恢复。
-
-## 怎么用
-
-**快速创建：** Finder 桌面背景或文件夹空白处右键 → **新建文件** → 选择类型。
-
-**自定义创建：** **新建文件…** → 输入完整文件名 → 选择后缀 → 按需粘贴内容 → **创建**。
-
-**资源工具：** 设置 → 扩展功能 → 资源工具；开启后，在主应用选择图片，或在 Finder 选中图片后右键。
-
-**文件工具：** 设置 → 扩展功能 → 文件（夹）工具；先打开总开关，再按需启用动作和菜单位置。
-
-也可以从 FileMint 应用或菜单栏选择“新建文件…”，无需先启用 Finder 扩展。
+无需 Finder 扩展，也可以从 FileMint 应用或菜单栏选择「新建文件…」。设置、快捷键和故障处理见[使用指南](https://filemintapp.github.io/FileMint/guide.html)。
 
 ## 隐私与权限边界
 
 - 文件名、路径、内容、图片和 OCR 结果不会上传。
-- 不扫描目录、不枚举文件、不监控剪贴板，也不保留图片处理历史。
+- 不在后台扫描目录、不监控剪贴板，也不保留图片处理历史。
 - Finder 扩展只处理当前明确选中的、位于已授权范围内的项目。
-- 文件创建和图片处理离线完成；主应用只在你检查或下载更新时访问 GitHub，Finder 扩展不需要网络。
+- 文件创建和图片处理离线完成；主应用只在检查或下载更新时访问 GitHub，Finder 扩展不需要网络。
 - 在 macOS 系统设置中启用 Finder 扩展，在 FileMint 的「文件访问」中管理已保存的目录授权。
 
 完整说明见 [隐私政策](PRIVACY.md)。
 
 ## 下载与安装
 
-当前正式安装包支持 **搭载 Apple 芯片、运行 macOS 13 或更新版本的 Mac**。已发布的 0.5.10 及更早版本仍保留各自原有兼容范围。
-
-**0.5.9 及后续正式版安装包使用 Developer ID 签名，通过 Apple 公证并附加公证票据。** 首次使用仍需按系统提示启用 Finder 扩展和文件夹授权。
+当前正式安装包支持 **运行 macOS 13.0 及以上的 M 系列 Mac**，使用 Developer ID 签名，通过 Apple 公证并附加公证票据。
 
 1. [下载最新 DMG](https://github.com/FileMintApp/FileMint/releases/latest)，把 FileMint 拖入“应用程序”。
 2. 启动 FileMint，按应用内提示启用 Finder 扩展并授权常用文件夹。
-3. 回到 Finder，开始创建或处理图片。
+3. 回到 Finder，开始创建或处理图片。详细操作见[首次设置指南](https://filemintapp.github.io/FileMint/guide.html#先完成首次设置)。
 
 全新安装也可使用 [FileMint 官方 Homebrew tap](https://github.com/FileMintApp/homebrew-tap)：
-`brew install --cask filemintapp/tap/filemint`。已有手动安装的迁移及升级、卸载后的 Finder 行为仍待隔离环境验收；请先阅读 tap 的说明。
+`brew install --cask filemintapp/tap/filemint`。
 
-安装 0.5.9 后，可通过 **关于 → 检查更新 → 更新并重启** 获取后续版本。请先完成创建或编辑操作；macOS 可能要求管理员授权。
-
-从 0.5.7/0.5.8 升级时，请手动安装 0.5.9 或更新版本一次：退出 FileMint，将新版拖入“应用程序”替换，推出安装磁盘后重新打开。旧版的签名权限问题无法通过自身的更新器修正。
-
-完整的安装限制、更新说明和发布来源记录，请阅读[安装指引](docs/INSTALL.md)。
+旧版升级、Intel 兼容性及下载校验见[安装说明](docs/INSTALL.md)。Apple 在 0.5.3 发布后接受了该 DMG 的公证；公开下载包没有附加票据，Gatekeeper 需要联网获取。
 
 ## 未来规划
 
@@ -164,7 +131,7 @@ Finder 菜单图标可选择彩色或系统单色；支持自定义的菜单和�
 ### 目录与工具联动
 
 - [ ] **项目目录模板** — 一次创建常用的文件夹结构和起始文件。
-- [ ] **快捷指令与启动器联动** — 从快捷指令、Raycast 或 Alfred 打开预填的创建面板。
+- [ ] **快捷指令与 Raycast 接入验收** — 验证首次使用者可以配置并重复使用 0.8.2 起提供的草稿工作流。
 
 </div>
 <div class="roadmap-group">
@@ -180,7 +147,7 @@ Finder 菜单图标可选择彩色或系统单色；支持自定义的菜单和�
 
 ### 安装与分发
 
-- [ ] **Homebrew 安装支持** — FileMint 官方 tap 已公开，可获取全新安装包；升级、迁移和卸载仍待隔离环境验收。
+- [ ] **Homebrew 升级与迁移** — 在隔离 Mac 上验证升级、从手动安装迁移及卸载。
 
 </div>
 <!-- #endregion roadmap -->

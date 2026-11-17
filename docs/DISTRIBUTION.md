@@ -4,8 +4,8 @@
 
 The historical 0.5.1 release uses GitHub-hosted builds, universal ad-hoc-signed
 app bundles, a DMG, a portable SHA-256 checksum and GitHub artifact attestations.
-Its installation limitations remain visible in README, release notes and
-INSTALL.md. Do not describe that already-published artifact as Apple notarized.
+It was not Apple notarized. Its installation limitations remain in the release notes and
+[legacy installation guidance](INSTALL.md#旧版本兼容性--legacy-compatibility).
 
 An ad-hoc signature validates bundle integrity but does not identify a trusted
 Apple developer. GitHub provenance identifies a repository/workflow/source
@@ -448,15 +448,15 @@ a sandbox execution block. `UpdateClient`, `make verify-updates` and the old
 sandbox harness remain solely for compatibility checks, not production installs.
 
 Released 0.5.7 and 0.5.8 contain unexpanded installer Mach service entitlements
-from manual signing. Users must manually install 0.5.9 once; a new feed cannot
+from manual signing. Users must manually install 0.5.9 or later once; a new feed cannot
 change the running old app's signed permissions. The 0.5.9 signing flow resolves
 variables before codesign and reads the embedded entitlements during bundle/release
 verification. See [0.5.9 release evidence](RELEASE_VERIFICATION_0.5.9.md).
 
-No updater forcibly quits Finder or enables the extension. Test a real signed
-sandbox installation and Finder refresh before release; a build and Core tests
-are not installation proof. A standard-user or managed installation may require
-administrator authorization. A readonly mounted DMG cannot update in place.
+No updater forcibly quits Finder or enables the extension. For changes to
+installer behavior, follow the [signed runtime checks](../specs/verification/updates.md#sparkle-installation-checks).
+A standard-user or managed installation may require administrator authorization.
+A read-only mounted DMG cannot update in place.
 
 ## Primary references
 

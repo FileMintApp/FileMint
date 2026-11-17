@@ -1,7 +1,7 @@
-# FileMint 0.5 acceptance
+# FileMint acceptance history
 
-Checked on 2026-09-14, macOS 26.6.2, Apple silicon. Minimum deployment target:
-macOS 13. Release bundles contain arm64 and x86_64 executables.
+Observations below apply to the revisions and environments stated in each entry.
+Use [HARNESS](../specs/HARNESS.md) to select present-day verification.
 
 ## Installed Debug cross-feature acceptance — 2026-11-13
 
@@ -395,6 +395,21 @@ No production integration feature has been implemented yet. First-user onboardin
 use, first-glance comprehension and final promotional assets remain unverified.
 See the [task](tasks/2026-10-29-shortcuts-and-launchers.md#p0-实施观察尚未整体通过)
 for build run IDs and the locally exported evidence.
+
+## Website build and deployment — October 2026
+
+- [Bilingual redesign](https://github.com/FileMintApp/FileMint/blob/46882c07d1eee100cb6c200a89e72201c78a36c8/docs/tasks/2026-10-13-website-redesign.md):
+  both languages deployed from `28db029`; the built homepages did not embed a release version.
+- [Automatic deployment](https://github.com/FileMintApp/FileMint/blob/46882c07d1eee100cb6c200a89e72201c78a36c8/docs/tasks/2026-10-20-website-auto-deployment.md):
+  the successful push build for `924b40f` triggered deployment and both homepages were checked.
+- [Node 26 rollout](https://github.com/FileMintApp/FileMint/blob/46882c07d1eee100cb6c200a89e72201c78a36c8/docs/tasks/2026-10-29-website-node26.md):
+  source CI, Pages build and deployment for `2a8831b` used Node 26.12.1.
+- [Independent website deployment](https://github.com/FileMintApp/FileMint/blob/46882c07d1eee100cb6c200a89e72201c78a36c8/docs/tasks/2026-10-30-website-deployment-independence.md):
+  the exact successful artifact for `4d512ce` deployed despite newer app source;
+  both live homepages displayed the localized Quick Search capture.
+
+These links preserve the run IDs and limits observed at the time.
+The maintained procedure is [Website-only updates](DISTRIBUTION.md#website-only-updates).
 
 ## Hide and unhide selected items — 2026-10-29
 
@@ -1274,6 +1289,10 @@ Checked on macOS 27.2, Apple silicon, `c23ffc6` plus the uncommitted
 
 ## Favorite availability, Finder locate and groups — 2026-09-28
 
+Earlier isolated favorites and private metadata checks are in the
+[September 24 implementation record](https://github.com/FileMintApp/FileMint/blob/46882c07d1eee100cb6c200a89e72201c78a36c8/docs/tasks/2026-09-24-quick-finder-favorites-private-images.md#evidence-and-references).
+That record predates the shipped Finder hidden-file command.
+
 Checked on macOS 27.2, Apple silicon, `684dba2` plus the uncommitted favorite
 repair worktree. Contract: [Favorite locations](../specs/domains/favorite-locations.md).
 
@@ -1302,7 +1321,7 @@ repair worktree. Contract: [Favorite locations](../specs/domains/favorite-locati
 ## Settings setup and template interaction — 2026-09-24
 
 Checked on macOS 27.2, Apple silicon, `7a482bb` plus the uncommitted
-[settings task worktree](tasks/2026-09-24-settings-setup-and-templates.md).
+[settings task worktree](https://github.com/FileMintApp/FileMint/blob/46882c07d1eee100cb6c200a89e72201c78a36c8/docs/tasks/2026-09-24-settings-setup-and-templates.md).
 
 - `make verify` passed 150 Core and 13 image tests plus public Harness, CLI,
   context and release script checks. The unsigned universal app/extension built.
@@ -1413,7 +1432,7 @@ settings worktree. See [the task](tasks/settings-appearance.md) for commands and
 ## Open with App — 2026-09-22
 
 Checked on macOS 27.2, Apple silicon, `55d9a1f` plus the uncommitted Open with App
-worktree. See [the task](tasks/2026-09-22-open-with-app.md).
+worktree. See [the task](https://github.com/FileMintApp/FileMint/blob/46882c07d1eee100cb6c200a89e72201c78a36c8/docs/tasks/2026-09-22-open-with-app.md).
 
 - `make verify` passed: 127 Core tests, 12 image tests, 5 public cases, 10 CLI
   regressions, 3 appcast tests and context checks. The unsigned universal app and
@@ -1437,7 +1456,7 @@ worktree. See [the task](tasks/2026-09-22-open-with-app.md).
 
 Checked on macOS 27.0 (26A428), Apple silicon, `6bf596d` plus the uncommitted
 resource/UI worktree. See [the task](tasks/image-resource-tools.md) and
-[the approved design](design/UI_UX_V1.md).
+[the approved design](https://github.com/FileMintApp/FileMint/blob/46882c07d1eee100cb6c200a89e72201c78a36c8/docs/design/UI_UX_V1.md).
 
 - `make verify`: 131 Swift tests (119 Core and 12 native image tests), 5 public
   Harness cases, 10 CLI regressions, 3 appcast tests and context checks passed.
@@ -1515,7 +1534,7 @@ shared tool images without loading or saving the owner's preferences.
 - `make verify` passed: 104 Swift tests, 5 public cases, 10 CLI regressions and
   3 appcast tests. The unsigned universal app/extension build also passed.
 
-See [the task record](tasks/file-tools-ui-polish.md) for local evidence and limits.
+See [the task record](https://github.com/FileMintApp/FileMint/blob/46882c07d1eee100cb6c200a89e72201c78a36c8/docs/tasks/file-tools-ui-polish.md) for local evidence and limits.
 
 ## 0.5.5 signed and notarized release — 2026-09-18
 
@@ -1653,7 +1672,7 @@ worktree changes. This is local development evidence, not release acceptance.
   isolation were not rerun. macOS 13 retains the system focus indicator and its
   native appearance was not tested on that OS. No release was published.
 
-See [the settings task](tasks/2026-09-17-settings-navigation.md) for scope and
+See [the settings task](https://github.com/FileMintApp/FileMint/blob/46882c07d1eee100cb6c200a89e72201c78a36c8/docs/tasks/2026-09-17-settings-navigation.md) for scope and
 remaining release checks.
 
 ## Automatic update checks and extension guidance — 2026-09-17
@@ -1701,6 +1720,9 @@ the exact source commit, submission ID, checksum and runtime scope.
   The existing installed app was not replaced, and no release was published.
 
 ## Automated verification
+
+Initial 0.5 baseline, 2026-09-14: macOS 26.6.2 on Apple silicon, targeting
+macOS 13. Release bundles in this baseline contained arm64 and x86_64 executables.
 
 - 54 Swift Testing tests pass, including Desktop menu destinations, installer quarantine preflight, repeated menu creation, update validation and bilingual About
   text, plus the permission-copy tests and all 5 public JSON harness cases.
@@ -2222,14 +2244,14 @@ release/install instructions require a fresh browser download for that upgrade.
 Worktree based on `4788db0`, macOS 27.2 / Apple silicon, Xcode. These observations
 cover the development worktree, not the installed Finder extension or a release.
 
-- [Clipboard image task](tasks/2026-09-22-clipboard-image.md): native synthetic
+- [Clipboard image task](https://github.com/FileMintApp/FileMint/blob/46882c07d1eee100cb6c200a89e72201c78a36c8/docs/tasks/2026-09-22-clipboard-image.md): native synthetic
   PNG preview, 1600×1000 output, identical numbered copy and cancel-without-write;
   real PNG/TIFF encoding and alpha/orientation regression coverage.
-- [Multiple-template task](tasks/2026-09-22-multiple-templates.md): same-suffix
+- [Multiple-template task](https://github.com/FileMintApp/FileMint/blob/46882c07d1eee100cb6c200a89e72201c78a36c8/docs/tasks/2026-09-22-multiple-templates.md): same-suffix
   choices, persisted format default, independent name/content, exact native
   meeting-note output. Tab/Shift-Tab cycles through text/image controls, skips
   disabled controls and preserves content; Cmd-Return still creates.
-- [Office-template task](tasks/2026-09-22-document-templates.md): native DOCX/XLSX
+- [Office-template task](https://github.com/FileMintApp/FileMint/blob/46882c07d1eee100cb6c200a89e72201c78a36c8/docs/tasks/2026-09-22-document-templates.md): native DOCX/XLSX
   import, managed reference readback, exact-byte native creation and numbered
   output. Independent document readers verified text, formatting and a formula.
   Chinese/light and English/dark surfaces inspected; template settings fit 840×600.

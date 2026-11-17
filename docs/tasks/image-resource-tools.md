@@ -1,7 +1,7 @@
 # Task: 图片资源工具
 
-Status: in-progress (实现及隔离验证完成；安装版集成验收待做)
-Next action: 用户查看原生改版；后续在安装版补验 Finder 回调、沙盒授权及 macOS 13/Intel，不把隔离夹具等同于安装验收。
+Status: 已实施；本记录保留 2026-09-18 六项资源工具的首批实现和隔离观察。
+Next action: 当前功能查[资源工具 SPEC](../../specs/domains/resource-tools.md)，变更后按 [Finder QA](../FINDER_QA.md#image-resource-tools) 选需要的验收。下文的 Intel 和安装态缺项仅指该轮构建。
 
 ## Objective and scope
 
@@ -61,7 +61,7 @@ Next action: 用户查看原生改版；后续在安装版补验 Finder 回调�
 - 当前实现通过 118 个 Core tests、11 个原生图片处理 tests、5 个 Harness cases、10 个 CLI tests、3 个 appcast tests，以及无签名 arm64/x86_64 构建。无提交、安装或发布。
 - 两轮隔离原生夹具跑通六项功能；额外交互检查确认了中文浅色/英文深色拼图面板、顺序调整、取消目录选择、实际 5462×1024 横向输出和超大画布拒绝。零输出失败后的“调整参数”重试在后续改版夹具中已复验。
 - 后续 UI 设计稿单独探索布局与流程，不将原型呈现为已经落地的原生界面。
-- 用户选择“原生 macOS：通透、克制，薄荷绿点缀”；交互与视觉提案见 [UI / UX 提案 01](../design/UI_UX_V1.md)。
+- 用户选择“原生 macOS：通透、克制，薄荷绿点缀”；交互与视觉提案见 [UI / UX 提案 01](https://github.com/FileMintApp/FileMint/blob/46882c07d1eee100cb6c200a89e72201c78a36c8/docs/design/UI_UX_V1.md)。
 - 2026-09-18：用户确认排除 WebP 和新增库；同意尺寸、图标、拼接、OCR。
 - “压缩到指定字节数”、动画、RAW、SVG、HDR 保真处理不在首批；避免无界重试与隐式丢帧。
 - 原生图像代码置于本仓库 `FileMintImages` target，Finder 只依赖轻量 Core 规则。

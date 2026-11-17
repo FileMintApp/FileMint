@@ -1,8 +1,7 @@
 # Task: Send Finder aliases to Desktop
 
-Status: in-progress
-Next action: Validate the installed Finder menu when the user chooses to exercise it.
-Implementation and the local Debug install are complete; the real Finder action remains user acceptance.
+Status: implemented and installed in the Debug run below; the Finder menu action was not exercised in that run.
+Next action: If this flow is under test again, use the [desktop alias contract](../../specs/domains/file-tools.md#desktop-aliases) and the relevant installed Finder checks.
 
 ## Objective and scope
 

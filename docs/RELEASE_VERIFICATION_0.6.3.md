@@ -7,7 +7,7 @@ Published on 2026-09-30. Version **0.6.3**, build **22**.
 - Tag `v0.6.3` points to release commit `5d4d0fa17a2cfac85231df816ee6bf3dc4b3f584` on `main`.
 - The user selected the standard distribution workflow for this publication,
   superseding the unfinished exhaustive QA scope recorded in
-  [the release task](tasks/release-0.6.3.md).
+  [the release task](https://github.com/FileMintApp/FileMint/blob/46882c07d1eee100cb6c200a89e72201c78a36c8/docs/tasks/release-0.6.3.md).
 - `make release-local` passed on macOS 27.2 / arm64 with Xcode 27.0 (27A266a).
   It ran `make verify` (178 Core tests, 14 image tests, 5 public Harness cases,
   10 CLI regressions and release-script checks), built the app and Finder

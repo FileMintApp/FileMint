@@ -93,7 +93,7 @@ Open **Extensions → Open with App**, click **Add App**, choose a local applica
 
 <p class="guide-caption">These applications are an example. A new installation starts with an empty list.</p>
 
-Supported terminals offer directory opening modes in the same settings row. Otty supports **Follow App** and **New Tab**; the other supported terminals also offer **New Window**. File selections retain their existing opening behavior. Actual window behavior depends on the installed terminal. This does not change macOS default file associations. If an app is missing from the menu, check that it is still installed at its configured location and that the target folder is within the menu scope.
+For supported terminals, choose a directory opening mode in the same settings row. Available modes and window behavior depend on the terminal. This setting applies to directories; opening selected files does not change macOS default file associations. If an app is missing from the menu, check that it is still installed at its configured location and that the target folder is within the menu scope.
 
 ## Enable File & Folder Tools when needed
 
@@ -104,15 +104,15 @@ Open **Extensions → File & Folder Tools**, enable the master switch, then enab
 <p class="guide-caption">This is an example with tools enabled. Check the Permanent Delete setting before using it.</p>
 
 - **Copy Names / Paths:** Select one or more items, then use the context menu. Multiple items are copied one per line. With Copy Paths enabled, you can also right-click an in-scope folder background to copy that folder's full path.
-- **Move File / Folder:** Select the source items and choose this action. Then right-click the **background of the destination folder** and choose **Move Selected Items Here**. The first step only remembers the sources; existing names are never overwritten or merged.
-- **Delete Permanently:** Bypasses Trash and asks for confirmation by default. It cannot be undone. Enable it only when you need it.
+- **Move File / Folder:** Select the source items and choose this action. Then right-click the **background of the destination folder** and choose **Move Selected Items Here**. Existing names are never overwritten or merged. You can retry the remaining items after resolving a failure; preparing a new move replaces that pending selection.
+- **Delete Permanently:** Bypasses Trash and asks for confirmation by default. Delete silently skips FileMint's confirmation but still requires folder access. Deletion cannot be undone, and deleting a symbolic link leaves its target intact.
 - **AirDrop / Send Alias to Desktop:** AirDrop opens the native macOS chooser so you select a recipient. An alias points to the original item without moving it.
 
 ### Copy File Contents
 
-Enable the module and Copy File Contents in File & Folder Tools, then right-click one supported ordinary local text file in Finder. Clipboard publication follows a complete read; if you copy something else while it runs, the older request does not overwrite your newer clipboard.
+Enable the module and Copy File Contents in File & Folder Tools, then right-click one supported ordinary local text file in Finder. FileMint preserves whitespace and line endings. It leaves the clipboard untouched if the read fails, is cancelled or you copy something else before it finishes.
 
-Enable this child tool, then right-click one supported ordinary local text file to copy its complete contents. Accept UTF-8, BOM-declared UTF-16 and a limited validated RTF subset, with source and decoded text each limited to 8 MiB. Preserve whitespace and line endings without truncation; failure or cancellation leaves the clipboard untouched. Images, PDF, Office documents, RTF attachments and tables are unsupported.
+Supported content includes UTF-8, BOM-declared UTF-16 and a limited, validated RTF subset. The source file and decoded text must each be no larger than 8 MiB. Images, PDFs, Office documents and RTF with attachments or tables are unsupported.
 
 ### Batch Rename
 

@@ -1,7 +1,9 @@
 # Task: FileMint 0.6.5 release and 0.6.6 compatibility follow-up
 
-Status: in-progress
-Next action: Build the clean tagged 0.6.6 source, wait for its source CI after the validated candidate push, then run publish-local.
+Status: historical. 0.6.5 was published with a known source CI failure; 0.6.6 shipped the correction.
+The [0.6.7 preparation record](release-0.6.7.md#decisions-and-progress) later
+confirmed the published 0.6.6 build 25 and passing source CI. The checks below
+remain the observations from the original 0.6.5 and early 0.6.6 work.
 
 ## Objective and scope
 
@@ -67,12 +69,7 @@ Logs and prior feed: `build/release-0.6.5/`.
 | 0.6.5 source CI | failed | [CI](https://github.com/FileMintApp/FileMint/actions/runs/37100768405): two `builtInUnavailable` failures among 205 tests. Same failure reproduced locally with `--build-system native`; not an absent DMG resource. |
 | 0.6.6 focused native SwiftPM regression | passed | Six Office tests pass, including the host-boundary regression; `build/release-0.6.6/native-fix.log`. |
 | 0.6.6 complete checks | passed | Native SwiftPM: 206 tests in 24 suites; default `make verify`: 192 Core, 14 image tests, Harness/CLI and offline release checks. Site build also passed. Logs under `build/release-0.6.6/`. |
-| 0.6.6 formal release | not-run | Pending corrected clean tagged source and candidate. |
+| 0.6.6 formal release | not-run in this round | Later confirmed in the 0.6.7 preparation record above. |
 | Installed Finder, Microsoft Office, minimum macOS | not-run | Not represented by isolated UI, WPS or build evidence. |
 
-## Handoff
-
-- Continue through `make release-local` and `make publish-local`; inspect retained
-  state before retrying a failure. Do not weaken or skip a failed release gate.
-- Record the release commit, notarization ID, final DMG/feed hashes, asset URLs
-  and completed verification workflow in the final evidence.
+The current workflow is in [Distribution](../DISTRIBUTION.md).

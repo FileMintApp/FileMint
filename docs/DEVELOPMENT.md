@@ -8,7 +8,7 @@ make verify
 make project
 make build
 make icon
-APP_VERSION=0.5.1 make package
+make package
 ```
 
 `make verify` runs context-document checks, unit tests, the public JSON harness
@@ -17,9 +17,10 @@ executable and verify both passing and deliberately failing inputs; no third-par
 test runner is needed. The current [Harness format](../specs/verification/core.md)
 and `HarnessSuite.load` are the only supported input/Swift entry points.
 `make build` generates FileMint.xcodeproj from project.yml and builds the app and
-Finder extension for arm64. `make package` removes Intel slices from embedded
-Sparkle executables, adds ad-hoc bundle signatures, checks arm64-only contents
-and creates the DMG.
+Finder extension for arm64. `make package` uses the version in project.yml,
+removes Intel slices from embedded Sparkle executables, signs the bundle
+ad hoc by default, and produces local DMG and ZIP archives with checksums.
+For a public release, follow [Distribution](DISTRIBUTION.md).
 Outputs are under build/ and ignored by Git.
 
 Website development and CI use Node 26.x. CI resolves the newest stable patch
@@ -101,7 +102,8 @@ Start with the compact [SPEC router](../specs/SPEC.md), then load only contracts
 for the changed behavior and paths. Read [HARNESS](../specs/HARNESS.md) when
 selecting checks; do not preload all domain docs or historical acceptance records.
 Use the [AI Playbook](AI_PLAYBOOK.md) for cross-domain features or session handoff.
-Do not edit the generated Xcode project. No runtime package dependencies.
+Edit `project.yml` to change the generated Xcode project. New dependencies
+need a rationale in the owning domain SPEC.
 
 Future feature ideas, implementation starting points and completion criteria
 live in the [implementation roadmap](ROADMAP.md). The public TODO lists are

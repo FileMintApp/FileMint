@@ -72,9 +72,11 @@ from the current task rather than replaying a transcript.
   stable structs and explicit dependencies over hidden global state.
 - Review changed paths against the router again before completion. Add any missed
   domain/check, and report observed results separately from unavailable checks.
-- Product rules live in `specs/domains/`; planned ideas in [ROADMAP](ROADMAP.md);
+- Product rules live in `specs/domains/`; future work in [ROADMAP](ROADMAP.md);
   task decisions in their task; historical native evidence in [ACCEPTANCE](ACCEPTANCE.md).
-  `specs/ROADMAP.md` is a legacy pointer, not a second active roadmap.
+  When closing a task, keep distinct evidence and unresolved checks discoverable.
+  Remove superseded plans once their decisions and verification are covered
+  elsewhere; link a fixed Git revision if the original is still useful.
 
 ## Ordinary Git delivery and release checks
 

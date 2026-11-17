@@ -1,7 +1,9 @@
 # Task: Standard local release flow
 
 Status: complete
-Next action: Use the standard procedure for the next authorized stable release; full live default-stage publication remains to be observed on that release.
+Next action: Use the [current distribution procedure](../DISTRIBUTION.md).
+The evidence below predates live use of the default stages; see the later
+[0.8.2 publication record](release-0.8.2.md#evidence) for the standard release and tap results.
 
 ## Objective and scope
 
@@ -78,6 +80,5 @@ version/tag change or new release is part of this workflow update.
 ## Handoff
 
 - Remaining work: none for workflow implementation.
-- Known limitations: a future tagged, notarized candidate and remote release
-  are required to prove the complete live workflow. Ad-hoc packaging does not
-  establish production installation or Finder activation.
+- This record covers the workflow implementation. Use the release-specific
+  records for publication results and their native acceptance limits.

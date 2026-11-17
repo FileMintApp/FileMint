@@ -1,7 +1,7 @@
 # Task: Performance and security audit fixes
 
-Status: in-progress
-Next action: Await the user's decision on a temporary 0.5.10 QA installation for installed Finder callback acceptance.
+Status: implemented; this record preserves the 2026-09-23 source and fixture checks.
+Next action: For new work on these paths, select relevant installed Finder checks from [Finder QA](../FINDER_QA.md). The original QA run did not install the candidate for Finder callback testing.
 
 ## Objective and scope
 

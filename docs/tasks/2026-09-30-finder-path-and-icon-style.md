@@ -1,7 +1,7 @@
 # Task: Finder background paths and global menu icon style
 
-Status: in-progress
-Next action: Verify the installed Finder menus when a new-build installation is requested.
+Status: implemented; the checks below apply to the September 30 worktree.
+Next action: If these paths change, select the relevant installed Finder menu checks from [Finder QA](../FINDER_QA.md).
 
 ## Objective and scope
 

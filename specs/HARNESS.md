@@ -112,9 +112,7 @@ signed-artifact and website checks are not implied by a green CI run. The matrix
 exercise macOS 13/14 or installed Finder/UI behavior. Swift tests and the JSON
 CLI share the JSON cases; those cases are not independent coverage counted twice.
 
-The hosted matrix uses explicit stable OS labels. GitHub has retired the
-[macOS 13 images](https://github.com/actions/runner-images/issues/13046), and
-[macOS 14 is in scheduled brownouts before retirement on 2026-11-02](https://github.com/actions/runner-images/issues/13518).
+The hosted matrix is defined in the [source CI workflow](../.github/workflows/ci.yml).
 Older supported systems need separate runtime checks; setting a deployment
 target of macOS 13 does not replace running on macOS 13.
 

@@ -6,7 +6,7 @@ This guide covers the initial integration in FileMint 0.8.2. It opens a draft fo
 you to review. Only **Create** writes a file. An action returning “draft opened”
 does not mean the file was created.
 
-FileMint retains its Apple-silicon Mac and macOS 13.0 application requirement.
+FileMint supports M-series Macs on macOS 13.0 or later.
 Only Shortcuts & Launchers requires macOS 13.3 or later and a logged-in,
 interactive desktop. On macOS 13.0–13.2, its setup controls are disabled with an
 explanation, and direct external draft/search requests are rejected. Ordinary

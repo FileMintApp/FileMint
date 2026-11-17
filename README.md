@@ -3,7 +3,7 @@
 <p align="center"><strong>Create files from Finder's right-click menu.</strong><br>Start a Markdown note, Word document or Excel workbook in the folder you already have open.</p>
 <p align="center"><strong>English</strong> ｜ <a href="README.zh-CN.md"><strong>简体中文 →</strong></a></p>
 <p align="center"><a href="https://github.com/FileMintApp/FileMint/releases/latest"><strong>Get the DMG</strong></a> · <a href="docs/INSTALL.md">Installation help</a> · <a href="https://filemintapp.github.io/FileMint/en/">Website</a> · <a href="website/">Website source</a> · <a href="https://github.com/FileMintApp/FileMint/issues">Report an issue</a></p>
-<p align="center"><sub>Apple Silicon · macOS 13+ · Apple-notarized DMG</sub></p>
+<p align="center"><sub>M-series Macs · macOS 13+ · Apple-notarized DMG</sub></p>
 
 Right-click the background of a Finder folder configured in FileMint, then choose **New File → Markdown (.md)** to create a file there. Choose **New File…** when you want to set the filename and starter content first.
 
@@ -16,9 +16,10 @@ FileMint is a native **macOS Finder extension** with reusable templates and opti
 
 [What's new in the latest stable release](https://github.com/FileMintApp/FileMint/releases/latest)
 
-## Recent features
+## Features
 
 - **Quick Search**: Find creation actions, enabled templates, favorites and settings from one panel; optionally enable a global shortcut in General.
+- **Shortcuts and Raycast**: Open a prefilled draft or Quick Search. Requires macOS 13.3 or later; see the [setup guide](docs/SHORTCUTS_AND_LAUNCHERS.md).
 - **Copy File Contents**: Copy complete supported text files from Finder, retaining whitespace and line endings. Enable it under File & Folder Tools.
 - **Batch Rename**: Preview and rename 2–1,000 items in one directory on local, writable APFS, with undo, interrupted-operation recovery and no overwriting of existing items.
 - **File Info and checksums**: Inspect one ordinary file, explicitly calculate four supported digests, and copy or compare results.
@@ -30,7 +31,7 @@ FileMint is a native **macOS Finder extension** with reusable templates and opti
 - **Paste Image as File**: Preview and name a copied screenshot or image, then save it as PNG.
 - **Multiple templates per format**: Keep separate content and filenames for one format, with a configurable default template.
 - **Word / Excel templates**: Create blank `.docx` and `.xlsx` files from built-in templates, or import your own documents and create independent copies with their formatting and content intact.
-- **Themes and settings**: General now offers Follow System, Light and Dark, with consistent control alignment and interaction styles.
+- **Toggle Hidden Files**: Change Finder's display from its context menu without changing file attributes.
 
 ## Why FileMint
 
@@ -80,48 +81,20 @@ Select an image in Finder and open Resource Tools, or choose a local image expli
 </p>
 <p align="center"><sub>The resource example uses longmao.navigator.png; preview, destination and original preservation are visible in the panel.</sub></p>
 
-### 4. Six opt-in File & Folder Tools
+### 4. File & Folder Tools
 
-The module starts off. Once enabled, each action can live directly in Finder's main menu or inside **File & Folder Tools**:
-
-- **Copy File / Folder Names and Paths**: one line per selected item; Copy Paths also accepts an in-scope folder background. The clipboard changes only when you choose the command.
-- **Move File / Folder**: capture sources first, then confirm at the target folder background. Nothing moves silently.
-- **Delete Permanently**: confirmation by default, bypasses Trash and never follows a selected symlink.
-- **AirDrop**: opens macOS's native recipient UI; it never sends automatically.
-- **Send Alias to Desktop**: creates native Finder aliases, preserves originals and numbers conflicts.
+The module starts off. Enable the actions you need and choose their Finder menu positions. The [user guide](https://filemintapp.github.io/FileMint/en/guide.html#enable-file-folder-tools-when-needed) covers copying names and paths, moving items, permanent deletion, AirDrop, and Finder aliases.
 
 <p align="center">
   <img src="website/public/images/file-tools-en.png" width="760" alt="FileMint File and Folder Tools settings with menu placement and individual switches">
 </p>
 
-## Settings with a clear hierarchy
-
-The persistent sidebar groups settings by job:
-
-- **File Creation**: Templates & Types, Creation.
-- **Extensions**: File & Folder Tools, Resource Tools, Open with App.
-- **Preferences**: General, Finder & Folders, File Access, About.
-
-Each page has a clear responsibility, optional modules can be disabled independently, and arrow keys move between pages. General → Appearance offers Follow System, Light and Dark; Follow System is the default.
-
-Finder menu icons offer Colored and System Monochrome styles. Supported menus and templates also let you search system symbols, change colors or reset to the default. Monochrome preserves saved colors for when you switch back to Colored.
-
-## Use it
-
-**Quick creation:** Finder desktop or folder background → **New File** → choose a type.
-
-**Custom creation:** **New File…** → enter the full filename → choose the suffix → paste optional content → **Create**.
-
-**Resource Tools:** Settings → Extensions → Resource Tools; enable it, then choose images in the app or from Finder.
-
-**File & Folder Tools:** Settings → Extensions → File & Folder Tools; enable the module, then choose actions and menu locations.
-
-The FileMint app and menu bar also offer New File… without Finder integration.
+Use **New File…** in the app or menu bar to create a file without Finder integration. See the [user guide](https://filemintapp.github.io/FileMint/en/guide.html) for settings, shortcuts and troubleshooting.
 
 ## Privacy and permission boundaries
 
 - Filenames, paths, content, images and OCR results are never uploaded.
-- FileMint does not crawl folders, enumerate files, monitor the clipboard or keep image-processing history.
+- FileMint does not crawl folders in the background, monitor the clipboard or keep image-processing history.
 - Finder actions operate only on the current local selection inside an authorized scope.
 - Creation and image processing work offline. The main app reaches GitHub only for update checks or downloads; the Finder extension stays offline.
 - Enable the Finder extension in macOS System Settings and manage saved folder grants in FileMint's File Access settings.
@@ -130,23 +103,16 @@ Read the complete [privacy policy](PRIVACY.md).
 
 ## Install
 
-Current stable installers support **Apple Silicon Macs on macOS 13 or later**. Published installers through 0.5.10 keep their original compatibility.
-
-**Stable installers from 0.5.9 onward are Developer ID signed, Apple notarized and stapled.** First use still follows macOS prompts for Finder enablement and folder authorization.
+Current stable installers support **M-series Macs on macOS 13.0 or later**. They are Developer ID signed, Apple notarized and stapled.
 
 1. [Download the latest DMG](https://github.com/FileMintApp/FileMint/releases/latest) and drag FileMint into Applications.
 2. Launch it, enable the Finder extension and authorize your working folders.
-3. Return to Finder and start creating or processing images.
+3. Return to Finder and start creating or processing images. See the [first-time setup guide](https://filemintapp.github.io/FileMint/en/guide.html#complete-the-first-time-setup) for details.
 
 For a fresh installation, the [official FileMint Homebrew tap](https://github.com/FileMintApp/homebrew-tap)
-provides `brew install --cask filemintapp/tap/filemint`. Migration from a manual
-installation and Finder behavior after upgrade or removal still need isolated native acceptance; read the tap instructions first.
+provides `brew install --cask filemintapp/tap/filemint`.
 
-After installing 0.5.9, use **About → Check for Updates → Update and Restart** for later releases. Finish creating or editing first; macOS may request administrator authorization.
-
-When upgrading from 0.5.7/0.5.8, manually install 0.5.9 or later once: quit FileMint, replace it in Applications, eject the installer volume and reopen it. Those older updaters cannot repair their own signed permissions.
-
-For full installation limitations, update notes and provenance, read the [installation guide](docs/INSTALL.md).
+See the [installation notes](docs/INSTALL.md) for older updaters, Intel compatibility and verifying a download. Apple accepted the 0.5.3 DMG for notarization after publication; that download has no stapled ticket and needs network access for Gatekeeper to retrieve it.
 
 ## Roadmap
 
@@ -165,7 +131,7 @@ These are unfinished directions only; the list changes with real use and feedbac
 ### Folders and tool integrations
 
 - [ ] **Project folder templates** — Create a familiar folder structure and starter files in one action.
-- [ ] **Shortcuts and launcher integrations** — Open a prefilled creation panel from Shortcuts, Raycast or Alfred.
+- [ ] **Shortcuts and Raycast setup** — Verify that first-time users can set up and repeat the draft workflows available since 0.8.2.
 
 </div>
 <div class="roadmap-group">
@@ -181,7 +147,7 @@ These are unfinished directions only; the list changes with real use and feedbac
 
 ### Installation and distribution
 
-- [ ] **Homebrew installation** — The official FileMint tap is public for fresh downloads; upgrade, migration and removal still need isolated native acceptance.
+- [ ] **Homebrew upgrade and migration** — Verify upgrade, migration from a manual installation and removal on an isolated Mac.
 
 </div>
 <!-- #endregion roadmap -->
