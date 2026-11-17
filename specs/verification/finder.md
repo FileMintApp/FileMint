@@ -40,8 +40,8 @@ writes in a headless child sandbox. Production capture/metadata inspection still
 reports file/folder/link metadata; a requested digest fails with read denial and
 produces no result. The signed `file-info` native fixture covers window state,
 five choices, cancellation, clipboard/comparison and coordinator ownership using
-isolated stores. Neither proves installed Finder delivery, external-folder picker
-grants, real cloud placeholders or macOS 13 runtime behavior.
+isolated stores. Installed Finder delivery, external-folder picker grants and
+macOS 13 runtime behavior require their corresponding environments.
 
 The same restricted fixture verifies that Copy File Contents can build a menu
 candidate without opening content and fails when a content read is denied. A

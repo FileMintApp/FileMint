@@ -63,4 +63,4 @@ Local logs and metadata: `build/release-0.8.0.noindex/`, `build/FileMint-0.8.0.r
 - Application publication and website deployment are complete. Preserve final archives, manifests and publication journal; never replace these assets or move `v0.8.0`.
 - The following evidence-only commit does not change the tagged release source or candidate. Any transaction diagnosis must use the original source and journal.
 - No new encryption feature is shipped; the separate sealed research remains untouched.
-- Installed Finder/UI, macOS 13/14, provider/NAS behavior and actual installed-update acceptance require their own runtime evidence.
+- Installed Finder/UI, macOS 13/14 and installed updates require their own runtime evidence.

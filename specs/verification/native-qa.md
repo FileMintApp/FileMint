@@ -313,7 +313,5 @@ record error codes and folder-picker counts without paths or file contents.
 Finder menu checks require the user to enable the separate QA extension. The
 loopback update feed uses an ephemeral in-memory key; it never contacts production.
 
-A NAS test needs a user-supplied mounted network folder. A local volume, a mock
-or a permission-error fixture is not NAS evidence. The current user has no NAS
-test target; retain this case as not run. This minimal prototype establishes
-access/installer feasibility, not complete old production FileMint upgrade QA.
+The prototype compares local access and installer behavior for its two QA
+builds. Production upgrade acceptance requires evidence from the production app.

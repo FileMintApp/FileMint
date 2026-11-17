@@ -26,3 +26,6 @@ the app becomes active again. In-app New File remains usable before extension
 approval. No silent enablement, private API, injected code or shell-based system
 setting change is added. These sources establish the supported integration
 boundary, not a claim that every unsandboxed workaround is prohibited by Apple.
+
+See the [directory menu investigation](research/2026-11-17-finder-icloud-nas-menus.md)
+for Finder callback delivery and its relationship to file access.

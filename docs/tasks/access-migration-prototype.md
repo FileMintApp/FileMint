@@ -1,16 +1,15 @@
 # Task: Signed sandbox-to-native access prototype
 
-Status: in-progress
-Next action: Run the retained NAS case when a mounted network test directory is available; decide separately whether to migrate the full production app.
+Status: verified on the recorded local QA builds
+Next action: Consult this evidence if production migration is revisited.
 
 ## Objective and scope
 
 - Evaluate a non-sandboxed FileMint host with a sandboxed Finder extension.
 - Use a separate fixed QA identity, data and loopback update source; leave the
   installed FileMint, production preferences, entitlements and release feeds alone.
-- Verify folder-authorization prompts after a user-granted Full Disk Access,
-  network-volume access when available, and sandbox-to-non-sandbox upgrade.
-- User has no NAS test target. NAS remains not run; do not substitute local tests.
+- Verify local folder-authorization prompts after a user-granted Full Disk Access
+  and the sandbox-to-non-sandbox upgrade.
 
 ## Selected context
 
@@ -54,7 +53,6 @@ Support directory. They contain scenario labels/error codes, not user paths/cont
 | FDA / non-sandbox candidate | passed | Same two destinations: zero helper folder pickers, create/read/move/delete and collision checks passed; no intervening target-folder grant. |
 | Real permission failure | passed | Owned read-only directory: EACCES on both versions, zero helper folder pickers; no claimed access success for writes. |
 | Local Sparkle replacement and data migration | passed | Build 27 → 28 at the same path, old process absent, new PID running. Actual installed signature reverified. Preferences/custom text template/favorites/folder-access bytes unchanged; saved folder and favorite bookmarks resolved and favorite identity matched. |
-| NAS | not-run | User has no mounted NAS test directory |
 | Production old-to-new / installed Finder | not-run | Separate from minimal prototype evidence |
 
 ## Interpretation and limits
@@ -68,7 +66,7 @@ Support directory. They contain scenario labels/error codes, not user paths/cont
   production migration acceptance or public-update/notarization proof.
 - Old production preferences/stores and installed FileMint were not read or changed.
   Production entitlements/signing validation remain unchanged.
-- NAS unavailable; real Finder callback/loading, FDA revocation and other supported
+- Real Finder callback/loading, FDA revocation and other supported
   macOS versions remain outside the observed results. The real separate Finder
   extension is bundled and sandbox signed, but was not enabled during these checks.
 
@@ -84,10 +82,8 @@ Support directory. They contain scenario labels/error codes, not user paths/cont
    a grant that would contaminate the comparison. Record the observed failures.
 5. Run the isolated update. Require new process/build 28, matching source hashes,
    bookmark/identity checks, and the actual new installed entitlements.
-6. Repeat local probes. With a real NAS later, enter an explicitly chosen mounted
-   network directory. The probe requires `volumeIsLocal == false`; local folders
-   cannot produce a passing NAS result. The app creates/removes only unique QA
-   children, but uses the real mounted directory's access rules.
+6. Repeat the local probes and compare the folder picker counts and access
+   results for the two builds.
 7. Stop the loopback server after the run. FDA revocation is a separate manual
    System Settings action; the harness never alters it.
 

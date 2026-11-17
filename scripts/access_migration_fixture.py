@@ -47,8 +47,7 @@ def assemble(root, framework):
         listener.bind(("127.0.0.1", 0))
         port = listener.getsockname()[1]
     config = dict(identifier=IDENTIFIER, port=port, application=str(qa.app_path("access-migration")),
-                  runID=root.name, sourceCommit=subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
-                  nas="not-run: no user-supplied NAS")
+                  runID=root.name, sourceCommit=subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip())
     (root / "fixture.json").write_text(json.dumps(config, indent=2) + "\n")
     (root / "server").mkdir()
     for folder, build, sandbox in [("installation", "27", True), ("payload", "28", False)]:

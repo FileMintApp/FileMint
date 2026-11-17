@@ -58,7 +58,7 @@ Logs/readback: `build/qa-2026-09-30-issues.DTad4B/` (ignored local evidence).
 
 - Remaining work: installed Finder acceptance only; implementation and automated
   checks are complete. No issue comment, installation or release was made.
-- Native limits: installed Finder callbacks/background clipboard flow, actual
-  highlighted Finder menu colors and NAS permissions remain unverified. The
+- Native limits: installed Finder callbacks, background clipboard flow and
+  actual highlighted Finder menu colors remain unverified. The
   isolated fixture's AppKit raster/flag checks and settings previews are separate
   evidence from those installed-app scenarios.

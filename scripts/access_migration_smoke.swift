@@ -10,7 +10,6 @@ final class AccessMigrationSmoke: NSObject, NSApplicationDelegate, SPUUpdaterDel
     private var window: NSWindow!
     private var evidence: NSTextView!
     private var status: NSTextField!
-    private var nasPath: NSTextField!
     private var declaredFDA: NSPopUpButton!
     private var updater: SPUUpdater?
     private var busy = false
@@ -79,10 +78,6 @@ final class AccessMigrationSmoke: NSObject, NSApplicationDelegate, SPUUpdaterDel
             NSButton(title: "检查旧数据", target: self, action: #selector(checkData)),
             NSButton(title: "执行隔离升级", target: self, action: #selector(startUpdate)),
             NSButton(title: "退出 QA", target: self, action: #selector(quit))])
-        nasPath = NSTextField(string: "")
-        nasPath.placeholderString = "可选：已挂载的 NAS 测试目录绝对路径（不提供账号密码）"
-        let nas = NSStackView(views: [nasPath, NSButton(title: "测试 NAS", target: self, action: #selector(nasProbe))])
-        nasPath.widthAnchor.constraint(greaterThanOrEqualToConstant: 530).isActive = true
         evidence = NSTextView()
         evidence.isEditable = false
         evidence.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
@@ -90,7 +85,7 @@ final class AccessMigrationSmoke: NSObject, NSApplicationDelegate, SPUUpdaterDel
         scroll.documentView = evidence
         scroll.hasVerticalScroller = true
         evidence.autoresizingMask = [.width]
-        let stack = NSStackView(views: [status, help, privacy, probes, nas, scroll])
+        let stack = NSStackView(views: [status, help, privacy, probes, scroll])
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 16
@@ -198,19 +193,6 @@ final class AccessMigrationSmoke: NSObject, NSApplicationDelegate, SPUUpdaterDel
         runTargets([("control", control), ("desktop", AccessQA.home.appendingPathComponent("Desktop")),
                     ("documents", AccessQA.home.appendingPathComponent("Documents"))])
     }
-    @objc private func nasProbe() {
-        let path = nasPath.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard path.hasPrefix("/"), !path.contains("\n") else { status.stringValue = "请输入已挂载的 NAS 测试目录绝对路径。"; return }
-        let url = URL(fileURLWithPath: path, isDirectory: true)
-        do {
-            let values = try url.resourceValues(forKeys: [.isDirectoryKey, .volumeIsLocalKey])
-            guard values.isDirectory == true, values.volumeIsLocal == false else {
-                record("nas", ["result": "not-run", "reason": "not a mounted network directory"]); return
-            }
-            runTargets([("nas", url)])
-        } catch { record("nas", errorFields(error)) }
-    }
-
     private func runTargets(_ targets: [(String, URL)]) {
         guard !busy, updater?.sessionInProgress != true else { return }
         busy = true

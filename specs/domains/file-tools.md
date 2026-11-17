@@ -341,7 +341,7 @@ Load for: Optional Finder file/folder actions, batch rename, selection snapshots
   switches, whole-selection scope and source identities after authorization and
   before each write. Reject roots, duplicates and missing/replaced sources.
 - The main app resolves Desktop under the operating-system-resolved real user
-  home (including the normal iCloud Desktop location). Desktop need not be a
+  home and lets macOS handle any redirection. Desktop need not be a
   configured menu location; authorization never expands menu scope. Authorize
   exact source parents for read access and Desktop for writing using native
   directory pickers only when needed. Keep operation grants in a private bookmark
@@ -394,11 +394,6 @@ The following rules apply only to batch rename, not to the existing tools above.
   cloud-root exclusion scans. Missing optional provider information is neither
   proof of safety nor a reason by itself to reject an otherwise valid request;
   it never substitutes for required identity, authorization or operation checks.
-- NAS, iCloud and third-party sync compatibility remain unverified, not a gate
-  for ordinary local implementation or acceptance. Do not promise universal
-  compatibility or infer it from a successful local call. Requests still obey
-  the same first-version filesystem scope and native safety checks; no separate
-  provider-specific support path is part of this task.
 - Reject symlinks, Finder aliases, packages and nonregular nodes. Protect root
   and volume-root objects; the canonical /System, /Library, /Applications,
   /Users and /Volumes directory objects; the OS-resolved real user home and its

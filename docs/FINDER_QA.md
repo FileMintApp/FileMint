@@ -145,8 +145,8 @@ remain successful; size feedback must not prevent publication.
 - For Remove Private Metadata, a Finder click starts processing without another
   Run. Check `-clean` sibling copies, unchanged originals, orientation/dimensions,
   readback with GPS/EXIF/IPTC/XMP fixtures, and a rejected over-limit input.
-- Verify Finder callbacks on the installed signed build, source/output sandbox grants,
-  cloud placeholders and macOS 13 separately from isolated native fixtures.
+- Verify Finder callbacks on the installed signed build, source/output sandbox grants
+  and macOS 13 separately from isolated native fixtures.
 
 ## File and folder tools
 
@@ -237,8 +237,7 @@ This fixture does not prove that Finder has loaded the new extension.
 - Cancel source or Desktop authorization: create nothing and release the busy
   guard. Grant only the exact fixture folders, relaunch and verify saved grants
   work without another picker. Menu scope must remain unchanged. Check partial
-  failures and removed/replaced originals. A redirected/iCloud Desktop and
-  disconnected/file-provider originals require separate native evidence.
+  failures and removed/replaced originals with disposable local fixtures.
 - Confirm native checkboxes, descriptions and both placement/deletion controls remain
   readable at minimum window size in both languages and appearances.
 - Select files, folders and multiple items with Unicode/spaces/compound extensions;

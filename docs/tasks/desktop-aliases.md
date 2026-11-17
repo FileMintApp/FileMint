@@ -53,11 +53,11 @@ Logs and reproducible disposable sandbox fixture sources: `build/desktop-alias-e
 | Local Debug install | passed | Clean arm64 Debug `0.5.6 (14)` installed at `/Applications/FileMint.app`; deep signature, App Sandbox, `get-task-allow`, and the single installed Finder extension registration verified. Rollback archive: `build/local-install-backups/20260918-174004-desktop-alias-debug-clean/FileMint-before-debug.zip`. |
 | Installed settings entry | passed | After the clean rebuild, the actual installed settings page showed `发送替身到桌面` with its opt-in switch and menu placement; no user preference was changed. |
 | Test alias cleanup | passed | Removed the four aliases created under `build/desktop-alias-native.iS7cSz/Desktop`; the directory is empty. |
-| Installed Finder action / real Desktop | not-run | The actual Finder right-click callback, real Desktop/iCloud and removable-volume integration still need user acceptance. |
+| Installed Finder action / real Desktop | not-run | This run did not exercise the right-click callback, the real Desktop destination or removable volumes. |
 
 ## Handoff
 
-- Remaining work: installed Finder menu integration; real Desktop/iCloud/removable-volume scenarios.
+- Remaining work: installed Finder delivery, the real Desktop destination and removable volumes.
 - Implementation: new `DesktopAlias.swift` and tests, file-tools preferences/localization,
   ticket payload, Finder dispatch, main-app coordinator, settings hint/icon and owning SPECs.
 - Isolated sandbox fixture: `build/desktop-alias-native.iS7cSz/`; settings fixture:

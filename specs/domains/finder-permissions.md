@@ -31,6 +31,9 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - Finder menu location selection uses NSOpenPanel and saves only paths.
   Adding or removing a menu location does not change saved file access. A
   failed settings save keeps the previous complete selection.
+- Menu display requires a Finder Sync callback for the registered location.
+  Folder grants authorize the main app's file operations. An enabled extension
+  and a saved grant are separate from Finder's delivery of the menu callback.
 - Preferences are an atomically replaced private JSON file in
   `~/Library/Application Support/FileMint`. Both sandboxed targets have an
   exception scoped only to this application-owned directory. No App Group or

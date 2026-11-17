@@ -132,7 +132,7 @@ body:
       description: Include relevant settings, file or template types, whether it started after an update, and any troubleshooting you tried.
       placeholder: |
         For Finder: entry point, whether the extension is enabled, and whether the destination folder is authorized.
-        Folder location type: local, iCloud, external disk or network share. Real paths are not needed.
+        Folder location type, such as a local folder or external drive. Real paths are not needed.
         For Open with App or terminals: application name and version.
         For templates or images: file format and a minimal example that can be shared publicly.
 

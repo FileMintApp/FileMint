@@ -140,7 +140,7 @@ These are unfinished directions only; the list changes with real use and feedbac
 
 - [ ] **Template groups and favorites** — Group templates by purpose, pin favorites and find them through search.
 - [ ] **First-file walkthrough** — Follow clear steps from enabling the extension and authorizing a folder to creating your first file.
-- [ ] **Troubleshooting and compatibility notes** — Get specific help when menus or creation fail, with verified cloud-folder and external-drive notes.
+- [ ] **Troubleshooting and compatibility notes** — Get specific help when menus or creation fail, with verified external-drive notes.
 
 </div>
 <div class="roadmap-group">

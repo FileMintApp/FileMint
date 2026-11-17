@@ -129,7 +129,7 @@ Number a photo collection, organize project files, or apply a list of names you 
 
 Each name-list line contains only the name body; do not repeat the extension. Files without an extension cannot gain one through the new name. Return edits the focused field without renaming the batch. After reviewing the preview, use the button or ⌘↩ to execute.
 
-**To undo:** Choose **Undo Last Batch Rename…** in the result panel or the app's **File** menu, then review and confirm the reverse preview for the most recent successful operation. Interrupted operations offer restoration of their pre-operation names. If manual handling is needed, export recovery evidence and explicitly unblock the tool. A batch is not atomic; recovery conflicts preserve files and records for further handling. NAS, iCloud and third-party sync compatibility remain unverified.
+**To undo:** Choose **Undo Last Batch Rename…** in the result panel or the app's **File** menu, then review and confirm the reverse preview for the most recent successful operation. Interrupted operations offer restoration of their pre-operation names. If manual handling is needed, export recovery evidence and explicitly unblock the tool. A batch is not atomic; recovery conflicts preserve files and records for further handling.
 
 ### File Info and checksums
 

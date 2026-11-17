@@ -277,8 +277,8 @@ owns the rules, supported storage, counts, explicit actions and recovery behavio
   Explain preview-before-commit, protected extensions, conflict blocking and
   explicit undo for rename; metadata-first opening, explicit calculation and
   copy/comparison for checksums. Identify both tools as opt-in and retain their
-  actual selection/filesystem limits in the guide. Do not imply encryption,
-  proof of origin, atomic batches or universal cloud/NAS compatibility.
+  actual selection and verified filesystem limits in the guide. Do not imply
+  encryption, proof of origin or atomic batches.
 - The homepage also introduces Quick Search and its optional global shortcut,
   Copy File Contents, direct creation drafts and compact/keyboard-friendly
   native interactions. Give each workflow a clear bilingual guide link and

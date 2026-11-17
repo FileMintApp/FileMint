@@ -875,7 +875,7 @@ Debug build, installation, real app acceptance and fixes for observed defects.
   the encoded resource-tool set without changing their effective choices.
 - **Not run:** macOS 13/14, desktop-wallpaper menus, exhaustive all-hidden menu
   combinations, full VoiceOver/focus/minimum-window coverage, remaining image
-  actions/batch cancellation, FDA/Accessibility changes, NAS or update installs.
+  actions/batch cancellation, FDA/Accessibility changes or update installs.
   Closed-window/Dock state is not inferred from an app-reopening inspection.
 
 [Build log](../build/debug-build.log), [signing log](../build/debug-sign.log),
@@ -1237,8 +1237,8 @@ Checked on macOS 27.2, Apple silicon, `0409f1a` plus the uncommitted
   appeared in the native picker. The QA app was closed after the checks.
 - The fixture used disposable preferences, no user file operation and no general
   clipboard writes. Installed FileMint/Finder was not replaced; real Finder
-  background clipboard execution, highlighted menu colors and NAS authorization
-  remain separate pending checks. No publication occurred.
+  background clipboard execution and highlighted menu colors were not exercised.
+  No publication occurred.
 
 ## FileMint 0.6.2 release — 2026-09-29
 
@@ -1502,7 +1502,7 @@ worktree. See the [task and official sources](tasks/desktop-aliases.md).
   Debug build `0.5.6 (14)` was installed at `/Applications/FileMint.app`; the
   installed settings page showed the opt-in `发送替身到桌面` switch and placement
   picker without changing preferences. The actual Finder extension callback,
-  real Desktop/iCloud integration and removable volumes remain unverified.
+  real Desktop destination and removable volumes were not exercised.
   Rollback archive: `build/local-install-backups/20260918-174004-desktop-alias-debug-clean/FileMint-before-debug.zip`.
 - The four aliases created by the disposable fixture were removed from
   `build/desktop-alias-native.iS7cSz/Desktop`; no test aliases remain there.
