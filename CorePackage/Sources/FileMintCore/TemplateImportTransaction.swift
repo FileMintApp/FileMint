@@ -204,14 +204,20 @@ public struct TemplateImportTransaction: Sendable {
         guard try DirectoryIdentity(assets.directory) == journal.assetDirectoryIdentity else { throw TemplateTransactionError.recoveryRequired }
         let stageExists = try exists(directory)
         if stageExists { guard try DirectoryIdentity(directory) == journal.stageIdentity else { throw TemplateTransactionError.recoveryRequired } }
+        let hasUnrecordedAsset = journal.assets.contains { $0.identity == nil }
         for asset in journal.assets {
             let referenced = preferences.templates.contains { $0.document?.builtInResource == nil && $0.document?.id == asset.reference.id }
             if !referenced { try removeOwned(assetURL(asset.reference, directory: assets.directory), asset: asset) }
-            if stageExists { try removeOwned(assetURL(asset.reference, directory: directory), asset: asset) }
+            if stageExists, asset.identity != nil { try removeOwned(assetURL(asset.reference, directory: directory), asset: asset) }
         }
         if stageExists {
             let status = directory.withUnsafeFileSystemRepresentation { rmdir($0!) }
-            guard status == 0 else { throw TemplateTransactionError.recoveryRequired }
+            // A crash may precede recording the staged inode, even during the
+            // exclusive writer's own staging. Leave those private bytes intact.
+            // Published paths above always require a recorded identity.
+            if status != 0, !(errno == ENOTEMPTY && hasUnrecordedAsset) {
+                throw TemplateTransactionError.recoveryRequired
+            }
         }
         // The journal is regular and still refers to this exact transaction.
         let current = try TemplatePackageCodec.read(at: journalURL, limit: 1_048_576)

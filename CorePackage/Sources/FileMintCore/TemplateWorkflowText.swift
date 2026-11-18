@@ -8,7 +8,8 @@ public enum TemplateWorkflowText: Hashable, Sendable {
     case openingApplicationUnavailable, applicationOpenFailed, defaultApplicationOpenFailed
     case importMenu, importPackage, exportPackage, exportSelection, selected, enabled, all, custom
     case add, skip, saveCopy, confirmImport, adoptDefaults, staleReview, recoveryNeeded, cleanupPending
-    case packageInvalid, packageTooLarge, packageVersion, noSelection, importFailed, exportFailed
+    case packageInvalid, packageTooLarge, selectSubset, packageVersion, noSelection, importFailed, exportFailed
+    case outsideFinderScope
     case importing, basicRevealHint, sourceUnavailable, settingsBusy, applicationRequired
     public func text(_ language: AppLanguage) -> String {
         let pair: (String, String)
@@ -57,6 +58,8 @@ public enum TemplateWorkflowText: Hashable, Sendable {
         case .cleanupPending: pair = ("Templates imported; private transaction cleanup is pending.", "模板已导入，私有事务清理待完成。")
         case .packageInvalid: pair = ("This template package is damaged or contains unsupported fields.", "模板包已损坏或包含不支持的字段。")
         case .packageTooLarge: pair = ("The package exceeds a size or item limit. Export a smaller selection.", "模板包超过大小或数量限制，请减少导出选择。")
+        case .selectSubset: pair = ("The full selection exceeds the settings size limit. Choose the templates to import.", "全部导入会超出设置文件的大小限制，请选择要导入的模板。")
+        case .outsideFinderScope: pair = ("The destination is outside your Finder menu folders. Choose a save folder.", "保存位置已超出配置的 Finder 菜单范围，请重新选择保存位置。")
         case .packageVersion: pair = ("This template package version is not supported.", "不支持此模板包版本。")
         case .noSelection: pair = ("Select at least one template.", "请至少选择一个模板。")
         case .importFailed: pair = ("Import was not applied. Your saved templates are unchanged.", "导入未应用，现有模板未改变。")

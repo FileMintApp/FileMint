@@ -1,4 +1,4 @@
-import FileMintCore
+@testable import FileMintCore
 import Foundation
 import Testing
 
@@ -78,6 +78,56 @@ struct FocusedCreationTests {
         let store = QuickCreationTicketStore(directory: root.appendingPathComponent("requests"))
         let ticket = try store.enqueue(directory: link, templateID: "plain-text")
         #expect(try store.consume(ticket, preferences: preferences) == nil)
+        let template = TemplateCatalog.builtInTemplates[0]
+        #expect(throws: FileMintError.self) {
+            try FileCreationService().createFile(.init(destinationDirectory: link, template: template, finderRoots: [allowed]))
+        }
+        #expect(!FileManager.default.fileExists(atPath: outside.appendingPathComponent(template.suggestedFileName).path))
+        let explicit = try FileCreationService().createFile(.init(destinationDirectory: link, template: template))
+        #expect(FileManager.default.fileExists(atPath: explicit.createdURL.path))
+    }
+
+    @Test("a staging failure keeps a newly arrived user directory at the intended name")
+    func failedStagingPreservesDestinationEntry() throws {
+        let root = try workspace()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let target = root.appendingPathComponent("report.txt")
+        let child = target.appendingPathComponent("owned-by-user")
+        #expect(throws: CocoaError.self) {
+            try PinnedCreationWriter.create(in: root, expected: nil, name: "report.txt", fileExtension: "txt",
+                collision: .replace, kind: .text, contentDependsOnName: false) { _ in
+                    try FileManager.default.createDirectory(at: target, withIntermediateDirectories: false)
+                    try Data("keep".utf8).write(to: child)
+                    throw CocoaError(.fileWriteOutOfSpace)
+                }
+        }
+        #expect(try Data(contentsOf: child) == Data("keep".utf8))
+        #expect(try FileManager.default.contentsOfDirectory(atPath: root.path) == ["report.txt"])
+    }
+
+    @Test("collision retries stage fixed bytes once and preserve compound template suffixes")
+    func compoundSuffixCollision() throws {
+        let root = try workspace()
+        defer { try? FileManager.default.removeItem(at: root) }
+        for name in ["types.d.ts", "types 2.d.ts"] {
+            try Data("original".utf8).write(to: root.appendingPathComponent(name))
+        }
+        let template = FileTemplate(id: "declaration", displayName: "Declaration", suggestedFileName: "types.d.ts",
+            group: "Custom", content: "{{fileName}}", rank: 0, fileExtension: "d.ts")
+        let declaration = try FileCreationService().createFile(.init(destinationDirectory: root, template: template))
+        #expect(declaration.createdURL.lastPathComponent == "types 3.d.ts")
+        #expect(try String(contentsOf: declaration.createdURL, encoding: .utf8) == "types 3.d.ts")
+        #expect(FilenamePolicy.fileName("types.d.ts", applyingFileExtension: "ts", replacingFileExtension: "d.ts") == "types.ts")
+
+        try Data("original".utf8).write(to: root.appendingPathComponent("Document.docx"))
+        var renders = 0
+        let bytes = Data("fixed bytes".utf8)
+        let result = try PinnedCreationWriter.create(in: root, expected: .capture(root),
+            name: "Document.docx", fileExtension: "docx", collision: .increment, kind: .officeDocument,
+            contentDependsOnName: false) { _ in renders += 1; return bytes }
+        #expect(renders == 1)
+        #expect(result.createdURL.lastPathComponent == "Document 2.docx")
+        #expect(try Data(contentsOf: result.createdURL) == bytes)
     }
 
     @Test("a desktop background action creates in Desktop through the existing single-use ticket flow")
@@ -94,7 +144,8 @@ struct FocusedCreationTests {
         let template = TemplateCatalog.builtInTemplates[0]
         let route = try store.enqueue(directory: destination, templateID: template.id)
         let ticket = try #require(try store.consume(route, preferences: preferences))
-        let result = try FileCreationService().createFile(.init(destinationDirectory: ticket.directory, template: template))
+        let result = try FileCreationService().createFile(.init(destinationDirectory: ticket.directory, template: template,
+                                                               finderRoots: preferences.monitoredFolderURLs))
         #expect(result.createdURL.deletingLastPathComponent() == desktop)
         #expect(FileManager.default.fileExists(atPath: result.createdURL.path))
         #expect(try store.consume(route, preferences: preferences) == nil)

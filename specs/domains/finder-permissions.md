@@ -24,6 +24,11 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   unconfigured folder through a symlink. A selected symlink itself belongs to its
   parent folder and may still be moved or deleted as a link. Resolution failure
   grants no scope.
+- Finder creation drafts retain their source until the user selects a new
+  destination. Before writing, recheck the original target against current menu
+  scope and bind publication to the directory object that passed the check.
+  An unavailable external draft target offers a location change; only a native
+  permission denial offers persistent write authorization.
 - Open with App may also appear for a captured background container directory.
   Item menus keep their complete selected-item snapshot. Recheck resolved scope
   and target type before a directory open; a later Finder location never replaces

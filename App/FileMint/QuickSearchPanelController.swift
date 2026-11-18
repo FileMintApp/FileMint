@@ -292,33 +292,44 @@ final class QuickSearchPanelController: NSObject, NSWindowDelegate {
     /// Revalidate the stable identity using committed state, never the row title,
     /// current Finder selection or the last search-result position.
     func execute(_ id: QuickSearchID, settings: PreferencesModel, favorites: FavoriteLocationsModel,
-                 context: OperationContext? = nil) async throws {
+                 context: OperationContext? = nil, pasteboard: NSPasteboard? = nil) async throws {
         let context = context ?? captureOperation()
+        let presentation: PreferencesModel.CreationPresentation
         switch id {
         case .command(let action):
-            completeSearch(context)
             switch action {
-            case .newFile: settings.newFile()
-            case .clipboardText: settings.newFileFromClipboard()
-            case .clipboardImage: settings.pasteImageFile()
+            case .newFile: presentation = settings.newFile()
+            case .clipboardText:
+                presentation = settings.presentClipboardText(in: nil, pasteboard: pasteboard ?? .general, showErrorAlert: false)
+            case .clipboardImage:
+                presentation = await settings.presentClipboardImage(in: settings.initialCreationDirectory,
+                    pasteboard: pasteboard ?? .general, showErrorAlert: false) {
+                    self.isCurrent(context)
+                }
             }
         case .template(let templateID):
             guard settings.committedPreferences.templates.contains(where: { $0.id == templateID && $0.isEnabled }) else {
                 throw QuickSearchExecutionError.unavailable
             }
-            completeSearch(context)
-            settings.newFile(templateID: templateID)
+            presentation = settings.newFile(templateID: templateID)
         case .favorite(let itemID):
             try await activateFavorite(itemID, favorites: favorites, context: context)
+            return
         case .settings(let name):
             guard let pane = PreferencesModel.Pane(rawValue: name) else { throw QuickSearchExecutionError.unavailable }
             completeSearch(context)
             settings.selectedPane = pane; openSettings(pane)
+            return
+        }
+        switch presentation {
+        case .presented: completeSearch(context)
+        case .busy: throw QuickSearchExecutionError.busy
+        case .failed(let key): throw QuickSearchExecutionError.creation(key)
         }
     }
 }
 
-enum QuickSearchExecutionError: Error { case unavailable, busy }
+enum QuickSearchExecutionError: Error { case unavailable, busy, creation(FileMintTextKey) }
 
 @MainActor
 enum QuickSearchSettingsCatalog {
@@ -705,6 +716,9 @@ private struct QuickSearchView: View {
             do { try await controller.execute(id, settings: settings, favorites: favorites, context: context) }
             catch QuickSearchExecutionError.busy {
                 if controller.isCurrent(context) { message = QuickSearchText.busy.text(language) }
+            }
+            catch QuickSearchExecutionError.creation(let key) {
+                if controller.isCurrent(context) { message = settings.text(key) }
             }
             catch {
                 if controller.isCurrent(context) { message = QuickSearchText.unavailable.text(language) }

@@ -987,6 +987,9 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
         // The production store rejects every mutation without replacing bytes.
         let damaged = Data("{damaged".utf8)
         try damaged.write(to: store.location!)
+        try require(!settings.recordUpdateCheckAttempt(Date(timeIntervalSince1970: 1234)) &&
+                    settings.preferences.lastUpdateCheckAttempt == previous.lastUpdateCheckAttempt,
+                    "A failed attempt-time write started a cooldown without a request")
         settings.removeFolder(retained)
         try require(settings.preferences == previous && settings.committedPreferences == previous,
                     "Failed folder removal changed settings or saved authority")

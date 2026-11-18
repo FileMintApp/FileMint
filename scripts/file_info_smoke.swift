@@ -139,7 +139,7 @@ final class FileInfoSmoke: NSObject, NSApplicationDelegate {
         controller.calculate()
         try await wait("read gate") { gate.hasStarted }
         try check(coordinator.isBusy, "Active read blocks mutation")
-        for request in [FileOperationRequest.fileInfo(selection), .prepare([source])] {
+        for request in [FileOperationRequest.fileInfo(selection), try .prepare([source])] {
             let url = try tickets.enqueue(request)
             let id = URLComponents(url: url, resolvingAgainstBaseURL: false)!.queryItems![0].value!
             coordinator.enqueue(url)

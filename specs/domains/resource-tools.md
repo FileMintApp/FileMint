@@ -23,7 +23,8 @@ Load for: Resource Tools menus, image processing, icon generation, stitching and
   HDR/high-bit-depth input are outside this first version; never silently take a
   first frame or infer encoding solely from an extension.
 - A private single-use expiring operation ticket opens a main-app panel. Capture
-  the complete selection; authorize exact parents, validate regular-file identity,
+  every selected item's filesystem identity on the Finder click; authorize exact
+  parents, compare each authorized regular file to the captured object,
   and reject links, placeholders, directories or replaced inputs before reading.
   Recheck module/action/scope before execution and before publishing each result.
 - Processing is entirely local, with no resource network calls, folder crawling,
@@ -100,6 +101,8 @@ Load for: Resource Tools menus, image processing, icon generation, stitching and
   IPTC, XMP, comments and text metadata while preserving visual orientation.
   Rebuild from decoded pixels as an sRGB image at the original dimensions, up to
   the 16 MP working limit. Explain that re-encoding may change file size or color;
+  choose a filename suffix matching the decoded source format and preserve valid
+  equivalent suffixes. Reject auxiliary depth and disparity maps of the main image.
   never claim lossless image-data preservation. Verify every
   staged output's metadata before exclusive publication. A failed verification
   publishes no copy. Work is local, cancellable and sequential; partial batches

@@ -46,6 +46,8 @@ swiftc -swift-version 6 -parse-as-library -target arm64-apple-macos13.0 \
   App/FileMint/FileContentCopyController.swift App/FileMint/FileContentClipboard.swift \
   App/FileMint/TerminalDirectoryLauncher.swift scripts/move_sandbox_smoke.swift \
   "${CORE_LINK[@]}" -o "$APP_PATH/Contents/MacOS/FileMintMoveSandboxSmoke"
+"$APP_PATH/Contents/MacOS/FileMintMoveSandboxSmoke" --capture-fixture "$SMOKE_DIRECTORY/fixtures" \
+  "$APP_PATH/Contents/Resources/MoveSelection.json"
 codesign --force --options runtime --sign - --timestamp=none \
   --entitlements "$SMOKE_DIRECTORY/entitlements.plist" "$APP_PATH"
 codesign --verify --strict "$APP_PATH"

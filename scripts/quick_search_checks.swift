@@ -116,7 +116,22 @@ enum QuickSearchChecks {
         // for another window is tested separately as a dismissal.
         search.show(settings: model, favorites: favorites)
         try check(first === search.panel, "search opened a second panel")
-        _ = try await searchField(in: first)
+        let firstField = try await searchField(in: first)
+        try postKeys([("x", 7)], to: first)
+        try await waitForText("x", in: firstField)
+        let emptyBoard = NSPasteboard.withUniqueName()
+        defer { emptyBoard.releaseGlobally() }
+        do {
+            try await search.execute(.command(.clipboardText), settings: model, favorites: favorites, pasteboard: emptyBoard)
+            throw Failure(message: "Empty clipboard reported a successful handoff")
+        } catch QuickSearchExecutionError.creation {}
+        let work = model.beginLauncherWork()
+        do {
+            defer { model.endLauncherWork(work) }
+            try await search.execute(.command(.newFile), settings: model, favorites: favorites)
+            throw Failure(message: "Busy creation reported a successful handoff")
+        } catch QuickSearchExecutionError.busy {}
+        try check(search.panel === first && firstField.stringValue == "x", "A failed handoff discarded the current search")
         try await search.execute(.settings("fileTypes"), settings: model, favorites: favorites)
         try check(model.selectedPane == .fileTypes && search.panel == nil, "settings result failed navigation")
 

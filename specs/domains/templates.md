@@ -147,6 +147,8 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   each Office validator limit and 32 MiB settings cap. Before materializing
   imported text, budget every accepted reference with JSON escaping, existing
   settings, metadata and the commit marker; skipped entries consume no budget.
+  When the default selection exceeds the settings budget, open review with rows
+  skipped so the user can select a subset that fits.
   Reject unknown/duplicate keys, invalid references/digests, invalid UTF-8/Office,
   unreferenced entries,
   encrypted/split/ZIP64/deflated outer entries, links, unsafe names, overlapping
@@ -163,6 +165,9 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   marker, then notify once. Roll back only transaction-owned assets. Recovery
   reads exact journal entries, retains referenced assets and preserves corrupt or
   replaced evidence; never scans. Block template mutations during commit/recovery.
+  If interruption predates recording a staged asset's identity, retain unidentified
+  staging bytes in their private transaction directory and release the template
+  mutation blocker after reconciling all known published assets.
 - Export selected/enabled/all/custom scopes through a native save panel, validating
   complete bytes on a worker before atomic publication. Cancel/failure preserves
   existing destination bytes. Packages never enable features or discover/open apps.

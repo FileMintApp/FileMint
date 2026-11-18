@@ -26,6 +26,9 @@ Load for: saved file/folder shortcuts, quick lookup, Finder add and locate menus
   catalog edits against the latest saved state and publish versioned snapshots;
   loading or an older completion must never overwrite a later edit. In-flight
   catalog writes and activations hold the normal quit/updater restart guard.
+- Project the bounded Finder shortcut rows when refreshing the catalog cache.
+  Menu callbacks use only the projected IDs and titles plus whether Search All
+  is available, including when the saved catalog has no pinned or recent rows.
 
 ## Working context
 

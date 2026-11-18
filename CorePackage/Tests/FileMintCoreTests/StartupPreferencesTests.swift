@@ -4,6 +4,42 @@ import Testing
 
 @Suite("Startup preferences and localization")
 struct StartupPreferencesTests {
+    @Test("settings import rejects unrelated documents, including inside a legacy wrapper")
+    func importIdentification() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = FileMintPreferencesStore(fileURL: root.appendingPathComponent("settings.json"))
+        let input = root.appendingPathComponent("import.json")
+        var original = FileMintPreferences.default
+        original.launchAtLogin = false
+        original.monitoredFolderURLs = [root]
+        try store.save(original)
+        let originalBytes = try Data(contentsOf: #require(store.location))
+        let unrelated = Data(#"{"items":[]}"#.utf8)
+        func wrapped(_ data: Data) throws -> Data {
+            try PropertyListSerialization.data(fromPropertyList: [FileMintAppGroup.preferencesKey: data], format: .binary, options: 0)
+        }
+        let legacy = Data(#"{"templates":[],"monitoredFolderURLs":[],"collisionStrategy":"increment","revealAfterCreation":false,"favoritesFirst":true}"#.utf8)
+        let malformed = Data(String(decoding: legacy, as: UTF8.self).replacingOccurrences(of: "false", with: #""invalid""#).utf8)
+        for data in [unrelated, Data("{}".utf8), Data(#"{"language":"typescript"}"#.utf8),
+                     Data(#"{"appearance":"modern","items":[]}"#.utf8), Data(#"{"showMenuBar":false}"#.utf8),
+                     malformed, try wrapped(unrelated), try wrapped(malformed)] {
+            try data.write(to: input)
+            #expect(throws: (any Error).self) {
+                try store.save(FileMintPreferencesStore.decodeFile(at: input), recoveringInvalidFile: true)
+            }
+            #expect(try Data(contentsOf: #require(store.location)) == originalBytes)
+        }
+        for data in [legacy, try wrapped(legacy)] {
+            try data.write(to: input)
+            let imported = try FileMintPreferencesStore.decodeFile(at: input)
+            #expect(!imported.revealAfterCreation && imported.monitoredFolderURLs.isEmpty)
+        }
+        try JSONEncoder().encode(original).write(to: input)
+        #expect(try FileMintPreferencesStore.decodeFile(at: input) == original)
+    }
+
     @Test("a damaged template list blocks ordinary writes and preserves all original records",
           arguments: ["record", "null", "container"])
     func damagedTemplateList(kind: String) throws {
@@ -52,12 +88,14 @@ struct StartupPreferencesTests {
         let file = root.appendingPathComponent("preferences.json")
         let store = FileMintPreferencesStore(fileURL: file)
         #expect(!store.loadWithStatus().requiresRecovery)
+        #expect(store.loadWithStatus().initialLoginItemChoice == true)
         #expect(!store.load().monitoredFolderURLs.isEmpty)
 
         let damaged = Data("{broken".utf8)
         try damaged.write(to: file)
         let result = store.loadWithStatus()
         #expect(result.requiresRecovery)
+        #expect(result.initialLoginItemChoice == nil)
         #expect(result.preferences.monitoredFolderURLs.isEmpty)
         #expect(throws: FileMintPreferencesStoreError.self) { try store.save(.default) }
         #expect(try Data(contentsOf: file) == damaged)

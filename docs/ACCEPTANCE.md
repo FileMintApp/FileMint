@@ -3,6 +3,18 @@
 Observations below apply to the revisions and environments stated in each entry.
 Use [HARNESS](../specs/HARNESS.md) to select present-day verification.
 
+## Project review corrections — 2026-11-18
+
+On arm64 macOS 27.2.1 with Xcode 27.2, the working tree based on `729ea04`
+passed offline verification, an unsigned Release build and 12 native QA
+suites. A temporary APFS source volume exercised a real cross-volume move
+and restart after publication. Both preserved the original name and inode
+in that volume's Trash, including data appended through a pre-existing open
+descriptor. The destination retained the copied bytes. The signed installed
+Finder handoff, system consent persistence, installed Sparkle replacement
+and remote publication remain separate checks. See the
+[task and verification record](tasks/2026-11-18-project-review.md).
+
 ## Installed Debug cross-feature acceptance — 2026-11-13
 
 Clean source `d8e20c7b6b967d400284eca706950e9b56767347` was built as

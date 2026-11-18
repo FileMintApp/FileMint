@@ -122,6 +122,22 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         case finderMenuIconStyle
     }
 
+    fileprivate struct ImportDocument: Decodable {
+        let preferences: FileMintPreferences
+
+        init(from decoder: Decoder) throws {
+            let fields = try decoder.container(keyedBy: FileMintPreferences.CodingKeys.self)
+            // The first FileMint settings encoder already wrote these five
+            // fields. Generic keys such as "language" do not identify a backup.
+            _ = try fields.nestedUnkeyedContainer(forKey: .templates)
+            _ = try fields.decode([URL].self, forKey: .monitoredFolderURLs)
+            _ = try fields.decode(NameCollisionStrategy.self, forKey: .collisionStrategy)
+            _ = try fields.decode(Bool.self, forKey: .revealAfterCreation)
+            _ = try fields.decode(Bool.self, forKey: .favoritesFirst)
+            preferences = try FileMintPreferences(from: decoder)
+        }
+    }
+
     public init(from decoder: Decoder) throws {
         let defaults = FileMintPreferences.default
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -270,6 +286,11 @@ public enum FileMintPreferencesStoreError: Error, Equatable, LocalizedError {
 public struct FileMintPreferencesLoadResult {
     public let preferences: FileMintPreferences
     public let requiresRecovery: Bool
+
+    public var initialLoginItemChoice: Bool? {
+        guard !requiresRecovery, !preferences.hasAttemptedLoginItemSetup else { return nil }
+        return preferences.launchAtLogin
+    }
 }
 
 public final class FileMintPreferencesStore {
@@ -286,13 +307,18 @@ public final class FileMintPreferencesStore {
     public var location: URL? { fileURL }
 
     public static func decode(_ data: Data) throws -> FileMintPreferences {
+        try decode(FileMintPreferences.self, from: data)
+    }
+
+    private static func decode<Document: Decodable>(_ type: Document.Type, from data: Data) throws -> Document {
         guard data.count <= maximumBytes else { throw FileMintPreferencesStoreError.tooLarge }
-        if let value = try? JSONDecoder().decode(FileMintPreferences.self, from: data) { return value }
-        let plist = try PropertyListSerialization.propertyList(from: data, format: nil)
-        guard let dictionary = plist as? [String: Any], let payload = dictionary[FileMintAppGroup.preferencesKey] as? Data else {
-            throw CocoaError(.fileReadCorruptFile)
+        let decoder = JSONDecoder()
+        if let document = try? decoder.decode(type, from: data) { return document }
+        guard let dictionary = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
+              let payload = dictionary[FileMintAppGroup.preferencesKey] as? Data else {
+            throw FileMintPreferencesStoreError.invalidFile
         }
-        return try JSONDecoder().decode(FileMintPreferences.self, from: payload)
+        return try decoder.decode(type, from: payload)
     }
 
     public func load() -> FileMintPreferences {
@@ -319,7 +345,7 @@ public final class FileMintPreferencesStore {
 
     public static func decodeFile(at url: URL) throws -> FileMintPreferences {
         guard let data = try readBoundedFile(at: url) else { throw FileMintPreferencesStoreError.invalidFile }
-        return try decode(data)
+        return try decode(FileMintPreferences.ImportDocument.self, from: data).preferences
     }
 
     func withExclusiveAccess<T>(_ operation: () throws -> T) rethrows -> T {

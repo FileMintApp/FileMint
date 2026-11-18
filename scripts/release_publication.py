@@ -13,13 +13,17 @@ import time
 from urllib.parse import urlencode
 import uuid
 
+from release_metadata import project_release_values
+
 ROOT = Path(__file__).resolve().parent.parent
 REPO = "FileMintApp/FileMint"
 API = f"repos/{REPO}"
 PUBLIC = f"https://github.com/{REPO}"
 SITE_INPUTS = ("README.md", "README.zh-CN.md", "website", "package.json", "pnpm-lock.yaml",
                ".github/workflows/build-pages.yml", ".github/workflows/deploy-pages.yml")
-WORKFLOWS = {"candidate": "release.yml", "site": "build-pages.yml", "deploy": "deploy-pages.yml"}
+WORKFLOWS = {"candidate": "release.yml", "site": "build-pages.yml",
+             "deploy": "deploy-pages.yml", "catchup": "deploy-website.yml"}
+PROMOTION_REF = "refs/heads/filemint-release-promotion"
 
 
 class PublicationError(RuntimeError):
@@ -302,19 +306,21 @@ class Publication:
 
     def dispatch(self, kind, inputs):
         workflow = WORKFLOWS[kind]
+        on_main = kind in ("deploy", "catchup")
         record = self.state["requests"].get(kind)
         if record is None:
-            ref = "main" if kind == "deploy" else self.tag
-            workflow_commit = (self.gh.api("git/ref/heads/main")["object"]["sha"]
-                               if kind == "deploy" else self.commit)
+            ref = "main" if on_main else self.tag
             request_id = uuid.uuid4().hex
-            record = {"request_id": request_id, "ref": ref, "commit": workflow_commit,
+            record = {"request_id": request_id, "ref": ref, "commit": None if on_main else self.commit,
                       "title": f"FileMint {kind} {request_id}", "run_id": None}
             self.state["requests"][kind] = record
             self.save()  # An uncertain dispatch resumes discovery of this request, not a new one.
             try:
-                self.gh.api(f"actions/workflows/{workflow}/dispatches", "POST",
-                            {"ref": ref, "inputs": inputs | {"request_id": request_id}})
+                response = self.gh.api(f"actions/workflows/{workflow}/dispatches", "POST",
+                                       {"ref": ref, "inputs": inputs | {"request_id": request_id}})
+                if response is not None:
+                    record["dispatched_run_id"] = positive_id(response["workflow_run_id"])
+                    self.save()
             except APIError as error:
                 if error.status and 400 <= error.status < 500:
                     del self.state["requests"][kind]  # A rejected request did not create a run.
@@ -327,13 +333,32 @@ class Publication:
                 if not matching_run(run, workflow, record["commit"], record["ref"], record["title"]):
                     raise PublicationError(f"Saved {kind} run identity changed")
                 return run
-            query = urlencode({"event": "workflow_dispatch", "head_sha": record["commit"], "per_page": 100})
-            runs = self.gh.api(f"actions/workflows/{workflow}/runs?{query}")["workflow_runs"]
-            matches = [run for run in runs if matching_run(run, workflow, record["commit"], record["ref"], record["title"])]
+            # A branch is resolved by GitHub at dispatch. Old, still-unbound
+            # journals can contain a speculative SHA read before the request.
+            def matches_request(run):
+                sha = run.get("head_sha", "")
+                return (re.fullmatch(r"[0-9a-f]{40}", sha) and (on_main or sha == self.commit)
+                        and matching_run(run, workflow, sha, record["ref"], record["title"]))
+
+            if record.get("dispatched_run_id"):
+                run = self.gh.api(f"actions/runs/{positive_id(record['dispatched_run_id'])}")
+                if not matches_request(run) or run.get("id") != record["dispatched_run_id"]:
+                    raise PublicationError(f"Dispatched {kind} run does not match its request")
+                matches = [run]
+            else:
+                filters = {"branch": record["ref"]} if on_main else {"head_sha": self.commit}
+                matches = []
+                for page in range(1, 11):
+                    query = urlencode({"event": "workflow_dispatch", **filters, "per_page": 100, "page": page})
+                    runs = self.gh.api(f"actions/workflows/{workflow}/runs?{query}")["workflow_runs"]
+                    matches.extend(run for run in runs if matches_request(run))
+                    if len(runs) < 100:
+                        break
             if len(matches) > 1:
                 raise PublicationError(f"Ambiguous duplicate {kind} workflow requests")
             if matches:
                 record["run_id"] = positive_id(matches[0]["id"])
+                record["commit"] = matches[0]["head_sha"]
                 self.save()
                 return matches[0]
             return None
@@ -342,16 +367,92 @@ class Publication:
         self.save()
         return run
 
+    def acquire_promotion_lease(self):
+        marker = self.state.get("promotion_lease")
+        if marker is None:
+            # Unique ownership survives a lost push response. Even a different
+            # journal for the same release commit cannot release this lease.
+            marker = command(["git", "-c", "user.name=FileMint Publisher", "-c",
+                              "user.email=publisher@filemint.invalid", "commit-tree",
+                              f"{self.commit}^{{tree}}", "-p", self.commit, "-m",
+                              f"Reserve {self.tag} promotion {uuid.uuid4().hex}"])
+            self.state["promotion_lease"] = marker
+            self.save()
+        if not re.fullmatch(r"[0-9a-f]{40}", marker):
+            raise PublicationError("Invalid promotion lease identity")
+        remote = command(["git", "ls-remote", "--refs", "origin", PROMOTION_REF])
+        if remote:
+            if remote.split() != [marker, PROMOTION_REF]:
+                raise PublicationError("Another release holds the promotion lease; finish its journal and retry")
+        else:
+            command(["git", "push", f"--force-with-lease={PROMOTION_REF}:", "origin", f"{marker}:{PROMOTION_REF}"])
+
+    def release_promotion_lease(self):
+        marker = self.state["promotion_lease"]
+        remote = command(["git", "ls-remote", "--refs", "origin", PROMOTION_REF])
+        if remote.split() == [marker, PROMOTION_REF]:
+            command(["git", "push", f"--force-with-lease={PROMOTION_REF}:{marker}", "origin", f":{PROMOTION_REF}"])
+        del self.state["promotion_lease"]
+        self.save()
+
+    def promote(self):
+        self.acquire_promotion_lease()
+        try:
+            latest = self.gh.api("releases/latest", missing_ok=True)
+            if latest is not None:
+                current_tag = latest["tag_name"]
+                validate_identity(current_tag, self.commit)
+                if tuple(map(int, current_tag[1:].split("."))) >= tuple(map(int, self.version.split("."))):
+                    raise PublicationError("Latest is already this version or newer; retaining the draft")
+            if (latest["tag_name"] if latest else None) != self.state["base_tag"]:
+                # The new predecessor may have a different build counter or
+                # website inputs. Re-evaluate both before accepting promotion.
+                raise PublicationError("Stable predecessor changed during verification; resume to verify against the new base")
+            check_release(self.gh, self.state["release_id"], self.tag, self.commit, self.state["assets"], True)
+            self.state["phase"] = "publishing"
+            self.save()
+            self.unknown = True
+            try:
+                self.gh.api(f"releases/{self.state['release_id']}", "PATCH",
+                            {"draft": False, "prerelease": False, "make_latest": "true"})
+            except (PublicationError, subprocess.TimeoutExpired) as error:
+                release = self.gh.api(f"releases/{self.state['release_id']}")
+                self.public = release.get("draft") is False
+                if not self.public:
+                    if isinstance(error, APIError) and error.status and 400 <= error.status < 500 and error.status != 408:
+                        self.unknown = False
+                        self.state["phase"] = "draft"
+                        self.save()
+                    raise PublicationError("Publication request has not been confirmed public; resume the same journal") from error
+                self.unknown = False
+            else:
+                release = self.gh.api(f"releases/{self.state['release_id']}")
+                self.public = release.get("draft") is False
+                self.unknown = not self.public
+            if not self.public:
+                raise PublicationError("GitHub did not confirm public Release status")
+        finally:
+            if not self.unknown:
+                self.release_promotion_lease()
+
     def website_required(self, previous):
         if previous is None:
             return True
         tag = previous["tag_name"]
         validate_identity(tag, self.commit)
+        ref = f"refs/tags/{tag}"
         try:
-            command(["git", "rev-parse", "--verify", f"refs/tags/{tag}^{{commit}}"])
+            base = command(["git", "rev-parse", "--verify", f"{ref}^{{commit}}"])
         except PublicationError:
-            command(["git", "fetch", "--no-tags", "origin", f"refs/tags/{tag}:refs/tags/{tag}"])
-        return bool(command(["git", "diff", "--name-only", f"refs/tags/{tag}", self.commit, "--", *SITE_INPUTS]))
+            command(["git", "fetch", "--no-tags", "origin", f"{ref}:{ref}"])
+            base = command(["git", "rev-parse", "--verify", f"{ref}^{{commit}}"])
+        if resolve_tag(self.gh, tag) != base:
+            raise PublicationError("Local predecessor does not match the public release tag")
+        version, build = project_release_values(command(["git", "show", f"{base}:project.yml"]))
+        if (tag != f"v{version}" or tuple(map(int, version.split("."))) >= tuple(map(int, self.version.split(".")))
+                or int(build) >= int(self.build)):
+            raise PublicationError("Candidate must exceed the current stable version and build")
+        return bool(command(["git", "diff", "--name-only", base, self.commit, "--", *SITE_INPUTS]))
 
     def homebrew(self):
         if not self.state.get("homebrew_requested"):
@@ -391,17 +492,24 @@ class Publication:
                    if self.state.get("release_id") else find_release(self.gh, self.tag))
         self.observed = True
         self.public = bool(release and release.get("draft") is False)
-        self.unknown = False
+        self.unknown = not self.public and self.state.get("phase") == "publishing"
         if self.public and self.state.get("phase") not in ("publishing", "published", "complete"):
             raise PublicationError("Release is already public without this journal's verified promotion; do not replace it")
         if release and release.get("draft") is True and not self.state.get("creation_started"):
             raise PublicationError("Existing draft is not owned by this publication journal")
-        if "website_required" not in self.state:
-            previous = self.gh.api("releases/latest", missing_ok=True)
-            self.state["base_tag"] = previous["tag_name"] if previous else None
-            self.state["website_required"] = self.website_required(previous)
-            self.save()
+        if self.state.get("promotion_lease") and self.public:
+            # Release only once an uncertain promotion is confirmed. A draft
+            # readback may still race an earlier PATCH, so retain its lease for retry.
+            self.release_promotion_lease()
         if not self.public:
+            previous = self.gh.api("releases/latest", missing_ok=True)
+            base_tag = previous["tag_name"] if previous else None
+            if previous is None and self.state.get("base_tag") is not None:
+                raise PublicationError("Previously recorded stable release disappeared")
+            required = self.website_required(previous)
+            if self.state.get("base_tag") != base_tag or self.state.get("website_required") != required:
+                self.state.update(base_tag=base_tag, website_required=required)
+                self.save()
             if resolve_tag_local := command(["git", "rev-parse", f"refs/tags/{self.tag}"]):
                 remote_ref = command(["git", "ls-remote", "--tags", "origin", f"refs/tags/{self.tag}"])
                 if remote_ref and remote_ref.split()[0] != resolve_tag_local:
@@ -470,28 +578,7 @@ class Publication:
                 run = self.dispatch("site", {"tag": self.tag, "commit": self.commit})
                 if site_artifact(self.gh, run["id"]) != self.state["site_artifact"]:
                     raise PublicationError("Website build artifact changed before publication")
-            check_release(self.gh, self.state["release_id"], self.tag, self.commit, self.state["assets"], True)
-            self.state["phase"] = "publishing"
-            self.save()
-            self.unknown = True
-            try:
-                self.gh.api(f"releases/{self.state['release_id']}", "PATCH",
-                            {"draft": False, "prerelease": False, "make_latest": "true"})
-            except (PublicationError, subprocess.TimeoutExpired):
-                release = self.gh.api(f"releases/{self.state['release_id']}")
-                self.public = release.get("draft") is False
-                self.unknown = False
-                if not self.public:
-                    self.state["phase"] = "draft"
-                    self.save()
-                    raise PublicationError("Publication request did not make the draft public; resume to retry")
-            else:
-                release = self.gh.api(f"releases/{self.state['release_id']}")
-                self.public = release.get("draft") is False
-                self.unknown = False
-            if not self.public:
-                raise PublicationError("GitHub did not confirm public Release status")
-
+            self.promote()
         self.state["phase"] = "published"
         self.save()
         check_public(self.gh, self.state["release_id"], self.tag, self.commit, self.state["assets"])
@@ -524,6 +611,11 @@ class Publication:
             self.dispatch("deploy", inputs)
         else:
             print("Website inputs unchanged; deployment is not applicable.", flush=True)
+        # A newer main-push build may already have deferred to this release.
+        # Give it another opportunity after the release site is in place.
+        if ("catchup" in self.state["requests"]
+                or self.gh.api("git/ref/heads/main")["object"]["sha"] != self.commit):
+            self.dispatch("catchup", {"release_commit": self.commit, "release_id": str(self.state["release_id"])})
         self.state["distribution_complete"] = True
         self.save()
         self.homebrew()

@@ -97,7 +97,7 @@ test('download must contain only a nonempty regular artifact.tar', t => {
 })
 
 function fixture(t, { afterDownload = () => {}, checkout = commit,
-  ancestor = true, automatic = false, gitRun } = {}) {
+  ancestor = true, automatic = false, catchupAfter, gitRun, notesVersion = '1.2.3' } = {}) {
   const directory = mkdtempSync(join(tmpdir(), 'filemint-deploy-test-'))
   t.after(() => rmSync(directory, { recursive: true, force: true }))
   const sourceCommit = gitRun ? gitRun(['rev-parse', 'HEAD']).trim() : commit
@@ -117,12 +117,19 @@ function fixture(t, { afterDownload = () => {}, checkout = commit,
       repository: { full_name: REPOSITORY }, workflow_run: state.build }))
     for (const key of ['SITE_COMMIT', 'SITE_BUILD_RUN_ID', 'SITE_ARTIFACT_ID', 'SITE_RELEASE_ID']) delete env[key]
   }
+  if (catchupAfter) {
+    Object.assign(env, { GITHUB_REPOSITORY: REPOSITORY, GITHUB_REF: 'refs/heads/main',
+      SITE_RELEASE_COMMIT: catchupAfter, SITE_REQUEST_ID: '1'.repeat(32) })
+    for (const key of ['SITE_COMMIT', 'SITE_BUILD_RUN_ID', 'SITE_ARTIFACT_ID']) delete env[key]
+  }
   const calls = []
   const run = (command, args) => {
     calls.push([command, ...args])
     if (command === 'git') {
       if (gitRun) return gitRun(args)
+      if (args[0] === 'rev-parse' && args[1] === '--verify') return catchupAfter
       if (args[0] === 'rev-parse') return checkout
+      if (args[0] === 'show' && args[1] === 'HEAD:docs/RELEASE_NOTES.md') return `# FileMint ${notesVersion}\n`
       if (args[0] === 'merge-base') {
         if (!ancestor) throw Error('not an ancestor')
         assert.deepEqual(args, ['merge-base', '--is-ancestor', 'refs/tags/v1.2.3', 'HEAD'])
@@ -134,6 +141,9 @@ function fixture(t, { afterDownload = () => {}, checkout = commit,
       if (endpoint === 'git/ref/heads/main') return JSON.stringify(state.main)
       if (endpoint === 'releases/latest') return JSON.stringify(state.release)
       if (endpoint === 'actions/runs/12') return JSON.stringify(state.build)
+      if (endpoint === `actions/workflows/build-pages.yml/runs?branch=main&event=push&head_sha=${sourceCommit}&per_page=1`) {
+        return JSON.stringify({ workflow_runs: state.runs ?? [state.build] })
+      }
       if (endpoint === 'actions/runs/12/artifacts?per_page=100') return JSON.stringify({ artifacts: state.artifacts })
     }
     if (command === 'gh' && args[0] === 'run' && args[1] === 'download') {
@@ -176,7 +186,8 @@ test('website deployment stays independent of unpublished native changes in a re
       GIT_COMMITTER_NAME: 'FileMint Test', GIT_COMMITTER_EMAIL: 'filemint-test@example.invalid' },
   })
   gitRun(['init', '--initial-branch=main'])
-  for (const name of ['App', 'website', 'Resources']) mkdirSync(join(directory, name))
+  for (const name of ['App', 'website', 'Resources', 'docs']) mkdirSync(join(directory, name))
+  writeFileSync(join(directory, 'docs/RELEASE_NOTES.md'), '# FileMint 1.2.3\n')
   writeFileSync(join(directory, 'App/FileMint.swift'), '// Published application\n')
   writeFileSync(join(directory, 'website/index.md'), 'Published feature guide\n')
   gitRun(['add', '.'])
@@ -195,8 +206,8 @@ test('website deployment stays independent of unpublished native changes in a re
     'App/FileMint.swift', 'Resources/native.txt', 'project.yml', 'website/index.md',
   ])
   const websiteCommit = gitRun(['rev-parse', 'HEAD']).trim()
-  for (const automatic of [false, true]) {
-    const options = fixture(t, { automatic, gitRun })
+  for (const trigger of [{}, { automatic: true }, { catchupAfter: stableCommit }]) {
+    const options = fixture(t, { ...trigger, gitRun })
     const archive = prepareDeployment(options)
     assert.equal(readFileSync(archive, 'utf8'), 'verified website bytes')
     assert.equal(readFileSync(options.env.GITHUB_OUTPUT, 'utf8'), `archive=${archive}\nready=true\n`)
@@ -205,6 +216,55 @@ test('website deployment stays independent of unpublished native changes in a re
     assert.equal(gitRun(['rev-parse', 'HEAD']).trim(), websiteCommit)
     assert.equal(options.calls.filter(call => call[0] === 'gh' && call[1] === 'run').length, 1)
   }
+})
+
+test('post-release catch-up delivers the current push held while its release was private', t => {
+  const stable = 'b'.repeat(40)
+  const waiting = fixture(t, { automatic: true })
+  Object.assign(waiting.state.release, { tag_name: 'v1.2.2',
+    html_url: `https://github.com/${REPOSITORY}/releases/tag/v1.2.2` })
+  assert.equal(prepareDeployment(waiting), null)
+  const catchup = fixture(t, { catchupAfter: stable })
+  const archive = prepareDeployment(catchup)
+  assert.equal(readFileSync(archive, 'utf8'), 'verified website bytes')
+  assert.match(readFileSync(catchup.env.GITHUB_OUTPUT, 'utf8'), /ready=true/)
+  assert.ok(catchup.calls.some(args => args.includes(`repos/${REPOSITORY}/actions/workflows/build-pages.yml/runs?branch=main&event=push&head_sha=${commit}&per_page=1`)))
+})
+
+test('post-release catch-up skips the release commit, pending builds, future copy and superseded sources', t => {
+  for (const [options, message] of [
+    [fixture(t, { catchupAfter: commit }), 'release source'],
+    [fixture(t, { catchupAfter: 'b'.repeat(40) }), 'pending'],
+    [fixture(t, { catchupAfter: 'b'.repeat(40), notesVersion: '1.3.0' }), 'upcoming copy'],
+    [fixture(t, { catchupAfter: 'b'.repeat(40),
+      afterDownload: state => { state.main.object.sha = 'c'.repeat(40) } }), 'newer head'],
+  ]) {
+    if (message === 'pending') Object.assign(options.state.build, { status: 'in_progress', conclusion: null })
+    assert.equal(prepareDeployment(options), null, message)
+    assert.equal(readFileSync(options.env.GITHUB_OUTPUT, 'utf8'), 'ready=false\n', message)
+    if (message !== 'newer head') assert.ok(!options.calls.some(call => call[0] === 'gh' && call[1] === 'run'), message)
+  }
+})
+
+test('post-release catch-up rejects failed or missing builds, foreign sources and ambiguous inputs', t => {
+  for (const mutate of [
+    opts => { opts.state.build.conclusion = 'failure' },
+    opts => { opts.state.runs = [] },
+    opts => { opts.state.build.head_repository.full_name = 'fork/FileMint' },
+    opts => { opts.env.SITE_RELEASE_ID = '999' },
+    opts => { opts.env.SITE_BUILD_RUN_ID = '12' },
+    opts => { opts.env.GITHUB_REPOSITORY = 'fork/FileMint' },
+    opts => { opts.env.GITHUB_REF = 'refs/heads/feature' },
+    opts => { opts.state.artifacts[0].expired = true },
+  ]) {
+    const options = fixture(t, { catchupAfter: 'b'.repeat(40) })
+    mutate(options)
+    assert.throws(() => prepareDeployment(options))
+    assert.ok(!options.calls.some(call => call[0] === 'gh' && call[1] === 'run'))
+  }
+  const options = fixture(t, { catchupAfter: 'b'.repeat(40) })
+  const run = (cmd, args) => cmd === 'git' && args[1] === '--verify' ? 'c'.repeat(40) : options.run(cmd, args)
+  assert.throws(() => prepareDeployment({ ...options, run }), /public tag/)
 })
 
 test('reruns, artifact replacement, newer main or newer latest release block deployment output', t => {
@@ -254,6 +314,25 @@ test('automatic deployment skips superseded builds before downloading', t => {
   options.state.main.object.sha = 'b'.repeat(40)
   assert.equal(prepareDeployment(options), null)
   assert.equal(readFileSync(options.env.GITHUB_OUTPUT, 'utf8'), 'ready=false\n')
+})
+
+test('every main push can replace a superseded website build, including App-only commits', () => {
+  const workflow = readFileSync(new URL('../../.github/workflows/build-pages.yml', import.meta.url), 'utf8')
+  const trigger = workflow.match(/\n  push:\n([\s\S]*?)\n  workflow_dispatch:/)?.[1]
+  assert.match(trigger, /branches: \[main\]/)
+  assert.doesNotMatch(trigger, /^    paths(?:-ignore)?:/m)
+})
+
+test('push and manual deployment hold release copy until the required version is published', t => {
+  for (const automatic of [true, false]) {
+    const options = fixture(t, { automatic, notesVersion: '1.10.0' })
+    assert.equal(prepareDeployment(options), null)
+    assert.equal(readFileSync(options.env.GITHUB_OUTPUT, 'utf8'), 'ready=false\n')
+    assert.ok(options.calls.every(call => !(call[0] === 'gh' && call[1] === 'run')))
+    Object.assign(options.state.release, { tag_name: 'v1.10.0', html_url: `https://github.com/${REPOSITORY}/releases/tag/v1.10.0` })
+    const run = (cmd, args) => cmd === 'git' && args[0] === 'merge-base' ? '' : options.run(cmd, args)
+    assert.ok(prepareDeployment({ ...options, run }))
+  }
 })
 
 test('automatic deployment revalidates API metadata before trusting a trigger or downloading bytes', t => {

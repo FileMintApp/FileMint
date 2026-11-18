@@ -1,5 +1,5 @@
 name: Deploy website-only update
-run-name: FileMint website deploy ${{ github.event.workflow_run.head_sha || inputs.commit }}
+run-name: ${{ inputs.release_commit && format('FileMint catchup {0}', inputs.request_id) || format('FileMint website deploy {0}', github.event.workflow_run.head_sha || inputs.commit) }}
 on:
   workflow_run:
     workflows: [Build FileMint website]
@@ -9,19 +9,27 @@ on:
     inputs:
       commit:
         description: Current main commit containing the website update
-        required: true
+        required: false
         type: string
       build_run_id:
         description: Successful main-push Build FileMint website run
-        required: true
+        required: false
         type: string
       artifact_id:
         description: Exact unexpired github-pages artifact from that run
-        required: true
+        required: false
         type: string
       release_id:
         description: Current published stable Latest application Release ID
         required: true
+        type: string
+      release_commit:
+        description: Published release commit for automatic main-push catch-up
+        required: false
+        type: string
+      request_id:
+        description: Publisher journal request identity for catch-up
+        required: false
         type: string
 permissions:
   contents: read
@@ -65,6 +73,8 @@ jobs:
           SITE_BUILD_RUN_ID: ${{ inputs.build_run_id }}
           SITE_ARTIFACT_ID: ${{ inputs.artifact_id }}
           SITE_RELEASE_ID: ${{ inputs.release_id }}
+          SITE_RELEASE_COMMIT: ${{ inputs.release_commit }}
+          SITE_REQUEST_ID: ${{ inputs.request_id }}
         run: node website/scripts/prepare-deployment.mjs
       - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
         if: steps.candidate.outputs.ready == 'true'

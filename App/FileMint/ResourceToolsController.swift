@@ -67,12 +67,14 @@ final class ResourceToolsController: NSObject, ObservableObject, NSWindowDelegat
         return true
     }
 
-    func present(selection: [URL], tool: ResourceTool, fromFinder: Bool = true) async throws {
+    func present(selection: [URL], tool: ResourceTool, fromFinder: Bool = true, expected: [FileMoveItem]? = nil) async throws {
         guard panel == nil else {
             if let panel { activatePanel(panel) }
             return
         }
-        let captured = try await Task.detached(priority: .userInitiated) { try ImageProcessor.capture(selection) }.value
+        let captured = try await Task.detached(priority: .userInitiated) {
+            try ImageProcessor.capture(selection, expected: expected)
+        }.value
         self.tool = tool
         self.fromFinder = fromFinder
         language = FileMintPreferencesStore(fileURL: preferencesFile).load().language

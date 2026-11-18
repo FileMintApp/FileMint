@@ -20,11 +20,15 @@ zip_feed_path="$PWD/build/FileMint-$version.appcast-zip.xml"
 }
 [[ -z "$(git status --porcelain --untracked-files=all)" ]] || { echo 'Commit release changes before publishing' >&2; exit 2; }
 [[ "$(git branch --show-current)" == main ]] || { echo 'Publish from the main branch' >&2; exit 2; }
-origin_url="$(git remote get-url origin)"
-case "$origin_url" in
+check_release_remote() {
+  case "$1" in
   'https://github.com/FileMintApp/FileMint.git'|'git@github.com:FileMintApp/FileMint.git') ;;
-  *) echo "Unexpected origin remote: $origin_url" >&2; exit 2 ;;
-esac
+  *) echo 'Release fetch and push must use the canonical FileMint repository' >&2; exit 2 ;;
+  esac
+}
+check_release_remote "$(git remote get-url origin)"
+push_urls="$(git remote get-url --push --all origin)"
+while IFS= read -r url; do check_release_remote "$url"; done <<< "$push_urls"
 head_commit="$(git rev-parse HEAD)"
 tag_commit="$(git rev-parse --verify "refs/tags/$tag^{commit}" 2>/dev/null || true)"
 [[ "$tag_commit" == "$head_commit" ]] || { echo 'The release tag does not point at HEAD' >&2; exit 2; }

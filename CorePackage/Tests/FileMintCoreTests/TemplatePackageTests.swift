@@ -147,6 +147,33 @@ struct TemplatePackageTests {
         let unresolved=try TemplateImportPlanner.plan(incoming,into:local)
         #expect(unresolved.preferences.templates.last?.afterCreation?.localApplicationID==nil)
     }
+    @Test func recoveryRetainsUnrecordedStagingAndAllowsANewImport() throws {
+        let root = try root()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let assets = DocumentTemplateStore(directory: root.appendingPathComponent("assets"))
+        let prefs = root.appendingPathComponent("prefs.json"), journal = root.appendingPathComponent("journal.json")
+        let store = FileMintPreferencesStore(fileURL: prefs)
+        try store.save(emptyPreferences())
+        let package = try TemplatePackageCodec.decode(TemplatePackageCodec.encode(
+            templates: [BuiltInDocumentTemplate.word.template], defaults: [:], assets: assets))
+        let plan = try TemplateImportPlanner.plan(package, into: store.load())
+        let crashing = TemplateImportTransaction(journalURL: journal, preferencesURL: prefs, assets: assets, fault: {
+            if case .journal = $0 { throw TemplateImportTransaction.Interruption() }
+        })
+        #expect(throws: TemplateImportTransaction.Interruption.self) { try crashing.commit(plan) }
+        let metadata = try JSONDecoder().decode(TemplateImportTransaction.Journal.self, from: Data(contentsOf: journal))
+        let stage = root.appendingPathComponent(".template-stage-" + metadata.transactionID.uuidString)
+        let asset = try #require(plan.assets.first)
+        let staged = stage.appendingPathComponent(asset.reference.id.uuidString + "." + asset.reference.kind.rawValue)
+        try asset.bytes.write(to: staged, options: .withoutOverwriting)
+        let next = TemplateImportTransaction(journalURL: journal, preferencesURL: prefs, assets: assets)
+        try next.recover()
+        try next.recover()
+        #expect(try Data(contentsOf: staged) == asset.bytes)
+        #expect(!FileManager.default.fileExists(atPath: journal.path))
+        #expect(try !next.commit(plan).cleanupPending)
+    }
+
     @Test(arguments:["journal","staged","published","beforeSave","afterSave","cleanup"])
     func freshCoordinatorRecoversEveryInterruptedCommitPhase(_ phase:String) throws {
         let root=try root(); defer { try? FileManager.default.removeItem(at:root) }

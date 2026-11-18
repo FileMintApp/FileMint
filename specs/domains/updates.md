@@ -23,7 +23,8 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   Persist the attempt time before each check, including manual checks, failures
   and cancellations, so relaunches, wake and switching off/on do not trigger
   repeated requests. A future timestamp after clock rollback waits one interval
-  from the corrected time. If persistence fails, skip automatic networking.
+  from the corrected time. If persistence fails, skip automatic networking,
+  keep the committed attempt date and retry on a delayed one-shot timer.
 - Disabling the switch cancels scheduled and in-flight automatic checks, leaving
   manual checks and downloads alone. Automatic work never overlaps an existing
   operation or active modal window, or discards an offered update.
@@ -86,6 +87,8 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   archive format, not a moving latest feed. Bind the offered item to
   the selected version, exact archive URL and size; reject mismatches, informational
   items, deltas and downgrades. Require an EdDSA archive signature before extraction.
+  Apply the same binding when Sparkle resumes a previously downloaded or staged
+  update before accepting installation.
   An Apple-silicon-only release appcast declares Sparkle's arm64 hardware
   requirement, so older Intel clients cannot install a release they cannot run.
   Existing Intel clients may still discover a newer GitHub release before

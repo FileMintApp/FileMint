@@ -60,6 +60,9 @@ class FakeGitHub:
         self.tag_commit = COMMIT
         self.api_failure = None
         self.uploaded = {}
+        self.deploy_commit = COMMIT
+        self.main_commit = COMMIT
+        self.return_run_id = False
 
     def create(self, tag, version, assets, notes):
         self.events.append(("create", tag))
@@ -103,14 +106,16 @@ class FakeGitHub:
             return copy.deepcopy(self.release if self.release and not self.release["draft"] else self.previous)
         if path == f"git/ref/tags/{TAG}":
             return {"object": {"type": "commit", "sha": self.tag_commit}}
+        if path == f"git/ref/tags/{self.previous['tag_name']}":
+            return {"object": {"type": "commit", "sha": "e" * 40}}
         if path == "git/ref/heads/main":
-            return {"object": {"type": "commit", "sha": COMMIT}}
+            return {"object": {"type": "commit", "sha": self.main_commit}}
         if path.startswith("actions/workflows/"):
             workflow = path.split("/")[2]
             if path.endswith("/dispatches"):
                 kind = next(kind for kind, name in publication.WORKFLOWS.items() if name == workflow)
                 inputs = body["inputs"]
-                assert body["ref"] == ("main" if kind == "deploy" else TAG)
+                assert body["ref"] == ("main" if kind in ("deploy", "catchup") else TAG)
                 if kind in ("candidate", "deploy"):
                     assert json.loads(inputs["assets"]) == publication.asset_snapshot(self.release, TAG)
                     assert inputs["release_id"] == "7" and inputs["build"] == "99"
@@ -118,13 +123,22 @@ class FakeGitHub:
                     assert self.release["draft"] is False
                     assert inputs["artifact_id"] == str(self.artifact_id)
                     assert self.runs[int(inputs["build_run_id"])]["conclusion"] == "success"
+                if kind == "catchup":
+                    assert self.release["draft"] is False
+                    assert inputs["release_id"] == "7" and inputs["release_commit"] == COMMIT
                 if kind not in self.omit:
                     run_id = len(self.runs) + 10
                     run = workflow_run(run_id, workflow, f"FileMint {kind} {inputs['request_id']}", body["ref"])
+                    if kind == "deploy":
+                        run["head_sha"] = self.deploy_commit
+                    if kind == "catchup":
+                        run["head_sha"] = self.main_commit
                     run["conclusion"] = self.conclusions.get(kind, "success")
                     if kind in self.pending:
                         run.update(status="in_progress", conclusion=None)
                     self.runs[run_id] = run
+                    if self.return_run_id:
+                        return {"workflow_run_id": run_id}
                 return None
             return {"workflow_runs": copy.deepcopy([run for run in self.runs.values()
                                                       if run["path"].endswith("/" + workflow)])}
@@ -180,6 +194,7 @@ class PublicationTests(unittest.TestCase):
         self.sleep_callback = None
         self.website_changed = True
         self.commands = []
+        self.remote_lease = ""
         self.addCleanup(patch.stopall)
         patch.object(publication, "command", side_effect=self.command).start()
         patch.dict(os.environ, {"FILEMINT_ACTIONS_TIMEOUT_SECONDS": "3", "FILEMINT_ACTIONS_POLL_SECONDS": "1"}).start()
@@ -190,6 +205,18 @@ class PublicationTests(unittest.TestCase):
         self.commands.append(args)
         if args[:2] == ["git", "diff"]:
             return "website/index.md" if self.website_changed else ""
+        if args[:2] == ["git", "rev-parse"] and self.gh.previous["tag_name"] in args[-1]:
+            return "e" * 40
+        if args[:2] == ["git", "show"]:
+            return f"name: Fixture\n    MARKETING_VERSION: {self.gh.previous['tag_name'][1:]}\n    CURRENT_PROJECT_VERSION: 98"
+        if args[:3] == ["git", "ls-remote", "--refs"]:
+            return f"{self.remote_lease}\t{publication.PROMOTION_REF}" if self.remote_lease else ""
+        if args[:2] == ["git", "push"] and args[2].startswith("--force-with-lease="):
+            expected = args[2].partition(":")[2]
+            if self.remote_lease != expected:
+                raise publication.PublicationError("Lease changed")
+            self.remote_lease = args[-1].partition(":")[0]
+            return ""
         if args[:2] == ["git", "ls-remote"]:
             return ""
         if args[0] == "git":
@@ -252,6 +279,96 @@ class PublicationTests(unittest.TestCase):
         self.assertEqual(runner.state["homebrew"], {"status": "succeeded", **TAP_VERIFICATION})
         self.assertTrue(runner.state["homebrew_requested"])
         self.assertEqual(runner.state["phase"], "complete")
+
+    def test_newer_latest_during_verification_keeps_older_candidate_a_draft(self):
+        def advance(endpoint, method, body):
+            if method == "POST" and endpoint.endswith("release.yml/dispatches"):
+                self.gh.previous["tag_name"] = "v10.0.0"
+        self.gh.hook = advance
+        with self.assertRaisesRegex(publication.PublicationError, "already this version or newer"):
+            self.run_publication()
+        self.assertTrue(self.gh.release["draft"])
+        self.assertNotIn("publish", self.stages())
+        self.assertEqual(self.remote_lease, "")
+
+    def test_competing_journal_cannot_promote_or_release_another_lease(self):
+        self.remote_lease = "b" * 40
+        with self.assertRaisesRegex(publication.PublicationError, "Another release holds"):
+            self.run_publication()
+        self.assertEqual(self.remote_lease, "b" * 40)
+        self.assertTrue(self.gh.release["draft"])
+        self.remote_lease = ""
+        self.run_publication()
+        self.assertEqual(self.remote_lease, "")
+        self.assertEqual(self.stages().count("publish"), 1)
+
+    def test_real_git_lease_excludes_independent_journals_for_the_same_commit(self):
+        remote, repo = self.work / "remote.git", self.work / "checkout"
+        isolated = os.environ | {"GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull}
+        def git(args, cwd):
+            return subprocess.run(args, cwd=cwd, env=isolated, check=True, capture_output=True,
+                                  text=True, timeout=20).stdout.strip()
+        git(["git", "init", "--bare", str(remote)], self.work)
+        git(["git", "init", str(repo)], self.work)
+        git(["git", "-c", "user.email=fixture@example.invalid", "-c", "user.name=Fixture",
+             "commit", "--allow-empty", "-m", "Candidate"], repo)
+        git(["git", "remote", "add", "origin", str(remote)], repo)
+        second_manifest = self.work / "second" / self.manifest.name
+        second_manifest.parent.mkdir()
+        second_manifest.write_bytes(self.manifest.read_bytes())
+        first, second = self.instance(), publication.Publication(second_manifest, self.gh)
+        first.commit = second.commit = git(["git", "rev-parse", "HEAD"], repo)
+        with patch.object(publication, "command", side_effect=lambda args: git(args, repo)):
+            first.acquire_promotion_lease()
+            with self.assertRaisesRegex(publication.PublicationError, "Another release holds"):
+                second.acquire_promotion_lease()
+            self.assertNotEqual(first.state["promotion_lease"], second.state["promotion_lease"])
+            second.release_promotion_lease()
+            self.assertIn(first.state["promotion_lease"], git(["git", "ls-remote", "origin"], repo))
+            first.release_promotion_lease()
+            second.acquire_promotion_lease()
+            second.release_promotion_lease()
+            self.assertEqual(git(["git", "ls-remote", "origin"], repo), "")
+
+    def test_resuming_checks_the_intervening_stable_base(self):
+        self.gh.previous["tag_name"] = "v9.9.7"
+        def advance(endpoint, method, body):
+            if method == "POST" and endpoint.endswith("release.yml/dispatches"):
+                self.gh.previous["tag_name"] = "v9.9.8"
+        self.gh.hook = advance
+        with self.assertRaisesRegex(publication.PublicationError, "Stable predecessor changed"):
+            self.run_publication()
+        runner, _ = self.run_publication()
+        self.assertEqual(runner.state["base_tag"], "v9.9.8")
+        self.assertEqual(self.stages().count("publish"), 1)
+
+    def test_deployment_pins_actual_head_even_if_main_moves_before_dispatch(self):
+        self.gh.deploy_commit = "f" * 40
+        runner, _ = self.run_publication()
+        self.assertEqual(runner.state["requests"]["deploy"]["commit"], self.gh.deploy_commit)
+        self.assertEqual(self.stages().count("deploy-pages.yml"), 1)
+
+    def test_dispatch_returning_run_id_pins_and_verifies_its_identity(self):
+        self.gh.return_run_id = True
+        self.gh.deploy_commit = "f" * 40
+        runner, _ = self.run_publication()
+        record = runner.state["requests"]["deploy"]
+        self.assertEqual(record["dispatched_run_id"], record["run_id"])
+        self.assertEqual(record["commit"], self.gh.deploy_commit)
+
+    def test_advanced_main_replays_deferred_push_after_release_site(self):
+        self.gh.main_commit = "d" * 40
+        runner, _ = self.run_publication()
+        self.assertEqual(self.stages()[-2:], ["deploy-pages.yml", "deploy-website.yml"])
+        self.assertEqual(runner.state["requests"]["catchup"]["commit"], self.gh.main_commit)
+        self.run_publication()
+        self.assertEqual(self.stages().count("deploy-website.yml"), 1)
+
+    def test_advanced_main_replays_deferred_push_when_release_site_is_unchanged(self):
+        self.website_changed = False
+        self.gh.main_commit = "d" * 40
+        self.run_publication()
+        self.assertEqual(self.stages(), ["draft", "release.yml", "publish", "deploy-website.yml"])
 
     def test_verified_homebrew_stage_is_not_repeated_on_resume(self):
         with patch.dict(os.environ):
@@ -477,9 +594,10 @@ class PublicationTests(unittest.TestCase):
 
     def test_failed_promotion_stays_draft_and_resume_reuses_verified_runs(self):
         self.gh.promotion_error = "before"
-        with self.assertRaisesRegex(publication.PublicationError, "did not make the draft public"):
+        with self.assertRaisesRegex(publication.PublicationError, "not been confirmed public"):
             self.run_publication()
         self.assertTrue(self.gh.release["draft"])
+        self.assertEqual(self.remote_lease, self.instance().state["promotion_lease"])
         self.gh.promotion_error = None
         self.run_publication()
         self.assertEqual(self.stages().count("release.yml"), 1)
@@ -494,10 +612,12 @@ class PublicationTests(unittest.TestCase):
         self.assertTrue(runner.unknown)
         self.assertEqual(runner.state["phase"], "publishing")
         self.assertTrue(self.instance().unknown)
+        self.assertEqual(self.remote_lease, runner.state["promotion_lease"])
         self.gh.read_error_after_promotion = False
         self.run_publication()
         self.assertEqual(self.stages().count("publish"), 1)
         self.assertEqual(self.stages().count("release.yml"), 1)
+        self.assertEqual(self.remote_lease, "")
 
     def test_site_failure_is_post_publication_and_resume_only_observes_site_rerun(self):
         self.gh.conclusions["deploy"] = "failure"
@@ -765,6 +885,12 @@ class LocalSourceGuardTests(unittest.TestCase):
         result = self.publish()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("REMOTE_PUBLICATION_ENTERED", result.stdout)
+
+    def test_noncanonical_push_url_refuses_release_even_with_canonical_fetch_url(self):
+        self.git("remote", "set-url", "--push", "origin", "https://github.com/fixture/mirror.git")
+        result = self.publish()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertNotIn("REMOTE_PUBLICATION_ENTERED", result.stdout)
 
     def test_each_mismatched_manifest_field_blocks_remote_work(self):
         for field in self.original:

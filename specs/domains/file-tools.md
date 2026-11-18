@@ -242,8 +242,9 @@ Load for: Optional Finder file/folder actions, batch rename, selection snapshots
 - Move File / Folder / 移动文件（夹） has a persistent child switch, initially
   on under the default-off module. It accepts files of every suffix, directories,
   application bundles and symbolic links as items, never by inspecting content.
-- Choosing it replaces the pending selection with an immutable batch, captured
-  with filesystem identity. Only the main app writes this private, atomic state.
+- Choosing it captures each selected object's filesystem identity in Finder.
+  After queuing and authorization, the app verifies those identities before
+  replacing the pending selection. Only the main app writes this private, atomic state.
   It survives relaunch, has no expiry or cancel entry, and is independent of the
   clipboard. Turning switches off hides/blocks actions but preserves the batch.
 - A configured destination context menu displays Move Selected Items Here /
@@ -278,6 +279,20 @@ Load for: Optional Finder file/folder actions, batch rename, selection snapshots
   exclusively and stop; never act on it. Keep same-volume publication exclusive
   and copy into private destination staging before exclusive publication across
   volumes; restore the source on copy failure.
+- For cross-volume copies, compare the selected source's identities, sizes and
+  modification/change times before and after copying, including the descendants
+  of explicitly selected directories. Retire the verified original as a single
+  item in the source volume's Trash after exclusive publication. A writer with
+  an existing descriptor can continue writing to that recoverable original.
+  If retirement fails, preserve the published copy and restore the original.
+- Record the current item's source staging identity, intended destination and
+  expected published identity before the corresponding filesystem changes.
+  A retry at that destination reconciles only those known locations, advances
+  past a verified completed item and retains ambiguous objects for recovery.
+  If restoration finds the original name occupied, keep both entries and report
+  the captured item's recorded staging path. Retrying with the replacement still
+  in place completes the requested move when possible. Freeing the original
+  name and retrying restores the captured item and allows a new selection.
 - Execute away from the main thread and serialize requests. Persist completion
   after each successful item; only unfinished items remain after a partial failure.
   A successful batch removes the temporary menu. An error leaves unfinished work

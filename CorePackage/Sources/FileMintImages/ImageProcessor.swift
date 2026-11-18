@@ -25,10 +25,12 @@ public enum ImageProcessor {
         return ImageOutputFormat.allCases.filter { identifiers.contains($0.identifier) }
     }
 
-    public static func capture(_ urls: [URL]) throws -> [ImageInput] {
+    public static func capture(_ urls: [URL], expected: [FileMoveItem]? = nil) throws -> [ImageInput] {
         guard (1...ResourceToolsPolicy.maximumItems).contains(urls.count),
               Set(urls.map(\.standardizedFileURL)).count == urls.count else { throw ResourceError.invalidSelection }
-        return try urls.map(ImageInput.capture)
+        let inputs = try urls.map(ImageInput.capture)
+        if let expected, inputs.map(\.item) != expected { throw ResourceError.sourceChanged }
+        return inputs
     }
 
     public static func preview(_ input: ImageInput) throws -> Data {

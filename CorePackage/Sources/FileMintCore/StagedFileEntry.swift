@@ -10,32 +10,48 @@ struct StagedFileEntry {
     let staged: URL
     private let captured: FileMoveItem
 
-    static func claim(_ item: FileMoveItem, beforeRename: () throws -> Void = {}) throws -> Self {
+    static func prepare(_ item: FileMoveItem, component: String = "item") throws -> Self {
         try item.validateIdentity()
         let parent = item.source.deletingLastPathComponent()
         var pattern = Array(parent.appendingPathComponent(".FileMint-operation-XXXXXX").path.utf8CString)
         guard mkdtemp(&pattern) != nil else { throw posixError() }
         let directory = URL(fileURLWithPath: String(decoding: pattern.dropLast().map { UInt8(bitPattern: $0) },
                                                     as: UTF8.self), isDirectory: true)
-        let claim = Self(original: item.source, stagingDirectory: directory,
-                         staged: directory.appendingPathComponent("item"), captured: item)
+        return Self(original: item.source, stagingDirectory: directory,
+                    staged: directory.appendingPathComponent(component), captured: item)
+    }
+
+    static func existing(_ item: FileMoveItem, directory: FileMoveItem) throws -> Self {
+        guard directory.isDirectory, directory.source.lastPathComponent.hasPrefix(".FileMint-operation-"),
+              directory.source.deletingLastPathComponent().standardizedFileURL.path == item.source.deletingLastPathComponent().standardizedFileURL.path else {
+            throw FileMoveError.sourceChanged
+        }
+        try directory.validateIdentity()
+        return Self(original: item.source, stagingDirectory: directory.source,
+                    staged: directory.source.appendingPathComponent(item.source.lastPathComponent), captured: item)
+    }
+
+    static func claim(_ item: FileMoveItem, beforeRename: () throws -> Void = {}) throws -> Self {
+        let claim = try prepare(item)
         var succeeded = false
         defer { if !succeeded { claim.cleanup() } }
         try beforeRename()
-        try renameExclusive(item.source, to: claim.staged)
+        try claim.take()
+        succeeded = true
+        return claim
+    }
+
+    func take(keepStageOnConflict: Bool = false) throws {
+        try Self.renameExclusive(original, to: staged)
         do {
-            let actual = try FileMoveItem.capture(claim.staged)
-            guard actual.device == item.device, actual.inode == item.inode,
-                  actual.createdAt == item.createdAt, actual.isDirectory == item.isDirectory,
-                  directory.deletingLastPathComponent().resolvingSymlinksInPath().standardizedFileURL == item.canonicalParent else {
+            try validateIdentity()
+            guard stagingDirectory.deletingLastPathComponent().resolvingSymlinksInPath().standardizedFileURL == captured.canonicalParent else {
                 throw FileMoveError.sourceChanged
             }
         } catch {
-            try claim.restore()
+            try restore(keepStageOnConflict: keepStageOnConflict)
             throw FileMoveError.sourceChanged
         }
-        succeeded = true
-        return claim
     }
 
     func validateIdentity() throws {
@@ -48,9 +64,10 @@ struct StagedFileEntry {
 
     /// Restoring at the original name is exclusive. If another entry arrived,
     /// preserve the claimed item at a discoverable sibling name or in staging.
-    func restore() throws {
+    func restore(keepStageOnConflict: Bool = false) throws {
         do { try Self.renameExclusive(staged, to: original); return }
         catch {
+            if keepStageOnConflict { throw FileMoveError.recoveryRequired(staged) }
             let recovered = original.deletingLastPathComponent()
                 .appendingPathComponent(".FileMint-recovered-\(UUID().uuidString)")
             do { try Self.renameExclusive(staged, to: recovered) }

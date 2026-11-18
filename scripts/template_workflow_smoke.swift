@@ -109,6 +109,8 @@ final class TemplateWorkflowSmoke: NSObject, NSApplicationDelegate {
             return
         }
         try await testReviewRegressions(model: model, store: store, assets: assets)
+        try await testFinderDraftScope(model: model, root: root)
+        try await testUnavailableDraftLocation(model: model, root: root)
         try check(!model.preferences.creationOpeningEnabled && !model.preferences.templatePreviewEnabled,"Feature gates were not off")
         for (opening,preview) in [(false,false),(true,false),(false,true),(true,true)] {
             model.setCreationFeature(opening:opening,preview:preview)
@@ -169,6 +171,53 @@ final class TemplateWorkflowSmoke: NSObject, NSApplicationDelegate {
         try await testApplicationIcons(model: model, root: root, assets: assets)
         model.setCreationFeature(opening:false,preview:false)
     }
+    private func testFinderDraftScope(model: PreferencesModel, root: URL) async throws {
+        let original = model.committedPreferences
+        let folder = root.appendingPathComponent("finder-draft", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: false)
+        guard let route = CreationRoute.url(for: folder) else { throw CheckFailure(message: "Missing fixture route") }
+        model.handle(url: route)
+        guard let panel = NSApp.windows.first(where: { $0.identifier?.rawValue == "io.github.daigua.filemint.custom-file" }),
+              let create = panel.defaultButtonCell else { throw CheckFailure(message: "Finder draft did not open") }
+        defer { panel.close() }
+        model.preferences.monitoredFolderURLs = []
+        try check(model.save(), "Could not remove Finder fixture scope")
+        create.performClick(nil)
+        try await wait { panel.attachedSheet != nil }
+        guard let error = panel.attachedSheet else { throw CheckFailure(message: "Missing scope error") }
+        try check(!(error is NSOpenPanel), "Removed Finder scope requested a persistent grant")
+        try check(try FileManager.default.contentsOfDirectory(atPath: folder.path).isEmpty, "Finder draft wrote outside current scope")
+        panel.endSheet(error)
+        error.orderOut(nil)
+        model.preferences = original
+        try check(model.save(), "Could not restore Finder fixture scope")
+    }
+
+    private func testUnavailableDraftLocation(model: PreferencesModel, root: URL) async throws {
+        let unavailable = root.appendingPathComponent("absent", isDirectory: true)
+        let access = ExternalDraftDirectoryAccess(url: unavailable)
+        access.prepare(using: { try ExternalDraftDirectoryAccess.resolveDirectory(unavailable) }, didChange: {})
+        try await wait { !access.isChecking }
+        try check(access.error == .destinationUnavailable, "Missing fixture directory was classified as a permission denial")
+        let seed = try ExternalDraftRequest(destination: .directory(unavailable.path))
+            .resolve(preferences: model.committedPreferences, capturedAt: .now)
+        let controller = CustomFileSavePanelController.shared
+        let id = UUID()
+        controller.present(in: unavailable, preferences: model.committedPreferences, external: .init(
+            sessionID: id, seed: seed, source: .externalLink, directory: access, validateTemplate: { _ in true }, didClose: {}))
+        defer { controller.closeExternalSession(id) }
+        guard let panel = controller.externalWindow, let create = panel.defaultButtonCell else {
+            throw CheckFailure(message: "Missing external draft panel")
+        }
+        create.performClick(nil)
+        try await wait { panel.attachedSheet != nil }
+        guard let picker = panel.attachedSheet as? NSOpenPanel else { throw CheckFailure(message: "Missing recovery picker") }
+        try check(picker.identifier?.rawValue == "io.github.daigua.filemint.custom-file-location",
+                  "An unavailable target requested persistent write authorization")
+        picker.cancel(nil)
+        try await wait { panel.attachedSheet == nil }
+    }
+
     private func testCopiedCompoundSuffix(model: PreferencesModel, store: FileMintPreferencesStore, root: URL) async throws {
         let original = model.preferences
         let source = FileTemplate(id: "custom-compound", displayName: "Definition", suggestedFileName: "Untitled.d.ts",
@@ -370,6 +419,19 @@ final class TemplateWorkflowSmoke: NSObject, NSApplicationDelegate {
                                  group: "Custom", content: "accepted", rank: 2000)
         let package = try TemplatePackageCodec.decode(TemplatePackageCodec.encode(
             templates: [large[0], small], defaults: [:], assets: assets))
+        var incomingLarge = large[0]
+        incomingLarge.id = "custom-incoming-large"
+        incomingLarge.displayName = "Incoming large"
+        let incomingURL = store.location!.deletingLastPathComponent().appendingPathComponent("partial.filemint-templates")
+        try TemplatePackageCodec.encode(templates: [incomingLarge, small], defaults: [:], assets: assets).write(to: incomingURL)
+        await model.importTemplatePackage(from: incomingURL)
+        guard let partial = model.packageReview else { throw CheckFailure(message: "Over-budget package did not open review") }
+        try check(!partial.canConfirm && partial.plan.rows.allSatisfy { $0.choice == .skip }, "Over-budget initial review selected rows")
+        partial.choices[small.id] = .add
+        model.rebuildTemplateReview(partial)
+        try await wait { !partial.isPlanning }
+        try check(partial.canConfirm && partial.plan.acceptedCount == 1, "Could not select a subset in initial review")
+        model.packageReview = nil
         let initial = try TemplateImportPlanner.plan(package, into: model.committedPreferences)
         let review = TemplatePackageReview(package: package, plan: initial)
         model.packageReview = review

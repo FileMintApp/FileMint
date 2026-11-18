@@ -3,18 +3,6 @@ run-name: FileMint site ${{ inputs.request_id || github.sha }}
 on:
   push:
     branches: [main]
-    paths:
-      - README.md
-      - README.zh-CN.md
-      - website/**
-      - package.json
-      - pnpm-lock.yaml
-      - specs/domains/presentation.md
-      - specs/domains/distribution.md
-      - docs/DISTRIBUTION.md
-      - .github/workflows/build-pages.yml
-      - .github/workflows/deploy-pages.yml
-      - .github/workflows/deploy-website.yml
   workflow_dispatch:
     inputs:
       request_id:

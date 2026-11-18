@@ -122,6 +122,7 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case moveFailed
     case moveInvalidSelection
     case moveSourceChanged
+    case moveCopiedSourceRetained, moveRetryDestination, moveRestoreBlocked, moveSourceRestored
     case moveInvalidDestination
     case moveDestinationExists
     case moveStaleRequest
@@ -360,7 +361,7 @@ public enum FileMintStrings {
         .copyNamesSettingsHint: ("Includes extensions, one item per line.", "包含文件后缀，多选时每项一行。"),
         .copyPathsSettingsHint: ("Copies full paths, one item per line; on empty space, copies the current folder path.", "拷贝完整路径，多选时每项一行；空白处右键则拷贝当前文件夹路径。"),
         .copyContentsSettingsHint: ("Copies one code/text file or RTF with basic text and styles. Advanced RTF content is unsupported. Up to 8 MiB.", "无需打开文件，完整拷贝单个代码、文本或含基础文字和样式的 RTF；不支持复杂 RTF 内容，上限 8 MiB。"),
-        .moveSettingsHint: ("Select items, then right-click their destination to move them.", "先选择项目，再到目标文件夹右键完成移动。"),
+        .moveSettingsHint: ("Select items, then right-click their destination. Across volumes, originals stay in the source volume’s Trash and use space until it is emptied.", "先选择项目，再右键目标文件夹。跨卷移动会把原件保留在源卷的废纸篓中，清空废纸篓后释放空间。"),
         .deleteSettingsHint: ("Bypasses Trash. Deletion cannot be undone.", "不经过废纸篓，删除后无法撤销。"),
         .showInMainMenu: ("Show in main menu", "显示在一级菜单"),
         .moveHereInMainMenu: ("Show “Move Selected Items Here” in main menu", "将「将所选项目移到此处」显示在一级菜单"),
@@ -409,6 +410,10 @@ public enum FileMintStrings {
         .moveFailed: ("Move could not be completed", "未能完成移动"),
         .moveInvalidSelection: ("Select files or folders again. A selection cannot include a folder together with items inside it.", "请重新选择文件或文件夹，不能同时选择文件夹及其内部项目。"),
         .moveSourceChanged: ("A source item is missing or has been replaced. Select the items to move again.", "源项目已不存在或已被替换，请重新选择要移动的项目。"),
+        .moveCopiedSourceRetained: ("The destination copy and the original have both been kept. Retry from the same destination after checking the files and the source volume’s Trash, or prepare a new selection.", "已保留目标副本和源项目。检查两份文件与源卷的废纸篓后，可在同一目标重试，也可重新选择项目。"),
+        .moveRetryDestination: ("Finish the interrupted move by choosing Move Selected Items Here in %@.", "请在 %@ 选择「将所选项目移到此处」以处理上次中断的移动。"),
+        .moveRestoreBlocked: ("The original is preserved at %@. Retry Move Selected Items Here in %@ to finish the move. To restore the original instead, free its original name first and then retry.", "原件已保留在 %@。在 %@ 再选一次「将所选项目移到此处」可继续移动。若要恢复原件，请先腾出原来的名称，再重试。"),
+        .moveSourceRestored: ("The original was restored to its previous location. You can prepare a new selection or retry the move.", "原件已恢复到原位置。现在可以重新选择项目，也可以重试移动。"),
         .moveInvalidDestination: ("Choose a different folder. Items cannot be moved to their current folder or inside themselves.", "请选择其他文件夹，不能移动到原文件夹或项目自身内部。"),
         .moveDestinationExists: ("An item with the same name already exists. Nothing will be overwritten. Choose another destination or resolve the name conflict, then try again.", "目标位置已有同名项目，不会覆盖。请选择其他位置或处理同名项目后重试。"),
         .moveStaleRequest: ("The pending selection has changed. Reopen the destination context menu and try again.", "待移动项目已变化，请重新打开目标位置的右键菜单后重试。"),

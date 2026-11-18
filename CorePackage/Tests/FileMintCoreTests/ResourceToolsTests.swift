@@ -56,8 +56,10 @@ struct ResourceToolsTests {
     func tickets() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
-        let urls = [URL(fileURLWithPath: "/fixture/a.png"), URL(fileURLWithPath: "/fixture/b.png")]
-        let request = FileOperationRequest.resource(tool: .stitch, selection: urls)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let urls = [root.appendingPathComponent("a.png"), root.appendingPathComponent("b.png")]
+        for url in urls { try Data([1]).write(to: url) }
+        let request = try FileOperationRequest.resource(tool: .stitch, selection: urls)
         let store = FileOperationTicketStore(directory: root)
         let now = Date(timeIntervalSince1970: 1000)
         let ticket = try store.enqueue(request, now: now)

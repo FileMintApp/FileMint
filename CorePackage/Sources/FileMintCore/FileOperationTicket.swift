@@ -1,7 +1,7 @@
 import Foundation
 
 public enum FileOperationRequest: Codable, Equatable, Sendable {
-    case prepare([URL])
+    case prepare(items: [FileMoveItem])
     case permanentDelete(items: [FileMoveItem], confirmation: DeleteConfirmation)
     case airDrop([URL])
     case desktopAlias([FileMoveItem])
@@ -10,13 +10,22 @@ public enum FileOperationRequest: Codable, Equatable, Sendable {
     case defaultApplication(DefaultApplicationSelection)
     case copyContents(selection: FileInfoSelection, pasteboardChangeCount: Int)
     case toggleHiddenFiles(directory: URL)
-    case resource(tool: ResourceTool, selection: [URL])
+    case resource(tool: ResourceTool, items: [FileMoveItem])
     case openWith(application: OpenWithApplicationReference, selection: [URL])
     case openDirectory(application: OpenWithApplicationReference, directory: URL, mode: TerminalOpenMode)
     case favoriteAdd([URL])
     case favoriteLocate(UUID)
     case favoriteSearch
     case perform(batchID: UUID, destination: URL)
+
+    public static func prepare(_ selection: [URL]) throws -> Self {
+        .prepare(items: try PendingFileMove.capture(selection: selection).items)
+    }
+
+    public static func resource(tool: ResourceTool, selection: [URL]) throws -> Self {
+        guard ResourceToolsPolicy.allowsAppSelection(selection, tool: tool) else { throw FileMoveError.invalidSelection }
+        return .resource(tool: tool, items: try selection.map(FileMoveItem.capture))
+    }
 
     fileprivate var ticketHost: String {
         switch self {

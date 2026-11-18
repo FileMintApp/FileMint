@@ -183,6 +183,11 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 
 - Normal creation uses exclusive filesystem creation, never check-then-overwrite.
   Racing creations retry the next incremented name without overwriting data.
+  Finish writes in owned staging before publishing. Failure must preserve any
+  replacement at the intended output path. Increment before the complete selected
+  suffix, including compound suffixes. An explicit switch from a compound suffix
+  to its last component removes the entire prior suffix.
+  Stage fixed binary/Office bytes once across collision retries.
 - Default collision names: `Untitled.txt`, `Untitled 2.txt`, `Untitled 3.txt`.
 - Quick creation supports increment or fail. Replace is never a stored default.
 - Custom creation asks before replacement, with Cancel as the default button.

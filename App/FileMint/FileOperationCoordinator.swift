@@ -399,7 +399,8 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             try await TerminalDirectoryLauncher.open(directory, with: application,
                 applicationURL: applicationURL, mode: mode)
 
-        case .resource(let tool, let selection):
+        case .resource(let tool, let items):
+            let selection = items.map(\.source)
             guard ResourceToolsPolicy.availableTools(selection: selection, isItemMenu: true,
                 preferences: currentPreferences).contains(tool) else { throw ResourceError.disabled }
             var bookmarks: [String: Data] = [:]
@@ -407,9 +408,10 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             try requireResolvedSelection(selection)
             guard ResourceToolsPolicy.availableTools(selection: selection, isItemMenu: true,
                 preferences: currentPreferences).contains(tool) else { throw ResourceError.disabled }
-            try await resourceController.present(selection: selection, tool: tool)
+            try await resourceController.present(selection: selection, tool: tool, expected: items)
 
-        case .prepare(let selection):
+        case .prepare(let items):
+            let selection = items.map(\.source)
             guard FileToolsPolicy.availableTools(selection: selection, isItemMenu: true,
                 preferences: currentPreferences).contains(.move) else { throw FileMoveError.disabled }
             var bookmarks: [String: Data] = [:]
@@ -419,8 +421,8 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
                 preferences: currentPreferences).contains(.move) else { throw FileMoveError.disabled }
             let store = self.store
             try await Task.detached(priority: .userInitiated) {
-                let pending = try PendingFileMove.capture(selection: selection)
-                try store.save(pending)
+                let pending = try PendingFileMove.validate(captured: items)
+                try store.replaceSelection(pending)
             }.value
 
         case .permanentDelete(let items, let confirmation):
@@ -701,6 +703,22 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             return
         }
         if let error = error as? FileMoveError {
+            if case .restoreBlocked(let staged, let destination) = error {
+                let alert = NSAlert()
+                alert.messageText = text(.moveFailed)
+                alert.informativeText = String(format: text(.moveRestoreBlocked), staged.path, destination.path)
+                NSApp.activate(ignoringOtherApps: true)
+                alert.runModal()
+                return
+            }
+            if case .retryDestination(let destination) = error {
+                let alert = NSAlert()
+                alert.messageText = text(.moveFailed)
+                alert.informativeText = String(format: text(.moveRetryDestination), destination.path)
+                NSApp.activate(ignoringOtherApps: true)
+                alert.runModal()
+                return
+            }
             if let recovery = error.recoveryURL {
                 let alert = NSAlert()
                 alert.messageText = text(.moveFailed)
@@ -712,6 +730,10 @@ final class FileOperationCoordinator: NSObject, NSSharingServiceDelegate {
             let key: FileMintTextKey = switch error {
             case .invalidSelection: .moveInvalidSelection
             case .sourceChanged: .moveSourceChanged
+            case .copiedSourceRetained: .moveCopiedSourceRetained
+            case .retryDestination: .moveRetryDestination
+            case .restoreBlocked: .moveRestoreBlocked
+            case .sourceRestored: .moveSourceRestored
             case .invalidDestination: .moveInvalidDestination
             case .destinationExists: .moveDestinationExists
             case .staleRequest: .moveStaleRequest

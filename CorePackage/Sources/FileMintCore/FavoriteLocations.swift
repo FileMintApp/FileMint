@@ -84,6 +84,27 @@ public struct FavoriteAddResult: Equatable, Sendable {
     public let duplicates: Int
 }
 
+/// Menu callbacks need neither filesystem access nor the catalog's bookmarks.
+public struct FavoriteFinderMenu: Sendable {
+    public struct Row: Sendable {
+        public let id: UUID
+        public let title: String
+    }
+    public let hasSavedItems: Bool
+    public let rows: [Row]
+
+    public init(catalog: FavoriteLocationsCatalog) {
+        hasSavedItems = !catalog.items.isEmpty
+        let quick = catalog.quickItems()
+        let counts = Dictionary(grouping: quick, by: \.name)
+        rows = quick.map { item in
+            let title = counts[item.name, default: []].count > 1
+                ? "\(item.name) — \(item.url.deletingLastPathComponent().lastPathComponent)" : item.name
+            return Row(id: item.id, title: title)
+        }
+    }
+}
+
 public struct FavoriteLocationsCatalog: Codable, Equatable, Sendable {
     public var items: [FavoriteLocation]
     public init(items: [FavoriteLocation] = []) { self.items = items }

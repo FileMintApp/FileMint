@@ -74,7 +74,7 @@ struct FinderHiddenFilesTests {
         #expect(try store.consume(expired, now: now.addingTimeInterval(61)) == nil)
         #expect(try store.consume(expired, now: now) == nil)
 
-        let move = try store.enqueue(.prepare([root]), now: now)
+        let move = try store.enqueue(.prepare([storage]), now: now)
         var wrongRoute = try #require(URLComponents(url: move, resolvingAgainstBaseURL: false))
         wrongRoute.host = url.host
         #expect(try store.consume(try #require(wrongRoute.url), now: now) == nil)

@@ -64,6 +64,23 @@ import Sparkle
         driver.updater(updater, didFinishUpdateCycleFor: .updates, error: nil)
         precondition(model.finished)
 
+        // Sparkle sends resumed staged items directly to its user driver. A
+        // stale item presented without a matching active selection must stop.
+        let archive = NSKeyedArchiver(requiringSecureCoding: true)
+        archive.encode(SPUUserUpdateStage.installing.rawValue, forKey: "SPUUserUpdateStateStage")
+        archive.encode(true, forKey: "SPUUserUpdateStateUserInitiated")
+        archive.finishEncoding()
+        let decoded = try NSKeyedUnarchiver(forReadingFrom: archive.encodedData)
+        let resumed = SPUUserUpdateState(coder: decoded)!
+        decoded.finishDecoding()
+        let oldItem = SUAppcastItem(dictionary: ["enclosure": [
+            "url": "https://github.com/FileMintApp/FileMint/releases/download/v1.0.0/FileMint-1.0.0.zip",
+            "length": "100", "sparkle:version": "1", "sparkle:shortVersionString": "1.0.0"]])!
+        let resumedDriver = SparkleInstaller(model: model)
+        var resumedChoice: SPUUserUpdateChoice?
+        resumedDriver.showUpdateFound(with: oldItem, state: resumed) { resumedChoice = $0 }
+        precondition(resumedChoice == .skip && model.state == .failed(.updateInvalidRelease))
+
         let active = SparkleInstaller(model: model)
         active.showDownloadInitiated { cancelled += 1 }
         active.showDownloadDidReceiveExpectedContentLength(100)

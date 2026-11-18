@@ -69,7 +69,9 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   creation-endpoint override header to ordinary requests. See GitHub's
   [format guidance](https://github.blog/changelog/2026-05-15-github-app-installation-tokens-per-request-override-header/)
   and [completed rollout and header retirement](https://github.blog/changelog/2026-10-02-stateless-github-app-installation-tokens-rolled-out/).
-- Successful main-push website builds automatically trigger `deploy-website.yml`.
+- Every main push builds a website candidate so a later App-only commit can
+  supersede an in-flight website build with an artifact for the current head.
+  Successful main-push website builds automatically trigger `deploy-website.yml`.
   Serialize with release website deployments and retain manual dispatch for retries.
   Validate the originating repository, push event, workflow, current main, stable
   release ancestry and the exact successful build and unexpired artifact IDs.
@@ -80,6 +82,14 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   the [presentation contract](presentation.md#product-presentation); new-release
   copy uses the release-bound publication path. Skip superseded builds with an
   explicit reason before downloading any artifact.
+  Compare the first committed release-notes version with the public stable tag.
+  Hold push artifacts containing upcoming release copy until its version is public.
+  After the release-bound website stage succeeds or is inapplicable, a publisher
+  whose release commit has newer descendants on main reconciles the current
+  main-push build. Deploy its retained successful artifact under the same Pages
+  lock. A pending push build takes its normal completion path. A failed build
+  can be rerun for that exact commit. Never redeploy the release commit through
+  this follow-up or deploy an artifact for a superseded main.
   Recheck identities after downloading and deploy the retained archive without
   rebuilding or modifying releases. Release-dispatched builds never auto-deploy;
   the existing application-publication and release-bound website gates remain.
@@ -136,6 +146,11 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   same draft is made public and Latest. Only then announce online-update
   availability, deploy the verified website artifact, synchronize the official
   Homebrew tap and complete release records after its exact commit passes CI.
+  Serialize final promotion across publisher checkouts with a temporary Git
+  ref on the canonical remote. Under that lease, check the current stable
+  predecessor immediately before promotion. Preserve ownership on uncertain
+  publication and resume through the original journal. Discover a deployment
+  dispatched on main by its unique request and pin the run's actual commit.
   The owner
   confirmed public update acceptance across three recent small releases; routine
   releases therefore do not require a temporary app launch/UI review, website

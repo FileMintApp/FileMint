@@ -1,5 +1,6 @@
 import Foundation
 import ImageIO
+import UniformTypeIdentifiers
 import FileMintCore
 
 /// Rebuilds an image from decoded pixels. Source metadata and ancillary payloads
@@ -14,13 +15,20 @@ enum ImageMetadataCleaner {
             throw ResourceError.metadataFormatUnavailable
         }
         guard ImageProcessor.writableFormats.contains(format) else { throw ResourceError.metadataFormatUnavailable }
+        for type in [kCGImageAuxiliaryDataTypeDepth, kCGImageAuxiliaryDataTypeDisparity] {
+            guard CGImageSourceCopyAuxiliaryDataInfoAtIndex(source, 0, type) == nil else {
+                throw ResourceError.unsupportedImage
+            }
+        }
         let sourceDimensions = try ImageInput.dimensions(source)
         let image: CGImage
         do { image = try ImageInput.decode(source, longestEdge: nil) }
         catch ResourceError.dimensionsTooLarge { throw ResourceError.metadataTooLarge }
         let stem = input.url.deletingPathExtension().lastPathComponent + "-clean"
+        let suffix = input.url.pathExtension.lowercased()
+        let matches = UTType(filenameExtension: suffix)?.identifier == sourceType
         return try ImageOutput.publish(in: directory, stem: stem,
-            suffix: input.url.pathExtension.lowercased(), inputs: [input], canContinue: canContinue) { staged in
+            suffix: matches ? suffix : format.suffix, inputs: [input], canContinue: canContinue) { staged in
             do { try ImageOutput.encode(image, format: format, quality: 1, to: staged) }
             catch ResourceError.unsupportedOutput { throw ResourceError.metadataFormatUnavailable }
             try validate(staged, type: sourceType, expected: sourceDimensions)

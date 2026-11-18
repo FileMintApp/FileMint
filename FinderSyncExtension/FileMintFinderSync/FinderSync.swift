@@ -189,21 +189,16 @@ final class FinderSync: FIFinderSync {
                 favoriteAction: .add, selection: selection)])[0]
             menu.addItem(item)
         }
-        if preferences.favoriteLocations.showListInFinder, !favorites.items.isEmpty {
+        if preferences.favoriteLocations.showListInFinder, favorites.hasSavedItems {
             let submenu = NSMenu(title: FavoriteText.title.text(language))
-            let quick = favorites.quickItems()
-            let duplicateNames = Dictionary(grouping: quick, by: \.name)
-            for favorite in quick {
-                let title = (duplicateNames[favorite.name]?.count ?? 0) > 1
-                    ? "\(favorite.name) — \(favorite.url.deletingLastPathComponent().lastPathComponent)"
-                    : favorite.name
-                let item = NSMenuItem(title: title, action: #selector(performFavorite(_:)), keyEquivalent: "")
+            for favorite in favorites.rows {
+                let item = NSMenuItem(title: favorite.title, action: #selector(performFavorite(_:)), keyEquivalent: "")
                 item.image = menuImage(FileToolAppearance.image(for: .favoriteLocations, style: preferences.finderMenuIconStyle))
                 item.tag = actions.register([FileMenuAction(directory: directory,
                     favoriteAction: .locate(favorite.id))])[0]
                 submenu.addItem(item)
             }
-            if !quick.isEmpty { submenu.addItem(.separator()) }
+            if !favorites.rows.isEmpty { submenu.addItem(.separator()) }
             let search = NSMenuItem(title: FavoriteText.searchAll.text(language),
                 action: #selector(performFavorite(_:)), keyEquivalent: "")
             search.tag = actions.register([FileMenuAction(directory: directory,
@@ -262,7 +257,9 @@ final class FinderSync: FIFinderSync {
         Task { @MainActor in
             guard ResourceToolsPolicy.availableTools(selection: selection, isItemMenu: true,
                 preferences: FileMintPreferencesStore().load()).contains(tool) else { return }
-            FinderActions.shared.perform(.resource(tool: tool, selection: selection), activate: true)
+            FinderActions.shared.perform(activate: true, errorTitle: .resourceTools) {
+                try .resource(tool: tool, selection: selection)
+            }
         }
     }
 
@@ -279,7 +276,7 @@ final class FinderSync: FIFinderSync {
             }
             guard FileToolsPolicy.availableTools(target: target, preferences: preferences).contains(tool) else { return }
             if tool == .move {
-                FinderActions.shared.perform(.prepare(selection))
+                FinderActions.shared.perform(errorTitle: .moveFailed) { try .prepare(selection) }
                 return
             }
             if tool == .permanentDelete {
@@ -364,12 +361,13 @@ final class FinderSync: FIFinderSync {
 
 private final class LockedFavoriteCatalog: @unchecked Sendable {
     private let lock = NSLock()
-    private var value = FavoriteLocationsCatalog()
+    private var value = FavoriteFinderMenu(catalog: FavoriteLocationsCatalog())
     func replace(_ catalog: FavoriteLocationsCatalog) {
+        let menu = FavoriteFinderMenu(catalog: catalog)
         lock.lock(); defer { lock.unlock() }
-        value = catalog
+        value = menu
     }
-    func snapshot() -> FavoriteLocationsCatalog {
+    func snapshot() -> FavoriteFinderMenu {
         lock.lock(); defer { lock.unlock() }
         return value
     }
@@ -524,10 +522,15 @@ private final class FinderActions {
     }
 
     func perform(_ request: FileOperationRequest, activate: Bool = false, errorTitle: FileMintTextKey = .fileToolsErrorTitle) {
+        perform(activate: activate, errorTitle: errorTitle) { request }
+    }
+
+    func perform(activate: Bool = false, errorTitle: FileMintTextKey,
+                 request: @escaping @Sendable () throws -> FileOperationRequest) {
         Task {
             do {
                 let url = try await Task.detached(priority: .userInitiated) {
-                    try FileOperationTicketStore().enqueue(request)
+                    try FileOperationTicketStore().enqueue(request())
                 }.value
                 open(url, activate: activate)
             } catch { showError(error, title: errorTitle) }
@@ -555,6 +558,11 @@ private final class FinderActions {
             alert.informativeText = FileMintStrings.text(error.messageKey, language: language)
         } else if let error = error as? FileOperationTicketError {
             alert.informativeText = FileMintStrings.text(error.messageKey, language: language)
+        } else if title == .moveFailed, let error = error as? FileMoveError {
+            alert.informativeText = FileMintStrings.text(error == .invalidSelection ? .moveInvalidSelection : .moveSourceChanged,
+                                                         language: language)
+        } else if title == .resourceTools, error is FileMoveError {
+            alert.informativeText = ResourceError.invalidSelection.message(language)
         } else if title == .fileInfo {
             alert.informativeText = ((error as? FileInfoError)?.text ?? .readFailed).text(language)
         } else if title == .changeDefaultApplication {

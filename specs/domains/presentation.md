@@ -303,6 +303,8 @@ owns the rules, supported storage, counts, explicit actions and recovery behavio
 - Release-related website changes are built before public Release availability
   and deployed afterward from that exact successful build artifact. A push can
   build the website but must not automatically deploy unpublished release copy.
+  Include new-release copy with its version heading in the committed release
+  notes. Push deployments wait while that heading is newer than the public release.
   Website failures have a separate status from application publication.
 - Website updates on main automatically deploy after a successful push build,
   independently of App source changes since the latest public stable tag. Publish

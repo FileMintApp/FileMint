@@ -81,8 +81,9 @@ final class PreferencesModel: ObservableObject {
         CustomFileSavePanelController.shared.updateFeatures(preferences)
     }
     private func configureCreationPanel() {
-        CustomFileSavePanelController.shared.startFolderAccess = { [weak self] directory, external in
-            self?.startCreationAccess(to: directory, external: external) ?? []
+        CustomFileSavePanelController.shared.finderRoots = { [weak self] in self?.committedPreferences.monitoredFolderURLs ?? [] }
+        CustomFileSavePanelController.shared.startFolderAccess = { [weak self] directory, source in
+            self?.startCreationAccess(to: directory, fromFinder: source == .finder, external: source == .external) ?? []
         }
         CustomFileSavePanelController.shared.rememberAuthorizedFolder = { [weak self] chosen in
             guard let self else { throw FileInfoError.accessSaveFailed }
@@ -169,12 +170,12 @@ final class PreferencesModel: ObservableObject {
     }
 
     func prepareLoginItemIfNeeded() async {
-        guard loginItemService.isInstalled, !preferences.hasAttemptedLoginItemSetup else { return }
+        guard loginItemService.isInstalled, let wantsEnabled = store.loadWithStatus().initialLoginItemChoice else { return }
         let state = loginItemService.state
-        if LoginItemPolicy.shouldRegisterInitially(wantsEnabled: preferences.launchAtLogin,
+        if LoginItemPolicy.shouldRegisterInitially(wantsEnabled: wantsEnabled,
             attempted: false, status: state, installed: true) {
             await setLaunchAtLogin(true)
-        } else if !preferences.launchAtLogin && (state == .enabled || state == .requiresApproval) {
+        } else if !wantsEnabled && (state == .enabled || state == .requiresApproval) {
             await setLaunchAtLogin(false)
         } else {
             preferences.hasAttemptedLoginItemSetup = true
@@ -237,7 +238,11 @@ final class PreferencesModel: ObservableObject {
     @discardableResult
     func recordUpdateCheckAttempt(_ date: Date) -> Bool {
         preferences.lastUpdateCheckAttempt = date
-        return save()
+        guard save() else {
+            preferences.lastUpdateCheckAttempt = committedPreferences.lastUpdateCheckAttempt
+            return false
+        }
+        return true
     }
 
     func openLoginSettings() { loginItemService.openSettings() }
@@ -555,11 +560,16 @@ final class PreferencesModel: ObservableObject {
         } catch { lastError = text(.directoryAccessChangeFailed); return false }
     }
 
-    func newFile(templateID: String? = nil) {
-        if CustomFileSavePanelController.shared.focusExistingPanel() || isPreparingCreation || externalInvocations.pendingRequestCount > 0 || !launcherWork.isEmpty { return }
-        guard validateCreationTemplate(templateID) else { return }
+    enum CreationPresentation { case presented, busy, failed(FileMintTextKey) }
+
+    @discardableResult
+    func newFile(templateID: String? = nil) -> CreationPresentation {
+        if CustomFileSavePanelController.shared.focusExistingPanel() { return .presented }
+        guard !isPreparingCreation, externalInvocations.pendingRequestCount == 0, launcherWork.isEmpty else { return .busy }
+        guard validateCreationTemplate(templateID) else { return .failed(.createFileErrorTitle) }
         CustomFileSavePanelController.shared.present(in: initialCreationDirectory, preferences: committedPreferences,
             templateID: templateID, documentTemplates: documentTemplates)
+        return .presented
     }
 
     var initialCreationDirectory: URL {
@@ -629,18 +639,20 @@ final class PreferencesModel: ObservableObject {
         presentClipboardText(in: nil)
     }
 
-    func presentClipboardText(in directory: URL?, pasteboard: NSPasteboard = .general) {
-        guard !CustomFileSavePanelController.shared.focusExistingPanel(), !isPreparingCreation,
-              externalInvocations.pendingRequestCount == 0, launcherWork.isEmpty else { return }
+    @discardableResult
+    func presentClipboardText(in directory: URL?, pasteboard: NSPasteboard = .general, fromFinder: Bool = false,
+                              showErrorAlert: Bool = true) -> CreationPresentation {
+        if CustomFileSavePanelController.shared.focusExistingPanel() { return .presented }
+        guard !isPreparingCreation, externalInvocations.pendingRequestCount == 0, launcherWork.isEmpty else { return .busy }
         isPreparingCreation = true
         pendingCreationWork += 1
         defer { isPreparingCreation = false; pendingCreationWork -= 1 }
         do {
             let content = try ClipboardTextReader.capture(from: pasteboard)
             let destination = directory ?? initialCreationDirectory
-            guard !CustomFileSavePanelController.shared.focusExistingPanel() else { return }
             CustomFileSavePanelController.shared.present(in: destination, preferences: preferences,
-                initialText: content, documentTemplates: documentTemplates)
+                initialText: content, documentTemplates: documentTemplates, fromFinder: fromFinder)
+            return .presented
         } catch {
             let key: FileMintTextKey
             switch error {
@@ -648,11 +660,8 @@ final class PreferencesModel: ObservableObject {
             case ClipboardTextError.unsupported: key = .clipboardTextUnsupported
             default: key = .noClipboardText
             }
-            let alert = NSAlert()
-            alert.messageText = text(.newFileFromClipboard)
-            alert.informativeText = text(key)
-            NSApp.activate(ignoringOtherApps: true)
-            alert.runModal()
+            if showErrorAlert { showClipboardError(key, title: .newFileFromClipboard) }
+            return .failed(key)
         }
     }
 
@@ -663,9 +672,11 @@ final class PreferencesModel: ObservableObject {
         Task { await presentClipboardImage(in: directory) }
     }
 
-    func presentClipboardImage(in directory: URL, pasteboard: NSPasteboard = .general) async {
-        guard !isPreparingCreation, !CustomFileSavePanelController.shared.focusExistingPanel(),
-              externalInvocations.pendingRequestCount == 0, launcherWork.isEmpty else { return }
+    @discardableResult
+    func presentClipboardImage(in directory: URL, pasteboard: NSPasteboard = .general, fromFinder: Bool = false,
+                               showErrorAlert: Bool = true, shouldPresent: () -> Bool = { true }) async -> CreationPresentation {
+        if CustomFileSavePanelController.shared.focusExistingPanel() { return .presented }
+        guard !isPreparingCreation, externalInvocations.pendingRequestCount == 0, launcherWork.isEmpty else { return .busy }
         isPreparingCreation = true
         pendingCreationWork += 1
         defer { isPreparingCreation = false; pendingCreationWork -= 1 }
@@ -679,9 +690,11 @@ final class PreferencesModel: ObservableObject {
                 try ClipboardImageEncoder.encode(data)
             }.value
             // A different creation action may have opened a draft while decoding.
-            guard !CustomFileSavePanelController.shared.focusExistingPanel() else { return }
+            guard shouldPresent() else { return .busy }
+            if CustomFileSavePanelController.shared.focusExistingPanel() { return .presented }
             CustomFileSavePanelController.shared.present(in: directory, preferences: preferences,
-                imageData: image.png, imagePreview: NSImage(data: image.preview))
+                imageData: image.png, imagePreview: NSImage(data: image.preview), fromFinder: fromFinder)
+            return .presented
         } catch {
             let key: FileMintTextKey
             switch error {
@@ -689,12 +702,17 @@ final class PreferencesModel: ObservableObject {
             case ClipboardImageError.unsupported: key = .clipboardImageUnsupported
             default: key = .clipboardImageFailed
             }
-            let alert = NSAlert()
-            alert.messageText = text(.pasteImageFile)
-            alert.informativeText = text(key)
-            NSApp.activate(ignoringOtherApps: true)
-            alert.runModal()
+            if showErrorAlert { showClipboardError(key, title: .pasteImageFile) }
+            return .failed(key)
         }
+    }
+
+    private func showClipboardError(_ key: FileMintTextKey, title: FileMintTextKey) {
+        let alert = NSAlert()
+        alert.messageText = text(title)
+        alert.informativeText = text(key)
+        NSApp.activate(ignoringOtherApps: true)
+        alert.runModal()
     }
 
     func handle(url: URL) {
@@ -708,8 +726,13 @@ final class PreferencesModel: ObservableObject {
         }
         if let directory = CreationRoute.directory(from: url) {
             guard externalInvocations.pendingRequestCount == 0, launcherWork.isEmpty else { return }
+            if CustomFileSavePanelController.shared.focusExistingPanel() { return }
+            guard FolderScope.directoryAccess(directory, in: committedPreferences.monitoredFolderURLs) != .outsideScope else {
+                showCreationFailure(workflowText(.outsideFinderScope))
+                return
+            }
             CustomFileSavePanelController.shared.present(in: directory, preferences: preferences,
-                                                          templateID: CreationRoute.templateID(from: url), documentTemplates: documentTemplates)
+                templateID: CreationRoute.templateID(from: url), documentTemplates: documentTemplates, fromFinder: true)
             return
         }
         pendingCreationWork += 1
@@ -737,12 +760,12 @@ final class PreferencesModel: ObservableObject {
                     // Open the draft first; its Create action requests access
                     // only if writing to the selected destination needs it.
                     CustomFileSavePanelController.shared.present(in: ticket.directory, preferences: preferences,
-                        templateID: ticket.templateID, initialFollowUp: originalFollowUp, documentTemplates: documentTemplates)
+                        templateID: ticket.templateID, initialFollowUp: originalFollowUp, documentTemplates: documentTemplates, fromFinder: true)
                     return
                 }
                 switch ticket.resolvedIntent {
-                case .clipboardImage: await presentClipboardImage(in: ticket.directory)
-                case .clipboardText: presentClipboardText(in: ticket.directory)
+                case .clipboardImage: await presentClipboardImage(in: ticket.directory, fromFinder: true)
+                case .clipboardText: presentClipboardText(in: ticket.directory, fromFinder: true)
                 case .template: await quickCreate(ticket, originalFollowUp: originalFollowUp)
                 case nil: break
                 }
@@ -764,7 +787,8 @@ final class PreferencesModel: ObservableObject {
               template.isEnabled,
               FolderScope.containsResolvedDirectory(ticket.directory, in: preferences.monitoredFolderURLs) else { return }
         let request = FileCreationRequest(destinationDirectory: ticket.directory, template: template,
-                                           collisionStrategy: preferences.collisionStrategy == .replace ? .increment : preferences.collisionStrategy, capturedAt: Date())
+                                           collisionStrategy: preferences.collisionStrategy == .replace ? .increment : preferences.collisionStrategy, capturedAt: Date(),
+                                           finderRoots: committedPreferences.monitoredFolderURLs)
         let followUp = originalFollowUp ?? creationSnapshot(template: template, selection: .followTemplate)
         let accessed = ticket.directory.startAccessingSecurityScopedResource()
         defer { if accessed { ticket.directory.stopAccessingSecurityScopedResource() } }
@@ -780,7 +804,7 @@ final class PreferencesModel: ObservableObject {
                 // The retry remains an explicit user action in the single creation panel.
                 CustomFileSavePanelController.shared.present(in: ticket.directory, preferences: preferences, templateID: ticket.templateID,
                     initialFollowUp: followUp, capturedAt: request.capturedAt, templateSnapshot: template,
-                    documentTemplates: documentTemplates)
+                    documentTemplates: documentTemplates, fromFinder: true)
             } else {
                 showCreationFailure((error as? DocumentTemplateError).map { text($0.textKey) } ?? error.localizedDescription)
             }
@@ -844,9 +868,19 @@ extension PreferencesModel {
             }
             let package = try await withTaskCancellationHandler(operation: { try await worker.value }, onCancel: { worker.cancel() })
             try Task.checkCancellation()
-            let plan = try await makeTemplatePlan(package)
+            let review: TemplatePackageReview
+            do {
+                let plan = try await makeTemplatePlan(package)
+                review = TemplatePackageReview(package: package, plan: plan)
+            } catch TemplatePackageError.tooLarge {
+                let skipped = Dictionary(uniqueKeysWithValues: package.templates.map { ($0.id, TemplateImportChoice.skip) })
+                let plan = try await makeTemplatePlan(package, choices: skipped)
+                review = TemplatePackageReview(package: package, plan: plan)
+                review.choices = skipped
+                review.message = workflowText(.selectSubset)
+            }
             try Task.checkCancellation()
-            packageReview = TemplatePackageReview(package: package, plan: plan)
+            packageReview = review
         } catch is CancellationError { lastError = nil }
         catch { lastError = templateErrorText(error, fallback: .importFailed) }
     }

@@ -39,7 +39,10 @@ final class CustomFileSavePanelController: NSObject {
     private var formatHintView: NSView?
     private var documentTemplates = DocumentTemplateStore()
     // Injected by the main app; SharedUI never imports the app's settings model.
-    var startFolderAccess: ((URL, Bool) -> [URL])?
+    enum DestinationSource { case app, finder, external }
+    private var destinationSource = DestinationSource.app
+    var finderRoots: (() -> [URL])?
+    var startFolderAccess: ((URL, DestinationSource) -> [URL])?
     var rememberAuthorizedFolder: ((URL) throws -> Void)?
     var snapshotFollowUp: ((FileTemplate?, CreationActionSelection, CreationApplication?) -> CreationFollowUp?)?
     var completeCreation: ((FileCreationResult, CreationFollowUp?, AppLanguage) async -> Void)?
@@ -122,7 +125,7 @@ final class CustomFileSavePanelController: NSObject {
         let sessionID = current.sessionID
         externalPresentation?.directory = access
         locationSelection?.selectDirectory(url)
-        let scopes = nativeSelection ? [] : (startFolderAccess?(url, true) ?? [])
+        let scopes = nativeSelection ? [] : (startFolderAccess?(url, .external) ?? [])
         access.prepare(using: {
             defer { scopes.forEach { $0.stopAccessingSecurityScopedResource() } }
             return try ExternalDraftDirectoryAccess.resolveDirectory(url)
@@ -259,7 +262,8 @@ final class CustomFileSavePanelController: NSObject {
         capturedAt: Date? = nil,
         templateSnapshot: FileTemplate? = nil,
         documentTemplates: DocumentTemplateStore = DocumentTemplateStore(),
-        external: ExternalDraftPresentation? = nil
+        external: ExternalDraftPresentation? = nil,
+        fromFinder: Bool = false
     ) {
         if panel != nil {
             bringPanelForward(selectFileName: false)
@@ -275,6 +279,7 @@ final class CustomFileSavePanelController: NSObject {
         pendingFollowUp = initialFollowUp
         usesRequestFallback = initialText != nil || imageData != nil
         externalPresentation = external
+        destinationSource = external != nil ? .external : (fromFinder ? .finder : .app)
         rejectedRequestMessage = nil
         temporaryApplication = nil
         creationApplications = preferences.creationApplications
@@ -767,7 +772,10 @@ final class CustomFileSavePanelController: NSObject {
                     selectedDirectoryURL: selectedDirectory
                 )
                 self.directoryPicker = nil
-                if let selectedDirectory, self.externalPresentation != nil { self.selectExternalDirectory(selectedDirectory) }
+                if let selectedDirectory {
+                    if self.externalPresentation != nil { self.selectExternalDirectory(selectedDirectory) }
+                    else { self.destinationSource = .app }
+                }
                 self.refreshDestinationMenu()
                 self.bringPanelForward(selectFileName: false)
             }
@@ -788,7 +796,11 @@ final class CustomFileSavePanelController: NSObject {
                 return
             }
             if external.directory.needsSelection { chooseOtherFolder(nil); return }
-            if external.directory.identity == nil { authorizeForRetry(external.directory.url); return }
+            if external.directory.identity == nil {
+                if external.directory.error == .authorizationRequired { authorizeForRetry(external.directory.url) }
+                else { chooseOtherFolder(nil) }
+                return
+            }
         }
         guard let directoryURL = locationSelection?.directoryURL,
               let fileName = resolvedFileName() else {
@@ -830,14 +842,15 @@ final class CustomFileSavePanelController: NSObject {
         cancelButton?.isEnabled = false
         panel?.standardWindowButton(.closeButton)?.isEnabled = false
         let textTemplate = FileTemplate(id: "custom", displayName: "Custom", suggestedFileName: fileName,
-                                    group: "Custom", content: draft.content, rank: 0)
+                                    group: "Custom", content: draft.content, rank: 0, fileExtension: imageData == nil ? draft.normalizedFileExtension : "png")
         let template = selectedTemplate?.document != nil && imageData == nil ? selectedTemplate! : textTemplate
         let request = FileCreationRequest(destinationDirectory: directoryURL, template: template,
                                           requestedFileName: fileName,
                                           collisionStrategy: imageData != nil || template.document != nil ? .increment : (replacingExistingFile ? .replace : .fail),
                                           contentMode: draft.hasEditedContent ? .verbatim : .template,
                                           fileData: imageData, capturedAt: draft.capturedAt,
-                                          expectedDirectoryIdentity: externalPresentation?.directory.identity)
+                                          expectedDirectoryIdentity: externalPresentation?.directory.identity,
+                                          finderRoots: destinationSource == .finder ? finderRoots?() ?? [] : nil)
         let externalAccess = externalPresentation?.directory
         externalAccess?.beginOperation()
         let assets = documentTemplates
@@ -848,7 +861,7 @@ final class CustomFileSavePanelController: NSObject {
         let basicReveal = revealAfterCreation
         Task {
             defer { externalAccess?.endOperation() }
-            let configuredAccess = startFolderAccess?(directoryURL, externalAccess != nil) ?? []
+            let configuredAccess = startFolderAccess?(directoryURL, destinationSource) ?? []
             defer { configuredAccess.forEach { $0.stopAccessingSecurityScopedResource() } }
             let accessed = directoryURL.startAccessingSecurityScopedResource()
             defer { if accessed { directoryURL.stopAccessingSecurityScopedResource() } }
@@ -884,17 +897,24 @@ final class CustomFileSavePanelController: NSObject {
             guard let self, self.panel === panel, let remember = self.rememberAuthorizedFolder else { return }
             let selectedPath = url.resolvingSymlinksInPath().standardizedFileURL.path
             let selected = URL(fileURLWithPath: selectedPath, isDirectory: true)
+            let isOriginal = selected.path == directory.resolvingSymlinksInPath().standardizedFileURL.path
+            if self.destinationSource == .finder, isOriginal,
+               FolderScope.directoryAccess(directory, in: self.finderRoots?() ?? []) != .allowed {
+                self.showError(FileMintError.outsideFinderScope)
+                return
+            }
             do { try remember(url) }
             catch { self.showError(error); return }
             if self.externalPresentation != nil {
                 self.selectExternalDirectory(selected, nativeSelection: false)
                 return
             }
-            self.locationSelection?.selectDirectory(selected)
+            if !isOriginal { self.destinationSource = .app }
+            self.locationSelection?.selectDirectory(self.destinationSource == .finder ? directory : selected)
             self.refreshDestinationMenu()
-            if selected.path == directory.resolvingSymlinksInPath().standardizedFileURL.path,
+            if isOriginal,
                let name = self.resolvedFileName() {
-                self.createFile(named: name, in: selected, replacingExistingFile: false, allowsAuthorization: false)
+                self.createFile(named: name, in: self.destinationSource == .finder ? directory : selected, replacingExistingFile: false, allowsAuthorization: false)
             }
         }
     }
@@ -1087,6 +1107,9 @@ final class CustomFileSavePanelController: NSObject {
             ?? error.localizedDescription
         if externalPresentation != nil, case FileMintError.destinationChanged = error {
             alert.informativeText = ExternalInvocationError.destinationUnavailable.message(language)
+        }
+        if case FileMintError.outsideFinderScope = error {
+            alert.informativeText = TemplateWorkflowText.outsideFinderScope.text(language)
         }
         alert.alertStyle = .warning
         alert.addButton(withTitle: "OK")

@@ -18,7 +18,10 @@ NOTE_SECTIONS = ("更新摘要", "开始使用", "详细改进", "升级须知",
 
 
 def project_release(path: Path) -> tuple[str, str]:
-    source = path.read_text(encoding="utf-8")
+    return project_release_values(path.read_text(encoding="utf-8"))
+
+
+def project_release_values(source: str) -> tuple[str, str]:
     values = {}
     for key in ("MARKETING_VERSION", "CURRENT_PROJECT_VERSION"):
         matches = re.findall(rf"^    {key}:\s*([^\s#]+)\s*$", source, re.MULTILINE)

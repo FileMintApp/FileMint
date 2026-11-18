@@ -49,9 +49,12 @@ public enum FilenamePolicy {
         let sanitized = sanitizedFileName(fileName)
         let expectedSuffix = ".\(normalizedExtension)"
         if sanitized.lowercased().hasSuffix(expectedSuffix.lowercased()) {
-            return sanitized
+            // A shorter suffix may already match the tail of the selected
+            // compound suffix (for example d.ts → ts).
+            guard let previousExtension,
+                  previousExtension.lowercased().hasSuffix(expectedSuffix.lowercased()),
+                  sanitized.lowercased().hasSuffix(".\(previousExtension.lowercased())") else { return sanitized }
         }
-
         let path = sanitized as NSString
         let baseName: String
         if let previousExtension, sanitized.lowercased().hasSuffix(".\(previousExtension.lowercased())") {
@@ -85,12 +88,20 @@ public enum FilenamePolicy {
         }
     }
 
-    public static func candidateURL(for firstURL: URL, index: Int) -> URL {
+    public static func candidateURL(for firstURL: URL, index: Int, fileExtension: String? = nil) -> URL {
         guard index > 1 else { return firstURL }
-        let name = firstURL.lastPathComponent as NSString
-        let suffix = name.pathExtension.isEmpty ? "" : ".\(name.pathExtension)"
+        let name = firstURL.lastPathComponent
+        let stem: String, suffix: String
+        if let fileExtension, !fileExtension.isEmpty, name.lowercased().hasSuffix(".\(fileExtension.lowercased())") {
+            suffix = String(name.suffix(fileExtension.count + 1))
+            stem = String(name.dropLast(suffix.count))
+        } else {
+            let path = name as NSString
+            stem = path.deletingPathExtension
+            suffix = path.pathExtension.isEmpty ? "" : "." + path.pathExtension
+        }
         return firstURL.deletingLastPathComponent().appendingPathComponent(
-            "\(name.deletingPathExtension) \(index)\(suffix)", isDirectory: false
+            "\(stem) \(index)\(suffix)", isDirectory: false
         )
     }
 

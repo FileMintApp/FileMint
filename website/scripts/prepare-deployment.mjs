@@ -61,13 +61,18 @@ export function validateRelease(release, releaseId) {
   return release.tag_name
 }
 
-export function validateBuildRun(run, { commit, runId }) {
+function validateBuildIdentity(run, { commit, runId }) {
   requireCondition(String(run?.id) === runId && run?.repository?.full_name === REPOSITORY
     && run?.head_repository?.full_name === REPOSITORY && run?.head_sha === commit
     && run?.head_branch === 'main' && run?.event === 'push'
-    && run?.path === '.github/workflows/build-pages.yml'
-    && run?.status === 'completed' && run?.conclusion === 'success',
-  'Website build must be a successful main push build for the exact requested commit and repository')
+    && run?.path === '.github/workflows/build-pages.yml',
+  'Website build must be a main push build for the exact requested commit and repository')
+}
+
+export function validateBuildRun(run, inputs) {
+  validateBuildIdentity(run, inputs)
+  requireCondition(run.status === 'completed' && run.conclusion === 'success',
+    'Website build has not succeeded; rerun the exact main-push build before retrying deployment')
 }
 
 export function validateArtifact(data, { artifactId, runId, commit }) {
@@ -96,11 +101,10 @@ export function prepareDeployment({ env = process.env, run = (command, args) => 
 }) } = {}) {
   validateContext(env)
   const automatic = env.GITHUB_EVENT_NAME === 'workflow_run'
-  if (automatic) requireCondition(env.GITHUB_REPOSITORY === REPOSITORY,
+  const catchup = !automatic && Boolean(env.SITE_RELEASE_COMMIT || env.SITE_REQUEST_ID)
+  const discoverArtifact = automatic || catchup
+  if (discoverArtifact) requireCondition(env.GITHUB_REPOSITORY === REPOSITORY,
     'Automatic deployment must run in the original repository')
-  let inputs = automatic
-    ? automaticBuildInputs(JSON.parse(readFileSync(env.GITHUB_EVENT_PATH, 'utf8')))
-    : validateInputs(env)
   const api = endpoint => JSON.parse(run('gh', ['api', `repos/${REPOSITORY}/${endpoint}`]))
   const skip = reason => {
     const message = `Website deployment skipped: ${reason}`
@@ -110,22 +114,64 @@ export function prepareDeployment({ env = process.env, run = (command, args) => 
     return null
   }
   const checkout = run('git', ['rev-parse', 'HEAD']).trim()
+  let inputs
+  if (automatic) {
+    inputs = automaticBuildInputs(JSON.parse(readFileSync(env.GITHUB_EVENT_PATH, 'utf8')))
+  } else if (catchup) {
+    requireCondition(env.GITHUB_REF === 'refs/heads/main' && SHA.test(checkout)
+      && SHA.test(env.SITE_RELEASE_COMMIT ?? '') && ID.test(env.SITE_RELEASE_ID ?? '')
+      && /^[0-9a-f]{32}$/.test(env.SITE_REQUEST_ID ?? '')
+      && !env.SITE_COMMIT && !env.SITE_BUILD_RUN_ID && !env.SITE_ARTIFACT_ID,
+    'Invalid post-release website catch-up request')
+    inputs = { commit: checkout, releaseId: env.SITE_RELEASE_ID }
+  } else {
+    inputs = validateInputs(env)
+  }
   const main = api('git/ref/heads/main')
-  if (automatic && (checkout !== inputs.commit || main?.object?.sha !== inputs.commit)) {
+  requireCondition(main?.object?.type === 'commit' && SHA.test(main.object.sha ?? ''), 'Invalid main branch identity')
+  if (discoverArtifact && (checkout !== inputs.commit || main?.object?.sha !== inputs.commit)) {
     return skip('a newer main commit superseded this build')
   }
   requireCondition(checkout === inputs.commit, 'Workflow checkout differs from the requested website commit')
   validateMain(main, inputs.commit)
-  validateBuildRun(api(`actions/runs/${inputs.runId}`), inputs)
+  if (!catchup) validateBuildRun(api(`actions/runs/${inputs.runId}`), inputs)
   const release = api('releases/latest')
   const releaseId = automatic ? String(release?.id) : inputs.releaseId
   const tag = validateRelease(release, releaseId)
+  if (catchup) {
+    const tagCommit = run('git', ['rev-parse', '--verify', `refs/tags/${tag}^{commit}`]).trim()
+    requireCondition(tagCommit === env.SITE_RELEASE_COMMIT, 'Release commit differs from the current public tag')
+    if (checkout === tagCommit) return skip('main is already the published release commit')
+  }
+  const notes = run('git', ['show', 'HEAD:docs/RELEASE_NOTES.md'])
+  const heading = notes.match(/^# FileMint ([^\r\n]+)$/m)
+  requireCondition(heading && STABLE_TAG.test(`v${heading[1]}`), 'Missing stable release-notes heading')
+  const required = heading[1].split('.').map(BigInt)
+  const published = tag.slice(1).split('.').map(BigInt)
+  const changed = required.findIndex((value, index) => value !== published[index])
+  if (changed !== -1 && required[changed] > published[changed]) {
+    return skip(`website copy awaits public release v${heading[1]}`)
+  }
   // Keep release ancestry, but publish only the verified static artifact.
   // Unrelated App development must not block a reviewed website update.
   run('git', ['merge-base', '--is-ancestor', `refs/tags/${tag}`, 'HEAD'])
+  if (catchup) {
+    const query = new URLSearchParams({ branch: 'main', event: 'push', head_sha: checkout, per_page: '1' })
+    const runs = api(`actions/workflows/build-pages.yml/runs?${query}`).workflow_runs
+    requireCondition(Array.isArray(runs) && runs.length === 1 && ID.test(String(runs[0]?.id ?? '')),
+      'No main-push website build found for the current commit; retry after its build is available')
+    inputs.runId = String(runs[0].id)
+    validateBuildIdentity(runs[0], inputs)
+    const build = api(`actions/runs/${inputs.runId}`)
+    validateBuildIdentity(build, inputs)
+    if (['queued', 'in_progress', 'waiting', 'pending', 'requested'].includes(build.status)) {
+      return skip('the current main build is pending and will deploy on successful completion')
+    }
+    validateBuildRun(build, inputs)
+  }
   const artifactsEndpoint = `actions/runs/${inputs.runId}/artifacts?per_page=100`
   const artifacts = api(artifactsEndpoint)
-  if (automatic) {
+  if (discoverArtifact) {
     const candidates = artifacts?.artifacts?.filter(item => item.name === 'github-pages' && item.expired === false) ?? []
     requireCondition(candidates.length === 1, 'Automatic deployment needs one unexpired github-pages artifact')
     inputs = validateInputs({ ...env, SITE_COMMIT: inputs.commit, SITE_BUILD_RUN_ID: inputs.runId,
@@ -139,7 +185,10 @@ export function prepareDeployment({ env = process.env, run = (command, args) => 
   // A run can be rerun while downloading by name. Refuse if its artifact or state changed.
   validateBuildRun(api(`actions/runs/${inputs.runId}`), inputs)
   validateArtifact(api(artifactsEndpoint), inputs)
-  validateMain(api('git/ref/heads/main'), inputs.commit)
+  const finalMain = api('git/ref/heads/main')
+  if (catchup && finalMain?.object?.type === 'commit' && SHA.test(finalMain.object.sha)
+    && finalMain.object.sha !== inputs.commit) return skip('a newer main commit superseded this build')
+  validateMain(finalMain, inputs.commit)
   requireCondition(validateRelease(api('releases/latest'), inputs.releaseId) === tag,
     'Latest release tag changed during deployment preparation')
   appendFileSync(env.GITHUB_OUTPUT, `archive=${archive}\nready=true\n`)

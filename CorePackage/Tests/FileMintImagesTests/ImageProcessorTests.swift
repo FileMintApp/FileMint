@@ -1,6 +1,7 @@
 import Foundation
 import CoreGraphics
 import CoreText
+import CoreVideo
 import ImageIO
 import Testing
 import FileMintCore
@@ -8,6 +9,50 @@ import FileMintCore
 
 @Suite("Native offline image processing", .serialized)
 struct ImageProcessorTests {
+    @Test("metadata output uses the actual encoding and Finder identities survive queuing")
+    func encodedTypeAndTicketIdentity() throws {
+        try workspace { root in
+            let selected = root.appendingPathComponent("camera.jpg")
+            try fixture(selected)
+            let before = try Data(contentsOf: selected)
+            let request = try FileOperationRequest.resource(tool: .removeMetadata, selection: [selected])
+            guard case .resource(_, let expected) = request else { Issue.record("Missing captured items"); return }
+            let inputs = try ImageProcessor.capture([selected], expected: expected)
+            let result = ImageProcessor.run(tool: .removeMetadata, inputs: inputs, options: ImageJobOptions(), destination: nil)
+            let cleaned = try #require(result.outputs.first)
+            #expect(cleaned.lastPathComponent == "camera-clean.png")
+            let source = try #require(CGImageSourceCreateWithURL(cleaned as CFURL, nil))
+            #expect(CGImageSourceGetType(source) as String? == "public.png")
+            #expect(try Data(contentsOf: selected) == before)
+            try before.write(to: selected, options: .atomic)
+            #expect(throws: ResourceError.sourceChanged) { try ImageProcessor.capture([selected], expected: expected) }
+        }
+    }
+
+    @Test("cleaning refuses real single-frame JPEGs with a depth or disparity auxiliary image")
+    func depthInputs() throws {
+        try workspace { root in
+            let file = root.appendingPathComponent("camera.jpg")
+            let image = try #require(ImageOutput.context(width: 80, height: 64, white: true).makeImage())
+            for (kind, format) in [(kCGImageAuxiliaryDataTypeDepth, kCVPixelFormatType_DepthFloat16),
+                                   (kCGImageAuxiliaryDataTypeDisparity, kCVPixelFormatType_DisparityFloat16)] {
+                let destination = try #require(CGImageDestinationCreateWithURL(file as CFURL, "public.jpeg" as CFString, 1, nil))
+                CGImageDestinationAddImage(destination, image, nil)
+                let description: [CFString: Any] = [kCGImagePropertyWidth: 80, kCGImagePropertyHeight: 64,
+                    kCGImagePropertyBytesPerRow: 160, kCGImagePropertyPixelFormat: format]
+                let samples = (0..<(80 * 64)).map { Float16(0.25 + Double($0 % 16) * 0.1).bitPattern }
+                let info: [CFString: Any] = [kCGImageAuxiliaryDataInfoData: samples.withUnsafeBytes { Data($0) },
+                    kCGImageAuxiliaryDataInfoDataDescription: description, kCGImageAuxiliaryDataInfoMetadata: CGImageMetadataCreateMutable()]
+                CGImageDestinationAddAuxiliaryDataInfo(destination, kind, info as CFDictionary)
+                try #require(CGImageDestinationFinalize(destination))
+                let source = try #require(CGImageSourceCreateWithURL(file as CFURL, nil))
+                try #require(CGImageSourceGetCount(source) == 1 && CGImageSourceCopyAuxiliaryDataInfoAtIndex(source, 0, kind) != nil)
+                let result = ImageProcessor.run(tool: .removeMetadata, inputs: try ImageProcessor.capture([file]), options: .init(), destination: nil)
+                #expect(result.failure == .unsupportedImage && result.completed == 0)
+            }
+            #expect(try FileManager.default.contentsOfDirectory(atPath: root.path) == ["camera.jpg"])
+        }
+    }
     @Test("private metadata removal creates verified same-format copies and preserves originals")
     func privateMetadata() throws {
         try workspace { root in

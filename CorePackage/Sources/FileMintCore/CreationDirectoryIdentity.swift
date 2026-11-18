@@ -24,22 +24,47 @@ public struct CreationDirectoryIdentity: Equatable, Sendable {
     }
 }
 
-/// External drafts bind writes to the admitted directory object. Opening a
+/// Bind publication to the selected directory object. Opening a
 /// search-only descriptor avoids requiring a read of directory contents.
 enum PinnedCreationWriter {
-    static func create(in directory: URL, expected: CreationDirectoryIdentity, name: String,
-                       collision: NameCollisionStrategy, kind: CreatedContentKind,
-                       bytes: (String) -> Data) throws -> FileCreationResult {
-        let parent = open(directory.path, O_SEARCH | O_NOFOLLOW | O_CLOEXEC)
-        guard parent >= 0 else { throw posix() }
+    static func create(in directory: URL, expected: CreationDirectoryIdentity?, name: String, fileExtension: String?,
+                       collision: NameCollisionStrategy, kind: CreatedContentKind, contentDependsOnName: Bool,
+                       finderRoots: [URL]? = nil,
+                       bytes: (String) throws -> Data) throws -> FileCreationResult {
+        func validateScope() throws {
+            guard let finderRoots else { return }
+            switch FolderScope.directoryAccess(directory, in: finderRoots) {
+            case .allowed: break
+            case .requiresAuthorization: throw posix(EACCES)
+            case .outsideScope: throw FileMintError.outsideFinderScope
+            }
+        }
+        try validateScope()
+        let parent = open(directory.path, O_SEARCH | O_CLOEXEC | (expected == nil ? 0 : O_NOFOLLOW))
+        guard parent >= 0 else {
+            if errno == ENOTDIR { throw FileMintError.destinationIsNotDirectory(directory) }
+            throw posix()
+        }
         defer { close(parent) }
         var parentMetadata = stat()
         guard fstat(parent, &parentMetadata) == 0 else { throw posix() }
-        guard parentMetadata.st_mode & S_IFMT == S_IFDIR, CreationDirectoryIdentity(parentMetadata) == expected else {
+        let pinned = CreationDirectoryIdentity(parentMetadata)
+        guard parentMetadata.st_mode & S_IFMT == S_IFDIR else { throw FileMintError.destinationIsNotDirectory(directory) }
+        if let expected, pinned != expected {
             throw FileMintError.destinationChanged
         }
         func validatePath() throws {
-            guard try CreationDirectoryIdentity.capture(directory) == expected else { throw FileMintError.destinationChanged }
+            try validateScope()
+            guard try CreationDirectoryIdentity.capture(directory) == pinned else { throw FileMintError.destinationChanged }
+            if let finderRoots {
+                var path = [CChar](repeating: 0, count: Int(MAXPATHLEN))
+                let read = path.withUnsafeMutableBufferPointer { fcntl(parent, F_GETPATH, $0.baseAddress!) }
+                guard read == 0 else { throw posix() }
+                let pinnedURL = path.withUnsafeBufferPointer {
+                    URL(fileURLWithFileSystemRepresentation: $0.baseAddress!, isDirectory: true, relativeTo: nil)
+                }
+                guard FolderScope.containsResolvedDirectory(pinnedURL, in: finderRoots) else { throw FileMintError.outsideFinderScope }
+            }
         }
         try validatePath()
         let stageName = ".FileMint-create-" + UUID().uuidString
@@ -63,7 +88,6 @@ enum PinnedCreationWriter {
             throw FileMintError.destinationChanged
         }
         defer {
-            _ = unlinkat(stage, "output", 0)
             // Clean only the exact private directory this invocation created.
             var current = stat()
             if fstatat(parent, stageName, &current, AT_SYMLINK_NOFOLLOW) == 0,
@@ -75,11 +99,18 @@ enum PinnedCreationWriter {
         let output = openat(stage, "output", O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0o666)
         guard output >= 0 else { throw posix() }
         defer { close(output) }
+        var original = stat()
+        guard fstat(output, &original) == 0 else { throw posix() }
+        func ownsOutput() -> Bool {
+            var current = stat()
+            return fstatat(stage, "output", &current, AT_SYMLINK_NOFOLLOW) == 0 &&
+                current.st_dev == original.st_dev && current.st_ino == original.st_ino
+        }
+        var published = false
+        defer { if !published && ownsOutput() { _ = unlinkat(stage, "output", 0) } }
         let first = directory.appendingPathComponent(FilenamePolicy.sanitizedFileName(name))
-        var index = 1
-        while true {
-            let target = FilenamePolicy.candidateURL(for: first, index: index)
-            let data = bytes(target.lastPathComponent)
+        func stageBytes(for target: URL) throws -> CreatedFileIdentity {
+            let data = try bytes(target.lastPathComponent)
             guard ftruncate(output, 0) == 0, lseek(output, 0, SEEK_SET) >= 0 else { throw posix() }
             try data.withUnsafeBytes { buffer in
                 var offset = 0
@@ -92,8 +123,15 @@ enum PinnedCreationWriter {
             }
             var written = stat()
             guard fstat(output, &written) == 0 else { throw posix() }
-            let identity = CreatedFileIdentity(written)
+            return CreatedFileIdentity(written)
+        }
+        var index = 1
+        var identity = try stageBytes(for: first)
+        while true {
+            let target = FilenamePolicy.candidateURL(for: first, index: index, fileExtension: fileExtension)
+            if index > 1 && contentDependsOnName { identity = try stageBytes(for: target) }
             try validatePath()
+            guard ownsOutput() else { throw FileMintError.destinationChanged }
             let result: Int32
             if collision == .replace, kind == .text {
                 result = renameat(stage, "output", parent, target.lastPathComponent)
@@ -101,10 +139,14 @@ enum PinnedCreationWriter {
                 result = renameatx_np(stage, "output", parent, target.lastPathComponent, UInt32(RENAME_EXCL))
             }
             if result == 0 {
+                published = true
                 return FileCreationResult(createdURL: target, usedCollisionFallback: index > 1,
                                           identity: identity, contentKind: kind)
             }
             let failure = errno
+            if collision == .replace, kind == .text, failure == EISDIR {
+                throw FileMintError.destinationIsNotDirectory(target)
+            }
             if failure == EEXIST {
                 if collision == .increment { index += 1; continue }
                 throw FileMintError.fileAlreadyExists(target)

@@ -56,12 +56,15 @@ final class SparkleInstaller: NSObject, SPUUserDriver, SPUUpdaterDelegate {
 
     func updater(_ updater: SPUUpdater, shouldProceedWithUpdate item: SUAppcastItem,
                  updateCheck: SPUUpdateCheck) throws {
-        guard let selectedUpdate,
-              UpdateInstallationPolicy.accepts(selectedUpdate, displayVersion: item.displayVersionString,
+        guard matchesSelection(item) else { throw validationError() }
+    }
+
+    private func matchesSelection(_ item: SUAppcastItem) -> Bool {
+        guard let selectedUpdate else { return false }
+        return UpdateInstallationPolicy.accepts(selectedUpdate, displayVersion: item.displayVersionString,
                 downloadURL: item.fileURL, size: item.contentLength,
-                informationOnly: item.isInformationOnlyUpdate, delta: item.isDeltaUpdate),
-              item.deltaUpdates?.isEmpty != false,
-              item.installationType == "application" else { throw validationError() }
+                informationOnly: item.isInformationOnlyUpdate, delta: item.isDeltaUpdate)
+            && item.deltaUpdates?.isEmpty != false && item.installationType == "application"
     }
 
     func updater(_ updater: SPUUpdater, shouldDownloadReleaseNotesForUpdate item: SUAppcastItem) -> Bool {
@@ -94,8 +97,14 @@ final class SparkleInstaller: NSObject, SPUUserDriver, SPUUpdaterDelegate {
 
     func showUpdateFound(with item: SUAppcastItem, state: SPUUserUpdateState,
                          reply: @escaping (SPUUserUpdateChoice) -> Void) {
-        // The user already accepted this exact version in the About page.
-        reply(cancelled ? .skip : .install)
+        guard !cancelled else { reply(.skip); return }
+        // Sparkle bypasses shouldProceedWithUpdate when resuming a staged item.
+        guard matchesSelection(item) else {
+            model?.installationChanged(.failed(.updateInvalidRelease))
+            reply(.skip)
+            return
+        }
+        reply(.install)
     }
 
     func showUpdateReleaseNotes(with downloadData: SPUDownloadData) {}

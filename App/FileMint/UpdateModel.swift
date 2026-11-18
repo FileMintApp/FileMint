@@ -77,17 +77,17 @@ final class UpdateModel: ObservableObject {
                 self.scheduleAutomaticCheck()
             }
         }
-        automaticPreferenceObserver = preferencesModel.$preferences
+        automaticPreferenceObserver = preferencesModel.$committedPreferences
             .removeDuplicates {
                 $0.automaticallyChecksForUpdates == $1.automaticallyChecksForUpdates &&
                     $0.lastUpdateCheckAttempt == $1.lastUpdateCheckAttempt
             }
             .sink { [weak self] _ in
-                // @Published emits before assignment, including tentative edits
-                // that a failed save rolls back in the same main-actor turn.
+                // @Published emits before assignment. Observe the committed
+                // value after the current MainActor turn.
                 Task { @MainActor in
                     guard let self else { return }
-                    self.automaticSettingsChanged(enabled: self.preferencesModel.preferences.automaticallyChecksForUpdates)
+                    self.automaticSettingsChanged(enabled: self.preferencesModel.committedPreferences.automaticallyChecksForUpdates)
                 }
             }
     }
@@ -104,16 +104,21 @@ final class UpdateModel: ObservableObject {
         automaticCheckTimer = nil
         automaticCheckDeferredForModal = false
         let model = preferencesModel
-        guard automaticPreferenceObserver != nil, model.preferences.automaticallyChecksForUpdates,
+        guard automaticPreferenceObserver != nil, model.committedPreferences.automaticallyChecksForUpdates,
               !isBusy, update == nil else { return }
         guard !deferAutomaticCheckForModal() else { return }
         let now = Date()
-        if let saved = model.preferences.lastUpdateCheckAttempt, saved > now {
-            guard model.recordUpdateCheckAttempt(now) else { return }
+        if let saved = model.committedPreferences.lastUpdateCheckAttempt, saved > now,
+           !model.recordUpdateCheckAttempt(now) {
+            scheduleTimer(after: max(AutomaticUpdatePolicy.startupDelay, automaticCheckStartupDelay))
+            return
         }
         guard let next = AutomaticUpdatePolicy.nextCheckDate(enabled: true,
-            lastAttempt: model.preferences.lastUpdateCheckAttempt, now: now) else { return }
-        let delay = max(automaticCheckStartupDelay, next.timeIntervalSince(now))
+            lastAttempt: model.committedPreferences.lastUpdateCheckAttempt, now: now) else { return }
+        scheduleTimer(after: max(automaticCheckStartupDelay, next.timeIntervalSince(now)))
+    }
+
+    private func scheduleTimer(after delay: TimeInterval) {
         let timer = Timer(timeInterval: delay, repeats: false) { [weak self] _ in
             Task { @MainActor in self?.checkAutomaticallyIfDue() }
         }
@@ -123,7 +128,7 @@ final class UpdateModel: ObservableObject {
     }
 
     private func checkAutomaticallyIfDue() {
-        let preferences = preferencesModel.preferences
+        let preferences = preferencesModel.committedPreferences
         guard preferences.automaticallyChecksForUpdates, !isBusy, update == nil else { return }
         guard !deferAutomaticCheckForModal() else { return }
         let now = Date()
@@ -157,7 +162,7 @@ final class UpdateModel: ObservableObject {
         // Failed and cancelled attempts also consume the weekly automatic check.
         let recorded = preferencesModel.recordUpdateCheckAttempt(Date())
         guard recorded || !automatically else {
-            scheduleAutomaticCheck()
+            scheduleTimer(after: max(AutomaticUpdatePolicy.startupDelay, automaticCheckStartupDelay))
             return
         }
         let id = UUID()
@@ -176,7 +181,7 @@ final class UpdateModel: ObservableObject {
             do {
                 let result = try await checkRelease(currentVersion)
                 guard operationID == id, !Task.isCancelled else { return }
-                if automatically && !preferencesModel.preferences.automaticallyChecksForUpdates {
+                if automatically && !preferencesModel.committedPreferences.automaticallyChecksForUpdates {
                     cancel()
                     return
                 }

@@ -83,7 +83,9 @@ diagnostic, not an automatic substitute for that evidence.
    do not edit generated `FileMint.xcodeproj` or keep a second version default.
 2. Put the current version at the **first** `# FileMint VERSION` heading in
    `docs/RELEASE_NOTES.md`. Write only verified shipped behavior and any migration
-   instructions. Review user-facing README/website/install copy when affected.
+   instructions. Commit website/README copy that announces this release together
+   with its release-note heading. The independent site deployer reads that heading
+   and waits for the required public version.
    The first arm64-only release must state its macOS 13 minimum and that
    earlier Intel installations cannot update to it; keep older release records
    accurate to their original universal artifacts.
@@ -193,8 +195,14 @@ is public.
 ### 4. Promote the verified candidate and confirm online updates
 
 After the required Actions succeed, `make publish-local` rechecks their saved
-identities and the draft asset set, then changes that same Release to stable and
-Latest. It does not rebuild, re-sign or re-upload the candidate. The appcast retains
+identities and the draft asset set. It briefly reserves the canonical remote
+branch `filemint-release-promotion` using a unique marker stored in the local
+journal. Under this lease it rechecks Latest and promotes the same draft.
+An older candidate stays a draft. If the predecessor changed to another lower
+version, resume the journal to check its version, build and website inputs.
+If another publisher holds the lease, finish or resume that publisher first.
+A lost response is reconciled by Release ID and the lease is removed using its
+exact marker. The appcast retains
 the final public tag-based asset URLs throughout draft staging; clients never
 receive draft URLs. Sparkle keys, signing, installer configuration and scoped Mach
 permissions remain part of the mandatory artifact checks.
@@ -210,6 +218,15 @@ the journal; do not assume that publication failed or upload another package.
 If website work is applicable, explicitly dispatch deployment after publication.
 The deployment job checks the public Release and exact successful website build,
 downloads its retained Pages archive on the runner, and deploys it without rebuilding.
+The journal binds a main-branch dispatch to the actual GitHub run SHA and ID.
+A paused publisher can rediscover its unique request after main has advanced.
+After the release website has deployed, or when it has no changes, the publisher
+checks for a newer main commit. Its follow-up runs under the Pages deployment
+lock and can publish the current main-push artifact that waited for this release.
+It verifies the public release commit, the current head, the source workflow
+and the retained artifact. A pending website build deploys on its own successful
+completion. If that build failed, rerun the exact main-push build. The journal
+keeps the earlier application publication intact if website follow-up fails.
 The archive is retained for seven days. A successfully rerun website build for the
 same source can supply a fresh artifact for unfinished deployment; published app
 assets stay untouched. All required Actions must finish successfully before
@@ -468,7 +485,9 @@ A read-only mounted DMG cannot update in place.
 
 ## Website-only updates
 
-Main-push website updates build and deploy automatically, independently of
+Every main push builds the website for its exact head, including App-only
+commits that supersede a build containing website changes. Eligible builds
+deploy automatically, independently of
 `publish-local`, without creating an application release or moving any tag.
 
 1. Commit and push the reviewed website changes to `main`.
@@ -480,6 +499,8 @@ Main-push website updates build and deploy automatically, independently of
    latest-release discovery. Record the commit, build and deployment run URLs.
 
 The source must remain current main and descend from the public stable tag.
+Push and manual website-only deployments both defer upcoming release copy
+while the first committed release-notes version is newer than the public tag.
 The website is a static artifact with an independent delivery cycle. App source,
 dependencies, resources, configuration and other repository changes since that
 tag do not block a reviewed website update. The deployer does not publish those

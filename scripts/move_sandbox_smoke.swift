@@ -51,7 +51,12 @@ final class MoveSandboxSmoke: NSObject, NSApplicationDelegate {
     }
 
     @objc private func prepare() {
-        run(.prepare([fixture.appendingPathComponent("source/图片.png"), fixture.appendingPathComponent("source/Demo.app")]))
+        do {
+            guard let file = Bundle.main.url(forResource: "MoveSelection", withExtension: "json") else {
+                throw FileMoveError.invalidSelection
+            }
+            run(try JSONDecoder().decode(FileOperationRequest.self, from: Data(contentsOf: file)))
+        } catch { status.stringValue = "FAIL: fixture selection could not be loaded" }
     }
 
     @objc private func move() {
@@ -74,7 +79,16 @@ final class MoveSandboxSmoke: NSObject, NSApplicationDelegate {
 
 @main
 struct Main {
-    static func main() {
+    static func main() throws {
+        if CommandLine.arguments.count == 4, CommandLine.arguments[1] == "--capture-fixture" {
+            let fixture = URL(fileURLWithPath: CommandLine.arguments[2], isDirectory: true)
+            let request = try FileOperationRequest.prepare([
+                fixture.appendingPathComponent("source/图片.png"),
+                fixture.appendingPathComponent("source/Demo.app")
+            ])
+            try JSONEncoder().encode(request).write(to: URL(fileURLWithPath: CommandLine.arguments[3]))
+            return
+        }
         let app = NSApplication.shared
         let delegate = MoveSandboxSmoke()
         app.delegate = delegate

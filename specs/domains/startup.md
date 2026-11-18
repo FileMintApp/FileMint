@@ -94,6 +94,12 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - Limit the persisted settings document to 32 MiB. A missing file initializes
   defaults; a present corrupt or oversized file leaves Finder scope empty and is
   preserved for explicit recovery instead of being overwritten during startup.
+- Import recognizes the five fields present in every full FileMint backup since
+  the original encoder: templates, monitored folder URLs, collision strategy,
+  reveal after creation and favorites first. Accept both JSON and the legacy
+  property-list wrapper. Unrelated JSON, partial settings and invalid required
+  fields preserve existing settings and login registration. Startup recovery
+  never registers a login item from fallback defaults.
 
 - An explicitly requested updater relaunch must wait until creation work and
   modal editing are finished. Preserve saved startup preferences and bookmarks.
@@ -166,6 +172,8 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   fresh. A pending operation may clear its dismissed session on success, but never
   a session reopened since it started. Failures keep the current search available
   without reopening a dismissed panel or stealing focus from another app.
+  Clipboard capture errors and busy creation requests show feedback in the
+  current search and preserve its query and selection.
 - Search operates on cached value snapshots without clipboard reads, filesystem
   discovery, template-content indexing or search-history persistence. Refresh after
   successful preference/catalog changes; revalidate an ID before execution.
