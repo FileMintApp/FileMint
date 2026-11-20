@@ -47,7 +47,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 
-    func applicationWillTerminate(_ notification: Notification) { PreferencesModel.shared.globalShortcuts.shutdown() }
+    func applicationWillTerminate(_ notification: Notification) { PreferencesModel.shared.stopGlobalShortcuts() }
 
     func applicationShouldOpenUntitledFile(_ sender: NSApplication) -> Bool { false }
 

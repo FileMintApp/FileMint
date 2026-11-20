@@ -10,11 +10,38 @@ final class GlobalShortcutController: ObservableObject {
     @Published private(set) var failure: GlobalShortcutFailure?
     private var service: GlobalShortcutService?
     private var started = false
+    private var reservedKeys: Set<GlobalShortcut> = []
     var onTrigger: () -> Void = {}
 
     func start(_ configuration: GlobalShortcutPreferences) {
         started = true
         reloadSavedConfiguration(configuration, retry: true)
+    }
+
+    /// Yield before the preferred action registers. The caller reconciles the
+    /// saved configuration after the preferred key is committed or rolled back.
+    func reserve(_ keys: Set<GlobalShortcut>) -> Bool {
+        let desired = configuration.effectiveCombination
+        let eligibilityChanged = desired.map(reservedKeys.contains) != desired.map(keys.contains)
+        reservedKeys = keys
+        if let service, let bound = service.binding, keys.contains(bound) {
+            try? service.replace(with: nil) { _ in }
+            isRegistered = false
+        }
+        return eligibilityChanged
+    }
+
+    private func validate(_ key: GlobalShortcut) throws {
+        guard !reservedKeys.contains(key) else { throw GlobalShortcutFailure.quickSearchReserved }
+        try GlobalShortcutKeyboard.validate(key)
+    }
+
+    // Release both obsolete keys before applying an imported pair. This also
+    // allows a backup to exchange the two actions' previous combinations.
+    func releaseObsoleteBinding(for next: GlobalShortcutPreferences) {
+        guard let service, let oldKey = service.binding, oldKey != next.effectiveCombination else { return }
+        try? service.replace(with: nil) { _ in }
+        isRegistered = false
     }
 
     /// A loaded snapshot is already authoritative on disk. Never leave an old
@@ -25,7 +52,7 @@ final class GlobalShortcutController: ObservableObject {
         guard started, !isRecording else { return }
         do {
             if let key = next.effectiveCombination {
-                try GlobalShortcutKeyboard.validate(key)
+                try validate(key)
                 try registrar().replace(with: key) { _ in }
             } else { try service?.replace(with: nil) { _ in } }
             failure = nil
@@ -41,7 +68,7 @@ final class GlobalShortcutController: ObservableObject {
         do {
             if let key = next.combination,
                next.combination != configuration.combination || (next.isEnabled && !configuration.isEnabled) {
-                try GlobalShortcutKeyboard.validate(key)
+                try validate(key)
             }
             if started {
                 if next.effectiveCombination != nil || service != nil {

@@ -182,6 +182,7 @@ struct ContentView: View {
         case .fileTools: FileToolsPane()
         case .resourceTools: ResourceToolsPane(launchTool: launchResourceTool)
         case .openWith: OpenWithPane()
+        case .fileDrawer: FileDrawerSettingsPane()
         case .favoriteLocations: FavoriteLocationsPane(favorites: favoriteLocations)
         case .about: AboutPane()
         }
@@ -247,7 +248,7 @@ extension PreferencesModel.Pane {
     func groupTitle(_ language: AppLanguage) -> String {
         switch self {
         case .fileTypes, .creation: InterfaceText.fileCreation.text(language)
-        case .fileTools, .resourceTools, .openWith, .favoriteLocations, .shortcuts, .launchers: FileMintStrings.text(.extensions, language: language)
+        case .fileTools, .resourceTools, .openWith, .favoriteLocations, .fileDrawer, .shortcuts, .launchers: FileMintStrings.text(.extensions, language: language)
         default: InterfaceText.preferences.text(language)
         }
     }
@@ -264,6 +265,7 @@ extension PreferencesModel.Pane {
         case .fileTools: InterfaceText.filesSubtitle.text(language)
         case .resourceTools: InterfaceText.resourceSubtitle.text(language)
         case .openWith: FileMintStrings.text(.openWithAppsHint, language: language)
+        case .fileDrawer: FileMintStrings.text(.fileDrawerHint, language: language)
         case .favoriteLocations: FavoriteText.subtitle.text(language)
         case .about: FileMintStrings.text(.productTagline, language: language)
         }
@@ -280,6 +282,7 @@ extension PreferencesModel.Pane {
         case .fileTools: .fileTools
         case .resourceTools: .resourceTools
         case .openWith: .openWithApps
+        case .fileDrawer: .fileDrawer
         case .favoriteLocations: .favoriteLocations
         case .about: .about
         }
@@ -296,6 +299,7 @@ extension PreferencesModel.Pane {
         case .fileTools: .fileToolsHint
         case .resourceTools: .resourceToolsHint
         case .openWith: .openWithAppsHint
+        case .fileDrawer: .fileDrawerHint
         case .favoriteLocations: .favoriteLocations
         case .about: .productTagline
         }
@@ -313,6 +317,7 @@ extension PreferencesModel.Pane {
         case .fileTools: "wrench.and.screwdriver"
         case .resourceTools: "photo.on.rectangle"
         case .openWith: FileToolAppearance.openWithSymbol
+        case .fileDrawer: "sidebar.right"
         case .favoriteLocations: "star"
         case .about: "info.circle"
         }

@@ -3,7 +3,7 @@ import Carbon
 import FileMintCore
 
 enum GlobalShortcutFailure: Error, Equatable {
-    case invalid, systemReserved, menuConflict(String), registration(OSStatus), systemQuery(OSStatus), handler(OSStatus)
+    case invalid, systemReserved, fileMintConflict, quickSearchReserved, menuConflict(String), registration(OSStatus), systemQuery(OSStatus), handler(OSStatus)
 
     func message(_ language: AppLanguage) -> String {
         let chinese = language.resolved() == .chinese
@@ -11,6 +11,8 @@ enum GlobalShortcutFailure: Error, Equatable {
         case .invalid: return chinese ? "请使用包含 Control 或 Command 的组合键。" : "Use a key combination containing Control or Command."
         case .systemReserved: return chinese ? "该组合已用于系统快捷键，请换一个组合。" : "This combination is used by a system shortcut. Choose another."
         case .menuConflict(let title): return chinese ? "该组合已用于菜单“\(title)”。" : "This combination is used by “\(title)” in the app menu."
+        case .quickSearchReserved: return chinese ? "此组合为快捷搜索保留，请为文件抽屉选择其他组合。" : "This combination is reserved for Quick Search. Choose another for File Drawer."
+        case .fileMintConflict: return chinese ? "该组合已被 FileMint 的另一个全局快捷键占用。" : "FileMint already uses this combination for another global shortcut."
         case .registration: return chinese ? "无法启用该组合，可能已被其他应用占用。" : "Could not enable this combination; another app may be using it."
         case .systemQuery, .handler: return chinese ? "无法准备快捷键，请重试。" : "Could not prepare the shortcut. Try again."
         }
@@ -96,25 +98,35 @@ enum GlobalShortcutKeyboard {
 @MainActor
 final class GlobalShortcutService {
     private struct Registration { let id: UInt32; let reference: EventHotKeyRef }
-    private let signature: OSType = 0x464D4851
+    // One dispatcher serves every FileMint action, including concurrently active
+    // controllers. A retired signature can never deliver events to a newer action.
+    private static var nextSignature: OSType = 0x464D4800
+    private static let targets = NSMapTable<NSNumber, GlobalShortcutService>.strongToWeakObjects()
+    private static var handler: EventHandlerRef?
+    private let signature: OSType
     private var sequence: UInt32 = 0
     private var registration: Registration?
-    private var handler: EventHandlerRef?
     private var armedID: UInt32?
     private(set) var binding: GlobalShortcut?
     private(set) var suspended = false
     var isRegistered: Bool { registration != nil }
+    var registeredEventID: EventHotKeyID? { registration.map { EventHotKeyID(signature: signature, id: $0.id) } }
     var onRelease: () -> Void = {}
 
     init() throws {
+        signature = Self.nextSignature
+        Self.nextSignature += 1
+        if Self.handler == nil { try Self.installDispatcher() }
+        Self.targets.setObject(self, forKey: NSNumber(value: signature))
+    }
+
+    private static func installDispatcher() throws {
         var events = [EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed)),
                       EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyReleased))]
-        let status = InstallEventHandler(GetEventDispatcherTarget(), { _, event, pointer in
-            guard Thread.isMainThread, let event, let pointer else { return OSStatus(eventNotHandledErr) }
-            return MainActor.assumeIsolated {
-                Unmanaged<GlobalShortcutService>.fromOpaque(pointer).takeUnretainedValue().receive(event)
-            }
-        }, events.count, &events, Unmanaged.passUnretained(self).toOpaque(), &handler)
+        let status = InstallEventHandler(GetEventDispatcherTarget(), { _, event, _ in
+            guard Thread.isMainThread, let event else { return OSStatus(eventNotHandledErr) }
+            return MainActor.assumeIsolated { GlobalShortcutService.dispatch(event) }
+        }, events.count, &events, nil, &handler)
         guard status == noErr else { throw GlobalShortcutFailure.handler(status) }
     }
 
@@ -149,11 +161,19 @@ final class GlobalShortcutService {
 
     func shutdown() {
         suspend()
-        if let handler { RemoveEventHandler(handler) }
-        handler = nil
+        Self.targets.removeObject(forKey: NSNumber(value: signature))
+        if Self.targets.objectEnumerator()?.allObjects.isEmpty == true, let handler = Self.handler {
+            RemoveEventHandler(handler)
+            Self.handler = nil
+        }
     }
 
     private func register(_ binding: GlobalShortcut) throws -> Registration {
+        for case let peer as GlobalShortcutService in Self.targets.objectEnumerator()?.allObjects ?? [] {
+            if peer !== self && peer.isRegistered && peer.binding == binding {
+                throw GlobalShortcutFailure.fileMintConflict
+            }
+        }
         sequence += 1
         var reference: EventHotKeyRef?
         let code = RegisterEventHotKey(binding.keyCode, binding.modifiers,
@@ -163,16 +183,18 @@ final class GlobalShortcutService {
         return .init(id: sequence, reference: reference)
     }
 
-    private func receive(_ event: EventRef) -> OSStatus {
+    private static func dispatch(_ event: EventRef) -> OSStatus {
         var identifier = EventHotKeyID()
         guard GetEventParameter(event, EventParamName(kEventParamDirectObject), EventParamType(typeEventHotKeyID),
                                 nil, MemoryLayout<EventHotKeyID>.size, nil, &identifier) == noErr,
-              identifier.signature == signature, identifier.id == registration?.id else {
+              let target = targets.object(forKey: NSNumber(value: identifier.signature)),
+              identifier.id == target.registeredEventID?.id else {
             return OSStatus(eventNotHandledErr)
         }
-        if GetEventKind(event) == UInt32(kEventHotKeyPressed) { armedID = identifier.id }
-        else if GetEventKind(event) == UInt32(kEventHotKeyReleased), armedID == identifier.id {
-            armedID = nil; onRelease()
+        if GetEventKind(event) == UInt32(kEventHotKeyPressed) { target.armedID = identifier.id }
+        else if GetEventKind(event) == UInt32(kEventHotKeyReleased), target.armedID == identifier.id {
+            target.armedID = nil
+            target.onRelease()
         }
         return noErr
     }

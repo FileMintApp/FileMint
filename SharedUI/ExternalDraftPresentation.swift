@@ -2,9 +2,10 @@ import AppKit
 import FileMintCore
 
 enum ExternalDraftSource: Equatable {
-    case shortcuts, externalLink, preview
+    case shortcuts, externalLink, preview, fileDrawer
     func title(_ language: AppLanguage) -> String {
         switch self {
+        case .fileDrawer: language.resolved() == .chinese ? "文件抽屉" : "File Drawer"
         case .shortcuts: LauncherText.shortcuts.text(language)
         case .externalLink: LauncherText.externalRequest.text(language)
         case .preview: LauncherText.previewDraft.text(language)

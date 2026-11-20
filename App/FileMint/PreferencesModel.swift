@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import FileMintCore
 import FileMintImages
 import UniformTypeIdentifiers
@@ -9,7 +10,7 @@ import SwiftUI
 final class PreferencesModel: ObservableObject {
     static let shared = PreferencesModel()
     enum Pane: String, CaseIterable, Identifiable {
-        case fileTypes, creation, fileTools, resourceTools, openWith, favoriteLocations, shortcuts, launchers, general, folders, fileAccess, about
+        case fileTypes, creation, fileTools, resourceTools, openWith, favoriteLocations, fileDrawer, shortcuts, launchers, general, folders, fileAccess, about
         var id: String { rawValue }
     }
     @Published var selectedPane: Pane = .general
@@ -24,6 +25,8 @@ final class PreferencesModel: ObservableObject {
     @Published var loginItemError: String?
     @Published var isUpdatingLoginItem = false
     @Published var isChoosingOpenWithApp = false
+    let drawerAccessChanged = PassthroughSubject<Void, Never>()
+    private var drawerGrantObserver: AnyCancellable?
     private let loginItemService = LoginItemService()
     private let store: FileMintPreferencesStore
     private let quickCreationTickets: QuickCreationTicketStore
@@ -34,6 +37,7 @@ final class PreferencesModel: ObservableObject {
     private(set) var openingGate = CreationOpeningGate(enabled: false)
     @Published private(set) var committedPreferences: FileMintPreferences = .default
     let globalShortcuts = GlobalShortcutController()
+    let drawerShortcuts = GlobalShortcutController()
     lazy var postCreationExecutor = PostCreationActionExecutor(gate: { [weak self] in self?.openingGate ?? .init(enabled: false) })
     var hasTemplateModalWork = false
     @Published var packageReview: TemplatePackageReview?
@@ -74,9 +78,27 @@ final class PreferencesModel: ObservableObject {
         let app = try await Task.detached { try OpenWithApplicationAccess.capture(url) }.value
         return .init(id: app.id, hint: .init(bundleIdentifier: app.bundleIdentifier, displayName: app.name), url: app.url, bookmark: app.bookmark)
     }
-    private func commitFeatureState() {
+    private func reserveSearchKeys(_ search: GlobalShortcutPreferences) -> Bool {
+        var keys: Set<GlobalShortcut> = [.suggested]
+        if let saved = search.combination { keys.insert(saved) }
+        return drawerShortcuts.reserve(keys)
+    }
+
+    private func commitFeatureState(recheckDrawer: Bool = false) {
+        let previous = committedPreferences
         committedPreferences = preferences
-        globalShortcuts.reloadSavedConfiguration(preferences.globalShortcut)
+        if previous.fileDrawer.defaultDirectoryPath != preferences.fileDrawer.defaultDirectoryPath ||
+            previous.fileDrawer.enabled != preferences.fileDrawer.enabled ||
+            previous.monitoredFolderBookmarks != preferences.monitoredFolderBookmarks {
+            drawerAccessChanged.send()
+        }
+        let search = preferences.globalShortcut
+        let drawer = preferences.fileDrawer.effectiveShortcut
+        let reservationChanged = reserveSearchKeys(search)
+        globalShortcuts.releaseObsoleteBinding(for: search)
+        drawerShortcuts.releaseObsoleteBinding(for: drawer)
+        globalShortcuts.reloadSavedConfiguration(search)
+        drawerShortcuts.reloadSavedConfiguration(drawer, retry: reservationChanged || recheckDrawer)
         openingGate.commit(enabled: preferences.creationOpeningEnabled)
         CustomFileSavePanelController.shared.updateFeatures(preferences)
     }
@@ -118,7 +140,11 @@ final class PreferencesModel: ObservableObject {
         let loaded = store.loadWithStatus()
         preferences = loaded.preferences
         committedPreferences = loaded.preferences
+        drawerGrantObserver = NotificationCenter.default.publisher(for: RememberedFileAccess.directoryWritesChanged)
+            .sink { [weak self] _ in self?.drawerAccessChanged.send() }
+        _ = reserveSearchKeys(loaded.preferences.globalShortcut)
         globalShortcuts.reloadSavedConfiguration(loaded.preferences.globalShortcut)
+        drawerShortcuts.reloadSavedConfiguration(loaded.preferences.fileDrawer.effectiveShortcut)
         openingGate = .init(enabled: loaded.preferences.creationOpeningEnabled)
         configureCreationPanel()
         if loaded.requiresRecovery {
@@ -204,6 +230,85 @@ final class PreferencesModel: ObservableObject {
         isUpdatingLoginItem = false
     }
 
+    @discardableResult
+    func setFileDrawer(_ value: FileDrawerPreferences) -> Bool {
+        guard value.hasValidWidthLimits, value.width.isFinite, value.hasValidHeightLimits, FileDrawerPreferences.supportedHeights.contains(value.height),
+              (0...1).contains(value.transparency) else { return false }
+        var updated = value
+        updated.width = value.effectiveWidth(availableWidth: value.maximumWidth)
+        updated.height = min(max(value.height, value.minimumHeight), value.maximumHeight)
+        guard updated != preferences.fileDrawer else { return true }
+        let previous = preferences.fileDrawer
+        preferences.fileDrawer = updated
+        guard save() else {
+            preferences.fileDrawer = previous
+            return false
+        }
+        return true
+    }
+
+    func restoreDrawerAccess(to target: URL) -> FileDrawerGrant? {
+        FileDrawerGrant.restored(to: target, preferences: committedPreferences, access: rememberedFileAccess)
+    }
+
+    func fileDrawerDefaultLocationPanel() -> NSOpenPanel {
+        let panel = NSOpenPanel()
+        let chinese = preferences.language.resolved() == .chinese
+        panel.title = chinese ? "默认抽屉激活位置" : "Default Drawer Location"
+        panel.prompt = chinese ? "选择" : "Choose"
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.canCreateDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.resolvesAliases = false
+        panel.directoryURL = committedPreferences.fileDrawer.defaultDirectoryPath.map { URL(fileURLWithPath: $0, isDirectory: true) }
+            ?? DefaultFolders.resolvedUserHomeDirectory(fileManager: .default)
+        return panel
+    }
+
+    @discardableResult
+    func setFileDrawerDefaultLocation(_ url: URL) -> Bool {
+        guard committedPreferences.fileDrawer.enabled else { return false }
+        let started = url.startAccessingSecurityScopedResource()
+        defer { if started { url.stopAccessingSecurityScopedResource() } }
+        do {
+            let directory = try FileDrawerDirectory(root: url)
+            var drawer = committedPreferences.fileDrawer
+            drawer.defaultDirectoryPath = directory.url.path
+            return setFileDrawer(drawer)
+        } catch {
+            lastError = text(.directoryAccessChangeFailed)
+            return false
+        }
+    }
+
+    private static let drawerDiskRoot = URL(fileURLWithPath: "/", isDirectory: true)
+
+    func fileDrawerDiskRootPanel() -> NSOpenPanel {
+        let panel = FolderAccess.directoryWritePanel(for: Self.drawerDiskRoot, language: preferences.language)
+        let chinese = preferences.language.resolved() == .chinese
+        panel.title = chinese ? "授权磁盘根目录" : "Authorize Disk Root"
+        panel.message = chinese
+            ? "选择磁盘根目录（/），为 FileMint 保存此目录及其子目录的读写授权。实际访问仍受 macOS 权限限制。"
+            : "Choose the disk root (/) to save read and write access to it and its descendants, subject to macOS permissions."
+        return panel
+    }
+
+    @discardableResult
+    func authorizeFileDrawerDiskRoot(_ url: URL) -> Bool {
+        guard committedPreferences.fileDrawer.enabled else { return false }
+        do {
+            try rememberedFileAccess.rememberWriteDirectory(url, expected: Self.drawerDiskRoot)
+            lastError = nil
+            return true
+        } catch FileInfoError.invalidSelection {
+            lastError = text(.moveChooseExactFolder)
+        } catch {
+            lastError = text(.directoryAccessChangeFailed)
+        }
+        return false
+    }
+
     func setShowMenuBar(_ visible: Bool) {
         guard preferences.showMenuBar != visible else { return }
         let previous = preferences
@@ -258,6 +363,7 @@ final class PreferencesModel: ObservableObject {
         if !allowingTemplateMutation && (isMutatingTemplates || templateRecoveryError != nil) && preferences.templates != committedPreferences.templates {
             lastError = workflowText(.recoveryNeeded); return false
         }
+        var reservationChanged = false
         do {
             preferences.normalizeCreationMenuPlacements()
             preferences.defaultTemplateIDs = TemplateCatalog.validDefaults(preferences.defaultTemplateIDs, in: preferences.templates)
@@ -266,14 +372,28 @@ final class PreferencesModel: ObservableObject {
                                     ifUnchangedFrom: recoveringInvalidFile ? nil : self.committedPreferences)
             }
             if acceptingUnavailableShortcut { try write() }
-            else { try globalShortcuts.commit(preferences.globalShortcut, persist: write) }
+            else {
+                reservationChanged = reserveSearchKeys(preferences.globalShortcut)
+                try globalShortcuts.commit(preferences.globalShortcut) {
+                    if !self.committedPreferences.fileDrawer.enabled && self.preferences.fileDrawer.enabled {
+                        // The menu feature remains available even if another app owns its
+                        // suggested key. Reload the saved binding and surface its actual status.
+                        try write()
+                    } else {
+                        try self.drawerShortcuts.commit(self.preferences.fileDrawer.effectiveShortcut, persist: write)
+                    }
+                }
+            }
             DistributedNotificationCenter.default().post(
                 name: Notification.Name(FileMintAppGroup.preferencesDidChangeNotification), object: nil
             )
-            commitFeatureState()
+            commitFeatureState(recheckDrawer: reservationChanged)
             lastError = nil
             return true
         } catch {
+            if reserveSearchKeys(committedPreferences.globalShortcut) || reservationChanged {
+                drawerShortcuts.reloadSavedConfiguration(committedPreferences.fileDrawer.effectiveShortcut, retry: true)
+            }
             if error as? FileMintPreferencesStoreError == .stalePreferences {
                 // Let callers finish rolling back their controls before adopting
                 // a newer snapshot written by another preferences entry point.
@@ -294,11 +414,44 @@ final class PreferencesModel: ObservableObject {
             guard let self else { return }
             searchController.toggle(settings: self, favorites: favorites ?? .shared)
         }
+        drawerShortcuts.onTrigger = { FileDrawerController.shared.toggleFromShortcut() }
         globalShortcuts.start(committedPreferences.globalShortcut)
+        drawerShortcuts.start(committedPreferences.fileDrawer.effectiveShortcut)
+    }
+
+    func beginShortcutRecording() {
+        // Let the recorder receive a key currently owned by either FileMint action.
+        globalShortcuts.beginRecording()
+        drawerShortcuts.beginRecording()
+    }
+
+    func endShortcutRecording() {
+        globalShortcuts.endRecording()
+        drawerShortcuts.endRecording()
+    }
+
+    func stopGlobalShortcuts() {
+        globalShortcuts.shutdown()
+        drawerShortcuts.shutdown()
+    }
+
+    func setDrawerShortcutEnabled(_ enabled: Bool) {
+        endShortcutRecording()
+        var next = preferences.fileDrawer
+        next.shortcut.isEnabled = enabled
+        if enabled, next.shortcut.combination == nil { next.shortcut.combination = .suggestedDrawer }
+        setFileDrawer(next)
+    }
+
+    func setDrawerShortcutCombination(_ combination: GlobalShortcut?) {
+        endShortcutRecording()
+        var next = preferences.fileDrawer
+        next.shortcut.combination = combination
+        setFileDrawer(next)
     }
 
     func setGlobalShortcutEnabled(_ enabled: Bool) {
-        globalShortcuts.endRecording()
+        endShortcutRecording()
         let previous = preferences
         preferences.globalShortcut.isEnabled = enabled
         if enabled, preferences.globalShortcut.combination == nil {
@@ -308,7 +461,7 @@ final class PreferencesModel: ObservableObject {
     }
 
     func setGlobalShortcutCombination(_ combination: GlobalShortcut?) {
-        globalShortcuts.endRecording()
+        endShortcutRecording()
         let previous = preferences
         preferences.globalShortcut.combination = combination
         if !save() { preferences = previous }

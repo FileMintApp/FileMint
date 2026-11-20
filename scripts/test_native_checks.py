@@ -70,6 +70,13 @@ class SelectionTests(unittest.TestCase):
         self.assertEqual(plan["manualChecks"], [])
         self.assertEqual(checks.SUITES["update-summary"].kind, "design-ui")
 
+    def test_drawer_uses_the_design_fixture_and_fingerprints_its_checks(self):
+        for path in ("App/FileMint/FileDrawerView.swift", "CorePackage/Sources/FileMintCore/FileDrawerPreferences.swift",
+                     "scripts/file_drawer_checks.swift"):
+            self.assertEqual(checks.plan_checks([path])["suites"], ["file-drawer"])
+        self.assertEqual(checks.SUITES["file-drawer"].kind, "design-ui")
+        self.assertIn("scripts/file_drawer_checks.swift", checks.FIXTURE_INPUTS["design-ui"])
+
     def test_shared_model_has_a_conservative_explainable_plan(self):
         path = 'App/FileMint/PreferencesModel.swift'
         plan = checks.plan_checks([path, path])

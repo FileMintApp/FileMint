@@ -346,6 +346,7 @@ enum QuickSearchSettingsCatalog {
             case .fileTools: ["rename", "checksum", "hash", "move", "file info", "重命名", "校验", "移动", "文件信息"]
             case .resourceTools: ["images", "ocr", "compress", "convert", "图片", "压缩", "转换", "文字识别"]
             case .openWith: ["open with", "terminal", "应用", "终端"]
+            case .fileDrawer: ["drawer", "preview", "文件抽屉", "预览"]
             case .favoriteLocations: ["favorites", "locations", "常用", "收藏", "分组"]
             case .about: ["about", "version", "update", "license", "关于", "版本", "更新", "许可"]
             }

@@ -8,6 +8,7 @@ public struct GlobalShortcut: Codable, Equatable, Hashable, Sendable {
     public static let option: UInt32 = 1 << 11
     public static let control: UInt32 = 1 << 12
     public static let suggested = Self(keyCode: 40, modifiers: control | option)
+    public static let suggestedDrawer = Self(keyCode: 2, modifiers: control | option)
     public let keyCode: UInt32
     public let modifiers: UInt32
 

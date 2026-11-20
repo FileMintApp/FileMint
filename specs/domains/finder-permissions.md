@@ -91,6 +91,8 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   setup and troubleshooting. File Access rows describe saved directory grants;
   Finder & Folders rows describe menu locations. Actual access depends on the
   target, the operation and macOS permissions.
+- The drawer root authorization shortcut uses this same directory grant store.
+  See [Places and folder authorization](file-drawer.md#places-and-folder-authorization).
 - For each captured item or destination, restore applicable saved grants for the
   exact target and its authorized ancestors. Resolve the operation target against
   the current Finder roots and separately verify coverage by the authorized

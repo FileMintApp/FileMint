@@ -83,6 +83,12 @@ Terminal, iTerm2 and Ghostty use their published macOS folder Services with a pr
   commands, AppleScript, directory crawling, or path/content logging.
   [Change Default App](file-tools.md#change-the-default-app) is a separate Finder command.
 
+## Drawer Open With
+
+The drawer offers Open With for a complete, nonempty file or folder selection. Its own browsing grant authorizes the selected directory. Keep the configured app order, then show the applications LaunchServices recommends for every selected URL, deduplicated by app location and bundle identity. Other Application accepts a real application bundle for this invocation. Looking up candidates does not scan Applications, save a new app or set a file association.
+
+Resolve the exact chosen app and validate the captured directory and every item again before handing the ordered URLs to macOS. Reject an app bundle replaced after listing or selection, including a replacement at the same path with the same bundle identifier. Retain the drawer grant and any app scope until dispatch completes. A single ordinary folder sent to a configured terminal uses its saved directory mode. All other choices deliver the original item URLs to the chosen app. Report invalid, replaced or inaccessible objects and respect the drawer's root boundary for links.
+
 ## Creation application registry
 
 - Template post-creation applications are selected explicitly and stored in a

@@ -35,7 +35,7 @@ An empty plan is `not-applicable`, not a successful native test.
 
 Automatic suites are `batch-rename`, `template-workflow`, `creation-opening`,
 `update-scheduling`, `open-with`, `default-application`, `file-tools-settings`, `file-info`, `resource-tools`,
-`design-ui`, `update-summary`, `hotkey-sandbox`, `quick-search`, `finder-hidden-files`, and the headless `favorite-model`. Template scenarios share one
+`design-ui`, `file-drawer`, `update-summary`, `hotkey-sandbox`, `quick-search`, `finder-hidden-files`, and the headless `favorite-model`. Template scenarios share one
 verified build in a run and each create their own runtime workspace. Design QA uses
 `--verify-automation`; ordinary interactive modes remain available.
 `default-application` reuses the signed Open With fixture to open and cancel a
@@ -48,6 +48,26 @@ the system association. For the system-confirmation boundary, run that fixture w
 and a registered, disposable `io.github.daigua.filemint.associationqa.*` type
 whose only handlers are the two test readers. Confirm the named test extension
 in the system dialog and require file and type readback to agree.
+The `file-drawer` suite runs the production drawer with the Design QA preferences,
+favorites and a temporary directory. It exercises location-specific consent, returning to
+a place or its parent, custom sidebar folders, keyboard sidebar toggling, the native
+all-locations menu and grant revocation, separate display-location and root
+authorization pickers, and the saved last-location switch. It tests reopening,
+restoration by a fresh controller and fallback when a remembered folder was replaced.
+The fixture edits the width and height settings
+through their native field editors and checks the open window, stored values, limits
+and reopened window. It also covers system material, interrupted fade, file-list layouts,
+query cancellation, sort direction, the full-width breadcrumb row, and four-arrow file
+navigation in each layout. The selection action panel fixture checks keyboard focus,
+filtering, template drafts targeting a selected child folder, cancellation, direct
+shortcuts, multi-selection and rejection of a same-name replacement. Its Open With
+page covers the app list, filtering, Other Application, cancellation and stale rows.
+The signed `open-with` suite checks delivery of file and folder URLs to a receiver.
+The drawer fixture creates a file from
+an unpinned drawer, edits a filename in place, checks collision and stale-identity
+handling, and checks quiet preview admission and cleanup. Physical display changes, observed
+animation frame rates, real protected-folder consent and full-screen Spaces require
+live acceptance.
 The focused `update-summary` suite reuses the design fixture with `--verify-updates`,
 injected release metadata and isolated preferences. It covers language switching,
 missing-summary fallback, install availability and minimum-size About/sidebar

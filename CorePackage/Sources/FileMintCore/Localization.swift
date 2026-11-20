@@ -61,6 +61,7 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case fileTools
     case fileToolsHint
     case resourceTools
+    case fileDrawer, fileDrawerHint
     case favoriteLocations
     case resourceToolsHint
     case openWithApps, openWithAppsHint, openWithAppName, addApplication, openWithEmptyTitle
@@ -316,6 +317,8 @@ public enum FileMintStrings {
         .fileTools: ("File & Folder Tools", "文件（夹）工具"),
         .fileToolsHint: ("Choose the tools you need in Finder’s context menu.", "选择需要的工具，让 Finder 右键菜单更顺手。"),
         .resourceTools: ("Resource Tools", "资源工具"),
+        .fileDrawer: ("File Drawer", "文件抽屉"),
+        .fileDrawerHint: ("Browse a folder, work with files and preview a selection at the edge of your screen.", "在屏幕边缘浏览文件夹、操作文件和预览所选项目。"),
         .favoriteLocations: ("Favorite Locations", "常用文件（夹）"),
         .resourceToolsHint: ("Convert, resize and process local images.", "转换格式、调整尺寸，处理本地图片。"),
         .openWithApps: ("Open with App", "使用 App 打开"),

@@ -31,11 +31,16 @@ private struct FileMintCommands: Commands {
             Button(QuickSearchText.menu.text(model.preferences.language)) {
                 QuickSearchPanelController.shared.toggle(settings: model)
             }.keyboardShortcut("k", modifiers: [.command, .shift])
+            if model.committedPreferences.fileDrawer.enabled {
+                Button(model.text(.fileDrawer)) { FileDrawerController.shared.toggle() }
+            }
             Button(model.text(.customNewFile)) { model.newFile() }.keyboardShortcut("n")
             Button(model.text(.newFileFromClipboard)) { model.newFileFromClipboard() }
             Button(model.text(.pasteImageFile)) { model.pasteImageFile() }
             Button(FavoriteText.searchAll.text(model.preferences.language)) {
-                FavoriteQuickPanelController.shared.show()
+                if !FileDrawerController.handleFavoriteMenuKey(NSApp.currentEvent) {
+                    FavoriteQuickPanelController.shared.show()
+                }
             }.keyboardShortcut("k")
             Button(model.text(.importSettings)) { model.importSettings() }
             Divider()
@@ -71,6 +76,9 @@ private struct FileMintMenu: View {
     var body: some View {
         Button(QuickSearchText.menu.text(model.preferences.language)) {
             QuickSearchPanelController.shared.show(settings: model)
+        }
+        if model.committedPreferences.fileDrawer.enabled {
+            Button(model.text(.fileDrawer)) { FileDrawerController.shared.toggle() }
         }
         Button(model.text(.customNewFile)) { model.newFile() }.keyboardShortcut("n")
         Button(model.text(.newFileFromClipboard)) { model.newFileFromClipboard() }

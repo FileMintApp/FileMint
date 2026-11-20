@@ -8,61 +8,95 @@ struct GlobalShortcutSettingsSection: View {
     @ObservedObject var controller: GlobalShortcutController
     let favorites: FavoriteLocationsModel
     let searchController: QuickSearchPanelController
+    var body: some View {
+        SettingsSection(title: QuickSearchText.title.text(model.preferences.language)) {
+            GlobalShortcutControls(controller: controller, destination: .quickSearch)
+            Button(QuickSearchText.menu.text(model.preferences.language)) {
+                searchController.show(settings: model, favorites: favorites)
+            }.accessibilityIdentifier("shortcut.openSearch")
+        }
+    }
+}
+
+struct GlobalShortcutControls: View {
+    enum Destination { case quickSearch, drawer }
+    @EnvironmentObject private var model: PreferencesModel
+    @ObservedObject var controller: GlobalShortcutController
+    let destination: Destination
     @State private var keyboardRevision = 0
+
+    private var isDrawer: Bool { destination == .drawer }
     private var language: AppLanguage { model.preferences.language }
+    private var saved: GlobalShortcutPreferences { isDrawer ? model.preferences.fileDrawer.shortcut : model.preferences.globalShortcut }
+    private var suggested: GlobalShortcut { isDrawer ? .suggestedDrawer : .suggested }
+    private var prefix: String { isDrawer ? "drawer.shortcut." : "shortcut." }
 
     var body: some View {
-        SettingsSection(title: text(.title)) {
-            PreferenceRow(title: text(.enable), detail: text(.enableHint)) {
-                Toggle(text(.enable), isOn: Binding(
-                    get: { model.preferences.globalShortcut.isEnabled },
-                    set: { model.setGlobalShortcutEnabled($0) }))
-                    .labelsHidden().accessibilityIdentifier("shortcut.enabled")
+        Group {
+            PreferenceRow(title: text(.enable), detail: isDrawer
+                ? (language.resolved() == .chinese ? "从其他应用呼出文件抽屉。" : "Show the drawer from another app.")
+                : text(.enableHint)) {
+                Toggle(text(.enable), isOn: Binding(get: { saved.isEnabled }, set: setEnabled))
+                    .labelsHidden().accessibilityIdentifier(prefix + "enabled")
             }
             Divider()
-            PreferenceRow(title: text(.combination), detail: text(.recordingHint)) {
+            PreferenceRow(title: text(.combination), detail: recordingHint) {
                 HStack(spacing: 8) {
                     ShortcutRecorder(title: recorderTitle, recording: controller.isRecording,
-                        begin: controller.beginRecording, cancel: controller.endRecording,
-                        record: model.setGlobalShortcutCombination)
+                        begin: model.beginShortcutRecording, cancel: model.endShortcutRecording, record: record)
                         .frame(width: 150, height: 24)
-                        .accessibilityLabel(text(.combination) + ": " + recorderTitle).accessibilityIdentifier("shortcut.recorder")
-                    Button(text(.reset)) { model.setGlobalShortcutCombination(.suggested) }
-                        .disabled(model.preferences.globalShortcut.combination == nil || model.preferences.globalShortcut.combination == .suggested)
-                        .accessibilityIdentifier("shortcut.reset")
+                        .accessibilityLabel(text(.combination) + ": " + recorderTitle)
+                        .accessibilityIdentifier(prefix + "recorder")
+                    Button(text(.reset)) { record(suggested) }
+                        .disabled(saved.combination == suggested || (!isDrawer && saved.combination == nil))
+                        .accessibilityIdentifier(prefix + "reset")
                 }
             }
             HStack(alignment: .top, spacing: 8) {
                 Text(status).font(.system(size: 11)).foregroundStyle(controller.failure == nil ? Color.secondary : .orange)
-                    .fixedSize(horizontal: false, vertical: true).accessibilityIdentifier("shortcut.status")
-                if !controller.isRecording, model.preferences.globalShortcut.effectiveCombination != nil,
-                   !controller.isRegistered {
+                    .fixedSize(horizontal: false, vertical: true).accessibilityIdentifier(prefix + "status")
+                if !controller.isRecording, saved.effectiveCombination != nil, !controller.isRegistered,
+                   !isDrawer || model.preferences.fileDrawer.enabled {
                     Button(text(.retry)) { controller.retry() }.controlSize(.small)
-                        .accessibilityIdentifier("shortcut.retry")
+                        .accessibilityIdentifier(prefix + "retry")
                 }
                 Spacer(minLength: 0)
             }
-            Button(text(.menu)) { searchController.show(settings: model, favorites: favorites) }
-                .accessibilityIdentifier("shortcut.openSearch")
         }
         .onReceive(DistributedNotificationCenter.default().publisher(
             for: Notification.Name(kTISNotifySelectedKeyboardInputSourceChanged as String))) { _ in keyboardRevision += 1 }
-        .onDisappear { controller.endRecording() }
+        .onDisappear { if controller.isRecording { model.endShortcutRecording() } }
     }
 
+    private func setEnabled(_ enabled: Bool) {
+        if isDrawer { model.setDrawerShortcutEnabled(enabled) }
+        else { model.setGlobalShortcutEnabled(enabled) }
+    }
+    private func record(_ value: GlobalShortcut?) {
+        if isDrawer { model.setDrawerShortcutCombination(value) }
+        else { model.setGlobalShortcutCombination(value) }
+    }
     private func text(_ key: QuickSearchText) -> String { key.text(language) }
+    private var recordingHint: String {
+        if !isDrawer { return text(.recordingHint) }
+        let keys = GlobalShortcutKeyboard.title(.suggestedDrawer)
+        return language.resolved() == .chinese ? "默认为 \(keys)，点击录制，Esc 取消。"
+            : "Default shortcut \(keys). Click to record. Escape cancels."
+    }
     private var recorderTitle: String {
         _ = keyboardRevision
         if controller.isRecording { return text(.recording) }
-        return model.preferences.globalShortcut.combination.map(GlobalShortcutKeyboard.title) ?? text(.defaultKey)
+        if let binding = saved.combination { return GlobalShortcutKeyboard.title(binding) }
+        return isDrawer ? GlobalShortcutKeyboard.title(suggested) + (language.resolved() == .chinese ? " · 默认" : " · Default")
+            : text(.defaultKey)
     }
     private var status: String {
-        if controller.isRecording { return text(.recordingHint) }
+        if controller.isRecording { return recordingHint }
         if let failure = controller.failure {
             return failure.message(language) + (controller.isRegistered ? " " + text(.previousActive) : "")
         }
-        if !model.preferences.globalShortcut.isEnabled { return text(.disabled) }
-        if model.preferences.globalShortcut.combination == nil { return text(.unassigned) }
+        if !saved.isEnabled || (isDrawer && !model.preferences.fileDrawer.enabled) { return text(.disabled) }
+        if saved.combination == nil { return text(.unassigned) }
         return text(controller.isRegistered ? .active : .inactive)
     }
 }

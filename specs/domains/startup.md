@@ -104,6 +104,8 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 - An explicitly requested updater relaunch must wait until creation work and
   modal editing are finished. Preserve saved startup preferences and bookmarks.
 
+The optional [File Drawer](file-drawer.md) owns its settings, main-app menu commands and configurable global shortcut. The app dispatches the drawer and Quick Search shortcuts independently.
+
 ## Quick Search and its global shortcut
 
 - General contains a Quick Search section with an independent Enable Global
@@ -133,7 +135,7 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   or sheets take priority. The panel neither creates a Dock icon nor opens settings
   until an explicit settings result is chosen. No Finder selection is inferred.
 - Quick Search is also available in the menu bar and app File menu (Command-Shift-K)
-  independently of the global switch. Existing Command-K retains Favorite Locations.
+  independently of the global switch. Command-K opens Favorite Locations outside the file drawer. The key drawer uses Command-K for its selection actions.
   Results cover the three app creation actions, enabled templates, saved favorites
   and settings destinations. Match bilingual action/settings aliases, template
   names/suffixes/aliases and saved favorite names/groups/path text. Group results by

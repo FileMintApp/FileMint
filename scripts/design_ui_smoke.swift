@@ -37,7 +37,7 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
     private func prepare() throws {
         guard let path = Bundle.main.object(forInfoDictionaryKey: "FixturePath") as? String else { throw ResourceError.failed }
         let base = URL(fileURLWithPath: path, isDirectory: true)
-        let automatic = CommandLine.arguments.contains("--verify-automation") || CommandLine.arguments.contains("--verify-updates")
+        let automatic = ["--verify-automation", "--verify-updates", "--verify-file-drawer"].contains { CommandLine.arguments.contains($0) }
         let root: URL
         if automatic {
             // Keep the normal-layout fixture's displayed destination short.
@@ -164,6 +164,20 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
         NSApp.mainMenu = bar
         NSApp.activate(ignoringOtherApps: true)
         print("READY isolated FileMint UI: \(root.path)")
+        if CommandLine.arguments.contains("--verify-file-drawer") {
+            Task { @MainActor in
+                do {
+                    try await waitForSettingsReady()
+                    try await checkFileDrawer(settings: model, favorites: favoriteModel, root: root)
+                    print("PASS file drawer: shortcut toggling, absolute path menus, verified row navigation, scoped creation and Quick Look")
+                    fflush(nil)
+                    NSApp.terminate(nil)
+                } catch {
+                    print("FAIL file drawer: \(error)"); fflush(nil); exit(1)
+                }
+            }
+            return
+        }
         if CommandLine.arguments.contains("--verify-creation-layout") {
             Task { @MainActor in
                 do {

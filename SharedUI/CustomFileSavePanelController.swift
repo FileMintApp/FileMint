@@ -14,7 +14,7 @@ final class CustomFileSavePanelController: NSObject {
     private var appliedExtension = "txt"
     private var allOptions = FileFormatCatalog.builtInOptions
 
-    private var panel: NSPanel?
+    private(set) var panel: NSPanel?
     private var contentStack: NSStackView?
     private var directoryPicker: NSOpenPanel?
     private var fileNameField: NSTextField?

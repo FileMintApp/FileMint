@@ -48,7 +48,7 @@ swiftc -swift-version 6 -parse-as-library -target "arm64-apple-macos13.0" \
   SharedUI/FileToolAppearance.swift \
   App/FileMint/FavoriteLocationsModel.swift App/FileMint/FavoriteQuickPanelController.swift \
   App/FileMint/FavoriteFeedbackController.swift \
-  App/FileMint/ClipboardTextReader.swift App/FileMint/OpenWithApplicationAccess.swift App/FileMint/OpenWithFolderAccess.swift \
+  App/FileMint/ClipboardTextReader.swift App/FileMint/OpenWithApplicationAccess.swift App/FileMint/OpenWithFolderAccess.swift App/FileMint/FileDrawerOpenWith.swift \
   App/FileMint/TerminalDirectoryLauncher.swift App/FileMint/BatchRenameText.swift App/FileMint/BatchRenameController.swift App/FileMint/BatchRenameView.swift \
   App/FileMint/BatchRenameAccess.swift App/FileMint/BatchRenameOperations.swift App/FileMint/FileOperationCoordinator.swift App/FileMint/FinderHiddenFilesService.swift \
   App/FileMint/DefaultApplication*.swift \

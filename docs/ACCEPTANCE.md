@@ -3,6 +3,18 @@
 Observations below apply to the revisions and environments stated in each entry.
 Use [HARNESS](../specs/HARNESS.md) to select present-day verification.
 
+## File drawer refinements — 2026-11-20
+
+The separated root access and location memory iteration passed 429 Swift tests, unsigned Release compilation, and signed drawer acceptance in `build/native-checks.noindex/run.pc1s5fhs/`. The fixture inspected the independent pickers and verified the settings switch, both opening modes and fallback after a folder replacement. The signed Debug host launched from Applications. The [drawer record](tasks/2026-11-20-file-drawer.md) includes the installation and backup.
+
+The Open With and dimension-settings iteration passed 429 Swift tests, unsigned Release compilation, and signed `file-drawer` and `open-with` native suites. The drawer fixture verified actual settings edits, persisted window geometry, default activation location and app picker navigation. The sandboxed receiver verified file/folder handoff and rejection of stale selections and replaced apps. Developer ID signed Debug 0.8.2 (31) was installed and launched from Applications. The [drawer task record](tasks/2026-11-20-file-drawer.md) lists the two reports, screenshot and previous bundle backup.
+
+The selection-actions iteration passed `make verify` (428 Swift tests), the unsigned Release build and the signed drawer fixture in `build/native-checks.noindex/run.4v_hx56k/`. The fixture exercised the dedicated breadcrumb row, collapsible sidebar, native all-locations menu, four-arrow file navigation, and a selection-bound action palette. The built Debug host and Finder extension matched their installed copies, and FileMint launched from Applications. The [drawer record](tasks/2026-11-20-file-drawer.md) includes captures, the backup and a transient AppKit layout diagnostic.
+
+The subsequent places and inline-editing iteration passed 428 Swift tests, the unsigned Release build and the signed native drawer fixture in `build/native-checks.noindex/run.i8puendw/report.json`. The captured sidebar showed twelve default destinations and a custom folder. The fixture exercised exact-folder picker cancellation, saved access and parent navigation, location search, window shortcuts, inline rename/collision/replacement handling and centered fixed height. Wide and compact captures are beside the report. The verified Developer ID signed Debug app and extension were installed in `/Applications/FileMint.app`, and the host launched from that path. The [drawer task record](tasks/2026-11-20-file-drawer.md) includes the previous bundle backup and remaining physical-display and protected-folder boundaries.
+
+On arm64 macOS 27.2.1, the working tree based on `53be850` passed `make verify`, the unsigned Release build and the signed drawer fixture in `build/native-checks.noindex/run.vjo62sko/report.json`. The fixture exercised unpinned draft creation and rename, root grant changes, file search, view and sort switching, and animation interruption. Physical multi-display refresh and protected-directory consent remain live acceptance boundaries. The [drawer task record](tasks/2026-11-20-file-drawer.md) records the fixture scope, earlier failure and local search measurement.
+
 ## Project review corrections — 2026-11-18
 
 On arm64 macOS 27.2.1 with Xcode 27.2, the working tree based on `729ea04`

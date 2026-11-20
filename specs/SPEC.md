@@ -9,10 +9,7 @@ optional low-frequency update checks and user-requested downloads use the networ
 
 ## Load only the context needed
 
-This index and the linked domain contracts form the current product SPEC.
-Each product rule has one owning domain. Read this index, select by behavior and
-affected paths, then open only those contracts. Links are discovery pointers,
-not instructions to recursively read everything.
+Each rule has one owning contract. Select by behavior and affected paths. Open only the contracts needed for the task.
 
 | Task / affected paths | Contract to load |
 | --- | --- |
@@ -20,6 +17,7 @@ not instructions to recursively read everything.
 | Presets/custom types, order, restoration, text/Office templates; `FileTemplate`, `DocumentTemplate*`, type editing in `ContentView` / `PreferencesModel` | [Templates](domains/templates.md) |
 | Finder menus, targets, folder scope/bookmarks, permission guidance, extension cleanup; `FinderSyncExtension/`, `SharedUI/FolderAccess`, `FileAccessPane`, `FolderScope`, `FileMenuAction` | [Finder and permissions](domains/finder-permissions.md) |
 | File info, default app, rename, hiding, moves, clipboard; `FileTools`, `DefaultApplication*`, `*FileMove*`, `BatchRename*` | [File tools](domains/file-tools.md) |
+| Edge drawer, on-demand directory browsing, drawer file operations and Quick Look; `FileDrawer*` | [File drawer](domains/file-drawer.md) |
 | Favorites, favorite search, Finder add/locate; `FavoriteLocation*` | [Favorite locations](domains/favorite-locations.md) |
 | Configured apps, opening selections and app menu placement; `OpenWith*` | [Open with App](domains/open-with.md) |
 | Image actions and private metadata removal; `ResourceTools*`, `FileMintImages` | [Resource tools](domains/resource-tools.md) |

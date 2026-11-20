@@ -325,6 +325,113 @@ final class OpenWithSmoke: NSObject, NSApplicationDelegate {
             throw SmokeFailure("Otty directory dispatch changed the folder or clipboard")
         }
         try await checkQueuedTicketIntake(root: root, first: document, second: folder)
+        try await checkDrawerOpenWith(root: root, app: app)
+    }
+
+    private func checkDrawerOpenWith(root: URL, app: OpenWithApplication) async throws {
+        let source = root.appendingPathComponent("Drawer", isDirectory: true)
+        try FileManager.default.createDirectory(at: source, withIntermediateDirectories: false)
+        let regular = source.appendingPathComponent("未知.drawer-unknown")
+        let folder = source.appendingPathComponent("A folder", isDirectory: true)
+        let text = source.appendingPathComponent("Known.txt")
+        try Data("original".utf8).write(to: regular)
+        try Data("plain text".utf8).write(to: text)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: false)
+        let link = source.appendingPathComponent("outside")
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: root)
+        let directory = try FileDrawerDirectory(root: source)
+        let rows = try directory.list()
+        guard let unknown = rows.first(where: { $0.name == regular.lastPathComponent }),
+              let subfolder = rows.first(where: { $0.name == folder.lastPathComponent }),
+              let plain = rows.first(where: { $0.name == text.lastPathComponent }),
+              let outside = rows.first(where: { $0.name == link.lastPathComponent }) else {
+            throw SmokeFailure("Missing Open With fixtures")
+        }
+        let mixed = [unknown, subfolder]
+        let saved = try await FileDrawerOpenWith.candidates(for: mixed, configured: [app])
+        guard let first = saved.first, first.url.path == app.url.path,
+              Set(saved.map(\.url)).count == saved.count else { throw SmokeFailure("Missing or duplicated configured app") }
+        let system = try await FileDrawerOpenWith.candidates(for: [plain], configured: [])
+        let supported = Set(NSWorkspace.shared.urlsForApplications(toOpen: plain.url).map { $0.resolvingSymlinksInPath().standardizedFileURL })
+        guard !system.isEmpty, system.allSatisfy({ supported.contains($0.url) }) else {
+            throw SmokeFailure("Text file has no validated LaunchServices candidates")
+        }
+        func picked(_ url: URL, stage: String) async throws -> FileDrawerOpenWith.Candidate {
+            do { return try await FileDrawerOpenWith.picked(url) }
+            catch {
+                let executable = url.appendingPathComponent("Contents/MacOS/OpenWithReceiver").path
+                let attributes = try? FileManager.default.attributesOfItem(atPath: executable)
+                let mode = attributes?[.posixPermissions] as? NSNumber
+                let recognized = try? url.resourceValues(forKeys: [.isApplicationKey]).isApplication
+                throw SmokeFailure("\(stage): \(error), app=\(recognized == true), executable=\(FileManager.default.isExecutableFile(atPath: executable)), mode=\(mode?.intValue ?? -1)")
+            }
+        }
+        let other = try await picked(app.url, stage: "Choosing the embedded receiver")
+        let receipt = source.appendingPathComponent("receipt.json")
+        for (candidate, selection) in [(first, mixed), (other, [subfolder])] {
+            try await FileDrawerOpenWith.open(candidate, directory: directory, items: selection,
+                                              currentApps: { [app] }, isCurrent: { true })
+            for _ in 0..<80 {
+                if FileManager.default.fileExists(atPath: receipt.path) { break }
+                try await Task.sleep(for: .milliseconds(125))
+            }
+            let received = try JSONDecoder().decode([URL].self, from: Data(contentsOf: receipt))
+            guard received.map(\.path) == selection.map({ $0.url.path }) else {
+                throw SmokeFailure("Drawer Open With changed the selected file/folder URLs")
+            }
+            try FileManager.default.removeItem(at: receipt)
+        }
+        do {
+            try await FileDrawerOpenWith.open(first, directory: directory, items: mixed,
+                                              currentApps: { [] }, isCurrent: { true })
+            throw SmokeFailure("Removed configured app could still open the selection")
+        } catch OpenWithError.changedConfiguration {}
+        do {
+            try await FileDrawerOpenWith.open(other, directory: directory, items: [outside],
+                                              currentApps: { [] }, isCurrent: { true })
+            throw SmokeFailure("Open With followed a link outside the drawer root")
+        } catch FileInfoError.accessDenied {}
+        do {
+            try await FileDrawerOpenWith.open(other, directory: directory, items: mixed,
+                                              currentApps: { [] }, isCurrent: { false })
+            throw SmokeFailure("Dismissed chooser opened its old selection")
+        } catch is CancellationError {}
+        let temporaryApp = root.appendingPathComponent("Chosen.app", isDirectory: true)
+        func makeIdentityFixture() throws {
+            try FileManager.default.copyItem(at: app.url, to: temporaryApp)
+            // The sandbox denies X_OK on newly copied executables in its temporary
+            // directory, even with mode 0755. This fixture varies only the bundle
+            // directory's identity and uses the signed receiver as its binary.
+            let executable = "Contents/MacOS/OpenWithReceiver"
+            let copy = temporaryApp.appendingPathComponent(executable)
+            try FileManager.default.removeItem(at: copy)
+            try FileManager.default.createSymbolicLink(at: copy, withDestinationURL: app.url.appendingPathComponent(executable))
+        }
+        try makeIdentityFixture()
+        let chosenCandidate = try await picked(temporaryApp, stage: "Choosing the temporary receiver copy")
+        let savedCopy = try OpenWithApplicationAccess.capture(temporaryApp)
+        let configuredCopyCandidates = try await FileDrawerOpenWith.candidates(for: [plain], configured: [savedCopy])
+        guard let savedCandidate = configuredCopyCandidates.first, savedCandidate.url.path == savedCopy.url.path else {
+            throw SmokeFailure("Could not present a configured temporary app")
+        }
+        try FileManager.default.moveItem(at: temporaryApp, to: root.appendingPathComponent("Old.app", isDirectory: true))
+        try makeIdentityFixture()
+        for candidate in [chosenCandidate, savedCandidate] {
+            do {
+                // A regression must fail before dispatching the temporary app.
+                try await FileDrawerOpenWith.open(candidate, directory: directory, items: mixed,
+                                                  currentApps: { [savedCopy] }, isCurrent: { false })
+                throw SmokeFailure("Chooser launched a same-path, same-bundle-ID replacement application")
+            } catch OpenWithError.unavailableApplication {}
+        }
+        try FileManager.default.moveItem(at: regular, to: source.appendingPathComponent("Retained"))
+        try Data("replacement".utf8).write(to: regular)
+        do {
+            try await FileDrawerOpenWith.open(other, directory: directory, items: mixed,
+                                              currentApps: { [] }, isCurrent: { true })
+            throw SmokeFailure("Open With dispatched a replaced file")
+        } catch FileMoveError.sourceChanged {}
+        print("PASS drawer Open With: validated system and configured candidates, explicit receiver, mixed and folder delivery, cancelled and stale selections")
     }
 
     private func checkQueuedTicketIntake(root: URL, first: URL, second: URL) async throws {

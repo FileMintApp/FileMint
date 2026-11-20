@@ -371,7 +371,46 @@ final class HostDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSS
         try require(service.isRegistered && service.binding == .primary, "saved-keycode-restores")
         try service.replace(with: nil, persist: persist)
         try verifyController()
+        try verifyTwoActionDispatch()
         FileHandle.standardOutput.write(Data("PASS hotkey sandbox: exclusive registration, independent process conflict, atomic save rollback, suspension, retry and removal\n".utf8))
+    }
+
+    private func verifyTwoActionDispatch() throws {
+        let search = try GlobalShortcutService()
+        defer { search.shutdown() }
+        let drawer = try GlobalShortcutService()
+        defer { drawer.shutdown() }
+        var searchCalls = 0, drawerCalls = 0
+        search.onRelease = { searchCalls += 1 }
+        drawer.onRelease = { drawerCalls += 1 }
+        try search.replace(with: .suggested) { _ in }
+        try drawer.replace(with: .suggestedDrawer) { _ in }
+        guard let searchID = search.registeredEventID, let drawerID = drawer.registeredEventID,
+              searchID.signature != drawerID.signature else { throw HotKeyFailure.check("missing independent hotkey IDs") }
+        func send(_ key: EventHotKeyID, _ kind: Int) throws {
+            var event: EventRef?, identifier = key
+            guard CreateEvent(nil, OSType(kEventClassKeyboard), UInt32(kind), GetCurrentEventTime(), 0, &event) == noErr,
+                  let event else { throw HotKeyFailure.check("create Carbon event") }
+            defer { ReleaseEvent(event) }
+            guard SetEventParameter(event, EventParamName(kEventParamDirectObject), EventParamType(typeEventHotKeyID),
+                                    MemoryLayout<EventHotKeyID>.size, &identifier) == noErr,
+                  SendEventToEventTarget(event, GetEventDispatcherTarget()) == noErr else {
+                throw HotKeyFailure.check("deliver Carbon event")
+            }
+        }
+        try send(searchID, kEventHotKeyPressed)
+        try send(drawerID, kEventHotKeyReleased)
+        guard searchCalls == 0 && drawerCalls == 0 else { throw HotKeyFailure.check("unarmed release fired") }
+        try send(drawerID, kEventHotKeyPressed)
+        try send(searchID, kEventHotKeyReleased)
+        try send(drawerID, kEventHotKeyReleased)
+        guard searchCalls == 1 && drawerCalls == 1 else { throw HotKeyFailure.check("cross-dispatched hotkeys") }
+        do {
+            try drawer.replace(with: .suggested) { _ in throw HotKeyFailure.check("duplicate reached persistence") }
+            throw HotKeyFailure.check("two actions accepted one key")
+        } catch GlobalShortcutFailure.fileMintConflict {}
+        guard drawer.isRegistered && drawer.binding == .suggestedDrawer else { throw HotKeyFailure.check("lost drawer key") }
+        qaEmit("check-passed", ["check": "two registered actions dispatch independently through Carbon"])
     }
 
     private func verifyController() throws {

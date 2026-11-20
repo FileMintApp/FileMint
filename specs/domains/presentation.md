@@ -8,7 +8,7 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 
 - Approved UI/UX v1 uses three explicit sidebar groups: File Creation (Templates
   & Types, Creation), Extensions (File & Folder Tools, Resource Tools, Open with App,
-  Favorite Locations, Shortcuts, Launchers), and
+  Favorite Locations, File Drawer, Shortcuts, Launchers), and
   Preferences (General, Finder & Folders, File Access, About). Arrow-key navigation follows
   that visual order. Future implemented tools join Extensions without placeholders.
 - Use restrained adaptive porcelain/graphite surfaces and a muted mint accent,

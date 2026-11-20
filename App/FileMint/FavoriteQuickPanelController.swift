@@ -152,6 +152,7 @@ struct QuickSearchInputField: NSViewRepresentable {
     // Opt in only for the command palette; the favorite picker retains its
     // compact native field and the same editing/IME delegate.
     var paletteStyle = false
+    var onAttach: ((NSSearchField) -> Void)? = nil
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -174,7 +175,10 @@ struct QuickSearchInputField: NSViewRepresentable {
             (field.cell as? NSSearchFieldCell)?.searchButtonCell = nil
             field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         }
-        if paletteStyle {
+        if let onAttach {
+            onCreate?(field)
+            field.didAttach = onAttach
+        } else if paletteStyle {
             // Hosted views can mount after the panel becomes key. Notify the
             // owner when the field actually belongs to its native window.
             field.didAttach = onCreate

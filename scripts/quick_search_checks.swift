@@ -14,7 +14,7 @@ enum QuickSearchChecks {
     }
 
     static func cleanup() {
-        model?.globalShortcuts.shutdown(); search?.close(); window?.close()
+        model?.stopGlobalShortcuts(); search?.close(); window?.close()
         model = nil; search = nil; window = nil
     }
 
@@ -103,6 +103,7 @@ enum QuickSearchChecks {
                   "enable overwrote a custom combination")
         model.setGlobalShortcutEnabled(false)
         model.setGlobalShortcutCombination(nil)
+        try checkDrawerShortcut(model, store: store)
         try await checkSearchInput()
 
         let destinations = QuickSearchSettingsCatalog.entries(language: .chinese)
@@ -188,6 +189,80 @@ enum QuickSearchChecks {
         window.endSheet(sheet); sheet.orderOut(nil)
         try check(try Data(contentsOf: example) == Data("isolated fixture".utf8), "search modified fixture content")
         cleanup()
+    }
+
+    private static func checkDrawerShortcut(_ model: PreferencesModel, store: FileMintPreferencesStore) throws {
+        let customSearch = GlobalShortcut(keyCode: 38, modifiers: GlobalShortcut.control | GlobalShortcut.option | GlobalShortcut.shift)
+        var config = model.preferences.fileDrawer
+        model.setGlobalShortcutCombination(.suggestedDrawer)
+        config.enabled = true
+        try check(model.setFileDrawer(config), "reserved default prevented enabling the drawer menu")
+        try check(store.load().fileDrawer.enabled && !model.drawerShortcuts.isRegistered &&
+                  model.drawerShortcuts.failure == .quickSearchReserved && !model.globalShortcuts.isRegistered,
+                  "a disabled search failed to reserve its saved combination")
+        model.drawerShortcuts.retry()
+        try check(!model.drawerShortcuts.isRegistered, "retry claimed a reserved key")
+        model.beginShortcutRecording()
+        model.endShortcutRecording()
+        try check(!model.drawerShortcuts.isRegistered, "ending recording claimed a reserved key")
+
+        model.setGlobalShortcutCombination(customSearch)
+        try check(model.drawerShortcuts.isRegistered, "drawer did not resume when search released its reservation")
+        for key in [GlobalShortcut.suggested, customSearch] {
+            model.setDrawerShortcutCombination(key)
+            try check(model.drawerShortcuts.failure == .quickSearchReserved && model.drawerShortcuts.isRegistered &&
+                      store.load().fileDrawer.shortcut.combination == .suggestedDrawer,
+                      "drawer edit claimed a reserved search combination")
+        }
+        model.setGlobalShortcutEnabled(true)
+        model.beginShortcutRecording()
+        try check(!model.drawerShortcuts.isRegistered && !model.globalShortcuts.isRegistered, "recorder did not pause both keys")
+        model.endShortcutRecording()
+        try check(model.drawerShortcuts.isRegistered && model.globalShortcuts.isRegistered, "recorder did not restore both keys")
+
+        guard let file = store.location else { throw Failure(message: "isolated preferences path unavailable") }
+        let saved = try Data(contentsOf: file)
+        try Data("damaged settings".utf8).write(to: file, options: .atomic)
+        model.setGlobalShortcutCombination(.suggestedDrawer)
+        try check(model.globalShortcuts.configuration.combination == customSearch && model.globalShortcuts.isRegistered &&
+                  model.drawerShortcuts.isRegistered && model.drawerShortcuts.configuration.combination == .suggestedDrawer,
+                  "failed search reassignment did not restore both previous registrations")
+        model.setDrawerShortcutEnabled(false)
+        try check(model.drawerShortcuts.isRegistered && model.preferences.fileDrawer.shortcut.isEnabled,
+                  "failed save released the drawer key")
+        try saved.write(to: file, options: .atomic)
+
+        model.setGlobalShortcutCombination(.suggestedDrawer)
+        try check(model.globalShortcuts.isRegistered && !model.drawerShortcuts.isRegistered &&
+                  model.drawerShortcuts.failure == .quickSearchReserved && store.load().globalShortcut.combination == .suggestedDrawer,
+                  "search could not claim the prior drawer key")
+        model.setDrawerShortcutCombination(customSearch)
+        try check(model.drawerShortcuts.isRegistered, "changing an inactive drawer to a free key failed")
+
+        // Import an exchange between two explicit combinations, then a backup
+        // whose drawer uses the permanent Quick Search default.
+        model.preferences.globalShortcut.combination = customSearch
+        model.preferences.fileDrawer.shortcut.combination = .suggestedDrawer
+        try check(model.save(acceptingUnavailableShortcut: true) &&
+                  model.globalShortcuts.configuration.combination == customSearch &&
+                  model.drawerShortcuts.configuration.combination == .suggestedDrawer &&
+                  model.globalShortcuts.isRegistered && model.drawerShortcuts.isRegistered,
+                  "valid imported exchange left an obsolete registration in the way")
+        model.preferences.fileDrawer.shortcut.combination = .suggested
+        try check(model.save(acceptingUnavailableShortcut: true) && model.globalShortcuts.isRegistered &&
+                  !model.drawerShortcuts.isRegistered && model.drawerShortcuts.failure == .quickSearchReserved,
+                  "imported drawer stole the permanent Quick Search default")
+
+        model.setDrawerShortcutCombination(.suggestedDrawer)
+        model.setDrawerShortcutEnabled(false)
+        try check(!model.drawerShortcuts.isRegistered && model.globalShortcuts.isRegistered &&
+                  store.load().fileDrawer.enabled, "drawer opt-out affected menu or search")
+        model.setGlobalShortcutEnabled(false)
+        model.setGlobalShortcutCombination(nil)
+        config.enabled = false
+        try check(model.setFileDrawer(config) && !model.drawerShortcuts.isRegistered, "disabled drawer retained key")
+        print("PASS drawer shortcuts: search reservations, priority, retry, rollback, import and opt-out")
+        fflush(nil)
     }
 
     private static func descendants(_ view: NSView) -> [NSView] { [view] + view.subviews.flatMap(descendants) }

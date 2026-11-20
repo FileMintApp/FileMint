@@ -53,6 +53,7 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
     public var fileTools = FileToolsPreferences()
     public var resourceTools = ResourceToolsPreferences()
     public var openWith = OpenWithPreferences()
+    public var fileDrawer = FileDrawerPreferences()
     public var favoriteLocations = FavoriteLocationsPreferences()
     public var newFileMenuPlacement: NewFileMenuPlacement = .submenu
     public var creationMenuPlacements: [String: CreationMenuPlacement] = [:]
@@ -116,6 +117,7 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         case fileTools
         case resourceTools
         case openWith
+        case fileDrawer
         case favoriteLocations
         case newFileMenuPlacement, creationMenuPlacements, templateMenuPlacements
         case menuIcons
@@ -201,6 +203,7 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         fileTools = (try? container.decode(FileToolsPreferences.self, forKey: .fileTools)) ?? FileToolsPreferences()
         resourceTools = (try? container.decode(ResourceToolsPreferences.self, forKey: .resourceTools)) ?? ResourceToolsPreferences()
         openWith = (try? container.decode(OpenWithPreferences.self, forKey: .openWith)) ?? OpenWithPreferences()
+        fileDrawer = (try? container.decode(FileDrawerPreferences.self, forKey: .fileDrawer)) ?? .init()
         favoriteLocations = (try? container.decode(FavoriteLocationsPreferences.self, forKey: .favoriteLocations)) ?? FavoriteLocationsPreferences()
         newFileMenuPlacement = (try? container.decode(NewFileMenuPlacement.self, forKey: .newFileMenuPlacement)) ?? .submenu
         let legacyPlacement: CreationMenuPlacement = newFileMenuPlacement == .main ? .main : .submenu
