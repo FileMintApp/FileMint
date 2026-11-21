@@ -2,8 +2,12 @@ import FileMintCore
 import SwiftUI
 
 struct FileDrawerSettingsPane: View {
+    var openDrawer: @MainActor () -> Void = { FileDrawerController.shared.show() }
+    var checkDiskRootAccess: @MainActor (PreferencesModel) async -> Bool = { await $0.hasSavedDrawerRootAccess() }
     @EnvironmentObject private var model: PreferencesModel
     @State private var sliderValue: Double?
+    @State private var diskRootAuthorized: Bool?
+    @State private var diskRootAccessRevision = 0
 
     private var settings: FileDrawerPreferences { model.preferences.fileDrawer }
     private func text(_ en: String, _ zh: String) -> String {
@@ -25,6 +29,9 @@ struct FileDrawerSettingsPane: View {
                     let title = text("Enable File Drawer", "启用文件抽屉")
                     PreferenceRow(title: title, detail: text("Show File Drawer in the menu bar menu and File menu.",
                                                              "在菜单栏菜单和「文件」菜单中显示文件抽屉。")) {
+                        Button(text("Open File Drawer", "打开文件抽屉"), action: openDrawer)
+                            .disabled(!settings.enabled)
+                            .accessibilityIdentifier("drawer.open")
                         Toggle(title, isOn: binding(\.enabled)).labelsHidden().accessibilityIdentifier("drawer.enabled")
                     }
                 }
@@ -86,11 +93,26 @@ struct FileDrawerSettingsPane: View {
     private var accessControls: some View {
         SettingsSection(title: text("Access Permissions", "访问权限")) {
             PreferenceRow(title: text("Full Disk Access", "完全磁盘访问"),
-                          detail: text("Authorize the disk root (/) and its folders within the limits of macOS permissions.",
-                                       "为磁盘根目录（/）及其子目录保存读写授权，实际访问受 macOS 权限限制。")) {
-                Button(text("Authorize Disk Root…", "授权根目录…"), action: authorizeDiskRoot)
-                    .accessibilityIdentifier("drawer.authorizeDiskRoot")
+                          detail: text("Read and write access to the disk root (/) and its folders is subject to macOS permissions.",
+                                       "磁盘根目录（/）及其子目录的读写访问受 macOS 权限限制。")) {
+                if diskRootAuthorized == true {
+                    Label(text("Disk Root Authorized", "根目录已授权"), systemImage: "checkmark.circle")
+                        .font(.callout).foregroundStyle(.secondary)
+                        .accessibilityIdentifier("drawer.diskRootAuthorized")
+                } else if diskRootAuthorized == false {
+                    Button(text("Authorize Disk Root…", "授权根目录…"), action: authorizeDiskRoot)
+                        .accessibilityIdentifier("drawer.authorizeDiskRoot")
+                }
             }
+        }
+        .task(id: diskRootAccessRevision) {
+            let authorized = await checkDiskRootAccess(model)
+            guard !Task.isCancelled else { return }
+            diskRootAuthorized = authorized
+        }
+        .onReceive(model.drawerAccessChanged) { _ in
+            diskRootAuthorized = nil
+            diskRootAccessRevision += 1
         }
     }
 

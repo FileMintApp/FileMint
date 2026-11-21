@@ -111,7 +111,12 @@ public struct FileDrawerPreferences: Codable, Equatable, Sendable {
             maximumWidth = defaults.maximumWidth
         }
         if let value = try? fields.decode(Double.self, forKey: .width), value.isFinite { width = value }
-        fitsDisplayWidth = (try? fields.decode(Bool.self, forKey: .fitsDisplayWidth)) ?? (width == defaults.width)
+        if let value = try? fields.decode(Bool.self, forKey: .fitsDisplayWidth) {
+            fitsDisplayWidth = value
+        } else if !fields.contains(.fitsDisplayWidth), Self.supportedWidths.contains(width), width != defaults.width {
+            // A customized width saved before the switch existed was fixed.
+            fitsDisplayWidth = false
+        }
         width = effectiveWidth(availableWidth: maximumWidth)
         fitsDisplayHeight = (try? fields.decode(Bool.self, forKey: .fitsDisplayHeight)) ?? fitsDisplayHeight
         if let value = try? fields.decode(Double.self, forKey: .height), Self.supportedHeights.contains(value) {

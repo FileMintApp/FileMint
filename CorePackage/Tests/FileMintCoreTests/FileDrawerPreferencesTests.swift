@@ -22,7 +22,7 @@ struct FileDrawerPreferencesTests {
         let disk = try JSONDecoder().decode(FileDrawerPreferences.self, from: Data(#"{"rootDirectoryPath":"/","hasOfferedRootAccess":true}"#.utf8))
         #expect(disk.defaultDirectoryPath == "/")
     }
-    @Test("new and legacy settings keep the optional drawer and automatic preview off")
+    @Test("new and legacy settings fit both axes and keep the optional drawer and automatic preview off")
     func defaultsAndMigration() throws {
         let legacy = try JSONDecoder().decode(FileMintPreferences.self, from: Data(#"{"showMenuBar":false}"#.utf8))
         #expect(!legacy.showMenuBar)
@@ -32,10 +32,23 @@ struct FileDrawerPreferencesTests {
             #expect(settings.viewMode == .list && settings.sort == .name && settings.sortAscending)
             #expect(settings.side == .right && settings.glass)
             #expect(settings.minimumWidth == 320 && settings.maximumWidth == 640 && settings.width == 520)
-            #expect(settings.fitsDisplayHeight && settings.height == 640)
+            #expect(settings.fitsDisplayWidth && settings.fitsDisplayHeight && settings.height == 640)
             #expect(settings.minimumHeight == 480 && settings.maximumHeight == 1_100)
             #expect(settings.transparency == 0.3)
         }
+    }
+
+    @Test("malformed sizing switches use adaptive defaults and retain saved dimensions")
+    func malformedSizingModes() throws {
+        let data = Data(#"{"fitsDisplayWidth":null,"width":580,"fitsDisplayHeight":"false","height":700}"#.utf8)
+        let fallback = try JSONDecoder().decode(FileDrawerPreferences.self, from: data)
+        #expect(fallback.fitsDisplayWidth && fallback.fitsDisplayHeight)
+        #expect(fallback.width == 580 && fallback.height == 700)
+
+        let fixed = Data(#"{"fitsDisplayWidth":false,"width":580,"fitsDisplayHeight":false,"height":700}"#.utf8)
+        let saved = try JSONDecoder().decode(FileDrawerPreferences.self, from: fixed)
+        #expect(!saved.fitsDisplayWidth && !saved.fitsDisplayHeight)
+        #expect(saved.width == 580 && saved.height == 700)
     }
 
     @Test("migration adds the drawer shortcut without claiming a key for a disabled drawer")

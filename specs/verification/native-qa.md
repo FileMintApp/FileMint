@@ -59,6 +59,9 @@ a place or its parent, custom sidebar folders, keyboard sidebar toggling, the na
 all-locations menu and grant revocation, separate display-location and root
 authorization pickers, and the saved last-location switch. It tests reopening,
 restoration by a fresh controller and fallback when a remembered folder was replaced.
+The settings controls exercise both adaptive defaults, opening and focusing the
+drawer, and replacing the authorization button with status until an isolated
+directory grant is revoked.
 The fixture edits the width and height settings
 through their native field editors and checks the open window, stored values, limits
 and reopened window. It also covers system material, interrupted fade, file-list layouts,

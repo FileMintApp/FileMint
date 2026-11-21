@@ -286,6 +286,14 @@ final class PreferencesModel: ObservableObject {
 
     private static let drawerDiskRoot = URL(fileURLWithPath: "/", isDirectory: true)
 
+    func hasSavedDrawerRootAccess(at root: URL = PreferencesModel.drawerDiskRoot) async -> Bool {
+        let preferences = committedPreferences
+        let access = rememberedFileAccess
+        return await Task.detached(priority: .utility) {
+            FileDrawerGrant.restoreSavedAccess(to: root, preferences: preferences, access: access) != nil
+        }.value
+    }
+
     func fileDrawerDiskRootPanel() -> NSOpenPanel {
         let panel = FolderAccess.directoryWritePanel(for: Self.drawerDiskRoot, language: preferences.language)
         let chinese = preferences.language.resolved() == .chinese

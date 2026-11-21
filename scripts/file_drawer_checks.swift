@@ -99,8 +99,8 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
     let model = controller.model
     controller.toggleFromShortcut()
     try require(!model.presented, "Disabled drawer was shown")
+    try await checkDrawerSettingsControls()
     var prefs = settings.committedPreferences.fileDrawer
-    prefs.enabled = true
     prefs.width = 1_000
     prefs.fitsDisplayWidth = false
     prefs.minimumWidth = 340
@@ -556,12 +556,15 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
     let (submitField, submitEditor) = try await startRename()
     submitEditor.insertText("occupied.txt", replacementRange: NSRange(location: 0, length: (submitEditor.string as NSString).length))
     try sendRenameCommand(#selector(NSResponder.insertNewline(_:)), field: submitField, editor: submitEditor)
-    try await wait("Collision did not preserve the inline edit") { !model.busy && model.message != nil && model.interacting }
+    try await wait("Collision did not restore the inline editor") {
+        !model.busy && model.message != nil && model.interacting && submitEditor.isEditable
+    }
     try require(submitEditor.string == "occupied.txt" && window.firstResponder === submitEditor &&
                 (try Data(contentsOf: occupied)) == occupiedBytes && (try Data(contentsOf: saved)) == Data(expectedContent.utf8),
                 "Rename collision lost the draft, the source, or the occupied file")
     let renamed = nestedEntry.url.appendingPathComponent("renamed-note.txt")
     submitEditor.insertText(renamed.lastPathComponent, replacementRange: NSRange(location: 0, length: (submitEditor.string as NSString).length))
+    try require(submitEditor.string == renamed.lastPathComponent, "Could not replace the colliding name in the editor")
     try sendRenameCommand(#selector(NSResponder.insertNewline(_:)), field: submitField, editor: submitEditor)
     try await wait("Inline rename did not refresh and select the renamed file") {
         !model.busy && !model.interacting && model.selection == [renamed] && renameField() == nil
@@ -937,6 +940,59 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
     try require(settings.setFileDrawer(prefs), "Disabling drawer failed")
     try await wait("Disabling drawer did not close and release its directory") {
         controller.panel == nil && !model.presented && model.directory == nil && model.previewURL == nil
+    }
+
+    func checkDrawerSettingsControls() async throws {
+        let owner = NSWindow(contentRect: NSRect(x: 80, y: 80, width: 700, height: 640),
+                             styleMask: [.titled, .closable], backing: .buffered, defer: false)
+        owner.isReleasedWhenClosed = false
+        let host = NSHostingView(rootView: FileDrawerSettingsPane(openDrawer: controller.show, checkDiskRootAccess: {
+            // Resolve a real saved grant inside the fixture instead of requesting disk-wide consent.
+            await $0.hasSavedDrawerRootAccess(at: folder)
+        }).environmentObject(settings))
+        host.sizingOptions = []
+        owner.contentView = host
+        owner.makeKeyAndOrderFront(nil)
+        defer {
+            controller.panel?.close()
+            owner.close()
+        }
+
+        try await wait("Open File Drawer was not disabled while the module was off") {
+            guard let button = axElement("drawer.open", in: host),
+                  button.responds(to: NSSelectorFromString("isAccessibilityEnabled")) else { return false }
+            return owner.isKeyWindow && button.value(forKey: "accessibilityEnabled") as? Bool == false
+        }
+        try await press("drawer.enabled", in: host)
+        try await wait("Enabling the drawer did not keep both adaptive sizing modes on") {
+            let drawer = settings.committedPreferences.fileDrawer
+            return drawer.enabled && drawer.fitsDisplayWidth && drawer.fitsDisplayHeight
+        }
+        try await wait("The missing grant did not show the authorization button") {
+            axElement("drawer.authorizeDiskRoot", in: host) != nil && axElement("drawer.diskRootAuthorized", in: host) == nil
+        }
+        try settings.rememberedFileAccess.rememberWriteDirectory(folder, expected: folder)
+        try await wait("A saved grant did not replace the authorization button with status") {
+            axElement("drawer.authorizeDiskRoot", in: host) == nil && axElement("drawer.diskRootAuthorized", in: host) != nil
+        }
+        try require(settings.forgetDirectoryWriteAccess(path: folder.resolvingSymlinksInPath().path, legacy: false),
+                    "Could not remove the fixture grant")
+        try await wait("Revocation did not restore the authorization button") {
+            axElement("drawer.authorizeDiskRoot", in: host) != nil && axElement("drawer.diskRootAuthorized", in: host) == nil
+        }
+        try await press("drawer.open", in: host)
+        try await wait("Open File Drawer did not show and focus the drawer") {
+            model.window?.isVisible == true && model.window?.isKeyWindow == true
+        }
+        guard let opened = controller.panel else { throw failure("Missing drawer opened from settings") }
+        model.pinned = true
+        owner.makeKeyAndOrderFront(nil)
+        try await wait("Settings could not take focus again") { owner.isKeyWindow }
+        try await press("drawer.open", in: host)
+        try await wait("Open File Drawer did not focus the existing drawer") {
+            controller.panel === opened && opened.isKeyWindow
+        }
+        print("PASS drawer settings: adaptive defaults, grant status and open or focus")
     }
 
     func turnOffLocationMemory() async throws {

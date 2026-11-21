@@ -45,6 +45,10 @@ final class FileDrawerGrant: Sendable {
 
     static func restored(to target: URL, preferences: FileMintPreferences, access: RememberedFileAccess) -> FileDrawerGrant? {
         guard preferences.fileDrawer.enabled else { return nil }
+        return restoreSavedAccess(to: target, preferences: preferences, access: access)
+    }
+
+    static func restoreSavedAccess(to target: URL, preferences: FileMintPreferences, access: RememberedFileAccess) -> FileDrawerGrant? {
         var scope = access.start(for: target, folder: true, mode: .write, roots: nil).first
         if scope == nil {
             let legacy = FolderAccess.startSavedAccess(to: target, in: preferences, requiresFinderScope: false)

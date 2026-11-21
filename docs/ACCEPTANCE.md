@@ -24,6 +24,13 @@ entry, cancel, apply and restoration after choosing a preset. See the
 The updated Developer ID signed Debug 0.8.2 (31) was installed and launched from
 Applications, and the running Finder extension mapped the replacement executable.
 
+## File drawer settings — 2026-11-21
+
+The worktree based on `d16477c` passed offline verification, unsigned Release
+compilation and the signed drawer suite on arm64 macOS 27.2.1. The fixture
+verified both adaptive defaults, grant status through save and revocation, and
+opening and refocusing from settings. See the [drawer settings record](tasks/2026-11-20-file-drawer.md#drawer-settings-controls--2026-11-21).
+
 ## File drawer refinements — 2026-11-20
 
 The separated root access and location memory iteration passed 429 Swift tests, unsigned Release compilation, and signed drawer acceptance in `build/native-checks.noindex/run.pc1s5fhs/`. The fixture inspected the independent pickers and verified the settings switch, both opening modes and fallback after a folder replacement. The signed Debug host launched from Applications. The [drawer record](tasks/2026-11-20-file-drawer.md) includes the installation and backup.

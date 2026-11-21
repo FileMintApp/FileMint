@@ -10,6 +10,24 @@ Acceptance follows the app, Core and native rows of the [Harness](../../specs/HA
 
 ## Drawer refinements
 
+### Drawer settings controls — 2026-11-21
+
+Settings now shows the saved disk-root grant status and offers authorization when
+the grant is missing or unusable. Opening from settings focuses an existing
+drawer. Both sizing switches default on, with saved fixed sizes preserved.
+
+Tested the worktree based on `d16477c` on arm64 macOS 27.2.1 with Xcode 27.2.
+
+| Check | Status | Observed result |
+| --- | --- | --- |
+| `make verify` | passed | 437 Core and 25 image Swift tests passed, plus the offline Harness checks. Local log `build/file-drawer-settings.63oNb6/verify.log`. |
+| `CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO make build` | passed | Both Release executables were present. Local log `build/file-drawer-settings.63oNb6/build.log`. |
+| `make verify-native-affected NATIVE_QA_SUITES=file-drawer` | failed on first run | The settings checks passed. The inline rename fixture timed out after retrying a colliding name. Local report `build/native-checks.noindex/run.ff89298x/report.json`. |
+| `make verify-native-affected NATIVE_QA_SUITES=file-drawer` | passed on rerun | The fixture waited for the editor to become editable after a collision. The complete suite passed, including the grant status before saving, after saving and after revocation, and opening and refocusing the drawer. Local report `build/native-checks.noindex/run.sv67knkb/report.json`. |
+
+The grant check used a temporary directory in the signed fixture. Real disk-root
+consent remains a live acceptance boundary.
+
 ### Separate root authorization and location memory
 
 The Full Disk Access row uses the native directory picker to save a root grant. The default location picker saves the display path. The Remember Last Location switch defaults on and restores the most recent authorized folder ahead of the selected default. The local position record carries only folder identities and a favorite reference, when applicable. Turning memory off clears that record.
