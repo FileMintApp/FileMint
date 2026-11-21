@@ -526,7 +526,7 @@ private struct TemplateQARoot:View {
                 Button("Finish QA") { NSApp.terminate(nil) }
             }
             if types { TypesPane(selectionID: "word-document") } else { CreationSettingsPane() }
-        }.padding(24).background(FileMintStyle.background).tint(FileMintStyle.accent)
+        }.padding(24).background(FileMintStyle.background).fileMintTheme()
     }
 }
 #endif

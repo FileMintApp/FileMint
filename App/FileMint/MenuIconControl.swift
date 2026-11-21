@@ -103,6 +103,7 @@ struct MenuIconControl: View {
 }
 
 private struct MenuIconEditor: View {
+    @Environment(\.fileMintPalette) private var palette
     @Binding var customization: MenuIconCustomization?
     let defaultSymbol: String
     let defaultColors: (NSColor, NSColor)
@@ -178,7 +179,7 @@ private struct MenuIconEditor: View {
                     ForEach(visibleSymbols, id: \.self) { name in
                         Button { symbolName = name } label: {
                             Image(systemName: name).font(.system(size: 17)).frame(width: 32, height: 32)
-                                .background(symbolName == name ? FileMintStyle.selection : Color.clear,
+                                .background(symbolName == name ? palette.selection : Color.clear,
                                             in: RoundedRectangle(cornerRadius: 5))
                         }
                         .buttonStyle(.plain).help(name).accessibilityLabel(name)

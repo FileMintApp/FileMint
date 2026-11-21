@@ -243,15 +243,16 @@ struct TypesPane: View {
     }
 }
 private struct TemplateRowSurface: ViewModifier {
+    @Environment(\.fileMintPalette) private var palette
     let isSelected: Bool
     @State private var isHovered = false
 
     func body(content: Content) -> some View {
         content
-            .background(isSelected ? FileMintStyle.selection : isHovered ? FileMintStyle.soft : Color.clear,
+            .background(isSelected ? palette.selection : isHovered ? FileMintStyle.soft : Color.clear,
                 in: RoundedRectangle(cornerRadius: 8))
             .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(
-                isSelected ? FileMintStyle.accent.opacity(0.35) : Color.clear, lineWidth: 0.8))
+                isSelected ? palette.accent.opacity(0.35) : Color.clear, lineWidth: 0.8))
             .onHover { isHovered = $0 }
     }
 }
@@ -384,7 +385,7 @@ private struct TypeEditor: View {
                 Button(model.text(.save)) { Task { await save() } }.keyboardShortcut(.defaultAction).buttonStyle(MintButtonStyle(primary: true))
                     .disabled(!draft.action.isValid)
             }
-        }.disabled(isSaving).padding(26).frame(width: model.preferences.templatePreviewEnabled && !draft.isDocument ? 680 : 470).background(FileMintStyle.background).tint(FileMintStyle.accent)
+        }.disabled(isSaving).padding(26).frame(width: model.preferences.templatePreviewEnabled && !draft.isDocument ? 680 : 470).background(FileMintStyle.background)
              .textFieldStyle(.roundedBorder).onAppear { nameFocused = true; model.hasTemplateModalWork = true }
             .onDisappear { model.hasTemplateModalWork = false }
     }

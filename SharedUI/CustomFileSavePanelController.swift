@@ -143,12 +143,20 @@ final class CustomFileSavePanelController: NSObject {
         revealAfterCreation = preferences.revealAfterCreation
         creationApplications = preferences.creationApplications
         guard panel != nil else { return }
+        applyAccentColor(preferences)
         if imageData == nil { updateContentField() }
         updateActionControls()
         if let focused = panel?.firstResponder as? NSView, focused.isHiddenOrHasHiddenAncestor {
             panel?.makeFirstResponder(fileNameField)
         }
     }
+
+    private func applyAccentColor(_ preferences: FileMintPreferences) {
+        let accent = FileMintPalette.resolve(preferences.accentColor, customRGB: preferences.customAccentRGB).accentNS
+        createButton?.bezelColor = accent
+        contentTextView?.insertionPointColor = accent
+    }
+
     private func actionText(_ key: TemplateWorkflowText) -> String { key.text(language) }
     private var effectiveAction: TemplateCreationAction {
         draft.actionSelection.resolve(template: !usesRequestFallback ? selectedTemplate : nil,
@@ -308,6 +316,7 @@ final class CustomFileSavePanelController: NSObject {
 
         let creationPanel = makePanel()
         panel = creationPanel
+        applyAccentColor(preferences)
         refreshDestinationMenu()
         refreshExternalNotice()
         bringPanelForward(selectFileName: true)
@@ -563,7 +572,6 @@ final class CustomFileSavePanelController: NSObject {
         )
         self.createButton = createButton
         createButton.bezelStyle = .rounded
-        createButton.bezelColor = FileMintStyle.accentNS
         createButton.controlSize = .large
         createButton.keyEquivalent = "\r"
         let buttonStack = NSStackView(views: [cancelButton, createButton])

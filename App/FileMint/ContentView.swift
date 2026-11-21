@@ -3,6 +3,7 @@ import FileMintCore
 import SwiftUI
 
 struct ContentView: View {
+    @Environment(\.fileMintPalette) private var palette
     var launchResourceTool: (ResourceTool) -> Void = { FileOperationCoordinator.shared.chooseImages(for: $0) }
     var favoriteLocations: FavoriteLocationsModel = .shared
     var quickSearch: QuickSearchPanelController = .shared
@@ -42,7 +43,6 @@ struct ContentView: View {
                 }
             }.background(FileMintStyle.background)
         }
-        .tint(FileMintStyle.accent)
         .environment(\.finderMenuIconStyle, model.preferences.finderMenuIconStyle)
         .buttonStyle(MintButtonStyle())
         .ignoresSafeArea(.container, edges: .top)
@@ -129,7 +129,7 @@ struct ContentView: View {
                                     .lineLimit(2).multilineTextAlignment(.leading)
                             }
                         }
-                    }.buttonStyle(.plain).foregroundStyle(FileMintStyle.accent)
+                    }.buttonStyle(.plain).foregroundStyle(palette.accent)
                         .accessibilityIdentifier("update.openSummary")
                         .accessibilityLabel("\(model.text(.availableVersion)) \(update.version.description). \(update.releaseNotes?.summary(for: model.preferences.language)?.headline ?? "")")
                 }
@@ -161,7 +161,7 @@ struct ContentView: View {
                 .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(FileMintStyle.line, lineWidth: 0.7))
                 Button { model.selectedPane = .folders } label: {
                     HStack(spacing: 6) {
-                        Circle().fill(model.extensionEnabled ? FileMintStyle.accent : Color.secondary).frame(width: 5, height: 5)
+                        Circle().fill(model.extensionEnabled ? palette.accent : Color.secondary).frame(width: 5, height: 5)
                         Text((model.extensionEnabled ? InterfaceText.enabledFinder : .disabledFinder).text(model.preferences.language))
                             .font(.system(size: 10)).foregroundStyle(.secondary)
                     }
@@ -198,32 +198,32 @@ private struct SidebarRowFrames: PreferenceKey {
 }
 
 private struct SettingsSidebarButton: View {
+    @Environment(\.fileMintPalette) private var palette
     let title: String
     let symbol: String
     let isSelected: Bool
     let isFocused: Bool
     let action: () -> Void
     @State private var isHovered = false
-    private var mint: Color { FileMintStyle.accent }
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: 10) {
                 Image(systemName: symbol).font(.system(size: 16, weight: .medium))
                     .frame(width: 20)
-                    .foregroundStyle(isSelected ? mint : Color.secondary)
+                    .foregroundStyle(isSelected ? palette.accent : Color.secondary)
                 Text(title).font(.system(size: 12, weight: isSelected ? .medium : .regular))
-                    .foregroundStyle(isSelected ? FileMintStyle.strong : Color.secondary)
+                    .foregroundStyle(isSelected ? palette.strong : Color.secondary)
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 11).frame(height: 36)
             .background {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(isSelected ? FileMintStyle.selection : isHovered ? FileMintStyle.soft : Color.clear)
+                    .fill(isSelected ? palette.selection : isHovered ? FileMintStyle.soft : Color.clear)
             }
             .overlay {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .strokeBorder(mint.opacity(isFocused ? 0.55 : isSelected ? 0.20 : 0),
+                    .strokeBorder(palette.accent.opacity(isFocused ? 0.55 : isSelected ? 0.20 : 0),
                                   lineWidth: isFocused ? 1 : 0.5)
             }
             .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))

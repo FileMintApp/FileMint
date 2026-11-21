@@ -11,10 +11,20 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   Favorite Locations, File Drawer, Shortcuts, Launchers), and
   Preferences (General, Finder & Folders, File Access, About). Arrow-key navigation follows
   that visual order. Future implemented tools join Extensions without placeholders.
-- Use restrained adaptive porcelain/graphite surfaces and a muted mint accent,
+- Use restrained adaptive porcelain/graphite surfaces and a shared app accent,
   shared row/section/button spacing, a quiet breadcrumb and a fixed New File action.
   Status reflects real extension/login/update state; no sample metrics or claimed
   permissions from the design prototype may reach the product.
+- Offer Mint (default), Ocean Blue, Soft Purple, Amber, Teal, Indigo, Moss,
+  Coral, Rose and Slate, each with light and dark variants. Keep the established
+  Mint, Ocean Blue, Soft Purple and Amber palettes. Generate readable light and
+  dark control, foreground and selection colors from a user's chosen sRGB hue,
+  adjusting tone for contrast and retaining the original swatch in the editor.
+  The accent drives primary buttons, tinted controls, selected
+  rows, focus treatments and decorative highlights across FileMint settings,
+  sheets, Quick Search, favorites, the file drawer, creation and tool panels.
+  Preserve semantic status colors, existing Finder menu icon choices, native
+  system dialogs and the application, menu-bar and toolbar glyphs.
 - Creation, File & Folder Tools, Resource Tools, Open with App and Favorite
   Locations put a Finder Menu group first, using shared settings rows and trailing
   controls while preserving each module's switch semantics. Resource Tools shows
@@ -36,7 +46,7 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   the remaining surfaces are inexpensive adaptive colors.
 - Quick Search uses a quiet command-palette layout: a large borderless native
   search field, a compact category strip, grouped results and a fixed keyboard
-  action footer. A restrained mint search mark, tinted symbol tiles and a fine
+  action footer. An accented search mark, tinted symbol tiles and a fine
   selected-row border provide FileMint identity on porcelain/graphite surfaces.
   Hide redundant title-bar controls while retaining a named, movable, resizable
   native panel and a visible accessible Close button. Start at 680 × 500 points,
@@ -55,8 +65,13 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   by default; English and Chinese can be selected explicitly.
 - General owns appearance, language, startup/menu bar, Quick Search's global
   shortcut switch/recorder and automatic-check preferences.
-  Its Appearance group contains Theme (Follow System, Light, Dark), interface
-  language and Finder Menu Icons (Colored, System Monochrome). Settings pickers
+  Its Appearance group contains Appearance Mode (Follow System, Light, Dark),
+  Accent Color with a labeled native picker and current swatch, interface language
+  and Finder Menu Icons (Colored, System Monochrome). Choose Color opens an editor
+  with the macOS color picker and a six-digit sRGB hex field. Both edit the same
+  opaque draft. The Apply button previews the adjusted primary color and commits
+  a valid draft. Cancel discards it. The picker lists Custom once a color has been
+  saved. Settings pickers
   use native small menu controls with adaptive primary
   text and a shared trailing edge aligned with switches; fixed control columns
   must not center a narrower visible control. Preference labels, supporting text,
@@ -76,9 +91,9 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   Sidebar labels, focus/selection and controls remain readable
   in English/Chinese and system light/dark appearances. Native keyboard and
   accessibility labels must remain available; icons supplement text, not replace it.
-- Sidebar navigation uses a continuous background and a subdued mint selection
+- Sidebar navigation uses a continuous background and a subdued accent selection
   with a stronger label/icon, rather than the system List's bright selection fill.
-  The selected row has a lightly visible mint surface in addition to its fine
+  The selected row has a lightly tinted surface in addition to its fine
   outline, so the active page remains clear without becoming a solid highlight.
   Hover and keyboard focus remain distinct from the selected page; arrow keys
   move between page buttons and the current page is exposed to accessibility.
@@ -86,9 +101,9 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   the first Finder Menu heading, using native small switches and softly bordered
   grouped rows for the tools.
   Align menu-position pickers on the trailing side; keep descriptions and secondary
-  options next to their tool. Use compact spacing, adaptive surfaces and mint
-  accents. Menu-position picker values use the adaptive system control text color,
-  reserving mint for enabled accents and selected controls. When the module is off
+  options next to their tool. Use compact spacing and adaptive surfaces. Menu-position
+  picker values use the adaptive system control text color, reserving the app accent
+  for enabled switches and selected controls. When the module is off
   the entire child area stays visible, grayscale
   and noninteractive. An individual disabled tool retains its available checkbox,
   with a muted icon and disabled secondary controls. Preserve readable contrast,
@@ -171,7 +186,7 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
 
 - File Info uses one resizable native window, initially 600 × 560 pt with a
   520 × 480 pt minimum (bounded by screen), porcelain/graphite system surfaces
-  and mint accent. A scrollable single column contains icon/name, metadata,
+  and app accent. A scrollable single column contains icon/name, metadata,
   algorithm picker with a persistent label and explanation, selectable monospaced
   results, and collapsed comparison. Bottom actions stay reachable. Long paths
   can be expanded, selected and explicitly copied; SHA-512 wraps at readable size.
@@ -198,7 +213,7 @@ owns the rules, supported storage, counts, explicit actions and recovery behavio
   readable full names through accessible labels/details; an ellipsis is not the
   only way to inspect a proposed target. Show metadata preparation and rule errors
   plainly without technical backend details in the normal user flow.
-- The rename workspace uses the shared porcelain/graphite surfaces and mint
+- The rename workspace uses the shared porcelain/graphite surfaces and app
   accent. A quiet header identifies the operation and selection count; the
   inspector groups the mode switch, ordered rule cards and adjacent Add Rule
   action. With no rules, offer clearly labeled starting actions for replacing

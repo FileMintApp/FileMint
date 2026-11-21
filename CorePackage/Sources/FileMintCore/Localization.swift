@@ -38,6 +38,9 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case documentTooLarge, documentInvalid, documentUnavailable, documentImportFailed, documentDraftEdited
     case followSystem
     case appearance, theme, lightAppearance, darkAppearance
+    case accentColor, mintAccent, blueAccent, purpleAccent, amberAccent
+    case tealAccent, indigoAccent, mossAccent, coralAccent, roseAccent, slateAccent
+    case customAccent, chooseAccentColor, accentHexCode, applyAccentColor
     case finderMenuIconStyle, coloredMenuIcons, systemMonochromeMenuIcons, finderMenuIconStyleHint
     case launchAtLogin
     case showMenuBar
@@ -279,9 +282,24 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
 public enum FileMintStrings {
     private static let focused: [FileMintTextKey: (String, String)] = [
         .appearance: ("Appearance", "外观"),
-        .theme: ("Theme", "主题"),
+        .theme: ("Appearance Mode", "外观模式"),
         .lightAppearance: ("Light", "浅色"),
         .darkAppearance: ("Dark", "深色"),
+        .accentColor: ("Accent Color", "主题色"),
+        .mintAccent: ("Mint", "薄荷绿"),
+        .blueAccent: ("Ocean Blue", "海蓝"),
+        .purpleAccent: ("Soft Purple", "柔紫"),
+        .amberAccent: ("Amber", "琥珀"),
+        .tealAccent: ("Teal", "青绿"),
+        .indigoAccent: ("Indigo", "靛蓝"),
+        .mossAccent: ("Moss", "苔绿"),
+        .coralAccent: ("Coral", "珊瑚"),
+        .roseAccent: ("Rose", "玫瑰"),
+        .slateAccent: ("Slate", "石板灰"),
+        .customAccent: ("Custom", "自定义"),
+        .chooseAccentColor: ("Choose Color…", "自定义颜色…"),
+        .accentHexCode: ("Hex color", "十六进制颜色"),
+        .applyAccentColor: ("Apply", "应用"),
         .finderMenuIconStyle: ("Finder menu icons", "Finder 菜单图标"),
         .coloredMenuIcons: ("Colored", "彩色"),
         .systemMonochromeMenuIcons: ("System Monochrome", "系统单色"),

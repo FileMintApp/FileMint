@@ -63,7 +63,7 @@ Record actual results in ACCEPTANCE.md.
   and the card disappears. Disable it again and confirm the card returns.
 - Add `.toml` with starter content; verify it appears in the selector and Finder.
 - Edit, disable, reorder and remove that custom type. Select a built-in template:
-  its selection should use the muted mint surface and its Edit and Remove actions
+  its selection should use the muted accent surface and its Edit and Remove actions
   should be available. Edit its name/content, relaunch and verify they persist.
   Remove it, relaunch and verify it stays absent from settings and creation.
 - Restore built-ins after confirmation; verify removed presets return with their
@@ -74,13 +74,21 @@ Record actual results in ACCEPTANCE.md.
   menu locations and the selected folders' contents stay independent. Add and
   remove a Finder menu location and verify the saved grants stay independent.
 - Switch Follow System/English/Chinese; verify settings, Finder menus and panel labels agree.
-- In General, Theme and Interface language pickers share the switches' trailing
-  edge in both languages. Check the same alignment in Creation and tool settings.
-- Switch Theme between Follow System, Light and Dark. Verify the sidebar, native
+- In General, Appearance Mode, Accent Color and Interface Language share the
+  switches' trailing edge in both languages. Check the same alignment in Creation
+  and tool settings.
+- Switch Appearance Mode between Follow System, Light and Dark. Verify the sidebar, native
   controls, title bar, open creation/resource panels and sheets update immediately.
   Relaunch and import settings to check persistence. Return to Follow System and
   change the system appearance; FileMint follows without rewriting the saved choice.
   Finder and the system appearance remain independently controlled by macOS.
+- Select another Accent Color with an open creation draft. Verify that the swatch,
+  app-owned selections and primary action update, and that the draft remains editable.
+  Switch appearance modes and relaunch to verify that the selected color persists.
+- Open Choose Color, edit the color with the picker or the hex field, then cancel
+  and verify the active preset stays selected. Reopen, apply a custom color and
+  inspect its global effect in light and dark. Switch to a preset, then select
+  Custom and verify that Choose Color shows the same original RGB value.
 - Toggle Show in menu bar off/on, relaunch, and verify the choice survives.
 - Install in Applications; verify default login registration and the actual
   ServiceManagement status. Disable/re-enable through both app and macOS

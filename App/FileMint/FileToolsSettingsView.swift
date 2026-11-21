@@ -45,7 +45,7 @@ struct FileToolsSettingsView: View {
                         .saturation(preferences.isEnabled ? 1 : 0)
                         .opacity(preferences.isEnabled ? 1 : 0.5)
                 }
-            }.toggleStyle(SmallSettingsSwitchStyle()).tint(FileMintStyle.accent).padding(1)
+            }.toggleStyle(SmallSettingsSwitchStyle()).padding(1)
         }
     }
 

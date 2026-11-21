@@ -22,7 +22,7 @@ final class FavoriteQuickPanelController: NSObject, NSWindowDelegate {
         panel.isReleasedWhenClosed = false
         panel.isRestorable = false
         panel.delegate = self
-        panel.contentView = NSHostingView(rootView: FavoriteQuickView(favorites: favorites, settings: settings))
+        panel.contentView = NSHostingView(rootView: FavoriteQuickView(favorites: favorites, settings: settings).fileMintTheme())
         panel.center()
         self.panel = panel
         NSApp.activate(ignoringOtherApps: true)
@@ -34,6 +34,7 @@ final class FavoriteQuickPanelController: NSObject, NSWindowDelegate {
 }
 
 private struct FavoriteQuickView: View {
+    @Environment(\.fileMintPalette) private var palette
     @ObservedObject var favorites: FavoriteLocationsModel
     @ObservedObject var settings: PreferencesModel
     @State private var query = ""
@@ -51,7 +52,7 @@ private struct FavoriteQuickView: View {
         let visibleItems = items
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Image(systemName: "star").foregroundStyle(FileMintStyle.accent)
+                Image(systemName: "star").foregroundStyle(palette.accent)
                 Text(FavoriteText.title.text(language)).font(.headline)
                 Spacer()
                 Button { FavoriteQuickPanelController.shared.close() } label: {
@@ -77,7 +78,7 @@ private struct FavoriteQuickView: View {
                             Button { locate(item.id) } label: {
                                 HStack(spacing: 11) {
                                     Image(systemName: item.kind == .folder ? "folder" : "doc")
-                                        .frame(width: 20).foregroundStyle(FileMintStyle.accent)
+                                        .frame(width: 20).foregroundStyle(palette.accent)
                                     VStack(alignment: .leading, spacing: 3) {
                                         Text(item.name).font(.system(size: 12, weight: .medium))
                                             .lineLimit(1).truncationMode(.middle)
@@ -89,10 +90,10 @@ private struct FavoriteQuickView: View {
                                         Label(FavoriteText.unavailable.text(language), systemImage: "exclamationmark.circle")
                                             .font(.caption).foregroundStyle(.orange)
                                     }
-                                    if item.isPinned { Image(systemName: "star.fill").font(.caption).foregroundStyle(FileMintStyle.accent) }
+                                    if item.isPinned { Image(systemName: "star.fill").font(.caption).foregroundStyle(palette.accent) }
                                 }.frame(maxWidth: .infinity, alignment: .leading)
                                     .padding(.horizontal, 11).padding(.vertical, 8)
-                                    .background(index == selectedIndex ? FileMintStyle.selection : Color.clear,
+                                    .background(index == selectedIndex ? palette.selection : Color.clear,
                                                 in: RoundedRectangle(cornerRadius: 7))
                             // Position changes during search; only the catalog
                             // identity can safely key both row reuse and scrolling.

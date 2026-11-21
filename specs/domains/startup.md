@@ -33,6 +33,15 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   across relaunch and settings import, apply immediately to all app-owned windows
   and sheets, and do not change macOS or Finder's appearance. Follow System removes
   the app override so subsequent system appearance changes remain live.
+- General saves a separate app accent color in the existing preferences document.
+  New installs and missing, malformed or unknown selections use Mint. Apply a
+  custom color by saving its opaque 24-bit sRGB value and the active selection in
+  one update. Switching to a preset retains the last valid custom color for reuse.
+  A custom selection with a missing or invalid color falls back to Mint. An invalid
+  custom value leaves a valid preset and unrelated preferences intact. Cancel and
+  failed saves preserve the active accent and remembered color. The committed
+  choice survives relaunch and settings import, updates open and future FileMint
+  windows and panels immediately, and preserves the appearance mode.
 
 - Settings has one resizable sidebar window. Switching pages preserves the
   in-session page selection without saving navigation into user preferences.

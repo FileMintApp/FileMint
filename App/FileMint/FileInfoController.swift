@@ -207,7 +207,7 @@ final class FileInfoController: NSObject, ObservableObject, NSWindowDelegate {
             panel.identifier = NSUserInterfaceItemIdentifier("fileInfoPanel")
             panel.onClose = { [weak self] in self?.requestClose() }
             panel.onCalculate = { [weak self] in self?.calculate() }
-            panel.contentView = NSHostingView(rootView: FileInfoView(model: self))
+            panel.contentView = NSHostingView(rootView: FileInfoView(model: self).fileMintTheme())
             self.panel = panel; panel.center()
             if let visible = panel.screen?.visibleFrame, !visible.contains(panel.frame) {
                 panel.minSize = NSSize(width: min(panel.minSize.width, visible.width), height: min(panel.minSize.height, visible.height))

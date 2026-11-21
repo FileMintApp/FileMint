@@ -3,6 +3,7 @@ import FileMintCore
 import SwiftUI
 
 struct BatchRenameView: View {
+    @Environment(\.fileMintPalette) private var palette
     @ObservedObject var model: BatchRenameController
     @FocusState private var focusedField: RuleField?
 
@@ -25,7 +26,6 @@ struct BatchRenameView: View {
             footer
         }
         .background(FileMintStyle.background)
-        .tint(FileMintStyle.accent)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onExitCommand { model.requestClose() }
     }
@@ -34,9 +34,9 @@ struct BatchRenameView: View {
         HStack(spacing: 14) {
             Image(systemName: model.isUndo ? "arrow.uturn.backward" : "pencil.line")
                 .font(.system(size: 21, weight: .medium))
-                .foregroundStyle(FileMintStyle.accent)
+                .foregroundStyle(palette.accent)
                 .frame(width: 44, height: 44)
-                .background(FileMintStyle.selection, in: RoundedRectangle(cornerRadius: 12))
+                .background(palette.selection, in: RoundedRectangle(cornerRadius: 12))
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 5) {
                 Text(model.text(model.isUndo ? .undoLast : .title))
@@ -122,7 +122,7 @@ struct BatchRenameView: View {
     private func starter(_ kind: BatchRenameRuleDraft.Kind, symbol: String, hint: BatchRenameText) -> some View {
         Button { addRule(kind) } label: {
             HStack(spacing: 12) {
-                Image(systemName: symbol).font(.system(size: 17)).foregroundStyle(FileMintStyle.accent)
+                Image(systemName: symbol).font(.system(size: 17)).foregroundStyle(palette.accent)
                     .frame(width: 24).accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 5) {
                     Text(model.text(kind.label)).font(.system(size: 13, weight: .medium))
@@ -179,9 +179,9 @@ struct BatchRenameView: View {
             HStack(spacing: 9) {
                 Text(String(format: "%02d", index + 1))
                     .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                    .foregroundStyle(FileMintStyle.accent)
+                    .foregroundStyle(palette.accent)
                     .frame(width: 25, height: 25)
-                    .background(FileMintStyle.selection, in: RoundedRectangle(cornerRadius: 6))
+                    .background(palette.selection, in: RoundedRectangle(cornerRadius: 6))
                 Text(model.text(rule.kind.label)).font(.system(size: 13, weight: .semibold))
                 Spacer(minLength: 0)
                 Menu {
@@ -342,7 +342,7 @@ struct BatchRenameView: View {
                 Label(model.isChecking ? model.text(.checking) : row.state,
                       systemImage: model.isChecking ? "clock" : row.isError ? "exclamationmark.triangle" : row.changesName ? "checkmark.circle" : "minus.circle")
                     .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(model.isChecking ? Color.secondary : row.isError ? Color.red : row.changesName ? FileMintStyle.accent : Color.secondary)
+                    .foregroundStyle(model.isChecking ? Color.secondary : row.isError ? Color.red : row.changesName ? palette.accent : Color.secondary)
                     .help(row.issue ?? row.state)
                     .accessibilityLabel([model.isChecking ? model.text(.checking) : row.state, row.issue].compactMap { $0 }.joined(separator: ". "))
             }.width(min: 100, ideal: 125)
@@ -457,7 +457,7 @@ struct BatchRenameView: View {
         model.hasRowErrors || model.isRecovery || model.canRestore || model.canExport || model.requiresFinalization
             || (!model.isEditing && !model.isRunning && model.result == nil && model.message != nil)
     }
-    private var statusColor: Color { needsAttention ? .orange : model.canSubmit || model.result != nil ? FileMintStyle.accent : .secondary }
+    private var statusColor: Color { needsAttention ? .orange : model.canSubmit || model.result != nil ? palette.accent : .secondary }
     private var statusSymbol: String {
         if needsAttention { return "exclamationmark.triangle" }
         if model.canSubmit || model.result != nil { return "checkmark.circle" }
@@ -522,6 +522,7 @@ struct BatchRenameView: View {
 /// A plain NSTextView rejects oversized edits before changing the draft, and
 /// disables smart substitutions so name-list bytes retain their stated meaning.
 private struct BatchRenameListEditor: NSViewRepresentable {
+    @Environment(\.fileMintPalette) private var palette
     @Binding var text: String
     let label: String
     let rejected: () -> Void
@@ -541,7 +542,6 @@ private struct BatchRenameListEditor: NSViewRepresentable {
         editor.font = .monospacedSystemFont(ofSize: 12, weight: .regular)
         editor.textContainerInset = NSSize(width: 12, height: 12)
         editor.textColor = .labelColor
-        editor.insertionPointColor = FileMintStyle.accentNS
         editor.isVerticallyResizable = true
         editor.isHorizontallyResizable = false
         editor.autoresizingMask = [.width]
@@ -554,6 +554,7 @@ private struct BatchRenameListEditor: NSViewRepresentable {
         context.coordinator.parent = self
         guard let editor = scroll.documentView as? NSTextView else { return }
         if !editor.string.utf8.elementsEqual(text.utf8) { editor.string = text }
+        editor.insertionPointColor = palette.accentNS
         editor.setAccessibilityLabel(label)
     }
     @MainActor final class Coordinator: NSObject, NSTextViewDelegate {

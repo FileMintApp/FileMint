@@ -3,6 +3,7 @@ import SwiftUI
 
 @MainActor
 struct FileDrawerApplicationPicker: View {
+    @Environment(\.fileMintPalette) private var palette
     let model: FileDrawerModel
     let page: FileDrawerApplicationList
     let availableHeight: CGFloat
@@ -88,7 +89,7 @@ struct FileDrawerApplicationPicker: View {
             if showsHints && selected { Text("↩").font(.system(size: 12)).foregroundStyle(.secondary) }
         }
         .padding(.horizontal, 7).frame(minHeight: 31).contentShape(Rectangle())
-        .background(selected ? FileMintStyle.selection : .clear, in: RoundedRectangle(cornerRadius: 5))
+        .background(selected ? palette.selection : .clear, in: RoundedRectangle(cornerRadius: 5))
     }
 
     private func move(_ delta: Int) {

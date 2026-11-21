@@ -160,6 +160,69 @@ struct StartupPreferencesTests {
         #expect(try FileMintPreferencesStore.decode(Data(contentsOf: file)) == preferences)
     }
 
+    @Test("missing or invalid accent colors preserve the saved appearance and other preferences")
+    func accentColorMigration() throws {
+        #expect(FileMintPreferences.default.accentColor == .mint)
+        for value in [nil, "\"sepia\"", "\"custom\"", "null", "false", "42", "[]", "{}"] as [String?] {
+            let field = value.map { ",\"accentColor\":\($0)" } ?? ""
+            let data = Data("{\"appearance\":\"dark\",\"language\":\"zh-Hans\",\"showMenuBar\":false\(field)}".utf8)
+            let preferences = try FileMintPreferencesStore.decode(data)
+            #expect(preferences.accentColor == .mint)
+            #expect(preferences.appearance == .dark && preferences.language == .chinese)
+            #expect(!preferences.showMenuBar)
+        }
+    }
+
+    @Test("invalid custom RGB values preserve valid presets and other settings")
+    func invalidCustomAccentColor() throws {
+        for invalid in ["null", "-1", "16777216", "42.5", "\"#FFCC00\"", "{}"] {
+            for choice in ["custom", "blue"] {
+                let data = Data("{\"accentColor\":\"\(choice)\",\"customAccentRGB\":\(invalid),\"appearance\":\"dark\"}".utf8)
+                let preferences = try FileMintPreferencesStore.decode(data)
+                #expect(preferences.customAccentRGB == nil)
+                #expect(preferences.accentColor == (choice == "custom" ? .mint : .blue))
+                #expect(preferences.appearance == .dark)
+            }
+        }
+    }
+
+    @Test("every accent survives a store reload and full settings import", arguments: AppAccentColor.allCases)
+    func accentColorPersistence(accentColor: AppAccentColor) throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let file = root.appendingPathComponent("preferences.json")
+        let store = FileMintPreferencesStore(fileURL: file)
+        var preferences = FileMintPreferences.default
+        if accentColor == .custom {
+            let selected = preferences.selectCustomAccentColor(0xFA7929)
+            #expect(selected)
+        } else {
+            preferences.accentColor = accentColor
+        }
+        preferences.appearance = .dark
+        preferences.finderMenuIconStyle = .systemMonochrome
+        try store.save(preferences)
+        #expect(FileMintPreferencesStore(fileURL: file).load() == preferences)
+        #expect(try FileMintPreferencesStore.decodeFile(at: file) == preferences)
+    }
+
+    @Test("switching to a preset retains the exact custom swatch for reuse")
+    func rememberedCustomAccent() throws {
+        var preferences = FileMintPreferences.default
+        let selected = preferences.selectCustomAccentColor(0xFFEE19)
+        #expect(selected)
+        preferences.accentColor = .slate
+        var restored = try FileMintPreferencesStore.decode(JSONEncoder().encode(preferences))
+        #expect(restored.accentColor == .slate)
+        #expect(restored.customAccentRGB == 0xFFEE19)
+        let previous = restored
+        let acceptedInvalidColor = restored.selectCustomAccentColor(0x1000000)
+        #expect(!acceptedInvalidColor)
+        #expect(restored == previous)
+        restored.accentColor = .custom
+        #expect(try FileMintPreferencesStore.decode(JSONEncoder().encode(restored)) == restored)
+    }
+
     @Test("home menus follow different usernames and relocated home directories")
     func dynamicHomeScope() {
         for path in ["/Users/alex", "/Volumes/People/改名用户"] {
@@ -261,7 +324,10 @@ struct StartupPreferencesTests {
         for key in [FileMintTextKey.settingsLabel, .creationSettings, .templatesAndTypes,
                     .finderAndFolders, .generalSettingsHint, .creationSettingsHint,
                     .finderFoldersHint, .interfaceLanguage, .startupAndAccess,
-                    .appearance, .theme, .lightAppearance, .darkAppearance,
+                    .appearance, .theme, .lightAppearance, .darkAppearance, .accentColor,
+                    .mintAccent, .blueAccent, .purpleAccent, .amberAccent, .tealAccent, .indigoAccent,
+                    .mossAccent, .coralAccent, .roseAccent, .slateAccent, .customAccent,
+                    .chooseAccentColor, .accentHexCode, .applyAccentColor,
                     .viewUpdateSettings, .quickCreation, .newFileMenuPosition, .newFileMenuPositionHint,
                     .quickCollisionHint,
                     .afterCreationHint, .manageTemplates, .finderExtension, .menuFolders, .enabledTypes,

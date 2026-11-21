@@ -66,7 +66,7 @@ final class DefaultApplicationPicker: NSObject, ObservableObject, NSWindowDelega
             window.onEscape = { [weak self] in self?.escape() }
             panel = window
             window.contentView = NSHostingView(rootView: DefaultApplicationView(model: self)
-                .ignoresSafeArea(.container, edges: .top))
+                .ignoresSafeArea(.container, edges: .top).fileMintTheme())
             window.setFrameOrigin(NSPoint(x: visible.midX - window.frame.width / 2,
                                           y: visible.midY - window.frame.height / 2))
             NSApp.activate(ignoringOtherApps: true)
@@ -181,6 +181,7 @@ private final class DefaultApplicationPanel: NSPanel {
 }
 
 private struct DefaultApplicationView: View {
+    @Environment(\.fileMintPalette) private var palette
     @ObservedObject var model: DefaultApplicationPicker
 
     var body: some View {
@@ -221,8 +222,8 @@ private struct DefaultApplicationView: View {
                 }
             }
             .frame(width: 42, height: 42)
-            .foregroundStyle(FileMintStyle.strong)
-            .background(FileMintStyle.selection, in: RoundedRectangle(cornerRadius: 10))
+            .foregroundStyle(palette.strong)
+            .background(palette.selection, in: RoundedRectangle(cornerRadius: 10))
             .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
                 Text(model.text(.title)).font(.system(size: 20, weight: .semibold))
@@ -264,7 +265,7 @@ private struct DefaultApplicationView: View {
     private var footer: some View {
         HStack(spacing: 8) {
             Button(model.text(.other), action: model.browse)
-                .buttonStyle(.plain).foregroundStyle(FileMintStyle.strong).font(.system(size: 12))
+                .buttonStyle(.plain).foregroundStyle(palette.strong).font(.system(size: 12))
                 .disabled(model.isApplying)
             Spacer(minLength: 6)
             if model.isApplying {
@@ -281,6 +282,7 @@ private struct DefaultApplicationView: View {
 }
 
 private struct DefaultApplicationRow: View {
+    @Environment(\.fileMintPalette) private var palette
     let app: DefaultApplicationCandidate
     let isCurrent: Bool
     let isSelected: Bool
@@ -299,15 +301,15 @@ private struct DefaultApplicationRow: View {
                 Spacer(minLength: 6)
                 Text(isCurrent ? currentLabel : applyLabel)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(isCurrent ? Color.secondary : FileMintStyle.strong)
+                    .foregroundStyle(isCurrent ? Color.secondary : palette.strong)
                     .padding(.horizontal, 6).padding(.vertical, 3)
-                    .background(isCurrent ? FileMintStyle.surface : FileMintStyle.selection,
+                    .background(isCurrent ? FileMintStyle.surface : palette.selection,
                                 in: RoundedRectangle(cornerRadius: 5))
             }
             .padding(.horizontal, 8).frame(height: 42)
-            .background(isSelected ? FileMintStyle.selection : hovering ? FileMintStyle.soft : .clear,
+            .background(isSelected ? palette.selection : hovering ? FileMintStyle.soft : .clear,
                         in: RoundedRectangle(cornerRadius: 9))
-            .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(isSelected ? FileMintStyle.accent.opacity(0.5) : .clear))
+            .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(isSelected ? palette.accent.opacity(0.5) : .clear))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain).disabled(isCurrent).onHover { hovering = $0 }

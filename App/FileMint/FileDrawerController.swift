@@ -137,7 +137,7 @@ final class FileDrawerController: NSObject, NSWindowDelegate {
             self.dismiss()
         }
         let backdrop = DrawerBackground()
-        let content = NSHostingView(rootView: FileDrawerView(model: model, settings: settings))
+        let content = NSHostingView(rootView: FileDrawerView(model: model, settings: settings).fileMintTheme())
         let handle = DrawerGrip()
         handle.setAccessibilityLabel(model.text("Resize file drawer", "调整抽屉宽度"))
         handle.resize = { [weak self] delta, finished in self?.resize(by: delta, finished: finished) }

@@ -288,7 +288,7 @@ final class BatchRenameController: NSObject, ObservableObject, NSWindowDelegate 
         panel.cancelHandler = { [weak self] in self?.requestClose() }
         let minimum = NSSize(width: min(900, size.width), height: min(560, size.height))
         let host = NSHostingView(rootView: BatchRenameView(model: self)
-            .frame(minWidth: minimum.width, minHeight: minimum.height))
+            .frame(minWidth: minimum.width, minHeight: minimum.height).fileMintTheme())
         // Export only the explicit minimum to AppKit. Changing drafts must not
         // resize the window to SwiftUI's ideal or maximum content dimensions.
         host.sizingOptions = [.minSize]

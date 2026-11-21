@@ -34,7 +34,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         window.isReleasedWhenClosed = false
         window.isRestorable = false
         let hostingView = NSHostingView(rootView: ContentView()
-            .environmentObject(PreferencesModel.shared).environmentObject(UpdateModel.shared))
+            .environmentObject(PreferencesModel.shared).environmentObject(UpdateModel.shared).fileMintTheme())
         // The resizable window owns its size; SwiftUI content changes must not
         // expand it past the visible screen when language or appearance changes.
         hostingView.sizingOptions = []

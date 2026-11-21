@@ -129,7 +129,7 @@ final class IntegrationsModel: NSObject, ObservableObject, NSWindowDelegate {
             window.isRestorable = false
             window.tabbingMode = .disallowed
             window.backgroundColor = FileMintStyle.backgroundNS
-            window.contentView = NSHostingView(rootView: LauncherGeneratorView(state: self))
+            window.contentView = NSHostingView(rootView: LauncherGeneratorView(state: self).fileMintTheme())
             window.delegate = self
             generator = window
         }

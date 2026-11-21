@@ -3,6 +3,27 @@
 Observations below apply to the revisions and environments stated in each entry.
 Use [HARNESS](../specs/HARNESS.md) to select present-day verification.
 
+## App accent color — 2026-11-21
+
+On arm64 macOS 27.2.1, the working tree based on `940d980` passed `make verify`,
+an unsigned Release build and the signed `design-ui` suite. The drawer fixture
+verified live recoloring while preserving selection. Two runs of the broader
+drawer and Quick Search suites had interaction failures. Live Design QA showed
+the Amber preset in settings, creation and Quick Search. See the
+[theme verification record](tasks/global-accent-color.md#evidence).
+
+Developer ID signed Debug 0.8.2 (31) was then installed in Applications. Both
+running executables came from the verified replacement bundle. The
+[installation record](tasks/global-accent-color.md#installed-debug--2026-11-21)
+links the build evidence and previous bundle backup.
+
+The expanded palette adds six presets and a custom opaque color. `make verify`,
+the unsigned build and signed Design QA passed. Live interaction verified hex
+entry, cancel, apply and restoration after choosing a preset. See the
+[custom color verification record](tasks/global-accent-color.md#expanded-presets-and-custom-colors--2026-11-21).
+The updated Developer ID signed Debug 0.8.2 (31) was installed and launched from
+Applications, and the running Finder extension mapped the replacement executable.
+
 ## File drawer refinements — 2026-11-20
 
 The separated root access and location memory iteration passed 429 Swift tests, unsigned Release compilation, and signed drawer acceptance in `build/native-checks.noindex/run.pc1s5fhs/`. The fixture inspected the independent pickers and verified the settings switch, both opening modes and fallback after a folder replacement. The signed Debug host launched from Applications. The [drawer record](tasks/2026-11-20-file-drawer.md) includes the installation and backup.

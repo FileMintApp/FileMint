@@ -90,7 +90,7 @@ final class QuickSearchPanelController: NSObject, NSWindowDelegate {
             }, rememberState: { [weak self, weak window] state in
                 guard let self, let window, self.panel === window else { return }
                 self.savedSearch = state
-            }))
+            }).fileMintTheme())
         window.setFrameOrigin(NSPoint(x: visible.midX - window.frame.width / 2,
                                       y: visible.midY - window.frame.height / 2))
         // A nonactivating panel takes keyboard focus directly. Requesting app
@@ -358,6 +358,7 @@ enum QuickSearchSettingsCatalog {
 }
 
 private struct QuickSearchView: View {
+    @Environment(\.fileMintPalette) private var palette
     @ObservedObject var settings: PreferencesModel
     @ObservedObject var favorites: FavoriteLocationsModel
     let controller: QuickSearchPanelController
@@ -439,9 +440,9 @@ private struct QuickSearchView: View {
     private func searchHeader(move: @escaping (Int) -> Void) -> some View {
         HStack(spacing: 15) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 22, weight: .medium)).foregroundStyle(FileMintStyle.accent)
+                .font(.system(size: 22, weight: .medium)).foregroundStyle(palette.accent)
                 .frame(width: 44, height: 44)
-                .background(FileMintStyle.selection, in: RoundedRectangle(cornerRadius: 13))
+                .background(palette.selection, in: RoundedRectangle(cornerRadius: 13))
                 .accessibilityHidden(true)
             QuickSearchInputField(text: Binding(get: { query }, set: { value in
                 query = value
@@ -529,7 +530,7 @@ private struct QuickSearchView: View {
                         .accessibilityLabel(FavoriteText.unavailable.text(language))
                 }
                 Image(systemName: "return").font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(FileMintStyle.accent).opacity(selected ? 1 : 0)
+                    .foregroundStyle(palette.accent).opacity(selected ? 1 : 0)
                     .frame(width: 18).accessibilityHidden(true)
             }.padding(.horizontal, 12).padding(.vertical, 10)
                 .frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
@@ -568,7 +569,7 @@ private struct QuickSearchView: View {
     private var emptyState: some View {
         VStack(spacing: 12) {
             Image(systemName: "magnifyingglass").font(.system(size: 28, weight: .light))
-                .foregroundStyle(FileMintStyle.accent).padding(16)
+                .foregroundStyle(palette.accent).padding(16)
                 .background(FileMintStyle.soft, in: Circle()).accessibilityHidden(true)
             Text((isEmptyQuery ? QuickSearchText.emptyCategory : .noResults).text(language))
                 .font(.system(size: 15, weight: .medium))
@@ -593,7 +594,7 @@ private struct QuickSearchView: View {
             Rectangle().fill(FileMintStyle.line).frame(height: 1)
             HStack(spacing: 12) {
                 HStack(spacing: 6) {
-                    Circle().fill(FileMintStyle.accent).frame(width: 5, height: 5)
+                    Circle().fill(palette.accent).frame(width: 5, height: 5)
                     Text("FileMint").font(.system(size: 11, weight: .semibold))
                 }.foregroundStyle(.secondary).accessibilityHidden(true)
                 Spacer(minLength: 4)
@@ -608,7 +609,7 @@ private struct QuickSearchView: View {
                         Text(executing ? QuickSearchText.working.text(language) : actionTitle)
                             .font(.system(size: 11, weight: .medium))
                         keycap("↵")
-                    }.foregroundStyle(selectedResult == nil ? Color.secondary : FileMintStyle.strong)
+                    }.foregroundStyle(selectedResult == nil ? Color.secondary : palette.strong)
                         .fixedSize(horizontal: true, vertical: false)
                 }.buttonStyle(.plain).disabled(executing || selectedResult == nil).layoutPriority(1)
                     .accessibilityIdentifier("quickSearch.primaryAction")
@@ -656,7 +657,7 @@ private struct QuickSearchView: View {
 
     private func iconColor(_ group: QuickSearchGroup) -> Color {
         switch group {
-        case .actions: FileMintStyle.accent
+        case .actions: palette.accent
         case .templates: Color(nsColor: .systemBlue)
         case .favorites: Color(nsColor: .systemOrange)
         case .settings: Color.secondary
@@ -729,16 +730,17 @@ private struct QuickSearchView: View {
 }
 
 private struct QuickSearchRowStyle: ButtonStyle {
+    @Environment(\.fileMintPalette) private var palette
     let selected: Bool
     @Environment(\.isFocused) private var focused
     @State private var hovered = false
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .background(selected ? FileMintStyle.selection : hovered ? FileMintStyle.soft : Color.clear,
+            .background(selected ? palette.selection : hovered ? FileMintStyle.soft : Color.clear,
                         in: RoundedRectangle(cornerRadius: 10))
             .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(
-                focused ? FileMintStyle.accent : selected ? FileMintStyle.accent.opacity(0.22) : Color.clear,
+                focused ? palette.accent : selected ? palette.accent.opacity(0.22) : Color.clear,
                 lineWidth: focused ? 1.5 : 0.7))
             .opacity(configuration.isPressed ? 0.75 : 1)
             .onHover { hovered = $0 }
@@ -746,16 +748,17 @@ private struct QuickSearchRowStyle: ButtonStyle {
 }
 
 private struct QuickSearchScopeStyle: ButtonStyle {
+    @Environment(\.fileMintPalette) private var palette
     let selected: Bool
     @Environment(\.isFocused) private var focused
     @State private var hovered = false
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .foregroundStyle(selected ? FileMintStyle.strong : Color.secondary)
-            .background(selected ? FileMintStyle.selection : hovered ? FileMintStyle.soft : Color.clear,
+            .foregroundStyle(selected ? palette.strong : Color.secondary)
+            .background(selected ? palette.selection : hovered ? FileMintStyle.soft : Color.clear,
                         in: RoundedRectangle(cornerRadius: 7))
-            .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(focused ? FileMintStyle.accent : Color.clear))
+            .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(focused ? palette.accent : Color.clear))
             .opacity(configuration.isPressed ? 0.7 : 1)
             .onHover { hovered = $0 }
     }

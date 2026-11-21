@@ -271,6 +271,27 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
         return abs(first.size.width - width) <= 1
     }
     try captureDrawer("labeled")
+
+    let accent = settings.preferenceBinding(\.accentColor)
+    let originalAccent = accent.wrappedValue
+    if let first = model.visibleEntries.first,
+       let collection = views(of: NSCollectionView.self, in: container).first {
+        let index = IndexPath(item: 0, section: 0)
+        model.selection = [first.url]
+        try await wait("Drawer did not display the selected row") { collection.selectionIndexPaths == [index] }
+        guard let row = collection.item(at: index), let icon = views(of: NSImageView.self, in: row.view).first,
+              let originalTint = icon.contentTintColor, let originalFill = row.view.layer?.backgroundColor else {
+            throw failure("Selected drawer row has no tint or fill")
+        }
+        accent.wrappedValue = originalAccent == .blue ? .purple : .blue
+        try await wait("Changing the accent did not repaint the open drawer") {
+            icon.contentTintColor != originalTint && row.view.layer?.backgroundColor != originalFill
+        }
+        try require(collection.item(at: index) === row && collection.selectionIndexPaths == [index] && model.selection == [first.url],
+                    "Changing the accent replaced or deselected the active row")
+        accent.wrappedValue = originalAccent
+    } else { throw failure("Missing drawer row for accent repaint") }
+
     // Activate actions through the drawer and through the actual Command-K menu fallback.
     func actionSearch() async throws -> (NSSearchField, NSTextView) {
         func input() -> NSSearchField? {

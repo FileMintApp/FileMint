@@ -2,6 +2,7 @@ import FileMintCore
 import SwiftUI
 
 struct FileAccessPane: View {
+    @Environment(\.fileMintPalette) private var palette
     private struct Grant: Hashable {
         let path: String
         let legacy: Bool
@@ -36,7 +37,7 @@ struct FileAccessPane: View {
                                 .font(.caption).foregroundStyle(.secondary)
                         }
                     } icon: {
-                        Image(systemName: "folder.badge.person.crop").foregroundStyle(FileMintStyle.accent)
+                        Image(systemName: "folder.badge.person.crop").foregroundStyle(palette.accent)
                     }.padding(.vertical, 6).tag(grant)
                 }.listStyle(.plain).scrollContentBackground(.hidden).frame(height: 210)
                     .background(FileMintStyle.surface, in: RoundedRectangle(cornerRadius: 12))

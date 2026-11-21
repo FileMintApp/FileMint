@@ -11,6 +11,7 @@ struct FileDrawerPathAnchor: PreferenceKey {
 
 /// A single full-width path row. Each label is a destination and has a secondary browse action.
 struct FileDrawerPathBar: View {
+    @Environment(\.fileMintPalette) private var palette
     @ObservedObject var model: FileDrawerModel
     let directory: URL
 
@@ -57,7 +58,7 @@ struct FileDrawerPathBar: View {
             }
             .padding(.horizontal, 4).frame(minHeight: 27).contentShape(Rectangle())
             .background(component.url == directory || model.pathMenu?.component.id == component.id
-                        ? FileMintStyle.selection : .clear, in: RoundedRectangle(cornerRadius: 5))
+                        ? palette.selection : .clear, in: RoundedRectangle(cornerRadius: 5))
         }
         .id(component.id)
         .fixedSize()
@@ -76,6 +77,7 @@ struct FileDrawerPathBar: View {
 /// Kept in the panel's own window so an input field, menu tracking or the sheet
 /// presented for a restricted component cannot trigger loss of the owning panel.
 struct FileDrawerPathDropdown: View {
+    @Environment(\.fileMintPalette) private var palette
     @ObservedObject var model: FileDrawerModel
     let menu: FileDrawerPathMenu
     let availableHeight: CGFloat
@@ -133,13 +135,13 @@ struct FileDrawerPathDropdown: View {
                                     Button { model.choosePathItem(item, in: menu.id) } label: {
                                         HStack(spacing: 6) {
                                             Image(systemName: item.isDirectory ? "folder.fill" : "doc")
-                                                .frame(width: 22).foregroundStyle(FileMintStyle.accent)
+                                                .frame(width: 22).foregroundStyle(palette.accent)
                                             Text(verbatim: item.name).lineLimit(1).truncationMode(.middle)
                                             Spacer(minLength: 0)
                                         }
                                         .padding(.horizontal, 6).frame(height: 31)
                                         .contentShape(Rectangle())
-                                        .background(item.url == current?.url ? FileMintStyle.selection : .clear,
+                                        .background(item.url == current?.url ? palette.selection : .clear,
                                                     in: RoundedRectangle(cornerRadius: 5))
                                     }
                                     .buttonStyle(.plain)

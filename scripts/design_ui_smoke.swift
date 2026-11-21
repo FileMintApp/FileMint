@@ -140,7 +140,7 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
         self.quickSearch = quickSearch
         let hostingView = NSHostingView(rootView: ContentView(launchResourceTool: { coordinator.chooseImages(for: $0) },
             favoriteLocations: favoriteModel, quickSearch: quickSearch)
-            .environmentObject(model).environmentObject(updater))
+            .environmentObject(model).environmentObject(updater).fileMintTheme())
         hostingView.sizingOptions = []
         window.contentView = hostingView
         window.center()
@@ -252,6 +252,7 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
                     try await checkCreationEntry(store: store, root: root)
                     try await checkCreationLayout(root: root)
                     try checkAppearance(store: store, root: root)
+                    try await checkAccentColor(store: store, root: root)
                     print("CHECK automated design settings"); fflush(nil)
                     try await checkSettings(store: store, root: root)
                     print("CHECK automated design window size"); fflush(nil)
@@ -907,7 +908,10 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
         failed.preferenceBinding(\.resourceTools.isEnabled).wrappedValue.toggle()
         failed.preferenceBinding(\.favoriteLocations.showListInFinder).wrappedValue.toggle()
         failed.templatePlacementBinding(for: templates[0].id).wrappedValue = .hidden
-        try require(failed.preferences == failedBefore && failed.lastError != nil, "Failed controls did not roll back")
+        failed.preferenceBinding(\.accentColor).wrappedValue = .amber
+        try require(!failed.setCustomAccentColor(0xFFEE19), "A custom accent was saved over an unwritable preferences file")
+        try require(failed.preferences == failedBefore && failed.lastError != nil &&
+                    FileMintTheme.shared.accentColor == failedBefore.accentColor, "Failed controls did not roll back")
         model.preferences = original
         try require(model.save(), "Restore isolated preferences")
         let output = root.appendingPathComponent("settings-review", isDirectory: true)
@@ -1051,6 +1055,96 @@ final class DesignUISmoke: NSObject, NSApplicationDelegate {
         model.setAppearance(original.appearance == .light ? .dark : .light)
         model.setAppearance(original.appearance)
         print("PASS appearance: immediate window update, system reset, persistence, reload and failed-save rollback")
+    }
+
+    private func checkAccentColor(store: FileMintPreferencesStore, root: URL) async throws {
+        func require(_ condition: Bool, _ message: String) throws {
+            guard condition else {
+                throw NSError(domain: "AccentColorQA", code: 1, userInfo: [NSLocalizedDescriptionKey: message])
+            }
+        }
+        func views(_ view: NSView) -> [NSView] { [view] + view.subviews.flatMap(views) }
+        let selection = model.preferenceBinding(\.accentColor)
+        let original = model.preferences
+        let originalPane = model.selectedPane
+        defer {
+            model.preferences = original
+            model.save()
+            model.selectedPane = originalPane
+        }
+
+        model.selectedPane = .general
+        window.setContentSize(NSSize(width: 1040, height: 720))
+        let board = NSPasteboard.withUniqueName()
+        defer { board.releaseGlobally() }
+        let draft = "Draft text to preserve"
+        board.setString(draft, forType: .string)
+        model.presentClipboardText(in: root, pasteboard: board)
+        guard let panel = NSApp.windows.first(where: {
+            $0.isVisible && $0.identifier?.rawValue == "io.github.daigua.filemint.custom-file"
+        }), let content = panel.contentView else { throw ResourceError.failed }
+        defer { panel.close() }
+        let controls = views(content)
+        guard let button = controls.compactMap({ $0 as? NSButton }).first(where: {
+            $0.action == NSSelectorFromString("createRequestedFile:")
+        }), let editor = controls.compactMap({ $0 as? NSTextView }).first(where: {
+            $0.string == draft
+        }) else { throw ResourceError.failed }
+
+        func requireActiveAccent(_ expected: UInt32, choice: AppAccentColor, appearance: AppAppearance) throws {
+            var colors: [UInt32] = []
+            panel.effectiveAppearance.performAsCurrentDrawingAppearance {
+                colors = [button.bezelColor, editor.insertionPointColor, FileMintTheme.shared.palette.accentNS].compactMap {
+                    $0.flatMap(FileMintStyle.srgbValue)
+                }
+            }
+            try require(colors == [expected, expected, expected] && panel.isVisible && editor.string == draft,
+                        "Accent \(choice.rawValue) did not update the open draft and SwiftUI in \(appearance.rawValue)")
+            let saved = store.load()
+            try require(saved.accentColor == choice && saved.appearance == appearance,
+                        "Saving an accent changed the appearance or did not persist")
+        }
+
+        let output = root.appendingPathComponent("accent-review", isDirectory: true)
+        try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+        let choices: [(AppAccentColor, UInt32, UInt32)] = [
+            (.blue, 0x285E9D, 0x9DBFEC), (.purple, 0x694898, 0xC9AFE9),
+            (.amber, 0x93521E, 0xEDB784), (.mint, 0x3A8067, 0x98CBB0)
+        ]
+        for (appearance, dark) in [(AppAppearance.light, false), (.dark, true)] {
+            model.setAppearance(appearance)
+            for (choice, lightRGB, darkRGB) in choices {
+                selection.wrappedValue = choice
+                try requireActiveAccent(dark ? darkRGB : lightRGB, choice: choice, appearance: appearance)
+
+                if (choice == .blue && !dark) || (choice == .purple && dark) {
+                    try await Task.sleep(for: .milliseconds(150))
+                    for (name, target) in [("settings", window!), ("creation", panel)] {
+                        guard let view = target.contentView,
+                              let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { throw ResourceError.failed }
+                        view.layoutSubtreeIfNeeded(); target.display(); view.cacheDisplay(in: view.bounds, to: bitmap)
+                        guard let png = bitmap.representation(using: .png, properties: [:]) else { throw ResourceError.failed }
+                        try png.write(to: output.appendingPathComponent("\(name)-\(choice.rawValue)-\(appearance.rawValue).png"))
+                    }
+                }
+            }
+
+            let teal = AppAccentPalette(rgb: 0x087D86, dark: dark)
+            selection.wrappedValue = .teal
+            try requireActiveAccent(teal.accent, choice: .teal, appearance: appearance)
+            let lastCustom: UInt32 = 0xA657D8
+            for rgb in [0xFFEE19, lastCustom] {
+                try require(model.setCustomAccentColor(rgb), "Could not save a custom accent")
+                try require(store.load().customAccentRGB == rgb, "The saved swatch was changed while deriving the accent")
+                try requireActiveAccent(AppAccentPalette(rgb: rgb, dark: dark).accent, choice: .custom, appearance: appearance)
+            }
+            selection.wrappedValue = .mint
+            try require(store.load().customAccentRGB == lastCustom, "A preset replaced the remembered custom color")
+            selection.wrappedValue = .custom
+            try requireActiveAccent(AppAccentPalette(rgb: lastCustom, dark: dark).accent, choice: .custom, appearance: appearance)
+        }
+        print("PASS accent colors: preset and custom light/dark colors, open draft, exact swatch and reuse")
+        print("ACCENT_CAPTURES \(output.path)")
     }
     @objc private func clipboardImage() {
         guard let root = model.preferences.monitoredFolderURLs.first,

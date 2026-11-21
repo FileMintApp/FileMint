@@ -4,6 +4,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct FavoriteLocationsPane: View {
+    @Environment(\.fileMintPalette) private var palette
     @EnvironmentObject private var settings: PreferencesModel
     @ObservedObject private var favorites: FavoriteLocationsModel
     @State private var query = ""
@@ -122,7 +123,7 @@ struct FavoriteLocationsPane: View {
                         }
                         if visibleRows.isEmpty {
                             VStack(spacing: 9) {
-                                Image(systemName: "star").font(.system(size: 30)).foregroundStyle(FileMintStyle.accent)
+                                Image(systemName: "star").font(.system(size: 30)).foregroundStyle(palette.accent)
                                 Text(text(.emptyTitle)).font(.callout.weight(.medium))
                                 Text(text(.emptyHint)).font(.caption).foregroundStyle(.secondary)
                                     .multilineTextAlignment(.center)
@@ -203,9 +204,9 @@ struct FavoriteLocationsPane: View {
     private func filterButton(_ value: Filter, label: String) -> some View {
         Button(label) { filter = value }.buttonStyle(.plain)
             .font(.caption.weight(filter == value ? .medium : .regular))
-            .foregroundStyle(filter == value ? FileMintStyle.accent : Color.secondary)
+            .foregroundStyle(filter == value ? palette.accent : Color.secondary)
             .padding(.horizontal, 9).padding(.vertical, 5)
-            .background(filter == value ? FileMintStyle.selection : Color.clear,
+            .background(filter == value ? palette.selection : Color.clear,
                         in: RoundedRectangle(cornerRadius: 6))
     }
 
@@ -244,7 +245,7 @@ struct FavoriteLocationsPane: View {
             }
             Button { perform { try await favorites.setPinned([item.id], to: !item.isPinned) } } label: {
                 Image(systemName: item.isPinned ? "star.fill" : "star")
-            }.buttonStyle(.plain).foregroundStyle(item.isPinned ? FileMintStyle.accent : Color.secondary)
+            }.buttonStyle(.plain).foregroundStyle(item.isPinned ? palette.accent : Color.secondary)
                 .accessibilityLabel(text(item.isPinned ? .unpin : .pin))
             Menu {
                 Button(text(.locate)) { locate(item.id) }

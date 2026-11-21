@@ -154,7 +154,7 @@ final class FileContentCopyController: NSObject, ObservableObject, NSWindowDeleg
                             styleMask: [.titled, .closable, .nonactivatingPanel], backing: .buffered, defer: false)
         panel.title = title; panel.delegate = self; panel.isReleasedWhenClosed = false
         panel.level = .floating
-        panel.contentView = NSHostingView(rootView: FileContentCopyView(model: self))
+        panel.contentView = NSHostingView(rootView: FileContentCopyView(model: self).fileMintTheme())
         panel.center(); self.panel = panel; panel.orderFrontRegardless()
     }
 

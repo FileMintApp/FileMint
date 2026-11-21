@@ -38,6 +38,11 @@ Automatic suites are `batch-rename`, `template-workflow`, `creation-opening`,
 `design-ui`, `file-drawer`, `update-summary`, `hotkey-sandbox`, `quick-search`, `finder-hidden-files`, and the headless `favorite-model`. Template scenarios share one
 verified build in a run and each create their own runtime workspace. Design QA uses
 `--verify-automation`; ordinary interactive modes remain available.
+It exercises the original accent colors, an additional preset and custom colors
+in light and dark. It checks persistence, custom-color reuse and save rollback in
+addition to the open creation draft's text, button and caret. The drawer suite
+checks that a color change repaints the selected native row without replacing it
+or discarding selection.
 `default-application` reuses the signed Open With fixture to open and cancel a
 real one-use request, then checks complete results, search, direct choice,
 keyboard selection, failure and success with an injected write. It does not

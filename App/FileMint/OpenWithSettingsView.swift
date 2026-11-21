@@ -28,6 +28,7 @@ struct OpenWithPane: View {
 
 /// Shared by production and an isolated native UI fixture.
 struct OpenWithSettingsView: View {
+    @Environment(\.fileMintPalette) private var palette
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Binding var preferences: OpenWithPreferences
     let language: AppLanguage
@@ -46,7 +47,7 @@ struct OpenWithSettingsView: View {
                 if preferences.applications.isEmpty {
                     VStack(alignment: .center, spacing: 14) {
                         Image(systemName: FileToolAppearance.openWithSymbol)
-                            .font(.system(size: 30, weight: .light)).foregroundStyle(FileMintStyle.accent)
+                            .font(.system(size: 30, weight: .light)).foregroundStyle(palette.accent)
                             .accessibilityHidden(true)
                         VStack(spacing: 7) {
                             Text(text(.openWithEmptyTitle)).font(.system(size: 15, weight: .medium))

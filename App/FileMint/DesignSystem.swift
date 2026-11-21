@@ -6,36 +6,143 @@ enum FileMintStyle {
     static func adaptive(_ light: UInt32, _ dark: UInt32) -> NSColor {
         NSColor(name: nil) { appearance in
             let value = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? dark : light
-            return NSColor(srgbRed: CGFloat((value >> 16) & 255) / 255,
-                green: CGFloat((value >> 8) & 255) / 255, blue: CGFloat(value & 255) / 255, alpha: 1)
+            return srgbColor(value)
         }
     }
+
+    static func srgbColor(_ rgb: UInt32) -> NSColor {
+        NSColor(srgbRed: CGFloat((rgb >> 16) & 255) / 255,
+                green: CGFloat((rgb >> 8) & 255) / 255, blue: CGFloat(rgb & 255) / 255, alpha: 1)
+    }
+
+    static func srgbValue(_ color: NSColor) -> UInt32? {
+        guard let value = color.usingColorSpace(.sRGB) else { return nil }
+        let channels = [value.redComponent, value.greenComponent, value.blueComponent]
+        guard channels.allSatisfy(\.isFinite) else { return nil }
+        return channels.reduce(0) { result, channel in
+            (result << 8) | UInt32(min(255, max(0, (channel * 255).rounded())))
+        }
+    }
+
     static let backgroundNS = adaptive(0xFBFBFA, 0x202221)
-    static let accentNS = adaptive(0x3A8067, 0x98CBB0)
     static let background = Color(nsColor: backgroundNS)
     static let surface = Color(nsColor: adaptive(0xFFFFFF, 0x2B302D))
     static let soft = Color(nsColor: adaptive(0xF1F3EF, 0x252B27))
     static let line = Color(nsColor: adaptive(0xE3E7E1, 0x3A413C))
-    static let accent = Color(nsColor: accentNS)
-    static let selection = Color(nsColor: adaptive(0xE1ECE4, 0x354B3E))
-    static let strong = Color(nsColor: adaptive(0x244D3B, 0xA9D2B6))
-    static let onStrong = Color(nsColor: adaptive(0xFFFFFF, 0x1C3325))
     static let radius: CGFloat = 12
+}
+
+struct FileMintPalette {
+    let accentNS: NSColor
+    let selectionNS: NSColor
+    let strong: Color
+    let onStrong: Color
+
+    var accent: Color { Color(nsColor: accentNS) }
+    var selection: Color { Color(nsColor: selectionNS) }
+
+    private init(accent: (UInt32, UInt32), selection: (UInt32, UInt32),
+                 strong: (UInt32, UInt32), onStrongDark: UInt32) {
+        accentNS = FileMintStyle.adaptive(accent.0, accent.1)
+        selectionNS = FileMintStyle.adaptive(selection.0, selection.1)
+        self.strong = Color(nsColor: FileMintStyle.adaptive(strong.0, strong.1))
+        onStrong = Color(nsColor: FileMintStyle.adaptive(0xFFFFFF, onStrongDark))
+    }
+
+    private init(rgb: UInt32) {
+        let light = AppAccentPalette(rgb: rgb, dark: false)
+        let dark = AppAccentPalette(rgb: rgb, dark: true)
+        self.init(accent: (light.accent, dark.accent), selection: (light.selection, dark.selection),
+                  strong: (light.strong, dark.strong), onStrongDark: dark.onStrong)
+    }
+
+    static let mint = FileMintPalette(accent: (0x3A8067, 0x98CBB0), selection: (0xE1ECE4, 0x354B3E),
+                                    strong: (0x244D3B, 0xA9D2B6), onStrongDark: 0x1C3325)
+    private static let blue = FileMintPalette(accent: (0x285E9D, 0x9DBFEC), selection: (0xDFEAF8, 0x30445E),
+                                             strong: (0x1D426D, 0xADC9EF), onStrongDark: 0x192E48)
+    private static let purple = FileMintPalette(accent: (0x694898, 0xC9AFE9), selection: (0xEDE5F7, 0x463654),
+                                               strong: (0x503472, 0xD2B9F0), onStrongDark: 0x37254C)
+    private static let amber = FileMintPalette(accent: (0x93521E, 0xEDB784), selection: (0xF6E8D9, 0x503D2D),
+                                              strong: (0x723D15, 0xF2C59C), onStrongDark: 0x472B14)
+    private static let teal = FileMintPalette(rgb: 0x087D86)
+    private static let indigo = FileMintPalette(rgb: 0x4654AC)
+    private static let moss = FileMintPalette(rgb: 0x5D721C)
+    private static let coral = FileMintPalette(rgb: 0xBD503C)
+    private static let rose = FileMintPalette(rgb: 0xAD3D74)
+    private static let slate = FileMintPalette(rgb: 0x536B83)
+
+    static func resolve(_ choice: AppAccentColor, customRGB: UInt32? = nil) -> FileMintPalette {
+        switch choice {
+        case .mint: .mint
+        case .blue: .blue
+        case .purple: .purple
+        case .amber: .amber
+        case .teal: .teal
+        case .indigo: .indigo
+        case .moss: .moss
+        case .coral: .coral
+        case .rose: .rose
+        case .slate: .slate
+        case .custom: customRGB.map { FileMintPalette(rgb: $0) } ?? .mint
+        }
+    }
+}
+
+/// The active accent is derived from the main app's committed preferences.
+@MainActor
+final class FileMintTheme: ObservableObject {
+    static let shared = FileMintTheme()
+    @Published private(set) var palette = FileMintPalette.mint
+    private(set) var accentColor: AppAccentColor = .mint
+    private var customRGB: UInt32?
+
+    private init() {}
+
+    func apply(_ preferences: FileMintPreferences) {
+        let choice = preferences.accentColor
+        let rgb = choice == .custom ? preferences.customAccentRGB : nil
+        guard accentColor != choice || customRGB != rgb else { return }
+        accentColor = choice
+        customRGB = rgb
+        palette = FileMintPalette.resolve(choice, customRGB: rgb)
+    }
+}
+
+private struct FileMintPaletteKey: EnvironmentKey {
+    static let defaultValue = FileMintPalette.mint
+}
+
+extension EnvironmentValues {
+    var fileMintPalette: FileMintPalette {
+        get { self[FileMintPaletteKey.self] }
+        set { self[FileMintPaletteKey.self] = newValue }
+    }
+}
+
+@MainActor
+private struct FileMintThemeModifier: ViewModifier {
+    @ObservedObject private var theme = FileMintTheme.shared
+
+    func body(content: Content) -> some View {
+        let palette = theme.palette
+        content.environment(\.fileMintPalette, palette).tint(palette.accent)
+    }
 }
 
 struct MintButtonStyle: ButtonStyle {
     var primary = false
+    @Environment(\.fileMintPalette) private var palette
     @Environment(\.isEnabled) private var enabled
     @Environment(\.isFocused) private var focused
     @State private var hovered = false
     func makeBody(configuration: Configuration) -> some View {
         configuration.label.font(.system(size: 12, weight: primary ? .medium : .regular))
             .padding(.horizontal, 13).padding(.vertical, 8)
-            .foregroundStyle(configuration.role == .destructive ? Color.red : primary ? FileMintStyle.onStrong : Color.primary)
-            .background(primary ? FileMintStyle.strong : hovered && enabled ? FileMintStyle.soft : FileMintStyle.surface,
+            .foregroundStyle(configuration.role == .destructive ? Color.red : primary ? palette.onStrong : Color.primary)
+            .background(primary ? palette.strong : hovered && enabled ? FileMintStyle.soft : FileMintStyle.surface,
                         in: RoundedRectangle(cornerRadius: 7))
             .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(
-                focused && enabled ? FileMintStyle.accent : primary ? Color.clear : FileMintStyle.line,
+                focused && enabled ? palette.accent : primary ? Color.clear : FileMintStyle.line,
                 lineWidth: focused && enabled ? 1.5 : 0.7))
             .contentShape(RoundedRectangle(cornerRadius: 7))
             .opacity(enabled ? (configuration.isPressed ? 0.75 : 1) : 0.4)
@@ -44,7 +151,11 @@ struct MintButtonStyle: ButtonStyle {
 }
 
 extension View {
-    func settingsMenu(width: CGFloat = 180) -> some View {
+    @MainActor func fileMintTheme() -> some View {
+        modifier(FileMintThemeModifier())
+    }
+
+    func settingsMenu(width: CGFloat? = 180) -> some View {
         self.labelsHidden().pickerStyle(.menu).controlSize(.small).tint(.primary)
             .fixedSize().frame(width: width, alignment: .trailing)
     }
@@ -65,12 +176,14 @@ struct SettingsSectionTitle: View {
 }
 
 struct SettingsInsertionIndicator: View {
+    @Environment(\.fileMintPalette) private var palette
+
     var body: some View {
         HStack(spacing: 0) {
             Circle().frame(width: 8, height: 8)
             Rectangle().frame(height: 2)
         }
-        .foregroundStyle(Color(nsColor: .systemBlue))
+        .foregroundStyle(palette.accent)
         .padding(.horizontal, 12)
         .accessibilityHidden(true)
         .allowsHitTesting(false)

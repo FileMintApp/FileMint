@@ -108,7 +108,6 @@ struct FileDrawerView: View {
         .padding(12)
         .font(.system(size: 14))
         .controlSize(.regular)
-        .tint(FileMintStyle.accent)
         .disabled(model.pathMenu != nil)
         .accessibilityHidden(model.pathMenu != nil)
         .overlayPreferenceValue(FileDrawerPathAnchor.self) { anchor in

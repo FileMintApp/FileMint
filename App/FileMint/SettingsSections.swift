@@ -47,6 +47,8 @@ struct GeneralPane: View {
                         }.settingsMenu().accessibilityIdentifier("settings.appearance")
                     }
                     Divider()
+                    AccentColorSetting()
+                    Divider()
                     PreferenceRow(title: model.text(.interfaceLanguage)) {
                         Picker(model.text(.interfaceLanguage), selection: $model.preferences.language) {
                             ForEach(AppLanguage.allCases) { language in
@@ -106,6 +108,92 @@ struct GeneralPane: View {
                 }
             }.toggleStyle(SmallSettingsSwitchStyle()).padding(1)
         }
+    }
+}
+
+private struct AccentColorSetting: View {
+    @EnvironmentObject private var model: PreferencesModel
+    @Environment(\.fileMintPalette) private var palette
+    @State private var editing = false
+
+    var body: some View {
+        PreferenceRow(title: model.text(.accentColor)) {
+            HStack(spacing: 8) {
+                Button(model.text(.chooseAccentColor)) { editing = true }
+                    .accessibilityIdentifier("settings.customAccentColor")
+                Circle().fill(palette.accent).frame(width: 12, height: 12)
+                    .accessibilityHidden(true)
+                Picker(model.text(.accentColor), selection: model.preferenceBinding(\.accentColor)) {
+                    ForEach(AppAccentColor.allCases.filter { $0 != .custom || model.preferences.customAccentRGB != nil }) { choice in
+                        Text(model.text(choice.title)).tag(choice)
+                    }
+                }.settingsMenu(width: nil).accessibilityIdentifier("settings.accentColor")
+            }
+        }
+        .sheet(isPresented: $editing) {
+            AccentColorEditor(initialColor: model.preferences.customAccentRGB.map(FileMintStyle.srgbColor) ?? palette.accentNS)
+        }
+    }
+}
+
+private struct AccentColorEditor: View {
+    @EnvironmentObject private var model: PreferencesModel
+    @Environment(\.dismiss) private var dismiss
+    @State private var draftRGB: UInt32
+    @State private var hex: String
+    @State private var saveError: String?
+
+    init(initialColor: NSColor) {
+        let rgb = FileMintStyle.srgbValue(initialColor) ?? 0x3A8067
+        _draftRGB = State(initialValue: rgb)
+        _hex = State(initialValue: Self.hexCode(rgb))
+    }
+
+    private var pickerColor: Binding<Color> {
+        Binding(get: { Color(nsColor: FileMintStyle.srgbColor(draftRGB)) }, set: { color in
+            guard let rgb = FileMintStyle.srgbValue(NSColor(color)) else { return }
+            draftRGB = rgb
+            hex = Self.hexCode(rgb)
+        })
+    }
+
+    private static func hexCode(_ rgb: UInt32) -> String {
+        String(format: "#%06X", rgb)
+    }
+
+    var body: some View {
+        let rgb = AppAccentColor.parseCustomRGB(hex)
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 12) {
+                ColorPicker(model.text(.accentColor), selection: pickerColor, supportsOpacity: false)
+                    .accessibilityIdentifier("accentEditor.color")
+                TextField("#RRGGBB", text: $hex).textFieldStyle(.roundedBorder)
+                    .font(.system(.body, design: .monospaced)).frame(width: 100)
+                    .accessibilityLabel(model.text(.accentHexCode))
+                    .accessibilityIdentifier("accentEditor.rgb")
+                    .onChange(of: hex) { value in
+                        if let rgb = AppAccentColor.parseCustomRGB(value) { draftRGB = rgb }
+                    }
+            }
+            if let saveError {
+                Text(saveError).foregroundStyle(.red).fixedSize(horizontal: false, vertical: true)
+            }
+            HStack {
+                Spacer()
+                Button(model.text(.cancel)) { dismiss() }
+                    .keyboardShortcut(.cancelAction).accessibilityIdentifier("accentEditor.cancel")
+                Button(model.text(.applyAccentColor)) {
+                    guard let rgb else { return }
+                    if model.setCustomAccentColor(rgb) { dismiss() }
+                    else { saveError = model.lastError }
+                }
+                .buttonStyle(MintButtonStyle(primary: true))
+                .environment(\.fileMintPalette, FileMintPalette.resolve(.custom, customRGB: rgb))
+                .disabled(rgb == nil)
+                .keyboardShortcut(.defaultAction).accessibilityIdentifier("accentEditor.apply")
+            }
+        }
+        .padding(20).frame(width: 340)
     }
 }
 

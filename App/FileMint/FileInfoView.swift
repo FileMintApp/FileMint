@@ -3,6 +3,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct FileInfoView: View {
+    @Environment(\.fileMintPalette) private var palette
     @ObservedObject var model: FileInfoController
     @State private var pathExpanded = false
     @State private var comparisonExpanded = false
@@ -49,14 +50,14 @@ struct FileInfoView: View {
                     }
                 }
             }.padding(.horizontal, 26).padding(.vertical, 16)
-        }.background(FileMintStyle.background).tint(FileMintStyle.accent)
+        }.background(FileMintStyle.background)
     }
 
     private var summary: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 12) {
                 Image(systemName: model.metadata?.kind == .directory ? "folder" : "doc.text")
-                    .font(.system(size: 30)).foregroundStyle(FileMintStyle.accent).accessibilityHidden(true)
+                    .font(.system(size: 30)).foregroundStyle(palette.accent).accessibilityHidden(true)
                 Text(model.selection?.source.lastPathComponent ?? text(.title))
                     .font(.title3.weight(.semibold)).textSelection(.enabled)
                     .fixedSize(horizontal: false, vertical: true).accessibilityIdentifier("fileInfo.name")

@@ -4,6 +4,7 @@ import SwiftUI
 
 @MainActor
 struct FileDrawerPlacesSidebar: View {
+    @Environment(\.fileMintPalette) private var palette
     let model: FileDrawerModel
     let favorites: FavoriteLocationsModel
     let activePlace: FileDrawerPlace?
@@ -83,14 +84,14 @@ struct FileDrawerPlacesSidebar: View {
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: symbol).font(.system(size: 16)).frame(width: 23)
-                    .foregroundStyle(FileMintStyle.accent)
+                    .foregroundStyle(palette.accent)
                 Text(verbatim: title).font(.system(size: 14)).lineLimit(1).truncationMode(.middle)
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 6)
             .frame(maxWidth: .infinity, minHeight: 31, alignment: .leading)
             .contentShape(Rectangle())
-            .background(selected ? FileMintStyle.selection : .clear, in: RoundedRectangle(cornerRadius: 6))
+            .background(selected ? palette.selection : .clear, in: RoundedRectangle(cornerRadius: 6))
         }
         .buttonStyle(.plain).accessibilityLabel(title).help(help)
         .accessibilityAddTraits(selected ? .isSelected : []).accessibilityIdentifier(id)

@@ -52,7 +52,7 @@ enum QuickSearchChecks {
         self.search = search
         let updater = UpdateModel(preferencesModel: model, checkRelease: { _ in nil })
         window.contentView = NSHostingView(rootView: ContentView(favoriteLocations: favorites, quickSearch: search)
-            .environmentObject(model).environmentObject(updater))
+            .environmentObject(model).environmentObject(updater).fileMintTheme())
         model.startGlobalShortcut(searchController: search, favorites: favorites)
         model.selectedPane = .general
         // The fixture does not use SwiftUI App's default menu. Supply the native

@@ -44,6 +44,8 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
     public var favoritesFirst: Bool
     public var language: AppLanguage
     public var appearance: AppAppearance
+    public var accentColor: AppAccentColor = .mint
+    public private(set) var customAccentRGB: UInt32?
     public var launchAtLogin: Bool
     public var showMenuBar: Bool
     public var globalShortcut = GlobalShortcutPreferences()
@@ -107,6 +109,8 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         case favoritesFirst
         case language
         case appearance
+        case accentColor
+        case customAccentRGB
         case launchAtLogin
         case showMenuBar
         case globalShortcut
@@ -194,6 +198,12 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         favoritesFirst = (try? container.decode(Bool.self, forKey: .favoritesFirst)) ?? defaults.favoritesFirst
         language = (try? container.decode(AppLanguage.self, forKey: .language)) ?? defaults.language
         appearance = (try? container.decode(AppAppearance.self, forKey: .appearance)) ?? .system
+        accentColor = (try? container.decode(AppAccentColor.self, forKey: .accentColor)) ?? defaults.accentColor
+        if let rgb = try? container.decode(UInt32.self, forKey: .customAccentRGB), rgb <= 0xFFFFFF {
+            customAccentRGB = rgb
+        } else if accentColor == .custom {
+            accentColor = defaults.accentColor
+        }
         launchAtLogin = (try? container.decode(Bool.self, forKey: .launchAtLogin)) ?? true
         showMenuBar = (try? container.decode(Bool.self, forKey: .showMenuBar)) ?? true
         globalShortcut = (try? container.decode(GlobalShortcutPreferences.self, forKey: .globalShortcut)) ?? .init()
@@ -228,6 +238,14 @@ public struct FileMintPreferences: Codable, Equatable, Sendable {
         menuIcons = ((try? container.decode([String: MenuIconCustomization].self, forKey: .menuIcons)) ?? [:])
             .filter { MenuIconSlot(rawValue: $0.key) != nil }
         finderMenuIconStyle = (try? container.decode(FinderMenuIconStyle.self, forKey: .finderMenuIconStyle)) ?? .colored
+    }
+
+    @discardableResult
+    public mutating func selectCustomAccentColor(_ rgb: UInt32) -> Bool {
+        guard rgb <= 0xFFFFFF else { return false }
+        customAccentRGB = rgb
+        accentColor = .custom
+        return true
     }
 
     public static var `default`: FileMintPreferences {

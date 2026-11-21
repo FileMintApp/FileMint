@@ -2,6 +2,7 @@ import FileMintCore
 import SwiftUI
 
 struct FoldersPane: View {
+    @Environment(\.fileMintPalette) private var palette
     @EnvironmentObject private var model: PreferencesModel
     @State private var selection: URL?
 
@@ -12,7 +13,7 @@ struct FoldersPane: View {
                     HStack {
                         Label(model.text(model.extensionEnabled ? .ready : .permissionSetup),
                               systemImage: model.extensionEnabled ? "checkmark.circle.fill" : "info.circle")
-                            .foregroundStyle(model.extensionEnabled ? FileMintStyle.accent : Color.secondary)
+                            .foregroundStyle(model.extensionEnabled ? palette.accent : Color.secondary)
                         Spacer()
                         Button(model.text(.openExtensionSettings)) { model.openExtensionSettings() }.buttonStyle(MintButtonStyle())
                     }
@@ -29,7 +30,7 @@ struct FoldersPane: View {
                         .fixedSize(horizontal: false, vertical: true)
                     List(model.preferences.monitoredFolderURLs, id: \.self, selection: $selection) { url in
                         HStack(spacing: 12) {
-                        Image(systemName: "folder").font(.system(size: 18)).foregroundStyle(FileMintStyle.accent)
+                        Image(systemName: "folder").font(.system(size: 18)).foregroundStyle(palette.accent)
                         Text((url.path as NSString).abbreviatingWithTildeInPath)
                             .lineLimit(1).truncationMode(.middle)
                         }.padding(.vertical, 8).tag(url)

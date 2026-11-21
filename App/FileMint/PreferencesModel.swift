@@ -87,6 +87,7 @@ final class PreferencesModel: ObservableObject {
     private func commitFeatureState(recheckDrawer: Bool = false) {
         let previous = committedPreferences
         committedPreferences = preferences
+        FileMintTheme.shared.apply(committedPreferences)
         if previous.fileDrawer.defaultDirectoryPath != preferences.fileDrawer.defaultDirectoryPath ||
             previous.fileDrawer.enabled != preferences.fileDrawer.enabled ||
             previous.monitoredFolderBookmarks != preferences.monitoredFolderBookmarks {
@@ -140,6 +141,7 @@ final class PreferencesModel: ObservableObject {
         let loaded = store.loadWithStatus()
         preferences = loaded.preferences
         committedPreferences = loaded.preferences
+        FileMintTheme.shared.apply(loaded.preferences)
         drawerGrantObserver = NotificationCenter.default.publisher(for: RememberedFileAccess.directoryWritesChanged)
             .sink { [weak self] _ in self?.drawerAccessChanged.send() }
         _ = reserveSearchKeys(loaded.preferences.globalShortcut)
@@ -321,6 +323,15 @@ final class PreferencesModel: ObservableObject {
         let previous = preferences.appearance
         preferences.appearance = appearance
         if !save() { preferences.appearance = previous }
+    }
+
+    func setCustomAccentColor(_ rgb: UInt32) -> Bool {
+        if preferences.accentColor == .custom && preferences.customAccentRGB == rgb { return true }
+        let previous = preferences
+        guard preferences.selectCustomAccentColor(rgb) else { return false }
+        if save() { return true }
+        preferences = previous
+        return false
     }
 
     private func applyAppearance() {

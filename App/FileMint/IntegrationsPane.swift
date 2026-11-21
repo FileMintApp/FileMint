@@ -308,7 +308,7 @@ struct LauncherGeneratorView: View {
                 }.buttonStyle(MintButtonStyle(primary: true)).keyboardShortcut(.defaultAction)
             }.controlSize(.regular).disabled(state.isExporting).padding(18)
         }
-        .tint(FileMintStyle.accent).buttonStyle(MintButtonStyle()).background(FileMintStyle.background)
+        .buttonStyle(MintButtonStyle()).background(FileMintStyle.background)
         .onChange(of: state.previewFocus) { _ in previewFocused = true }
     }
     private func field<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {

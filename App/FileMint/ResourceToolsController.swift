@@ -103,7 +103,7 @@ final class ResourceToolsController: NSObject, ObservableObject, NSWindowDelegat
         panel.titlebarAppearsTransparent = true
         panel.isReleasedWhenClosed = false
         panel.delegate = self
-        panel.contentView = NSHostingView(rootView: ResourceToolsView(model: self))
+        panel.contentView = NSHostingView(rootView: ResourceToolsView(model: self).fileMintTheme())
         self.panel = panel
         panel.center()
         activatePanel(panel)

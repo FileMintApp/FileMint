@@ -3,6 +3,7 @@ import SwiftUI
 
 @MainActor
 struct FileDrawerActionPalette: View {
+    @Environment(\.fileMintPalette) private var palette
     @ObservedObject var model: FileDrawerModel
     let session: FileDrawerActionSession
     let chinese: Bool
@@ -88,7 +89,7 @@ struct FileDrawerActionPalette: View {
                                     }
                                     .padding(.horizontal, 7).frame(minHeight: 31)
                                     .contentShape(Rectangle())
-                                    .background(selected == action ? FileMintStyle.selection : .clear,
+                                    .background(selected == action ? palette.selection : .clear,
                                                 in: RoundedRectangle(cornerRadius: 5))
                                 }
                                 .buttonStyle(.plain).id(action)

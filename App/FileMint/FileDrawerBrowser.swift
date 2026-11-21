@@ -19,6 +19,7 @@ final class FileDrawerBrowserFocus: ObservableObject {
 
 /// One native collection owns keyboard selection and drag sessions in both layouts.
 struct FileDrawerBrowser: NSViewRepresentable {
+    @Environment(\.fileMintPalette) private var palette
     @ObservedObject var model: FileDrawerModel
     let entries: [FileDrawerEntry]
     let resultsVersion: Int
@@ -27,7 +28,7 @@ struct FileDrawerBrowser: NSViewRepresentable {
     let focus: FileDrawerBrowserFocus
     let find: () -> Void
 
-    func makeCoordinator() -> Coordinator { Coordinator(model: model) }
+    func makeCoordinator() -> Coordinator { Coordinator(model: model, palette: palette) }
 
     func makeNSView(context: Context) -> NSScrollView {
         let scroll = NSScrollView()
@@ -59,6 +60,7 @@ struct FileDrawerBrowser: NSViewRepresentable {
     func updateNSView(_ scroll: NSScrollView, context: Context) {
         guard let collection = scroll.documentView as? DrawerCollection else { return }
         collection.find = find
+        context.coordinator.applyPalette(palette, to: collection)
         context.coordinator.update(collection: collection, entries: entries, version: resultsVersion, mode: mode, chinese: chinese)
     }
 
@@ -75,14 +77,23 @@ struct FileDrawerBrowser: NSViewRepresentable {
         private(set) var chinese = false
         private var mode: FileDrawerViewMode = .list
         private var version: Int?
+        private var palette: FileMintPalette
         private var revealVersion: Int
         private var updating = false
         private var dragEntries: [FileDrawerEntry] = []
         private weak var editingCell: DrawerFileCell?
 
-        init(model: FileDrawerModel) {
+        init(model: FileDrawerModel, palette: FileMintPalette) {
             self.model = model
+            self.palette = palette
             revealVersion = model.pathSelectionVersion
+        }
+
+        func applyPalette(_ palette: FileMintPalette, to collection: NSCollectionView) {
+            guard palette.accentNS != self.palette.accentNS else { return }
+            self.palette = palette
+            // Repaint the existing rows without resetting selection or an inline edit.
+            for case let cell as DrawerFileCell in collection.visibleItems() { cell.applyPalette(palette) }
         }
 
         func update(collection: NSCollectionView, entries next: [FileDrawerEntry], version: Int, mode: FileDrawerViewMode, chinese: Bool) {
@@ -167,6 +178,7 @@ struct FileDrawerBrowser: NSViewRepresentable {
             let item = collectionView.makeItem(withIdentifier: DrawerFileCell.identifier, for: indexPath)
             if let cell = item as? DrawerFileCell, entries.indices.contains(indexPath.item) {
                 cell.configure(entries[indexPath.item], mode: mode, chinese: chinese)
+                cell.applyPalette(palette)
             }
             return item
         }
@@ -359,12 +371,17 @@ private final class DrawerCollection: NSCollectionView {
 }
 
 private final class DrawerCellBackground: NSView {
+    var selectionColor = FileMintPalette.mint.selectionNS {
+        didSet { if oldValue != selectionColor { needsDisplay = true } }
+    }
     var highlighted = false {
         didSet { if oldValue != highlighted { needsDisplay = true } }
     }
     override var wantsUpdateLayer: Bool { true }
     override func updateLayer() {
-        layer?.backgroundColor = (highlighted ? NSColor(FileMintStyle.selection) : .clear).cgColor
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            layer?.backgroundColor = (highlighted ? selectionColor : .clear).cgColor
+        }
     }
     override func viewDidChangeEffectiveAppearance() {
         super.viewDidChangeEffectiveAppearance()
@@ -397,7 +414,6 @@ private final class DrawerFileCell: NSCollectionViewItem, NSTextFieldDelegate {
         date.font = .systemFont(ofSize: 12)
         size.textColor = .secondaryLabelColor
         date.textColor = .secondaryLabelColor
-        symbol.contentTintColor = FileMintStyle.accentNS
         symbol.imageScaling = .scaleProportionallyUpOrDown
         view.addSubview(symbol)
         view.setAccessibilityElement(true)
@@ -406,6 +422,11 @@ private final class DrawerFileCell: NSCollectionViewItem, NSTextFieldDelegate {
 
     override var isSelected: Bool { didSet { paintSelection() } }
     override var highlightState: NSCollectionViewItem.HighlightState { didSet { paintSelection() } }
+
+    func applyPalette(_ palette: FileMintPalette) {
+        symbol.contentTintColor = palette.accentNS
+        (view as? DrawerCellBackground)?.selectionColor = palette.selectionNS
+    }
 
     private func paintSelection() {
         guard isViewLoaded else { return }

@@ -17,13 +17,7 @@ enum FavoriteFeedbackController {
         panel.hasShadow = true
         panel.level = .floating
         panel.ignoresMouseEvents = true
-        let content = NSHostingView(rootView:
-            Label(message, systemImage: symbol)
-                .font(.callout).foregroundStyle(FileMintStyle.strong)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(width: 366, alignment: .leading).padding(17)
-                .background(FileMintStyle.surface, in: RoundedRectangle(cornerRadius: 12))
-                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(FileMintStyle.line)))
+        let content = NSHostingView(rootView: FavoriteFeedbackView(message: message, symbol: symbol).fileMintTheme())
         panel.contentView = content
         panel.setContentSize(NSSize(width: 400, height: max(72, content.fittingSize.height)))
         if let screen = NSScreen.main {
@@ -38,5 +32,20 @@ enum FavoriteFeedbackController {
             panel.close()
             if self.panel === panel { self.panel = nil }
         }
+    }
+}
+
+private struct FavoriteFeedbackView: View {
+    @Environment(\.fileMintPalette) private var palette
+    let message: String
+    let symbol: String
+
+    var body: some View {
+        Label(message, systemImage: symbol)
+            .font(.callout).foregroundStyle(palette.strong)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(width: 366, alignment: .leading).padding(17)
+            .background(FileMintStyle.surface, in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(FileMintStyle.line))
     }
 }

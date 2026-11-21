@@ -112,6 +112,7 @@ private struct ResourceToolCard: View {
 }
 
 struct ResourceToolsView: View {
+    @Environment(\.fileMintPalette) private var palette
     @ObservedObject var model: ResourceToolsController
     @State private var details = false
     private func text(_ key: ResourceText) -> String { key.text(model.language) }
@@ -140,7 +141,7 @@ struct ResourceToolsView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             footer
-        }.padding(24).background(FileMintStyle.background).tint(FileMintStyle.accent)
+        }.padding(24).background(FileMintStyle.background)
             .frame(minWidth: 800, minHeight: 530)
     }
 
@@ -191,7 +192,7 @@ struct ResourceToolsView: View {
                                 Text("\(index + 1)").font(.system(size: 9)).foregroundStyle(.secondary)
                             }.padding(4).background(FileMintStyle.surface, in: RoundedRectangle(cornerRadius: 6))
                                 .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(
-                                    model.selectedIndex == index ? FileMintStyle.accent : Color.clear, lineWidth: 1))
+                                    model.selectedIndex == index ? palette.accent : Color.clear, lineWidth: 1))
                         }.buttonStyle(.plain).accessibilityLabel(input.url.lastPathComponent)
                             .accessibilityAddTraits(model.selectedIndex == index ? .isSelected : [])
                     }
@@ -305,10 +306,10 @@ struct ResourceToolsView: View {
                         Button { model.options.format = format } label: {
                             Text(format == .pngSet ? text(.pngSet) : format.rawValue.uppercased())
                                 .font(.system(size: 11)).frame(maxWidth: .infinity).padding(.vertical, 9)
-                                .background(model.options.format == format ? FileMintStyle.selection : FileMintStyle.background,
+                                .background(model.options.format == format ? palette.selection : FileMintStyle.background,
                                             in: RoundedRectangle(cornerRadius: 6))
                                 .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(
-                                    model.options.format == format ? FileMintStyle.accent : FileMintStyle.line, lineWidth: 0.7))
+                                    model.options.format == format ? palette.accent : FileMintStyle.line, lineWidth: 0.7))
                         }.buttonStyle(.plain).accessibilityAddTraits(model.options.format == format ? .isSelected : [])
                     }
                 }
