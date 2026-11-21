@@ -36,7 +36,7 @@ struct GlobalShortcutControls: View {
             PreferenceRow(title: text(.enable), detail: isDrawer
                 ? (language.resolved() == .chinese ? "从其他应用呼出文件抽屉。" : "Show the drawer from another app.")
                 : text(.enableHint)) {
-                Toggle(text(.enable), isOn: Binding(get: { saved.isEnabled }, set: setEnabled))
+                Toggle(text(.enable), isOn: Binding(get: { saved.isEnabled }, set: { setEnabled($0) }))
                     .labelsHidden().accessibilityIdentifier(prefix + "enabled")
             }
             Divider()

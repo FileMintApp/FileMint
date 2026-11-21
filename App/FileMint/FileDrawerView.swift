@@ -208,7 +208,8 @@ struct FileDrawerView: View {
             .accessibilityLabel(label("Sort by", "排序方式")).accessibilityIdentifier("drawer.sort")
             .help(label("Sort by", "排序方式"))
             Menu {
-                Picker(label("View", "显示方式"), selection: Binding(get: { model.viewMode }, set: model.setViewMode)) {
+                Picker(label("View", "显示方式"),
+                       selection: Binding(get: { model.viewMode }, set: { model.setViewMode($0) })) {
                     ForEach(FileDrawerViewMode.allCases, id: \.self) { mode in
                         Label(mode.command.hint(for: mode.command.title(chinese), shown: showsHints), systemImage: mode.symbol).tag(mode)
                     }
@@ -291,7 +292,7 @@ struct FileDrawerView: View {
                 }.disabled(model.interacting)
             }
             Toggle(label("Automatic Preview", "自动预览"),
-                   isOn: Binding(get: { settings.preferences.fileDrawer.autoPreview }, set: model.setAutoPreview))
+                   isOn: Binding(get: { settings.preferences.fileDrawer.autoPreview }, set: { model.setAutoPreview($0) }))
                 .toggleStyle(.switch).accessibilityIdentifier("drawer.autoPreview")
         }
     }
