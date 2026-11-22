@@ -38,6 +38,23 @@ struct FileDrawerPreferencesTests {
         }
     }
 
+    @Test("drawer animations preserve saved choices and migrate independently of neighboring settings")
+    func animationPreferences() throws {
+        #expect(FileDrawerPreferences().animation == .genie)
+        for drawer in [#"{"enabled":true,"side":"left"}"#,
+                       #"{"animation":"future","enabled":true,"side":"left"}"#,
+                       #"{"animation":12,"enabled":true,"side":"left"}"#] {
+            let decoded = try JSONDecoder().decode(FileDrawerPreferences.self, from: Data(drawer.utf8))
+            #expect(decoded.animation == .genie && decoded.enabled && decoded.side == .left)
+        }
+        for animation in FileDrawerPreferences.Animation.allCases {
+            var settings = FileMintPreferences.default
+            settings.fileDrawer.animation = animation
+            let restored = try JSONDecoder().decode(FileMintPreferences.self, from: JSONEncoder().encode(settings))
+            #expect(restored.fileDrawer == settings.fileDrawer)
+        }
+    }
+
     @Test("malformed sizing switches use adaptive defaults and retain saved dimensions")
     func malformedSizingModes() throws {
         let data = Data(#"{"fitsDisplayWidth":null,"width":580,"fitsDisplayHeight":"false","height":700}"#.utf8)

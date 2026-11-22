@@ -1,9 +1,30 @@
 import AppKit
+import CoreMedia
 import FileMintCore
+import MetalKit
 import QuartzCore
 import QuickLookUI
+import ScreenCaptureKit
 import SwiftUI
 import UniformTypeIdentifiers
+
+@available(macOS 15, *)
+@MainActor
+private final class DrawerMovie: NSObject, SCRecordingOutputDelegate {
+    var started = false
+    var finished = false
+    var error: Error?
+
+    nonisolated func recordingOutputDidStartRecording(_ output: SCRecordingOutput) {
+        Task { @MainActor in started = true }
+    }
+    nonisolated func recordingOutputDidFinishRecording(_ output: SCRecordingOutput) {
+        Task { @MainActor in finished = true }
+    }
+    nonisolated func recordingOutput(_ output: SCRecordingOutput, didFailWithError error: Error) {
+        Task { @MainActor in self.error = error }
+    }
+}
 
 @MainActor
 private final class DrawerLocationsMenuProbe: NSObject {
@@ -95,12 +116,15 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
     try FileManager.default.createDirectory(at: project, withIntermediateDirectories: true)
     let lastLocationKey = "fileDrawer.qa.lastLocation." + UUID().uuidString
     defer { UserDefaults.standard.removeObject(forKey: lastLocationKey) }
-    let controller = FileDrawerController(settings: settings, favorites: favorites, placeHome: home, lastLocationKey: lastLocationKey)
+    var reduceMotionOverride: Bool?
+    let controller = FileDrawerController(settings: settings, favorites: favorites, placeHome: home, lastLocationKey: lastLocationKey,
+                                          reduceMotion: { reduceMotionOverride ?? NSWorkspace.shared.accessibilityDisplayShouldReduceMotion })
     let model = controller.model
     controller.toggleFromShortcut()
     try require(!model.presented, "Disabled drawer was shown")
     try await checkDrawerSettingsControls()
     var prefs = settings.committedPreferences.fileDrawer
+    prefs.animation = .slide
     prefs.width = 1_000
     prefs.fitsDisplayWidth = false
     prefs.minimumWidth = 340
@@ -935,6 +959,7 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
     try await wait("Drawer did not return to its default") { model.directory == authorizedRoot && !model.busy }
     try await checkFileArrows()
     try await checkDimensionEditors()
+    try await checkAnimationEffects()
     prefs = settings.committedPreferences.fileDrawer
     prefs.enabled = false
     try require(settings.setFileDrawer(prefs), "Disabling drawer failed")
@@ -968,6 +993,8 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
             let drawer = settings.committedPreferences.fileDrawer
             return drawer.enabled && drawer.fitsDisplayWidth && drawer.fitsDisplayHeight
         }
+        try require(settings.committedPreferences.fileDrawer.animation == .genie, "New drawer settings did not default to Genie")
+        try await wait("Drawer appearance did not offer the animation picker") { axElement("drawer.animation", in: host) != nil }
         try await wait("The missing grant did not show the authorization button") {
             axElement("drawer.authorizeDiskRoot", in: host) != nil && axElement("drawer.diskRootAuthorized", in: host) == nil
         }
@@ -985,6 +1012,10 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
             model.window?.isVisible == true && model.window?.isKeyWindow == true
         }
         guard let opened = controller.panel else { throw failure("Missing drawer opened from settings") }
+        if !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion, let content = opened.contentView {
+            try require(!views(of: FileDrawerGenieTransition.self, in: content).isEmpty,
+                        "Opening with the default setting did not start Genie")
+        }
         model.pinned = true
         owner.makeKeyAndOrderFront(nil)
         try await wait("Settings could not take focus again") { owner.isKeyWindow }
@@ -993,6 +1024,358 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
             controller.panel === opened && opened.isKeyWindow
         }
         print("PASS drawer settings: adaptive defaults, grant status and open or focus")
+    }
+
+    func checkAnimationEffects() async throws {
+        reduceMotionOverride = false
+        defer { reduceMotionOverride = nil }
+        func genieView() -> FileDrawerGenieTransition? {
+            guard let content = controller.panel?.contentView else { return nil }
+            return views(of: FileDrawerGenieTransition.self, in: content).first
+        }
+        @available(macOS 14.4, *)
+        func checkCompositedGlass(layout: String, side: FileDrawerPreferences.Side, opening: Bool) async throws {
+            let phase = opening ? "opening" : "closing"
+            let label = "\(layout) \(side.rawValue) \(phase)"
+            controller.show()
+            guard let drawer = controller.panel else { throw failure("Missing drawer for \(label)") }
+            defer { drawer.close() }
+            model.pinned = true
+            if !opening {
+                try await wait("Drawer did not finish opening before \(label)") { genieView() == nil && !model.busy }
+                model.close()
+            }
+            guard let genie = genieView(), genie.presentsWithTransaction else { throw failure("Missing live glass for \(label)") }
+            // Keep the actual transition mounted while the window server takes the screenshot.
+            // The separate lifecycle checks below exercise its normal completion and reversal.
+            genie.play(opening: opening) {}
+            try await wait("No intermediate frame for \(label)") { (0.42...0.62).contains(genie.progress) }
+            genie.isPaused = true
+            CATransaction.flush()
+            let ownWindows = try await SCShareableContent.currentProcess.windows
+            guard let window = ownWindows.first(where: { $0.windowID == CGWindowID(drawer.windowNumber) }) else {
+                throw failure("Could not find the fixture's own drawer for \(label)")
+            }
+            let filter = SCContentFilter(desktopIndependentWindow: window)
+            let config = SCStreamConfiguration()
+            let width = Int(genie.drawableSize.width)
+            let height = Int(genie.drawableSize.height)
+            config.width = width
+            config.height = height
+            config.ignoreShadowsSingleWindow = true
+            config.showsCursor = false
+            config.shouldBeOpaque = false
+            let frame = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: config)
+            let bitmap = NSBitmapImageRep(cgImage: frame)
+            try require(frame.width == width && frame.height == height, "Unexpected backing dimensions for \(label)")
+            guard let png = bitmap.representation(using: .png, properties: [:]) else { throw failure("Could not encode \(label)") }
+            try png.write(to: root.appendingPathComponent("drawer-genie-\(layout)-\(phase)-\(side.rawValue).png"))
+
+            // The glass must cover the entire warped cross-section from the body to the throat.
+            let vertices = FileDrawerGenieGeometry(size: genie.bounds.size, side: side).vertices(at: genie.progress)
+            let columns = FileDrawerGenieGeometry.columns
+            var maxEdgeError = 0.0
+            for column in [2, columns / 2, columns - 2] {
+                let a = vertices[column], b = vertices[column + 1]
+                let x = Int(Double((a.x + b.x) / 2) * Double(width))
+                let rows = (0..<height).filter { (bitmap.colorAt(x: x, y: $0)?.alphaComponent ?? 0) > 0.4 }
+                guard let first = rows.first, let last = rows.last else { throw failure("Missing glass at column \(column) in \(label)") }
+                let sampleX = Float((Double(x) + 0.5) / Double(width))
+                let fraction = (sampleX - a.x) / (b.x - a.x)
+                let inset = Double(a.y + fraction * (b.y - a.y)) * Double(height)
+                maxEdgeError = max(maxEdgeError, abs(Double(first) - inset), abs(Double(height - 1 - last) - inset))
+                try require(rows.count == last - first + 1, "Gap in the composited glass at column \(column) in \(label)")
+            }
+            try require(maxEdgeError <= 3, "Glass outline missed the warped drawer by \(maxEdgeError) pixels in \(label)")
+
+            // The centered resize grip is part of the Metal snapshot. Measure its visible mark
+            // against the adjacent glass in this same image, including in dark appearance.
+            func resizeGrip(in view: NSView) -> NSView? {
+                if view.accessibilityLabel() == model.text("Resize file drawer", "调整抽屉宽度") { return view }
+                return view.subviews.lazy.compactMap { resizeGrip(in: $0) }.first
+            }
+            guard let content = drawer.contentView, let handle = resizeGrip(in: content) else { throw failure("Missing drawer grip") }
+            let sourceX = genie.convert(handle.bounds, from: handle).midX / genie.bounds.width
+            let gripX = Int((Double(vertices[0].x) + sourceX * Double(vertices[columns].x - vertices[0].x)) * Double(width))
+            let mid = height / 2
+            let span = Int(40 * drawer.backingScaleFactor)
+            func brightness(_ y: Int) throws -> CGFloat {
+                guard let color = bitmap.colorAt(x: gripX, y: y)?.usingColorSpace(.sRGB) else {
+                    throw failure("Missing resize grip sample in \(label)")
+                }
+                return color.brightnessComponent
+            }
+            let background = try brightness(mid - span)
+            let grip = try (mid - span...mid + span).filter { abs(try brightness($0) - background) > 0.06 }
+            guard let first = grip.first, let last = grip.last else { throw failure("Missing visible resize grip in \(label)") }
+            let gripCenter = Double(first + last) / 2
+            try require(grip.count >= 6 && grip.count == last - first + 1 && abs(gripCenter - Double(mid)) <= 2,
+                        "Resize grip did not align with the glass center in \(label) (\(first)...\(last), center \(mid))")
+            if layout == "adaptive" && side == .right {
+                // Locate actual file icons in the composited frame. A cached location chooser has none of these rows.
+                guard let list = views(of: NSCollectionView.self, in: content).first, list.numberOfItems(inSection: 0) >= 3 else {
+                    throw failure("The fixture listing did not restore during \(label)")
+                }
+                let windowRect = genie.convert(genie.bounds, to: nil)
+                for index in 0..<3 {
+                    guard let item = list.item(at: IndexPath(item: index, section: 0)),
+                          let icon = views(of: NSImageView.self, in: item.view).first else { throw failure("Missing fixture file icon") }
+                    let rect = icon.convert(icon.bounds, to: nil)
+                    let u = (rect.midX - windowRect.minX) / windowRect.width * CGFloat(columns)
+                    let column = min(columns - 1, max(0, Int(u)))
+                    let a = vertices[column], b = vertices[column + 1]
+                    let position = a + Float(u - CGFloat(column)) * (b - a)
+                    let v = (windowRect.maxY - rect.midY) / windowRect.height
+                    let x = CGFloat(position.x) * CGFloat(width)
+                    let y = (CGFloat(position.y) + v * CGFloat(1 - 2 * position.y)) * CGFloat(height)
+                    let radius = ceil(max(rect.width, rect.height) * drawer.backingScaleFactor / 2)
+                    let region = CGRect(x: x - radius, y: y - radius, width: 2 * radius, height: 2 * radius)
+                    guard let crop = frame.cropping(to: region.integral) else { throw failure("Missing warped file icon area") }
+                    let iconPixels = NSBitmapImageRep(cgImage: crop)
+                    let containsTint = (0..<iconPixels.pixelsHigh).contains { row in
+                        (0..<iconPixels.pixelsWide).contains { col in
+                            (iconPixels.colorAt(x: col, y: row)?.usingColorSpace(.sRGB)?.saturationComponent ?? 0) > 0.08
+                        }
+                    }
+                    try require(containsTint, "The warped snapshot lost file icon \(index) during \(label)")
+                }
+            }
+            print("PASS composited Genie \(label): \(width)x\(height) px, grip center \(gripCenter), maximum outline error \(maxEdgeError) px")
+        }
+        func checkMotionToEndpoint(_ genie: FileDrawerGenieTransition, opening: Bool) async throws {
+            var previous = genie.progress
+            var movedBackwards = false
+            try await wait("Genie did not hand off its final frame") {
+                if opening ? genie.progress > previous : genie.progress < previous { movedBackwards = true }
+                previous = genie.progress
+                return genie.superview == nil
+            }
+            try require(!movedBackwards && genie.progress == (opening ? 0 : 1),
+                        "Genie reversed or handed off before rendering its endpoint at \(genie.progress)")
+        }
+        @available(macOS 15, *)
+        func recordDrawerCycle() async throws {
+            controller.show()
+            guard let drawer = controller.panel, let screen = drawer.screen else { throw failure("Missing drawer to record") }
+            model.pinned = true
+            try await wait("Drawer did not finish opening before recording") { genieView() == nil && !model.busy }
+            let own = try await SCShareableContent.currentProcess
+            let screenID = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber
+            guard let display = own.displays.first(where: { $0.displayID == screenID?.uint32Value }),
+                  let app = own.applications.first(where: { $0.processID == ProcessInfo.processInfo.processIdentifier })
+            else { throw failure("Missing fixture display or app to record") }
+            // Both successive drawer windows belong to the fixture; exclude its other windows.
+            let excluded = own.windows.filter { $0.owningApplication?.processID == app.processID && $0.windowID != CGWindowID(drawer.windowNumber) }
+            let filter = SCContentFilter(display: display, including: [app], exceptingWindows: excluded)
+            filter.includeMenuBar = false
+            let config = SCStreamConfiguration()
+            config.sourceRect = CGRect(x: drawer.frame.minX - screen.frame.minX, y: screen.frame.maxY - drawer.frame.maxY,
+                                       width: drawer.frame.width, height: drawer.frame.height)
+            config.width = Int(drawer.frame.width) / 2 * 2
+            config.height = Int(drawer.frame.height) / 2 * 2
+            config.minimumFrameInterval = CMTime(value: 1, timescale: 60)
+            config.ignoreShadowsDisplay = true
+            config.showsCursor = false
+            config.capturesAudio = false
+            let stream = SCStream(filter: filter, configuration: config, delegate: nil)
+            let movie = DrawerMovie()
+            let output = SCRecordingOutputConfiguration()
+            output.outputURL = root.appendingPathComponent("drawer-genie-cycle.mp4")
+            try stream.addRecordingOutput(SCRecordingOutput(configuration: output, delegate: movie))
+            try await stream.startCapture()
+            do {
+                try await wait("Drawer recording did not start") { movie.started || movie.error != nil }
+                if let error = movie.error { throw error }
+                try await Task.sleep(for: .milliseconds(200))
+                model.close()
+                guard let closing = genieView() else { throw failure("Missing recorded dismissal") }
+                try await checkMotionToEndpoint(closing, opening: false)
+                try await Task.sleep(for: .milliseconds(200))
+                controller.show()
+                model.pinned = true
+                guard let opening = genieView() else { throw failure("Missing recorded opening") }
+                try await checkMotionToEndpoint(opening, opening: true)
+                try await Task.sleep(for: .milliseconds(200))
+            } catch {
+                try? await stream.stopCapture()
+                throw error
+            }
+            try await stream.stopCapture()
+            try await wait("Drawer recording did not finish") { movie.finished || movie.error != nil }
+            if let error = movie.error { throw error }
+            controller.panel?.close()
+        }
+        func captureGenie(_ genie: FileDrawerGenieTransition, side: FileDrawerPreferences.Side, phase: String,
+                          glass: NSVisualEffectView?) throws {
+            let width = Int(genie.bounds.width.rounded(.up))
+            let height = Int(genie.bounds.height.rounded(.up))
+            let textureInfo = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: genie.colorPixelFormat,
+                                                                      width: width, height: height, mipmapped: false)
+            textureInfo.usage = .renderTarget
+            textureInfo.storageMode = .shared
+            guard let device = genie.device, let texture = device.makeTexture(descriptor: textureInfo),
+                  let buffer = device.makeCommandQueue()?.makeCommandBuffer() else { throw failure("Could not allocate a Genie frame") }
+            let pass = MTLRenderPassDescriptor()
+            pass.colorAttachments[0].texture = texture
+            pass.colorAttachments[0].loadAction = .clear
+            pass.colorAttachments[0].storeAction = .store
+            pass.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 0)
+            genie.renderFrame(to: pass, using: buffer)
+            buffer.commit()
+            buffer.waitUntilCompleted()
+            try require(buffer.status == .completed, "Could not render the Genie taper")
+            let rowBytes = width * 4
+            var pixels = Data(count: rowBytes * height)
+            pixels.withUnsafeMutableBytes { bytes in
+                guard let address = bytes.baseAddress else { return }
+                texture.getBytes(address, bytesPerRow: rowBytes, from: MTLRegionMake2D(0, 0, width, height), mipmapLevel: 0)
+            }
+            let format: CGBitmapInfo = [.byteOrder32Little, .init(rawValue: CGImageAlphaInfo.premultipliedFirst.rawValue)]
+            guard let data = CGDataProvider(data: pixels as CFData), let space = CGColorSpace(name: CGColorSpace.sRGB),
+                  let image = CGImage(width: width, height: height, bitsPerComponent: 8, bitsPerPixel: 32,
+                                      bytesPerRow: rowBytes, space: space, bitmapInfo: format, provider: data,
+                                      decode: nil, shouldInterpolate: false, intent: .defaultIntent) else {
+                throw failure("Could not decode the rendered Genie frame")
+            }
+            let bitmap = NSBitmapImageRep(cgImage: image)
+            let edge = side == .left ? width / 50 : width - 1 - width / 50
+            guard let png = bitmap.representation(using: .png, properties: [:]) else { throw failure("Could not encode Genie taper") }
+            try png.write(to: root.appendingPathComponent("drawer-genie-\(phase)-\(side.rawValue).png"))
+            let interior = (height / 2 - 5)...(height / 2 + 5)
+            if let glass {
+                try require(!glass.isHidden && genie.presentsWithTransaction, "Genie stopped compositing the live glass")
+                guard let image = glass.maskImage?.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+                    throw failure("The \(phase) Genie frame did not mask the native glass")
+                }
+                let mask = NSBitmapImageRep(cgImage: image)
+                let maskEdge = side == .left ? mask.pixelsWide / 50 : mask.pixelsWide - 1 - mask.pixelsWide / 50
+                try require((mask.colorAt(x: maskEdge, y: mask.pixelsHigh / 2)?.alphaComponent ?? 0) > 0.98 &&
+                            (mask.colorAt(x: maskEdge, y: mask.pixelsHigh / 8)?.alphaComponent ?? 1) < 0.05,
+                            "The \(phase) glass mask did not follow the Genie outline")
+                try require(interior.contains { (bitmap.colorAt(x: edge, y: $0)?.alphaComponent ?? 1) < 0.1 },
+                            "The \(phase) Genie frame covered the glass with a solid background")
+                try require(stride(from: 3, to: pixels.count, by: 4).contains { pixels[$0] > 0 },
+                            "The \(phase) Genie frame lost the drawer controls")
+            } else {
+                try require(interior.allSatisfy { (bitmap.colorAt(x: edge, y: $0)?.alphaComponent ?? 0) > 0.98 },
+                            "The \(phase) Genie frame lost its solid background")
+            }
+            try require((bitmap.colorAt(x: edge, y: height / 8)?.alphaComponent ?? 1) < 0.05,
+                        "The \(phase) Genie frame did not taper into the \(side.rawValue) edge")
+        }
+        var options = settings.committedPreferences.fileDrawer
+        options.animation = .genie
+        controller.panel?.close()
+        for side in FileDrawerPreferences.Side.allCases {
+            options.side = side
+            options.glass = side == .right
+            try require(settings.setFileDrawer(options), "Could not save the Genie effect")
+            controller.show()
+            guard let drawer = controller.panel, let opening = genieView(),
+                  let content = drawer.contentView, let surface = content.subviews.first?.layer,
+                  let material = views(of: NSVisualEffectView.self, in: content).first(where: { $0.blendingMode == .behindWindow }) else {
+                throw failure("Genie did not animate opening on the " + side.rawValue)
+            }
+            let glass = options.glass && !NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency ? material : nil
+            model.pinned = true
+            try await wait("Genie opening did not reach the taper") { (0.43..<0.8).contains(opening.progress) }
+            try captureGenie(opening, side: side, phase: "opening", glass: glass)
+            try await checkMotionToEndpoint(opening, opening: true)
+            try await wait("The live drawer did not finish loading") { !model.busy }
+            try require(material.maskImage == nil, "Opening left the live drawer material masked")
+
+            model.close()
+            guard let closing = genieView() else { throw failure("Genie did not animate closing") }
+            try await wait("Genie closing did not reach the taper") { (0.43..<0.8).contains(closing.progress) }
+            try captureGenie(closing, side: side, phase: "closing", glass: glass)
+            let progress = closing.progress
+            controller.show()
+            try require(controller.panel === drawer && genieView() === closing && closing.progress == progress,
+                        "Reversing Genie replaced the window or restarted the deformation")
+            try await checkMotionToEndpoint(closing, opening: true)
+            try require(controller.panel === drawer && drawer.isVisible, "The reversed Genie transition lost the drawer")
+            try require(surface.opacity == 1, "Reopening did not restore the drawer's live content")
+            try require(material.maskImage == nil, "Reversing left the live drawer material masked")
+
+            model.close()
+            guard let dismissal = genieView() else { throw failure("Missing final Genie dismissal") }
+            try await checkMotionToEndpoint(dismissal, opening: false)
+            try require(controller.panel == nil && !drawer.isVisible, "Genie did not finish closing the drawer")
+            try require(surface.opacity == 0 && material.maskImage == nil, "Finishing Genie did not clean up the closed drawer")
+        }
+
+        if #available(macOS 14.4, *), !NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency {
+            var adaptive = FileDrawerPreferences()
+            adaptive.enabled = true
+            adaptive.defaultDirectoryPath = options.defaultDirectoryPath
+            adaptive.remembersLastLocation = options.remembersLastLocation
+            var tall = adaptive
+            tall.fitsDisplayWidth = false
+            tall.fitsDisplayHeight = false
+            tall.width = tall.minimumWidth
+            tall.height = tall.maximumHeight
+            tall.transparency /= 2
+            var wide = tall
+            wide.maximumWidth = FileDrawerPreferences.supportedWidths.upperBound
+            wide.width = min(screen.visibleFrame.width * 0.72, wide.maximumWidth)
+            wide.height = wide.minimumHeight
+            wide.transparency = adaptive.transparency
+            for (layout, sizing) in [("adaptive", adaptive), ("tall", tall), ("wide", wide)] {
+                for side in FileDrawerPreferences.Side.allCases {
+                    var fixture = sizing
+                    fixture.side = side
+                    try require(settings.setFileDrawer(fixture), "Could not configure \(layout) drawer")
+                    try await checkCompositedGlass(layout: layout, side: side, opening: true)
+                    try await checkCompositedGlass(layout: layout, side: side, opening: false)
+                }
+            }
+            try require(settings.setFileDrawer(tall), "Could not configure active resize")
+            controller.show()
+            guard let old = genieView(), let window = controller.panel else { throw failure("Missing Genie before resize") }
+            model.pinned = true
+            try require(settings.setFileDrawer(wide), "Could not resize an opening drawer")
+            let expected = wide.panelFrame(in: screen.visibleFrame)
+            try await wait("Resizing left a stale Genie frame or mask on the drawer") {
+                old.superview == nil && abs(window.frame.width - expected.width) < 1 && abs(window.frame.height - expected.height) < 1 &&
+                window.contentView.map { views(of: NSVisualEffectView.self, in: $0).allSatisfy { $0.maskImage == nil } } == true
+            }
+            window.close()
+            if #available(macOS 15, *) {
+                try require(settings.setFileDrawer(adaptive), "Could not configure adaptive recording")
+                try await recordDrawerCycle()
+            }
+        } else {
+            print("SKIP composited Genie: own-window capture needs macOS 14.4+ with glass available")
+        }
+
+        options.animation = .scale
+        try require(settings.setFileDrawer(options), "Could not save the Scale effect")
+        controller.show()
+        guard let drawer = controller.panel else { throw failure("Missing drawer for Scale effect") }
+        model.pinned = true
+        let layer = drawer.contentView?.subviews.first?.layer
+        try await wait("Scale did not finish opening the drawer") { layer?.animation(forKey: "drawerVisibility") == nil }
+        model.close()
+        let group = layer?.animation(forKey: "drawerVisibility") as? CAAnimationGroup
+        let scale = group?.animations?.compactMap { $0 as? CABasicAnimation }.first { $0.keyPath == "transform" }
+        try require((scale?.toValue as? NSValue)?.caTransform3DValue.m11 == 0.7, "Scale did not shrink the drawer")
+        controller.show()
+        try await wait("Reversing Scale lost the drawer") {
+            controller.panel === drawer && drawer.isVisible && layer?.animation(forKey: "drawerVisibility") == nil
+        }
+
+        options.animation = .genie
+        try require(settings.setFileDrawer(options), "Could not restore the Genie effect")
+        let stored = FileMintPreferencesStore(fileURL: root.appendingPathComponent("fixture-preferences.json")).load()
+        try require(stored.fileDrawer.animation == .genie, "The saved animation did not survive readback")
+        model.close()
+        try require(genieView() != nil, "Missing closing transition to interrupt")
+        reduceMotionOverride = true
+        NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+        try require(controller.panel == nil && !model.presented, "Reduce Motion did not finish an active dismissal")
+        controller.show()
+        try require(controller.panel?.isVisible == true && genieView() == nil, "Reduce Motion did not skip opening animation")
+        print("PASS drawer animations: left/right Genie, interruption, Scale, persistence and Reduce Motion")
     }
 
     func turnOffLocationMemory() async throws {

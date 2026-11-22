@@ -66,7 +66,12 @@ The fixture edits the width and height settings
 through their native field editors and checks the open window, stored values, limits
 and reopened window. It also covers system material, interrupted fade, file-list layouts,
 query cancellation, sort direction, the full-width breadcrumb row, and four-arrow file
-navigation in each layout. The selection action panel fixture checks keyboard focus,
+navigation in each layout. On macOS 14.4+ with glass available, the fixture
+captures its own composited Genie window at adaptive, tall and wide sizes on
+both edges and in both directions. It measures the glass outline and grip and
+checks that restored file icons appear in the moving controls. On macOS 15+ it
+also records a complete closing and reopening cycle for visual inspection.
+The selection action panel fixture checks keyboard focus,
 filtering, template drafts targeting a selected child folder, cancellation, direct
 shortcuts, multi-selection and rejection of a same-name replacement. Its Open With
 page covers the app list, filtering, Other Application, cancellation and stale rows.

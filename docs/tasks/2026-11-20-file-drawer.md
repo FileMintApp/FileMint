@@ -10,6 +10,144 @@ Acceptance follows the app, Core and native rows of the [Harness](../../specs/HA
 
 ## Drawer refinements
 
+### Drawer animations — 2026-11-22
+
+Appearance settings offer Genie, Scale, and Slide and Fade. Genie is the default
+when no valid effect is saved. AppKit supplies a temporary drawer image and a
+Metal-backed view bends it into the selected edge. The snapshot uses the system
+window background during the transition. Opening reverses the shape, and
+interrupting the animation preserves the drawer session.
+
+The first native runs stopped an opening before its intermediate frames
+(`run.5mtu_z3k`, `run.6xzyg7ek`, `run.7qlaylao`). AppKit rounded a requested Y
+origin of 329.5 pt to 329 pt. The drawer now compares requested frames so a
+preference notification with identical layout does not end the animation.
+The signed suite then passed on both edges in `run.5xtvggk2` before Genie became
+the default.
+
+Tested the final default on the worktree based on `a139fd6` on arm64 macOS 27.2.1
+with Xcode 27.2.
+
+| Check | Status | Observed result |
+| --- | --- | --- |
+| `make verify` | passed | 440 Core and 25 image Swift tests passed, plus the offline Harness checks. Local log `build/file-drawer-animation.gccoH3/verify-genie-default.log`. |
+| `CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO make build` | passed | The Release app and embedded Finder extension executables were present. Local log `build/file-drawer-animation.gccoH3/build-genie-default.log`. |
+| `make verify-native-affected` | passed | Opening from settings played Genie by default. The fixture checked both edges, reversal, Scale, saved readback, and interrupting an animation with Reduce Motion. Local report and rendered intermediate frames in `build/native-checks.noindex/run.glu316rk/`. |
+
+Inspected both rendered intermediate frames. Actual refresh rate, physical display
+changes, macOS 13 runtime, and frame-by-frame comparison with the Dock effect
+remain unverified.
+
+#### Installed Debug — 2026-11-22
+
+Rebuilt the direct-executable Debug configuration on the same working tree and
+signed it with the existing Developer ID. Bundle verification passed for the
+arm64 executables and the host and extension sandbox entitlements. Backed up
+the prior installation, quit FileMint normally and installed 0.8.2 (31) at
+`/Applications/FileMint.app`.
+
+After launch, the App and the enabled Finder extension both mapped the new
+installed executables. Their SHA-256 values matched the verified build. The old
+bundle archive and the build, signing, install and runtime logs are under
+`build/local-debug-install.noindex/drawer-genie.NbJ0Ii/`.
+
+#### Genie opening and dismissal handoff — 2026-11-22
+
+The user reported that the opening frame showed the desktop through the drawer,
+and that the full drawer briefly appeared again at the end of dismissal. The
+added native close check reproduced the live surface returning to full opacity
+as the window closed in `run.j255ge48`.
+
+The animation bitmap now composites the window background under the captured
+controls and keeps the rounded silhouette. The live window material returns
+when opening finishes. Closing orders the panel out before disposing of the
+animation and keeps the live surface hidden during teardown.
+
+The final working tree based on `a139fd6` passed `make verify` with 440 Core and
+25 image tests. Unsigned Release compilation passed after regenerating the
+project following the removal of a temporary indexing probe. Logs are in
+`build/file-drawer-genie-handoff.Wkqg5i/`.
+
+The signed drawer suite passed with the initial composition fix in
+`run.w6u398pn`. After unifying the captured background tint, `run.d0hj6tzx`
+stopped at an action-palette focus assertion before reaching animation. In
+`run.bk8ji4q7` and `run.0o5bk961` the complete suite exited successfully and
+checked opening and closing frame pixels on both sides, reversal, and the
+hidden live surface after dismissal. The runner marked both reports blocked
+because temporary Zed indexing probes changed its input fingerprint during
+execution. Comparison showed only the indexing probes changing outside the
+tested snapshot. The final observed frames are in `run.0o5bk961`.
+
+The Developer ID signed Debug bundle passed bundle checks and was installed at
+`/Applications/FileMint.app`. After launch, the running app and Finder extension
+both mapped the verified replacement executables. The installation logs and the
+previous app archive are in `build/local-debug-install.noindex/drawer-genie-handoff.6ZdEIj/`.
+
+#### Genie material in both directions — 2026-11-22
+
+The user clarified that the translucent glass should remain visible during both
+opening and closing. The animation now warps a snapshot of the controls and
+masks the native behind-window material with the same outline. The material
+and controls present in the same transaction. With glass off or Reduce
+Transparency enabled, the snapshot includes the system window background.
+The panel still leaves the screen before the animation is discarded.
+
+On the worktree based on `a139fd6`, `make verify` passed with 440 Core and 25
+image tests, and the unsigned Release build passed. The signed drawer suite
+passed in `build/native-checks.noindex/run.cw7mgy4x/`. It verified that both
+directions mask the live glass along the moving outline on the right, use a
+solid background on the left with glass disabled, and clear the mask at handoff
+and dismissal. The saved PNGs are renderer frames, with the glass composed
+separately by AppKit.
+
+The Developer ID signed Debug 0.8.2 (31) bundle passed verification and was
+installed at `/Applications/FileMint.app`. The running app and Finder extension
+mapped the verified replacement executables. The former app archive and local
+logs are in `build/local-debug-install.noindex/drawer-genie-glass.mafGir/`.
+
+#### Genie backing pixels and motion — 2026-11-22
+
+On a 2× display, a 420 × 820 pt probe put the original glass center at pixel
+384 and the controls at pixel 820. The glass mask now uses the material view's
+backing dimensions. A resize or a change of backing scale retires the old
+transition. The 28 pt landing thumbnail preserves the resolved panel's aspect
+ratio in automatic and fixed sizing modes.
+
+A fixture minimized and restored its own marked window using the Mac's existing
+Dock Genie setting. The near-edge sample took about half a second. Its attached
+end narrowed while the body held position for roughly the first third. The
+drawer follows that timing and a cosine taper relative to its own edge. The
+window hands off after the endpoint is presented, with a timeout for occlusion.
+A restored listing refreshes the moving controls once during opening.
+
+The final working tree based on `a139fd6` passed `make verify` (440 Core and
+25 image tests), unsigned Release compilation and the signed file-drawer suite
+on arm64 macOS 27.2.1 with Xcode 27.2. The 2× window captures covered 640 × 929
+pt adaptive, 320 × 1,100 pt tall/tinted and 1,443 × 480 pt wide drawers. Across
+all 12 combinations of size, edge and direction, the sampled glass outline was
+within 0.67 backing pixels of the mesh and the grip within one pixel of center.
+The fixture checked file icons during expansion, motion endpoints, reversal
+and resizing during opening. Its 1.94 s movie decoded to 80 frames. Inspection
+showed the restored rows inside the expanding funnel.
+
+The PNGs, movie and signed report are in `build/native-checks.noindex/run.vvry95f6/`.
+The native reference measurements and final build and verification logs are in
+`build/drawer-genie-motion.Um3Obd/`. The system comparison used one Mac and a
+Dock target. A physical transfer between displays of different scales remains
+unverified.
+
+Built and installed Developer ID signed Debug 0.8.2 (31) at
+`/Applications/FileMint.app`. Its drawer inputs matched the signed fixture.
+The installed app and Finder extension mapped the verified new executables.
+The prior bundle archive and the build, bundle and launch logs are in
+`build/local-debug-install.noindex/drawer-genie-motion.f2rUWZ/`.
+
+Earlier runs retain the first mask compilation error (`run.5s8wnphf`), the QA
+recorder's background-color lifetime failures (`run.9efpxd66`, `run.4_xu_9qe`)
+and a running-fixture guard (`run.g1372xju`). Using the recorder's default
+background allowed `run.5fdq53zt` to capture the opening placeholder, which
+led to the listing refresh verified in the final run.
+
 ### Drawer settings controls — 2026-11-21
 
 Settings now shows the saved disk-root grant status and offers authorization when

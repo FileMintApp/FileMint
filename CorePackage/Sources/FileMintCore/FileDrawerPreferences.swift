@@ -13,6 +13,7 @@ public enum FileDrawerViewMode: String, Codable, CaseIterable, Sendable {
 
 public struct FileDrawerPreferences: Codable, Equatable, Sendable {
     public enum Side: String, Codable, CaseIterable, Sendable { case left, right }
+    public enum Animation: String, Codable, CaseIterable, Sendable { case slide, scale, genie }
 
     public static let supportedWidths = 240.0...2_000.0
     public static let supportedHeights = 480.0...4_320.0
@@ -30,6 +31,7 @@ public struct FileDrawerPreferences: Codable, Equatable, Sendable {
     public var sort: FileDrawerSort = .name
     public var sortAscending = true
     public var side: Side = .right
+    public var animation: Animation = .genie
     public var glass = true
     public var transparency = 0.3
     public var minimumWidth = 320.0
@@ -45,7 +47,7 @@ public struct FileDrawerPreferences: Codable, Equatable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case enabled, remembersLastLocation, shortcut, autoPreview, showsShortcutHints, viewMode, sort, sortAscending
-        case side, glass, transparency, minimumWidth, maximumWidth, width, fitsDisplayWidth
+        case side, animation, glass, transparency, minimumWidth, maximumWidth, width, fitsDisplayWidth
         case fitsDisplayHeight, minimumHeight, maximumHeight, height
         case defaultDirectoryPath = "rootDirectoryPath"
     }
@@ -95,6 +97,7 @@ public struct FileDrawerPreferences: Codable, Equatable, Sendable {
         sort = (try? fields.decode(FileDrawerSort.self, forKey: .sort)) ?? sort
         sortAscending = (try? fields.decode(Bool.self, forKey: .sortAscending)) ?? sort.defaultAscending
         side = (try? fields.decode(Side.self, forKey: .side)) ?? side
+        animation = (try? fields.decode(Animation.self, forKey: .animation)) ?? animation
         glass = (try? fields.decode(Bool.self, forKey: .glass)) ?? glass
         if let value = try? fields.decode(Double.self, forKey: .transparency), (0...1).contains(value) {
             transparency = value

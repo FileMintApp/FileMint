@@ -3,6 +3,47 @@
 Observations below apply to the revisions and environments stated in each entry.
 Use [HARNESS](../specs/HARNESS.md) to select present-day verification.
 
+## Drawer Genie backing resolution and motion — 2026-11-22
+
+The signed drawer fixture captured both directions on both edges at three
+window sizes on a 2× display. The maximum sampled glass outline error was
+0.67 pixels. A full closing and reopening recording showed the restored files
+expanding with the glass. Offline verification and unsigned Release compilation
+passed on the working tree based on `a139fd6`. The task records the native Dock
+comparison, original frames and recording. [Genie motion verification](tasks/2026-11-20-file-drawer.md#genie-backing-pixels-and-motion--2026-11-22).
+
+## File drawer Genie material — 2026-11-22
+
+The worktree based on `a139fd6` passed offline verification, unsigned Release
+compilation and the signed drawer suite. Both directions preserved the native
+glass mask in glass mode and used an opaque system background in solid mode.
+Closing cleared the animation while keeping the drawer hidden. The running
+Debug app and Finder extension mapped the newly installed executables. See
+the [Genie material record](tasks/2026-11-20-file-drawer.md#genie-material-in-both-directions--2026-11-22).
+
+## File drawer animation handoff — 2026-11-22
+
+Offline verification and unsigned Release compilation passed on the working
+tree based on `a139fd6`. The signed drawer fixture rendered filled opening and
+closing frames on both sides and verified that dismissal kept the live surface
+hidden. The final fixture runs observed passes and reported blocked status when
+temporary indexing inputs changed during execution. The signed Debug app and
+Finder extension were installed and their running executables matched the new
+bundle. See the [handoff repair record](tasks/2026-11-20-file-drawer.md#genie-opening-and-dismissal-handoff--2026-11-22).
+
+## File drawer animations — 2026-11-22
+
+The worktree based on `a139fd6` passed offline verification, unsigned Release
+compilation and the signed drawer suite on arm64 macOS 27.2.1. The fixture
+played Genie from the default settings, read back an explicit effect choice,
+captured both edge deformations and checked reversal and Reduce Motion. See the
+[drawer animation record](tasks/2026-11-20-file-drawer.md#drawer-animations--2026-11-22).
+
+Developer ID signed Debug 0.8.2 (31) was installed at `/Applications/FileMint.app`.
+The running app and Finder extension mapped the verified replacement binaries.
+The [installation record](tasks/2026-11-20-file-drawer.md#installed-debug--2026-11-22)
+includes the prior bundle archive and local evidence.
+
 ## App accent color — 2026-11-21
 
 On arm64 macOS 27.2.1, the working tree based on `940d980` passed `make verify`,

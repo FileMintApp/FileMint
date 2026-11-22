@@ -54,6 +54,8 @@ struct FileDrawerSettingsPane: View {
                         .accessibilityIdentifier("drawer.side")
                     }
                     Divider()
+                    animationControl
+                    Divider()
                     toggle(text("Frosted glass", "毛玻璃"), \.glass, id: "drawer.glass")
                     Divider()
                     transparencyControl.disabled(!settings.glass)
@@ -135,6 +137,19 @@ struct FileDrawerSettingsPane: View {
         PreferenceRow(title: title, detail: detail) {
             Toggle(title, isOn: binding(key))
                 .labelsHidden().accessibilityIdentifier(id)
+        }
+    }
+
+    private var animationControl: some View {
+        let title = text("Opening and closing animation", "开合动画")
+        return PreferenceRow(title: title) {
+            Picker(title, selection: binding(\.animation)) {
+                Text(text("Slide and Fade", "滑动淡入淡出")).tag(FileDrawerPreferences.Animation.slide)
+                Text(text("Scale", "缩放")).tag(FileDrawerPreferences.Animation.scale)
+                Text(text("Genie", "神奇效果")).tag(FileDrawerPreferences.Animation.genie)
+            }
+            .settingsMenu(width: nil)
+            .accessibilityIdentifier("drawer.animation")
         }
     }
 
