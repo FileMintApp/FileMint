@@ -42,7 +42,7 @@ public enum FileMintTextKey: String, CaseIterable, Sendable {
     case tealAccent, indigoAccent, mossAccent, coralAccent, roseAccent, slateAccent
     case customAccent, chooseAccentColor, accentHexCode, applyAccentColor
     case finderMenuIconStyle, coloredMenuIcons, systemMonochromeMenuIcons, finderMenuIconStyleHint
-    case launchAtLogin
+    case launchAtLogin, launchAtLoginHint
     case showMenuBar
     case automaticallyCheckForUpdates
     case automaticUpdateHint
@@ -468,6 +468,10 @@ public enum FileMintStrings {
 
         .followSystem: ("Follow System", "跟随系统"),
         .launchAtLogin: ("Launch at login", "开机自动启动"),
+        .launchAtLoginHint: (
+            "Start FileMint in the background at login. If turned off, open FileMint manually to use the global shortcuts for File Drawer and Quick Search.",
+            "登录 macOS 时在后台启动 FileMint。关闭此项后，需先手动打开 FileMint，才能用全局快捷键唤起文件抽屉和快捷搜索。"
+        ),
         .showMenuBar: ("Show in menu bar", "显示在菜单栏"),
         .automaticallyCheckForUpdates: ("Automatically check for updates", "自动检查更新"),
         .automaticUpdateHint: ("While FileMint is running, check for a new version at most once every 7 days. Download and install when you choose.", "FileMint 运行时，每 7 天最多检查一次新版本。下载和安装由你决定。"),

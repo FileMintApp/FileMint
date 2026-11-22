@@ -4,17 +4,16 @@ import FileMintCore
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
+        let launchEvent = NSAppleEventManager.shared().currentAppleEvent
         PreferencesModel.shared.startGlobalShortcut()
         UpdateModel.shared.startAutomaticChecks()
         BatchRenameOperations.shared.refreshStatus()
         if #available(macOS 13.3, *) {
             FileMintLauncherShortcuts.updateAppShortcutParameters()
         }
-        let activationExpected = NSAppleEventManager.shared().currentAppleEvent?
-            .paramDescriptor(forKeyword: AEKeyword(kAEApplicationActivationExpected))?.booleanValue == true
         PreferencesModel.shared.externalInvocations.handleOrdinaryLaunch(
             isDefault: notification.userInfo?[NSApplication.launchIsDefaultUserInfoKey] as? Bool == true,
-            activationExpected: activationExpected)
+            event: launchEvent)
         Task { await PreferencesModel.shared.prepareLoginItemIfNeeded() }
     }
 

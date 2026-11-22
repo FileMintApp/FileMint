@@ -297,6 +297,21 @@ struct StartupPreferencesTests {
         #expect(!LoginItemPolicy.shouldRegisterInitially(wantsEnabled: true, attempted: false, status: .notRegistered, installed: false))
     }
 
+    @Test("login and non-activating launches leave settings closed")
+    func launchWindowPolicy() {
+        let event = NSAppleEventDescriptor(eventClass: kCoreEventClass, eventID: kAEOpenApplication,
+            targetDescriptor: nil, returnID: AEReturnID(kAutoGenerateReturnID), transactionID: AETransactionID(kAnyTransactionID))
+        #expect(!LoginItemPolicy.shouldShowSettingsOnLaunch(isDefault: true, event: nil))
+        #expect(!LoginItemPolicy.shouldShowSettingsOnLaunch(isDefault: true, event: event))
+
+        event.setParam(NSAppleEventDescriptor(boolean: true), forKeyword: AEKeyword(kAEApplicationActivationExpected))
+        #expect(LoginItemPolicy.shouldShowSettingsOnLaunch(isDefault: true, event: event))
+        #expect(!LoginItemPolicy.shouldShowSettingsOnLaunch(isDefault: false, event: event))
+
+        event.setParam(NSAppleEventDescriptor(enumCode: keyAELaunchedAsLogInItem), forKeyword: keyAEPropData)
+        #expect(!LoginItemPolicy.shouldShowSettingsOnLaunch(isDefault: true, event: event))
+    }
+
     @Test("development and disk-image copies never become automatic login items")
     func installLocations() {
         let home = URL(fileURLWithPath: "/Users/example")
@@ -340,6 +355,16 @@ struct StartupPreferencesTests {
         }
         #expect(FileMintStrings.text(.quickCollisionHint, language: .english).contains("asks before replacing"))
         #expect(FileMintStrings.text(.quickCollisionHint, language: .chinese).contains("替换已有文件前询问"))
+    }
+
+    @Test("launch at login guidance describes background startup and manual launch for both global shortcuts",
+          arguments: [AppLanguage.english, .chinese])
+    func launchAtLoginGuidance(language: AppLanguage) {
+        let hint = FileMintStrings.text(.launchAtLoginHint, language: language)
+        let expectedPhrases = language == .chinese
+            ? ["登录 macOS 时在后台启动 FileMint", "关闭此项后", "手动打开 FileMint", "文件抽屉", "快捷搜索"]
+            : ["background at login", "If turned off", "open FileMint manually", "File Drawer", "Quick Search"]
+        for phrase in expectedPhrases { #expect(hint.contains(phrase)) }
     }
 
     @Test("folder authorization guidance explains descendant coverage and removal in both languages",

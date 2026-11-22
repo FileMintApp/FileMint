@@ -26,15 +26,15 @@ final class LauncherProductFixtureDelegate: NSObject, NSApplicationDelegate {
         _ = LauncherProductRuntime.shared
     }
     func applicationDidFinishLaunching(_ notification: Notification) {
+        let launchEvent = NSAppleEventManager.shared().currentAppleEvent
         if #available(macOS 13.3, *) {
             FileMintLauncherShortcuts.updateAppShortcutParameters()
         }
-        let expected = NSAppleEventManager.shared().currentAppleEvent?
-            .paramDescriptor(forKeyword: AEKeyword(kAEApplicationActivationExpected))?.booleanValue == true
+        let expected = launchEvent?.paramDescriptor(forKeyword: AEKeyword(kAEApplicationActivationExpected))?.booleanValue == true
         LauncherProductRuntime.shared.record("launch", ["activationExpected": expected])
         LauncherProductRuntime.shared.coordinator.handleOrdinaryLaunch(
             isDefault: notification.userInfo?[NSApplication.launchIsDefaultUserInfoKey] as? Bool == true,
-            activationExpected: expected)
+            event: launchEvent)
     }
     func application(_ sender: NSApplication, open urls: [URL]) {
         for url in urls {

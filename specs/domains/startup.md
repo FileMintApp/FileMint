@@ -13,6 +13,12 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   opens settings or adds a Dock icon; the creation panel alone stays accessory.
 - Launch at login and Show in menu bar default to enabled. Both have persistent
   switches in General. A saved off value must survive upgrades and relaunches.
+- A login-item launch runs FileMint in the background with enabled global
+  shortcuts and leaves its windows closed. The login-item reason in the macOS
+  launch event takes priority over a foreground activation request.
+- The Launch at login row explains background startup in both supported
+  languages. With automatic launch off, users need to open FileMint after
+  signing in before the File Drawer and Quick Search global shortcuts can respond.
 - Use macOS 13+ SMAppService.mainApp for login registration. Request the default
   once after the app has been placed in /Applications or ~/Applications and
   launched. Do not register development builds or a mounted DMG as login items.

@@ -272,8 +272,8 @@ final class ExternalInvocationCoordinator: ObservableObject {
         }
     }
 
-    func handleOrdinaryLaunch(isDefault: Bool, activationExpected: Bool) {
-        guard isDefault, activationExpected else { return }
+    func handleOrdinaryLaunch(isDefault: Bool, event: NSAppleEventDescriptor?) {
+        guard LoginItemPolicy.shouldShowSettingsOnLaunch(isDefault: isDefault, event: event) else { return }
         handleReopen()
     }
     func handleReopen() {

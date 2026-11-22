@@ -5,6 +5,16 @@ public enum LoginItemState: Sendable {
 }
 
 public enum LoginItemPolicy {
+    public static func shouldShowSettingsOnLaunch(isDefault: Bool, event: NSAppleEventDescriptor?) -> Bool {
+        guard isDefault, let event,
+              event.paramDescriptor(forKeyword: AEKeyword(kAEApplicationActivationExpected))?.booleanValue == true
+        else { return false }
+
+        let launchedAtLogin = event.eventID == kAEOpenApplication &&
+            event.paramDescriptor(forKeyword: keyAEPropData)?.enumCodeValue == keyAELaunchedAsLogInItem
+        return !launchedAtLogin
+    }
+
     public static func shouldRegisterInitially(wantsEnabled: Bool, attempted: Bool, status: LoginItemState, installed: Bool) -> Bool {
         installed && wantsEnabled && !attempted && (status == .notRegistered || status == .notFound)
     }

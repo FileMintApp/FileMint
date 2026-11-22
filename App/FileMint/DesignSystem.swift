@@ -263,7 +263,7 @@ enum InterfaceText {
     case parameters, keepOriginal, previewMissing, allImages, outputSize, start, more, chooseImages
     case resourceSubtitle, generalSubtitle, creationSubtitle, typesSubtitle, foldersSubtitle, filesSubtitle
     case interface, enabledFinder, disabledFinder, selectedImages, textResult, reduceWithoutUpscale
-    case busy, pixelWidth, pixelHeight, fitting, inFinder, launchHint, menuBarHint, menuEnabled, prepared
+    case busy, pixelWidth, pixelHeight, fitting, inFinder, menuBarHint, menuEnabled, prepared
     func text(_ language: AppLanguage) -> String {
         let pair: (String, String) = switch self {
         case .fileCreation: ("File Creation", "文件创建")
@@ -299,7 +299,6 @@ enum InterfaceText {
         case .pixelHeight: ("Common height (px)", "统一高度（像素）")
         case .fitting: ("Centered on a transparent square", "居中适配透明方形")
         case .inFinder: ("Show in Finder", "在 Finder 中显示")
-        case .launchHint: ("Ready for Finder actions after login.", "登录后即可使用 Finder 右键功能。")
         case .menuBarHint: ("Quick access to creation and settings.", "随时新建文件，快速打开设置。")
         case .menuEnabled: ("Show Resource Tools in Finder", "在 Finder 中显示资源工具")
         case .prepared: ("Ready when you are.", "准备好了，随手新建。")

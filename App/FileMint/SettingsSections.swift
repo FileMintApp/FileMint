@@ -69,7 +69,7 @@ struct GeneralPane: View {
                     }
                 }
                 SettingsSection(title: model.text(.startupAndAccess)) {
-                    PreferenceRow(title: model.text(.launchAtLogin), detail: InterfaceText.launchHint.text(model.preferences.language)) {
+                    PreferenceRow(title: model.text(.launchAtLogin), detail: model.text(.launchAtLoginHint)) {
                         Toggle(model.text(.launchAtLogin), isOn: Binding(
                             get: { model.preferences.launchAtLogin },
                             set: { value in Task { await model.setLaunchAtLogin(value) } }
