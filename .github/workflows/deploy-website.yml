@@ -50,6 +50,8 @@ jobs:
         github.event.workflow_run.head_repository.full_name == github.repository))
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      PAGES_ARTIFACT_NAME: github-pages-${{ github.run_attempt }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -81,12 +83,37 @@ jobs:
         with:
           enablement: true
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        id: pages_upload
         if: steps.candidate.outputs.ready == 'true'
         with:
-          name: github-pages
+          name: ${{ env.PAGES_ARTIFACT_NAME }}
           path: ${{ steps.candidate.outputs.archive }}
           if-no-files-found: error
+      - name: Wait for the uploaded Pages artifact
+        if: steps.candidate.outputs.ready == 'true'
+        timeout-minutes: 2
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PAGES_ARTIFACT_ID: ${{ steps.pages_upload.outputs.artifact-id }}
+        # An upload can finish before GitHub includes it in its artifact listings.
+        run: |
+          : "${PAGES_ARTIFACT_ID:?Missing Pages artifact ID from upload}"
+          for delay in 2 4 8 16 30; do
+            sleep "$delay"
+            ids=$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" \
+              -f "name=$PAGES_ARTIFACT_NAME" \
+              --jq '.artifacts[] | if .expired == false then .id else "expired" end')
+            case "$ids" in
+              "$PAGES_ARTIFACT_ID") exit 0 ;;
+              '') continue ;;
+              *) echo "::error::Unexpected or ambiguous Pages artifact for $PAGES_ARTIFACT_NAME"; exit 1 ;;
+            esac
+          done
+          echo "::error::GitHub did not list Pages artifact $PAGES_ARTIFACT_ID after upload"
+          exit 1
       - name: Deploy the verified website without rebuilding
         if: steps.candidate.outputs.ready == 'true'
         id: deployment
         uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+        with:
+          artifact_name: ${{ env.PAGES_ARTIFACT_NAME }}
