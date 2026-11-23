@@ -3,6 +3,15 @@
 Observations below apply to the revisions and environments stated in each entry.
 Use [HARNESS](../specs/HARNESS.md) to select present-day verification.
 
+## FileMint 0.8.3 release — 2026-11-23
+
+The replacement source at `3894a41` published as `v0.8.3` build 32 at
+10:55:50 Asia/Shanghai. Source CI, Apple notarization, remote draft verification,
+Pages deployment and official Homebrew tap CI passed. Both live homepages and
+guides showed the six localized File Drawer screenshots and served neither
+withdrawn Genie still. See the [release evidence](tasks/release-0.8.3.md#replacement-release-evidence).
+Installed-upgrade and older macOS runtime acceptance remain separate checks.
+
 ## Drawer Genie on a fixed 60 Hz display — 2026-11-23
 
 On a 5K external display in a fixed 60 Hz mode, the signed fixture on `d6856c8`
