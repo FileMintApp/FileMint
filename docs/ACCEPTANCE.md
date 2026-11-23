@@ -3,6 +3,17 @@
 Observations below apply to the revisions and environments stated in each entry.
 Use [HARNESS](../specs/HARNESS.md) to select present-day verification.
 
+## Drawer Genie on a fixed 60 Hz display — 2026-11-23
+
+On a 5K external display in a fixed 60 Hz mode, the signed fixture on `d6856c8`
+with the mask change presented 28–31 frames in each of 12 opening or closing
+transitions. Median intervals were 16.7 ms, with occasional 33.3 ms intervals.
+The composited outline, tint, restored file rows and handoff passed the signed
+drawer suite. See the [cadence record](tasks/2026-11-20-file-drawer.md#genie-cadence-at-60-hz--2026-11-23).
+
+The signed Debug build with the fix was installed for the owner's 60 Hz retest.
+The running host and enabled Finder extension mapped the replacement binaries.
+
 ## Drawer Genie backing resolution and motion — 2026-11-22
 
 The signed drawer fixture captured both directions on both edges at three

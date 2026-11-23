@@ -10,6 +10,44 @@ Acceptance follows the app, Core and native rows of the [Harness](../../specs/HA
 
 ## Drawer refinements
 
+### Genie cadence at 60 Hz — 2026-11-23
+
+The owner reported stuttering on a 60 Hz screen and paused 0.8.3 publication.
+On arm64 macOS 27.2.1, the signed fixture reproduced it on a 5K external
+display at 60 Hz and 2× scale. The first glass opening with the old mask
+presented 15 frames, with a 33.3 ms median interval and a 66.7 ms maximum.
+The baseline measures that first opening because the fixture compared two
+spellings of its temporary folder path before the next motion.
+
+The live glass and tint now share a `CAShapeLayer` mask at the window's backing
+scale. The compositor rasterizes the mesh outline without a new AppKit bitmap
+for every frame. The glass and moving controls still present in the same Core
+Animation transaction.
+
+- `run.7gq_zdez` passed `file-drawer-cadence` on `d6856c8` with the local fix.
+  Three open/close cycles each for glass and solid backgrounds all presented
+  28–31 frames with 16.7 ms medians. The worst interval was 33.3 ms.
+- The same run stopped the general `file-drawer` suite at a settings-window
+  focus assertion. The isolated rerun `run.t1tc2x2n` passed with the same code,
+  including composited captures at three sizes on both edges in both directions,
+  restored file rows, tint, reversal, resize and Reduce Motion.
+- `make verify` passed with 467 Swift tests. The unsigned Release build produced
+  arm64 executables for both FileMint and its embedded Finder extension.
+  Logs are in `build/drawer-genie-cadence.IczG4I/`.
+- The native reports in `build/native-checks.noindex/` cover the isolated
+  signed drawer and the measured display. Moving an active transition between
+  physical displays and running it on macOS 13/14 remain unverified.
+
+At the owner's request, Developer ID signed Debug 0.8.2 (31) with the fix was
+installed at `/Applications/FileMint.app`. Both running processes mapped the
+new installed executables and Finder had one enabled registration. The prior
+bundle archive and installation logs are in
+`build/local-debug-install.noindex/genie-cadence.RkAF6E/`. The owner will check
+animation quality on the installed build at 60 Hz.
+
+When 0.8.3 release preparation resumes, feature the drawer prominently on the
+Chinese and English website and include multiple real screenshots of its use.
+
 ### Drawer animations — 2026-11-22
 
 Appearance settings offer Genie, Scale, and Slide and Fade. Genie is the default

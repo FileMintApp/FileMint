@@ -25,6 +25,8 @@ final class FileDrawerGenieTransition: MTKView {
     private var completionTask: Task<Void, Never>?
     private(set) var progress: Float
     var restoredOpeningImage: (@MainActor () -> CGImage?)?
+    // The signed fixture samples the actual display presentation times.
+    var framePresented: (@Sendable (TimeInterval) -> Void)?
 
     init?(image: CGImage, frame: CGRect, side: FileDrawerPreferences.Side, opening: Bool, framesPerSecond: Int,
           updateBackdrop: BackdropUpdate?) {
@@ -67,6 +69,9 @@ final class FileDrawerGenieTransition: MTKView {
     override func draw(_ dirtyRect: NSRect) {
         guard let motion, let pass = currentRenderPassDescriptor, let drawable = currentDrawable,
               let buffer = queue.makeCommandBuffer() else { return }
+        if let framePresented {
+            drawable.addPresentedHandler { framePresented($0.presentedTime) }
+        }
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         if motion.to == 0, let image = restoredOpeningImage?() {

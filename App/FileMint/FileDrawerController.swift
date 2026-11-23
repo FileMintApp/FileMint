@@ -102,7 +102,9 @@ final class FileDrawerController: NSObject, NSWindowDelegate {
         }
     }
 
-    func show() {
+    func show() { show(on: pointerScreen) }
+
+    func show(on targetScreen: NSScreen?) {
         guard settings.committedPreferences.fileDrawer.enabled else { return }
         if let modal = NSApp.modalWindow ?? NSApp.windows.compactMap(\.attachedSheet).first {
             modal.makeKeyAndOrderFront(nil)
@@ -111,7 +113,7 @@ final class FileDrawerController: NSObject, NSWindowDelegate {
         if let panel {
             let reopening = closing
             closing = false
-            if !hasActiveInteraction, let screen = pointerScreen, display != screen {
+            if !hasActiveInteraction, let screen = targetScreen, display != screen {
                 display = screen
                 requestedFrame = nil
                 layout(settings.committedPreferences.fileDrawer)
@@ -120,7 +122,7 @@ final class FileDrawerController: NSObject, NSWindowDelegate {
             panel.makeKeyAndOrderFront(nil)
             return
         }
-        guard !model.writing, let screen = pointerScreen else { return }
+        guard !model.writing, let screen = targetScreen else { return }
         display = screen
         previousApp = NSWorkspace.shared.frontmostApplication?.processIdentifier
         let p = DrawerPanel(contentRect: .init(x: 0, y: 0, width: 520, height: 650),
@@ -423,9 +425,10 @@ final class FileDrawerController: NSObject, NSWindowDelegate {
 
 private final class DrawerBackground: NSView {
     let controls = NSView()
+    private let material = NSView()
     private let effect = NSVisualEffectView()
     private let solid = NSBox()
-    private let tintMask = CALayer()
+    private let genieMask = CAShapeLayer()
 
     var showsGlass: Bool { !effect.isHidden }
 
@@ -442,11 +445,17 @@ private final class DrawerBackground: NSView {
         solid.borderWidth = 0
         solid.titlePosition = .noTitle
         solid.fillColor = .windowBackgroundColor
+        material.wantsLayer = true
         controls.wantsLayer = true
-        for view in [effect as NSView, solid, controls] {
+        for view in [material, controls] {
             view.frame = bounds
             view.autoresizingMask = [.width, .height]
             addSubview(view)
+        }
+        for view in [effect as NSView, solid] {
+            view.frame = material.bounds
+            view.autoresizingMask = [.width, .height]
+            material.addSubview(view)
         }
     }
     required init?(coder: NSCoder) { nil }
@@ -483,35 +492,28 @@ private final class DrawerBackground: NSView {
     }
 
     func genieBackdropUpdate() -> FileDrawerGenieTransition.BackdropUpdate? {
-        guard showsGlass, !effect.bounds.isEmpty else { return nil }
-        let size = effect.bounds.size
-        // AppKit composites a behind-window mask at its raster dimensions.
-        let pixels = CGRect(origin: .zero, size: effect.convertToBacking(effect.bounds).integral.size)
-        guard let context = CGContext(data: nil, width: Int(pixels.width), height: Int(pixels.height), bitsPerComponent: 8,
-                                      bytesPerRow: 0, space: CGColorSpaceCreateDeviceGray(),
-                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        guard showsGlass, !material.bounds.isEmpty, let layer = material.layer else { return nil }
+        let size = material.bounds.size
+        // Clip the live glass and its tint together at the backing scale.
+        genieMask.frame = material.bounds
+        genieMask.contentsScale = window?.backingScaleFactor ?? 1
         let edgeCount = FileDrawerGenieGeometry.columns + 1
         return { [weak self] vertices, opacity in
             guard let self else { return }
             let outline = Array(vertices.prefix(edgeCount)) + vertices.suffix(edgeCount).reversed()
-            context.clear(pixels)
-            context.addLines(between: outline.map { CGPoint(x: CGFloat($0.x) * pixels.width, y: CGFloat($0.y) * pixels.height) })
-            context.closePath()
-            context.setFillColor(gray: 1, alpha: opacity)
-            context.fillPath()
-            guard let image = context.makeImage() else { return }
-            effect.maskImage = NSImage(cgImage: image, size: size)
-            tintMask.frame = solid.bounds
-            tintMask.contents = image
-            solid.layer?.mask = tintMask
+            let path = CGMutablePath()
+            path.addLines(between: outline.map { CGPoint(x: CGFloat($0.x) * size.width, y: CGFloat($0.y) * size.height) })
+            path.closeSubpath()
+            genieMask.path = path
+            genieMask.opacity = Float(opacity)
+            if layer.mask == nil { layer.mask = genieMask }
         }
     }
 
     func clearGenieBackdrop() {
         controls.layer?.opacity = 1
-        effect.maskImage = nil
-        solid.layer?.mask = nil
-        tintMask.contents = nil
+        material.layer?.mask = nil
+        genieMask.path = nil
     }
 
     func apply(_ options: FileDrawerPreferences) {

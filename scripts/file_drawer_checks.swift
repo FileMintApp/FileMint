@@ -2,11 +2,97 @@ import AppKit
 import CoreMedia
 import FileMintCore
 import MetalKit
+import os
 import QuartzCore
 import QuickLookUI
 import ScreenCaptureKit
 import SwiftUI
 import UniformTypeIdentifiers
+
+@MainActor
+func checkFileDrawerCadence(settings: PreferencesModel, favorites: FavoriteLocationsModel, root: URL) async throws {
+    func refreshRate(_ screen: NSScreen) -> Double {
+        let number = NSDeviceDescriptionKey("NSScreenNumber")
+        guard let id = screen.deviceDescription[number] as? NSNumber else { return 0 }
+        return CGDisplayCopyDisplayMode(id.uint32Value)?.refreshRate ?? 0
+    }
+    func failure(_ detail: String) -> NSError {
+        NSError(domain: "FileDrawerCadenceQA", code: 1, userInfo: [NSLocalizedDescriptionKey: detail])
+    }
+    func wait(_ detail: String, until condition: () -> Bool) async throws {
+        let deadline = ContinuousClock.now.advanced(by: .seconds(4))
+        while !condition() {
+            guard ContinuousClock.now < deadline else { throw failure(detail) }
+            try await Task.sleep(for: .milliseconds(12))
+        }
+    }
+    func percentile(_ values: [TimeInterval], _ fraction: Double) -> String {
+        let sorted = values.sorted()
+        guard !sorted.isEmpty else { return "missing" }
+        let index = Int((Double(sorted.count - 1) * fraction).rounded(.up))
+        return String(format: "%.2f", sorted[index] * 1_000)
+    }
+
+    guard let screen = NSScreen.screens.first(where: { (59...61).contains(refreshRate($0)) }) ?? NSScreen.main else {
+        throw failure("The drawer cadence check needs a display")
+    }
+    let modeHz = refreshRate(screen)
+    let fixed60Hz = (59...61).contains(modeHz)
+    print("DRAWER DISPLAY modeHz=\(modeHz) maximumFPS=\(screen.maximumFramesPerSecond) backingScale=\(screen.backingScaleFactor)")
+
+    let folder = root.appendingPathComponent("DrawerCadence", isDirectory: true)
+    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: false)
+    for index in 1...20 { try Data("Fixture".utf8).write(to: folder.appendingPathComponent("Notes \(index).txt")) }
+    try settings.rememberedFileAccess.rememberWriteDirectory(folder, expected: folder)
+    var options = FileDrawerPreferences()
+    options.enabled = true
+    options.shortcut.isEnabled = false
+    options.defaultDirectoryPath = folder.resolvingSymlinksInPath().path
+    let controller = FileDrawerController(settings: settings, favorites: favorites,
+                                          lastLocationKey: UUID().uuidString, reduceMotion: { false })
+    defer { controller.panel?.close() }
+
+    func sample(_ label: String, opening: Bool) async throws {
+        guard let transition = controller.panel?.contentView?.subviews.compactMap({ $0 as? FileDrawerGenieTransition }).first else {
+            throw failure("Missing Genie transition for \(label)")
+        }
+        let timestamps = OSAllocatedUnfairLock(initialState: [TimeInterval]())
+        transition.framePresented = { timestamp in timestamps.withLock { $0.append(timestamp) } }
+        defer { transition.framePresented = nil }
+        try await wait("Genie did not finish \(label)") { transition.superview == nil }
+        let delivered = timestamps.withLock { $0 }
+        let presented = delivered.filter { $0 > 0 }.sorted()
+        guard presented.count > 2, transition.progress == (opening ? 0 : 1) else {
+            throw failure("Genie did not present motion and its endpoint for \(label)")
+        }
+        let intervals = zip(presented, presented.dropFirst()).map { $1 - $0 }
+        print("GENIE \(label) \(Int(transition.bounds.width))x\(Int(transition.bounds.height))pt frames=\(presented.count) intervalP50/P95/max=\(percentile(intervals, 0.5))/\(percentile(intervals, 0.95))/\(percentile(intervals, 1))ms")
+        if fixed60Hz {
+            // Allow occasional scheduling delays, but catch sustained half-rate presentation.
+            let missed = intervals.filter { $0 > 1.5 / modeHz }.count
+            guard presented.count >= 23, Double(missed) <= Double(intervals.count) * 0.15 else {
+                throw failure("Genie missed the 60 Hz cadence for \(label) (\(missed) long intervals)")
+            }
+        }
+    }
+
+    let supportsGlass = !NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency
+    for glass in supportsGlass ? [true, false] : [false] {
+        options.glass = glass
+        guard settings.setFileDrawer(options) else { throw failure("Could not set isolated drawer preferences") }
+        for cycle in 1...3 {
+            let material = glass ? "glass" : "solid"
+            controller.show(on: screen)
+            controller.model.pinned = true
+            try await sample("\(material)-open-\(cycle)", opening: true)
+            try await wait("Fixture files did not load") {
+                !controller.model.busy && controller.model.entries.contains { $0.name == "Notes 20.txt" }
+            }
+            controller.model.close()
+            try await sample("\(material)-close-\(cycle)", opening: false)
+        }
+    }
+}
 
 @available(macOS 15, *)
 @MainActor
@@ -1244,13 +1330,12 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
             let interior = (height / 2 - 5)...(height / 2 + 5)
             if let glass {
                 try require(!glass.isHidden && genie.presentsWithTransaction, "Genie stopped compositing the live glass")
-                guard let image = glass.maskImage?.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+                guard let path = (glass.superview?.layer?.mask as? CAShapeLayer)?.path else {
                     throw failure("The \(phase) Genie frame did not mask the native glass")
                 }
-                let mask = NSBitmapImageRep(cgImage: image)
-                let maskEdge = side == .left ? mask.pixelsWide / 50 : mask.pixelsWide - 1 - mask.pixelsWide / 50
-                try require((mask.colorAt(x: maskEdge, y: mask.pixelsHigh / 2)?.alphaComponent ?? 0) > 0.98 &&
-                            (mask.colorAt(x: maskEdge, y: mask.pixelsHigh / 8)?.alphaComponent ?? 1) < 0.05,
+                let maskEdge = glass.bounds.width * (side == .left ? 0.02 : 0.98)
+                try require(path.contains(CGPoint(x: maskEdge, y: glass.bounds.midY)) &&
+                            !path.contains(CGPoint(x: maskEdge, y: glass.bounds.height / 8)),
                             "The \(phase) glass mask did not follow the Genie outline")
                 try require(interior.contains { (bitmap.colorAt(x: edge, y: $0)?.alphaComponent ?? 1) < 0.1 },
                             "The \(phase) Genie frame covered the glass with a solid background")
@@ -1282,7 +1367,7 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
             try captureGenie(opening, side: side, phase: "opening", glass: glass)
             try await checkMotionToEndpoint(opening, opening: true)
             try await wait("The live drawer did not finish loading") { !model.busy }
-            try require(material.maskImage == nil, "Opening left the live drawer material masked")
+            try require(material.superview?.layer?.mask == nil, "Opening left the live drawer material masked")
 
             model.close()
             guard let closing = genieView() else { throw failure("Genie did not animate closing") }
@@ -1295,13 +1380,13 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
             try await checkMotionToEndpoint(closing, opening: true)
             try require(controller.panel === drawer && drawer.isVisible, "The reversed Genie transition lost the drawer")
             try require(surface.opacity == 1, "Reopening did not restore the drawer's live content")
-            try require(material.maskImage == nil, "Reversing left the live drawer material masked")
+            try require(material.superview?.layer?.mask == nil, "Reversing left the live drawer material masked")
 
             model.close()
             guard let dismissal = genieView() else { throw failure("Missing final Genie dismissal") }
             try await checkMotionToEndpoint(dismissal, opening: false)
             try require(controller.panel == nil && !drawer.isVisible, "Genie did not finish closing the drawer")
-            try require(surface.opacity == 0 && material.maskImage == nil, "Finishing Genie did not clean up the closed drawer")
+            try require(surface.opacity == 0 && material.superview?.layer?.mask == nil, "Finishing Genie did not clean up the closed drawer")
         }
 
         if #available(macOS 14.4, *), !NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency {
@@ -1337,7 +1422,9 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
             let expected = wide.panelFrame(in: screen.visibleFrame)
             try await wait("Resizing left a stale Genie frame or mask on the drawer") {
                 old.superview == nil && abs(window.frame.width - expected.width) < 1 && abs(window.frame.height - expected.height) < 1 &&
-                window.contentView.map { views(of: NSVisualEffectView.self, in: $0).allSatisfy { $0.maskImage == nil } } == true
+                window.contentView.map {
+                    views(of: NSVisualEffectView.self, in: $0).allSatisfy { $0.superview?.layer?.mask == nil }
+                } == true
             }
             window.close()
             if #available(macOS 15, *) {

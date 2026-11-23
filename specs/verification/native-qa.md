@@ -71,6 +71,11 @@ captures its own composited Genie window at adaptive, tall and wide sizes on
 both edges and in both directions. It measures the glass outline and grip and
 checks that restored file icons appear in the moving controls. On macOS 15+ it
 also records a complete closing and reopening cycle for visual inspection.
+`file-drawer-cadence` reuses the signed drawer fixture and prefers a display
+in a fixed 60 Hz mode. It samples presented Metal frames over repeated opening
+and closing motions with live glass and with the solid background. The fixture log
+records the display mode, backing scale and presentation intervals. The 60 Hz
+threshold applies on a display reporting a mode between 59 and 61 Hz.
 The selection action panel fixture checks keyboard focus,
 filtering, template drafts targeting a selected child folder, cancellation, direct
 shortcuts, multi-selection and rejection of a same-name replacement. Its Open With
@@ -78,9 +83,9 @@ page covers the app list, filtering, Other Application, cancellation and stale r
 The signed `open-with` suite checks delivery of file and folder URLs to a receiver.
 The drawer fixture creates a file from
 an unpinned drawer, edits a filename in place, checks collision and stale-identity
-handling, and checks quiet preview admission and cleanup. Physical display changes, observed
-animation frame rates, real protected-folder consent and full-screen Spaces require
-live acceptance.
+handling, and checks quiet preview admission and cleanup. Physical display
+changes, real protected-folder consent and full-screen Spaces require live
+acceptance on the corresponding setup.
 The focused `update-summary` suite reuses the design fixture with `--verify-updates`,
 injected release metadata and isolated preferences. It covers language switching,
 missing-summary fallback, install availability and minimum-size About/sidebar

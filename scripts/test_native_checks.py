@@ -75,6 +75,8 @@ class SelectionTests(unittest.TestCase):
                      "scripts/file_drawer_checks.swift"):
             self.assertEqual(checks.plan_checks([path])["suites"], ["file-drawer"])
         self.assertEqual(checks.SUITES["file-drawer"].kind, "design-ui")
+        self.assertEqual(checks.plan_checks(["App/FileMint/FileDrawerGenieTransition.swift"])["suites"],
+                         ["file-drawer", "file-drawer-cadence"])
         self.assertIn("scripts/file_drawer_checks.swift", checks.FIXTURE_INPUTS["design-ui"])
 
     def test_shared_model_has_a_conservative_explainable_plan(self):
