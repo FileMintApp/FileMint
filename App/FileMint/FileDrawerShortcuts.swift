@@ -3,7 +3,7 @@ import SwiftUI
 
 /// The file collection and its keyboard guide share the same key bindings.
 enum FileDrawerCommand: Hashable {
-    case find, back, forward, up, refresh, chooseFolder, togglePlaces, goToPlaceMenu, actions, newFile, newFolder
+    case find, back, forward, refresh, chooseFolder, togglePlaces, goToPlaceMenu, actions, newFile, newFolder
     case selectAll, iconView, listView, compactView, pin, close, escape, togglePreview
     case place(FileDrawerPlace)
     case file(FileDrawerAction)
@@ -36,19 +36,20 @@ enum FileDrawerCommand: Hashable {
 
     static let windowCommands: [Binding] = [
         .init(.close, "W"), .init(.pin, "P", [.command, .shift]),
-        .init(.newFile, "N"), .init(.newFolder, "N", [.command, .shift]), .init(.up, "↑"),
-        .init(.togglePlaces, "L"), .init(.goToPlaceMenu, "L", [.shift, .command]), .init(.actions, "K")
+        .init(.newFile, "N"), .init(.newFolder, "N", [.command, .shift]),
+        .init(.togglePlaces, "L"), .init(.goToPlaceMenu, "0"), .init(.actions, "K")
     ]
     static let places = FileDrawerPlace.allCases.prefix(9).enumerated().map {
-        Binding(.place($0.element), String($0.offset + 1), [.command, .option])
+        Binding(.place($0.element), String($0.offset + 1))
     }
     static let navigation: [Binding] = [
         .init(.find, "F"), .init(.back, "["), .init(.forward, "]"),
         .init(.refresh, "R"), .init(.chooseFolder, "O", [.command, .shift]),
-        .init(.iconView, "1"), .init(.listView, "2"), .init(.compactView, "3"), .init(.escape, "Esc", [])
+        .init(.iconView, "1", [.command, .option]), .init(.listView, "2", [.command, .option]),
+        .init(.compactView, "3", [.command, .option]), .init(.escape, "Esc", [])
     ]
     static let files: [Binding] = [
-        .init(.selectAll, "A"), .init(.file(.open), "O"), .init(.file(.open), "↓"),
+        .init(.selectAll, "A"), .init(.file(.open), "O"),
         .init(.file(.rename), "↩", []), .init(.togglePreview, "Space", []),
         .init(.file(.reveal), "R", [.option, .command]), .init(.file(.favorite), "D", [.command, .shift]),
         .init(.file(.copy), "C"), .init(.file(.cut), "X"), .init(.file(.paste), "V"),
@@ -67,7 +68,6 @@ enum FileDrawerCommand: Hashable {
         case .togglePlaces: model.togglePlaces()
         case .goToPlaceMenu: model.showPlacesMenu()
         case .actions: model.toggleActionPalette()
-        case .up: if !model.busy { model.up() }
         case let .place(place): model.openPlace(place)
         default: return false
         }
@@ -81,8 +81,6 @@ enum FileDrawerCommand: Hashable {
         case 49: key = "Space"
         case 51: key = "⌫"
         case 53: key = "Esc"
-        case 125: key = "↓"
-        case 126: key = "↑"
         default: key = event.charactersIgnoringModifiers?.uppercased()
         }
         let modifiers = event.modifierFlags.intersection([.command, .control, .option, .shift])
@@ -96,7 +94,6 @@ enum FileDrawerCommand: Hashable {
         case .find: ("Search this folder", "搜索当前文件夹")
         case .back: ("Back", "后退")
         case .forward: ("Forward", "前进")
-        case .up: ("Parent Folder", "上一级")
         case .refresh: ("Refresh", "刷新")
         case .chooseFolder: ("Choose Folder…", "选择文件夹…")
         case .togglePlaces: ("Show or Hide Locations", "显示或隐藏位置")
@@ -110,7 +107,7 @@ enum FileDrawerCommand: Hashable {
         case .compactView: ("Compact List", "紧凑列表")
         case .pin: ("Pin or Unpin", "固定或取消固定")
         case .close: ("Close Drawer", "收起抽屉")
-        case .escape: ("Close preview or drawer", "关闭预览或收起抽屉")
+        case .escape: ("Leave search, close preview or drawer", "离开搜索框、关闭预览或收起抽屉")
         case let .place(place): (place.title(false), place.title(true))
         case .togglePreview: ("Show or hide preview", "显示或关闭预览")
         case let .file(action): (action.title(false), action.title(true))

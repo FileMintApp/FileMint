@@ -3,6 +3,14 @@
 Observations below apply to the revisions and environments stated in each entry.
 Use [HARNESS](../specs/HARNESS.md) to select present-day verification.
 
+## Drawer keyboard navigation — 2026-11-23
+
+On arm64 macOS 27.2.1, offline verification, unsigned Release compilation and
+the signed drawer fixture passed on the worktree based on `c7daa3e`. The fixture
+verified that Escape returns focus to the files from empty and filtered search,
+and checked the new location and view shortcuts. See the
+[drawer keyboard record](tasks/2026-11-20-file-drawer.md#drawer-keyboard-navigation--2026-11-23).
+
 ## FileMint 0.8.3 release — 2026-11-23
 
 The replacement source at `3894a41` published as `v0.8.3` build 32 at

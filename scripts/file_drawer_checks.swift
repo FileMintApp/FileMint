@@ -219,12 +219,20 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
     controller.toggleFromShortcut()
     try await wait("Drawer did not appear") { model.window?.isVisible == true }
     guard let window = model.window, let screen = window.screen else { throw failure("No drawer screen") }
-    func sendWindowKey(_ key: String, _ code: UInt16, _ flags: NSEvent.ModifierFlags = [.command]) throws {
+    func drawerKeyEvent(_ key: String, _ code: UInt16, _ flags: NSEvent.ModifierFlags = [.command]) throws -> NSEvent {
         guard let target = model.window,
-              let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: flags, timestamp: 0,
-                  windowNumber: target.windowNumber, context: nil, characters: key,
-                  charactersIgnoringModifiers: key, isARepeat: false, keyCode: code),
-              target.performKeyEquivalent(with: event) else { throw failure("Drawer did not handle " + key) }
+              let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: flags,
+                  timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: target.windowNumber, context: nil,
+                  characters: key, charactersIgnoringModifiers: key, isARepeat: false, keyCode: code) else {
+            throw failure("Could not create drawer key event: " + key)
+        }
+        return event
+    }
+    func sendWindowKey(_ key: String, _ code: UInt16, _ flags: NSEvent.ModifierFlags = [.command]) throws {
+        guard let target = model.window else { throw failure("Missing drawer window for " + key) }
+        let event = try drawerKeyEvent(key, code, flags)
+        try require(target.performKeyEquivalent(with: event),
+                    "Drawer did not handle \(key) (key window: \(target.isKeyWindow), presented: \(model.presented))")
     }
     func captureDrawer(_ mode: String) throws {
         guard let view = window.contentView else { throw failure("Drawer has no content") }
@@ -281,13 +289,17 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
     firstPicker.cancel(nil)
     try await wait("Cancelling Downloads changed the listing") { !model.interacting && model.directory == nil }
     try settings.rememberedFileAccess.rememberWriteDirectory(downloads, expected: downloads)
-    try sendWindowKey("1", 18, [.command, .option])
+    try sendWindowKey("1", 18)
     try await wait("Saved place access did not open Downloads itself") { model.directory?.path == downloads.path && model.activePlace == .downloads }
     model.navigate(project)
-    try await wait("Could not open a child of Downloads") { model.directory?.path == project.path && model.activePlace == .downloads }
+    try await wait("Could not open a child of Downloads") { model.directory?.path == project.path && model.activePlace == .downloads && !model.busy }
+    try await press("drawer.find")
+    try await wait("Search did not take focus before the location shortcut") { window.firstResponder is NSTextView }
     model.query = "previous query"
-    model.openPlace(.downloads)
-    try await wait("Place did not return to its directory and clear the search") { model.directory?.path == downloads.path && model.query.isEmpty }
+    try sendWindowKey("1", 18)
+    try await wait("Command-1 from search did not return to Downloads and clear the filter") {
+        model.directory?.path == downloads.path && model.query.isEmpty
+    }
     try await wait("Narrow drawer did not return to the file browser") {
         !model.placesVisible && axElement("drawer.place.downloads") == nil && axElement("drawer.path.copy") != nil
     }
@@ -310,7 +322,9 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
     }
     try await press("drawer.place.favorite." + favoriteID.uuidString)
     try await wait("Clicking a saved sidebar folder did not open it") { model.directory?.path == project.path && !model.busy }
-    try sendWindowKey("1", 18, [.command, .option])
+    window.makeKeyAndOrderFront(nil)
+    try await wait("Drawer did not regain keyboard focus after the Add Folder interaction") { window.isKeyWindow }
+    try sendWindowKey("1", 18)
     try await wait("Window shortcut did not return to Downloads") { model.directory?.path == downloads.path && !model.busy }
     try require(!model.placesVisible, "Direct location shortcut expanded the collapsed sidebar")
     let locationsMenu = model.makePlacesMenu()
@@ -321,14 +335,10 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
     NotificationCenter.default.addObserver(probe, selector: #selector(DrawerLocationsMenuProbe.began(_:)),
                                            name: NSMenu.didBeginTrackingNotification, object: nil)
     defer { NotificationCenter.default.removeObserver(probe) }
-    guard let escape = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [],
-                                        timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
-                                        context: nil, characters: "\u{1b}", charactersIgnoringModifiers: "\u{1b}",
-                                        isARepeat: false, keyCode: 53) else { throw failure("Cannot prepare menu dismissal") }
-    NSApp.postEvent(escape, atStart: true)
-    try sendWindowKey("L", 37, [.command, .shift])
+    NSApp.postEvent(try drawerKeyEvent("\u{1b}", 53, []), atStart: true)
+    try sendWindowKey("0", 29)
     try require(probe.tracked && !model.placesVisible && model.directory?.path == downloads.path,
-                "Command-Shift-L failed to track a native menu or changed the directory on cancellation")
+                "Command-0 failed to track a native menu or changed the directory on cancellation")
     guard let favoriteIndex = locationsMenu.items.firstIndex(where: { $0.toolTip == project.path }) else {
         throw failure("Go to Location menu omitted the saved custom folder")
     }
@@ -345,7 +355,7 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
                 "Library menu action requested a different folder")
     libraryPicker.cancel(nil)
     try await wait("Cancelling location access did not preserve the current folder") { !model.interacting && model.directory?.path == project.path }
-    try sendWindowKey("1", 18, [.command, .option])
+    try sendWindowKey("1", 18)
     try await wait("Could not return from location menu scenarios") { model.directory?.path == downloads.path && !model.busy }
     model.up()
     try await wait("Leaving a grant boundary did not request the parent") { window.attachedSheet is NSOpenPanel }
@@ -731,6 +741,40 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
                                       isARepeat: false, keyCode: 49) else { throw failure("Could not focus the native file list") }
     list.keyDown(with: space)
     try await wait("Manual preview did not admit the large selection") { model.previewURL == movie.url }
+    window.sendEvent(try drawerKeyEvent("f", 3))
+    try await wait("Command-F did not focus the folder search") { window.firstResponder is NSTextView }
+    window.sendEvent(try drawerKeyEvent("\u{1b}", 53, []))
+    try await wait("Escape from empty Command-F search did not return to files and leave the preview open") {
+        window.isVisible && model.presented && window.firstResponder === list && model.query.isEmpty
+            && model.selection == [movie.url] && model.previewURL == movie.url
+    }
+    window.sendEvent(try drawerKeyEvent("\u{1b}", 53, []))
+    try await wait("Escape in the file list did not close only the preview") { model.previewURL == nil && model.presented }
+    guard let searchField = views(of: NSTextField.self, in: host).first(where: { $0.accessibilityIdentifier() == "drawer.filter" }) else {
+        throw failure("Missing native folder search field")
+    }
+    searchField.selectText(nil)
+    try await wait("The folder search field did not take focus directly") {
+        searchField.currentEditor() != nil && window.firstResponder === searchField.currentEditor()
+    }
+    guard let searchEditor = searchField.currentEditor() as? NSTextView else { throw failure("Missing folder search editor") }
+    searchEditor.insertText("Large", replacementRange: searchEditor.selectedRange())
+    try await wait("Typing in folder search did not filter the listing") {
+        model.query == "Large" && !model.isSearching && model.visibleEntries.map(\.url) == [movie.url]
+    }
+    window.sendEvent(try drawerKeyEvent("\u{1b}", 53, []))
+    try await wait("Escape after focusing the field directly closed the drawer or cleared the search") {
+        window.isVisible && model.presented && window.firstResponder === list && model.query == "Large"
+            && model.visibleEntries.map(\.url) == [movie.url]
+    }
+    model.selection = []
+    searchField.selectText(nil)
+    window.sendEvent(try drawerKeyEvent("\r", 36, []))
+    try await wait("Return from folder search did not select the result and return to files") {
+        window.firstResponder === list && model.query == "Large" && model.selection == [movie.url]
+    }
+    print("PASS drawer keyboard: Command-F and direct search focus, Escape, Return and preview priority")
+    model.query = ""
     model.sort = .size
     try await wait("Size sort did not show folders first and the largest file next") {
         !model.isSearching && model.visibleEntries.map(\.name) == ["Nested", "Large.txt", "Notes.txt"]
@@ -802,11 +846,7 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
     model.selection = [created.url]
     let firstPath = IndexPath(item: 0, section: 0)
     for (character, code, mode, height) in [("1", 18, FileDrawerViewMode.icons, 100), ("3", 20, .compact, 29), ("2", 19, .list, 42)] {
-        guard let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [.command],
-                timestamp: 0, windowNumber: window.windowNumber, context: nil, characters: character,
-                charactersIgnoringModifiers: character, isARepeat: false, keyCode: UInt16(code)) else {
-            throw failure("Could not create view shortcut event")
-        }
+        let event = try drawerKeyEvent(character, UInt16(code), [.command, .option])
         try require(currentList.performKeyEquivalent(with: event), "View shortcut did not reach focused file list")
         try await wait("View shortcut with hidden hints did not update the layout") {
             currentList.layoutSubtreeIfNeeded()

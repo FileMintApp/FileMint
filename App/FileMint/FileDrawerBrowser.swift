@@ -6,6 +6,14 @@ import UniformTypeIdentifiers
 @MainActor
 final class FileDrawerBrowserFocus: ObservableObject {
     weak var collection: NSCollectionView?
+    weak var searchField: NSTextField?
+
+    func focusSearch(in model: FileDrawerModel) {
+        guard model.presented, model.pathMenu == nil, model.actionPalette == nil, !model.interacting,
+              let searchField, let window = searchField.window, window === model.window,
+              window.isKeyWindow, window.attachedSheet == nil else { return }
+        window.makeFirstResponder(searchField)
+    }
 
     func restore(_ model: FileDrawerModel) {
         DispatchQueue.main.async { [weak collection, weak model] in
@@ -13,6 +21,65 @@ final class FileDrawerBrowserFocus: ObservableObject {
                   let collection, let window = collection.window, window === model.window,
                   window.isKeyWindow, window.attachedSheet == nil else { return }
             window.makeFirstResponder(collection)
+        }
+    }
+}
+
+struct FileDrawerSearchField: NSViewRepresentable {
+    @Environment(\.isEnabled) private var isEnabled
+    @ObservedObject var model: FileDrawerModel
+    let focus: FileDrawerBrowserFocus
+    let placeholder: String
+
+    func makeCoordinator() -> Coordinator { Coordinator(model: model, focus: focus) }
+
+    func makeNSView(context: Context) -> NSTextField {
+        let field = NSTextField(string: model.query)
+        field.bezelStyle = .roundedBezel
+        field.font = .systemFont(ofSize: 14)
+        field.usesSingleLineMode = true
+        field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        field.setAccessibilityIdentifier("drawer.filter")
+        field.delegate = context.coordinator
+        focus.searchField = field
+        return field
+    }
+
+    func updateNSView(_ field: NSTextField, context: Context) {
+        if (field.currentEditor() as? NSTextView)?.hasMarkedText() != true, field.stringValue != model.query {
+            field.stringValue = model.query
+        }
+        field.isEnabled = isEnabled
+        field.placeholderString = placeholder
+        field.setAccessibilityLabel(model.text("Search filenames in this folder", "在当前文件夹搜索文件名"))
+        field.toolTip = model.text("Match words in filenames and extensions in any order.", "可按任意顺序输入文件名或扩展名中的多个词。")
+    }
+
+    @MainActor
+    final class Coordinator: NSObject, NSTextFieldDelegate {
+        private let model: FileDrawerModel
+        private let focus: FileDrawerBrowserFocus
+
+        init(model: FileDrawerModel, focus: FileDrawerBrowserFocus) {
+            self.model = model
+            self.focus = focus
+        }
+
+        func controlTextDidChange(_ notification: Notification) {
+            guard let field = notification.object as? NSTextField,
+                  (field.currentEditor() as? NSTextView)?.hasMarkedText() != true else { return }
+            model.query = field.stringValue
+        }
+
+        func control(_ control: NSControl, textView: NSTextView, doCommandBy command: Selector) -> Bool {
+            guard !textView.hasMarkedText() else { return false }
+            switch command {
+            case #selector(NSResponder.insertNewline(_:)): model.selectFirstSearchResult()
+            case #selector(NSResponder.cancelOperation(_:)): break
+            default: return false
+            }
+            focus.restore(model)
+            return true
         }
     }
 }
@@ -334,7 +401,7 @@ private final class DrawerCollection: NSCollectionView {
             guard !model.isSearching else { return true }
             selectionIndexPaths = Set(owner.entries.indices.map { IndexPath(item: $0, section: 0) })
             owner.syncSelection(self)
-        case .newFolder, .newFile, .close, .pin, .up, .togglePlaces, .goToPlaceMenu, .actions, .place:
+        case .newFolder, .newFile, .close, .pin, .togglePlaces, .goToPlaceMenu, .actions, .place:
             return command.runWindowCommand(in: model)
         case .chooseFolder: model.chooseFolder()
         case .refresh: if !model.busy { model.refresh() }

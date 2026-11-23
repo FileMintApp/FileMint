@@ -10,6 +10,29 @@ Acceptance follows the app, Core and native rows of the [Harness](../../specs/HA
 
 ## Drawer refinements
 
+### Drawer keyboard navigation — 2026-11-23
+
+The native folder search field returns focus to the files on Escape and keeps
+the filter and visible selection. Command-1 through 9 go to standard places in
+sidebar order. Command-0 opens the complete location menu. Command-Option-1
+through 3 choose the file view. Plain arrows navigate the files.
+
+- `make verify` passed with 467 Swift tests on arm64 macOS 27.2.1 and Xcode 27.2.
+  `CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO make build` passed and
+  produced the app and Finder extension executables. Both ran on the primary
+  worktree based on `c7daa3e`. Logs are in `build/drawer-keyboard.IjDL1r/`.
+- `make verify-native-affected` passed the signed `file-drawer` suite in
+  `build/native-checks.noindex/run.7v7e8vmv/report.json`. The fixture sent
+  Escape after Command-F with an empty field and after direct focus with a live
+  filter. It checked the file list's actual first responder state, query and
+  preview preservation, Return selection, location shortcuts and the view keys.
+- The SwiftUI exit handler trial failed after direct native field focus in
+  `run.l8kgb2vz`. With the native editor delegate, `run.z871r6zc` stopped at a
+  location shortcut after the Add Folder interaction. The fixture now establishes
+  key-window ownership before sending that shortcut. `run.en20be7x` passed before
+  the final explicit empty-field check. Evidence is from the isolated QA app on
+  this macOS version.
+
 ### Genie cadence at 60 Hz — 2026-11-23
 
 The owner reported stuttering on a 60 Hz screen and paused 0.8.3 publication.

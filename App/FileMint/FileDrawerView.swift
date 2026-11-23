@@ -8,7 +8,6 @@ struct FileDrawerView: View {
     @ObservedObject var model: FileDrawerModel
     @ObservedObject var settings: PreferencesModel
     @StateObject private var browserFocus = FileDrawerBrowserFocus()
-    @FocusState private var filterFocused: Bool
     @State private var showingShortcuts = false
 
     init(model: FileDrawerModel, settings: PreferencesModel) {
@@ -158,7 +157,7 @@ struct FileDrawerView: View {
                 .disabled(!model.canBack)
             iconButton("chevron.right", label("Forward", "前进"), id: "drawer.forward", command: .forward, action: model.forward)
                 .disabled(!model.canForward)
-            iconButton("arrow.up", label("Parent Folder", "上一级"), id: "drawer.up", command: .up, action: model.up)
+            iconButton("arrow.up", label("Parent Folder", "上一级"), id: "drawer.up", action: model.up)
                 .disabled(!model.canUp)
             let choose = label("Choose Folder…", "选择文件夹…")
             Button(action: model.chooseFolder) {
@@ -179,17 +178,11 @@ struct FileDrawerView: View {
         let entries = model.visibleEntries
         HStack(spacing: 5) {
             iconButton("magnifyingglass", label("Find in Folder", "搜索当前文件夹"), id: "drawer.find", command: .find) {
-                filterFocused = true
+                browserFocus.focusSearch(in: model)
             }.keyboardShortcut("f", modifiers: .command).disabled(model.interacting)
-            TextField(FileDrawerCommand.find.hint(for: label("Search this folder", "搜索当前文件夹"), shown: showsHints), text: $model.query)
-                .textFieldStyle(.roundedBorder).focused($filterFocused).accessibilityIdentifier("drawer.filter")
-                .accessibilityLabel(label("Search filenames in this folder", "在当前文件夹搜索文件名"))
-                .help(label("Match words in filenames and extensions in any order.", "可按任意顺序输入文件名或扩展名中的多个词。"))
-                .onSubmit {
-                    model.selectFirstSearchResult()
-                    filterFocused = false
-                    browserFocus.restore(model)
-                }
+            FileDrawerSearchField(model: model, focus: browserFocus,
+                                  placeholder: FileDrawerCommand.find.hint(for: label("Search this folder", "搜索当前文件夹"), shown: showsHints))
+                .frame(maxWidth: .infinity)
             Menu {
                 Picker(label("Sort by", "排序方式"), selection: $model.sort) {
                     Text(label("Name", "名称")).tag(FileDrawerSort.name)
@@ -221,7 +214,7 @@ struct FileDrawerView: View {
         ZStack {
             FileDrawerBrowser(model: model, entries: entries, resultsVersion: model.resultsVersion,
                               mode: model.viewMode, chinese: chinese, focus: browserFocus) {
-                filterFocused = true
+                browserFocus.focusSearch(in: model)
             }
                 .accessibilityIdentifier("drawer.files")
                 .opacity(model.isSearching ? 0 : 1)
