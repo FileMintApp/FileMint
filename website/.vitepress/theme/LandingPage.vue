@@ -37,11 +37,6 @@ const drawerGallery = computed(() => [
     image: drawerImage('actions'), title: t('处理选中的文件', 'Act on selected files'),
     alt: t('文件抽屉的选中项操作面板，显示打开、拷贝路径和移动等命令', 'The File Drawer action palette showing commands for a selected file'),
     detail: t('按 ⌘K 打开操作面板，拷贝路径、移动文件或用指定 App 打开。', 'Press ⌘K for actions such as copying paths, moving files or opening them in another app.')
-  },
-  {
-    image: drawerImage('genie'), title: t('顺着屏幕边缘展开', 'Unfold from either edge'),
-    alt: t('文件抽屉沿屏幕右侧弯曲收起的神奇效果画面', 'A frame of the Genie transition pulling File Drawer toward the right edge'),
-    detail: t('选左侧或右侧，按屏幕调整宽高，再选你喜欢的开合动画。', 'Choose a side, size the drawer for your display and choose an opening and closing animation.')
   }
 ])
 function choose(index: number) { active.value = index }
