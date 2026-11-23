@@ -6,7 +6,23 @@ pageClass: guide-page
 
 # FileMint User Guide
 
-Start by creating one file in Finder, then turn on the other features as you need them. If FileMint is not installed yet, follow the [installation guide](./install). Screenshots show example files, apps and settings; your initial setup may differ and the interface may change between releases.
+Turn on File Drawer, Finder menus or other tools as you need them. If FileMint is not installed yet, follow the [installation guide](./install). Screenshots show example files and settings.
+
+## Open File Drawer from the screen edge {#file-drawer}
+
+1. Open **Extensions → File Drawer** in FileMint and enable File Drawer. It is off by default.
+2. Click **Open File Drawer**, or press **Control + Option + D (⌃⌥D)** while FileMint is running. You can change the shortcut in the same settings pane.
+3. Choose a folder in the locations sidebar. If access is needed, confirm the folder in the macOS picker. You can remove saved access in **File Access**.
+
+![File Drawer with its path bar, locations sidebar and the Launch Kit folder](/images/file-drawer-browse-en.png)
+
+Search filters the open folder by name. Use the arrow keys to select an item, press **Space** to preview it, or press **⌘K** to see actions for the selection. Actions include copying paths, opening items in another app and moving items, depending on the selection.
+
+![Searching inside File Drawer narrows the folder to two files](/images/file-drawer-search-en.png)
+
+![File Drawer shows the action palette for a selected Markdown file](/images/file-drawer-actions-en.png)
+
+In File Drawer settings, choose the screen edge, adjust the width and height, and pick an animation. The drawer remembers the last location by default. Turn that option off to use your chosen default location on each fresh opening.
 
 ## Complete the first-time setup
 

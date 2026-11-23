@@ -1,6 +1,64 @@
 <!-- Future releases after 0.8.0 use docs/RELEASE_NOTES_TEMPLATE.md.
 Keep released entries unchanged; add the next version only during release preparation. -->
 
+# FileMint 0.8.3
+
+## 更新摘要
+
+从屏幕边缘打开文件抽屉，在手边浏览、搜索和处理文件。
+
+- 新增文件抽屉。可按名称筛选当前文件夹、按空格预览，或打开选中项的操作面板。
+- 新增 Finder 的「更改默认应用…」，可为选中文件所属的类型设置默认应用。
+- 主题色新增多套预设，并支持自定义颜色。
+- 改善固定 60 Hz 屏幕上的神奇效果流畅度，修正登录启动时的设置窗口判定。
+
+## 开始使用
+
+在 FileMint 的**扩展功能 → 文件抽屉**开启模块。点击**打开文件抽屉**，或在 FileMint 运行时按 **Control + Option + D（⌃⌥D）**。进入需要授权的文件夹时，按 macOS 提示确认位置。可以在[文件抽屉使用指南](https://filemintapp.github.io/FileMint/guide.html#file-drawer)查看截图和快捷键。
+
+如需更改默认应用，在**扩展功能 → 文件（夹）工具**开启该命令，然后在 Finder 中右键点按一个具有已知文件类型的普通文件。更改适用于当前 macOS 账户中的该文件类型，macOS 可能要求确认。
+
+## 详细改进
+
+- 文件抽屉可贴靠屏幕左侧或右侧，提供图标、列表和紧凑列表。可以设置宽高和动画，并选择默认位置或记住上次浏览位置。
+- 按 **⌘K** 打开选中项的操作面板。可拷贝路径、移动或复制项目、用指定 App 打开，具体选项取决于当前选区和授权。跨卷时可通过拷贝传输文件。
+- 在**通用 → 外观**选择主题色预设或输入自定义颜色。主题色应用到 FileMint 自己的窗口与面板。
+- 「使用 App 打开」支持 Otty 的文件夹新标签页模式。Finder 创建草稿在写入前复核原目标目录，目标失效时可改选位置。
+
+## 升级须知
+
+支持搭载 Apple M 系列芯片并运行 macOS 13.0 或更新版本的 Mac。快捷指令与启动器功能仍要求 macOS 13.3 或更新版本。Intel Mac 请继续使用兼容的旧版本。
+
+升级保留偏好、模板和已保存的文件夹授权。文件抽屉与更改默认应用命令默认关闭，需要时再启用。
+
+## Highlights
+
+Open File Drawer from the screen edge to browse, search and act on the files you are working with.
+
+- File Drawer filters the open folder by name, previews files with Space and offers actions for the selection.
+- Change Default App in Finder sets the default app for the selected file's type.
+- Choose from more accent presets or set a custom accent color.
+- Genie is smoother on fixed 60 Hz displays, and login launches use the corrected settings-window policy.
+
+## Getting started
+
+Enable File Drawer in **Extensions → File Drawer**. Click **Open File Drawer** or press **Control + Option + D (⌃⌥D)** while FileMint is running. Confirm access in the macOS picker when opening a folder that needs it. See the [File Drawer guide](https://filemintapp.github.io/FileMint/en/guide.html#file-drawer) for screenshots and shortcuts.
+
+To change a default app, enable the command in **Extensions → File & Folder Tools** and right-click one ordinary file with a recognized type in Finder. The change applies to that file type in your macOS account and may require confirmation from macOS.
+
+## Details
+
+- Dock File Drawer to either screen edge and switch between icon, list and compact list views. Adjust the size and animation, choose a default location or return to your last folder.
+- Press **⌘K** for actions on the selection. Copy paths, move or copy items, or open them in a chosen app. Available actions depend on the selection and access. Use Copy to transfer items to another volume.
+- Choose a preset or enter a custom accent in **General → Appearance**. The accent applies to FileMint windows and panels.
+- Open with App supports opening folders in a new Otty tab. Finder creation drafts recheck the original folder before writing and let you choose another destination if it is unavailable.
+
+## Before you update
+
+FileMint supports Apple M-series Macs on macOS 13.0 or later. Shortcuts and Launchers still require macOS 13.3 or later. Intel Macs can continue using the last compatible release.
+
+Updating keeps preferences, templates and saved folder access. File Drawer and Change Default App are off by default and can be enabled when needed.
+
 # FileMint 0.8.2
 
 ## 更新摘要

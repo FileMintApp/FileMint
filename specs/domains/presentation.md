@@ -278,7 +278,7 @@ owns the rules, supported storage, counts, explicit actions and recovery behavio
 ## Product presentation
 
 - The bilingual website uses a workflow-led landing page: a real product capture,
-  selectable creation/image/app/Quick Search scenarios, a compact capability overview, local
+  selectable File Drawer, creation, image, Open with App and Quick Search scenarios, a compact capability overview, local
   processing facts, installation FAQ and a clear download action. Keep the mint
   identity, readable mobile layouts, keyboard controls and reduced-motion support.
   Guides and privacy pages describe capabilities without stale release banners;
@@ -286,7 +286,12 @@ owns the rules, supported storage, counts, explicit actions and recovery behavio
   The Quick Search scenario shows a real matching-language panel capture, names
   the optional Control-Option-K shortcut and links to the usage guide. Preserve
   accessible tab selection, arrow/Home/End navigation and screenshot enlargement
-  across all four scenarios, with readable labels at narrow widths.
+  across the scenarios, with readable labels at narrow widths.
+- Lead with File Drawer in the hero and navigation. Show real matching-language
+  captures of browsing, folder search, selected-item actions and the Genie
+  transition. Link to setup and keyboard use in both guides. Explain that the
+  drawer is off by default, opens while FileMint is running and browses folders
+  with the user's authorization.
 - Give Batch Rename and File Info/checksums a prominent bilingual homepage
   showcase with real, matching-language captures and direct usage-guide links.
   Explain preview-before-commit, protected extensions, conflict blocking and
@@ -299,8 +304,8 @@ owns the rules, supported storage, counts, explicit actions and recovery behavio
   native interactions. Give each workflow a clear bilingual guide link and
   state its actual defaults and limits. Keep the current-release label dynamic;
   do not turn the homepage into a hard-coded release banner or simulated app UI.
-- Promote Quick Search in the hero and navigation, with a dedicated bilingual
-  showcase immediately after the hero. Use typographic Control-Option-K keycaps
+- Keep Quick Search in the navigation and hero scenarios, with a dedicated
+  bilingual showcase after File Drawer. Use typographic Control-Option-K keycaps
   and the four actual search categories: creation actions, enabled templates,
   saved favorites and settings. Explain that the global shortcut starts off,
   can be customized and works while FileMint is running. Keycaps illustrate the
