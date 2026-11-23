@@ -6,7 +6,14 @@ DEVELOPER_DIR ?= /Applications/Xcode.app/Contents/Developer
 export DEVELOPER_DIR
 export DEVELOPMENT_TEAM
 
-verify: verify-context verify-fork-sync verify-github-token verify-image-compression test harness verify-harness-cli verify-appcast verify-release-metadata verify-release-notarization verify-release-publication verify-homebrew verify-signing-entitlements verify-native-qa verify-native-checks-runner verify-launcher-probe verify-batch-rename-capture verify-batch-rename-access verify-file-info-capture
+verify: verify-context verify-debug-install verify-fork-sync verify-github-token verify-image-compression test harness verify-harness-cli verify-appcast verify-release-metadata verify-release-notarization verify-release-publication verify-homebrew verify-signing-entitlements verify-native-qa verify-native-checks-runner verify-launcher-probe verify-batch-rename-capture verify-batch-rename-access verify-file-info-capture
+
+.PHONY: install-debug verify-debug-install
+install-debug:
+	python3 scripts/install_debug.py
+
+verify-debug-install:
+	python3 -B scripts/test_install_debug.py
 
 .PHONY: verify-launcher-probe
 verify-launcher-probe:

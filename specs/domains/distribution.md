@@ -4,6 +4,21 @@ Load for: Build configuration, packaging, signing, notarization and publication 
 
 Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; other documents link here.
 
+## Local Debug installation
+
+- `make install-debug` builds the arm64 Debug app with a direct executable,
+  signs it with an available Developer ID identity and verifies the app,
+  Finder extension and production entitlements. When replacing
+  `/Applications/FileMint.app`, preserve both designated requirements and retain
+  a verified ZIP of the previous bundle under the ignored `build/` directory.
+- Stage and verify the candidate on the Applications volume before replacement.
+  Respect normal FileMint termination and leave the previous app installed if
+  it declines to quit. Replace the bundle atomically and restore the prior
+  bundle if installed signature verification fails before launch. Use only the
+  installed path for launch, clean up the current run's temporary registrations,
+  and verify the resulting Finder registration. Finder enablement remains under
+  macOS user control. This workflow is local to the development Mac.
+
 ## Distribution
 
 - Main app, Finder extension, Core package and product QA compilation targets
