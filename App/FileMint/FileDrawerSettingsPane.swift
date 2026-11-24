@@ -179,7 +179,6 @@ private struct FileDrawerPositionPicker: View {
     typealias Position = FileDrawerPreferences.Position
     @Binding var selection: Position
     let chinese: Bool
-    @FocusState private var focused: Bool
 
     var body: some View {
         Grid(horizontalSpacing: 5, verticalSpacing: 5) {
@@ -199,10 +198,6 @@ private struct FileDrawerPositionPicker: View {
                 button(.bottomRight)
             }
         }
-        .contentShape(RoundedRectangle(cornerRadius: 8))
-        .focusable()
-        .focused($focused)
-        .onMoveCommand(perform: move)
         .environment(\.layoutDirection, .leftToRight)
     }
 
@@ -210,7 +205,6 @@ private struct FileDrawerPositionPicker: View {
         let selected = selection == position
         return Button {
             selection = position
-            focused = true
         } label: {
             Text(name(position))
                 .fontWeight(selected ? .semibold : .regular)
@@ -233,23 +227,6 @@ private struct FileDrawerPositionPicker: View {
         case .bottom: chinese ? "正下方" : "Bottom"
         case .bottomRight: chinese ? "右下角" : "Bottom Right"
         }
-    }
-
-    private func move(_ direction: MoveCommandDirection) {
-        guard focused else { return }
-        let dx: CGFloat, dy: CGFloat
-        switch direction {
-        case .left: (dx, dy) = (-0.5, 0)
-        case .right: (dx, dy) = (0.5, 0)
-        case .up: (dx, dy) = (0, 0.5)
-        case .down: (dx, dy) = (0, -0.5)
-        @unknown default: return
-        }
-        let anchor = selection.anchor
-        var target = CGPoint(x: anchor.x + dx, y: anchor.y + dy)
-        if target == CGPoint(x: 0.5, y: 0.5) { target = CGPoint(x: target.x + dx, y: target.y + dy) }
-        guard let next = Position.allCases.first(where: { $0.anchor == target }) else { return }
-        selection = next
     }
 }
 
@@ -297,7 +274,7 @@ struct FileDrawerDimensionControls: View {
     var body: some View {
         SettingsSection(title: label) {
             let fit = chinese ? label + "适应显示器" : "Fit " + dimension.lowercased() + " to display"
-            PreferenceRow(title: fit) {
+            PreferenceRow(title: fit, detail: width ? resizeHint : nil) {
                 Toggle(fit, isOn: Binding(get: { settings[keyPath: autoKey] }, set: { enabled in
                     var next = edited ?? settings
                     next[keyPath: autoKey] = enabled
@@ -327,6 +304,11 @@ struct FileDrawerDimensionControls: View {
         .onChange(of: savedNumbers) { _ in reset() }
         .onChange(of: editing) { _ in apply() }
         .onDisappear(perform: apply)
+    }
+
+    private var resizeHint: String {
+        chinese ? "关闭后可拖动抽屉边缘调整固定宽度。"
+            : "Turn this off to set a fixed width by dragging the drawer edge."
     }
 
     private var feedback: String {

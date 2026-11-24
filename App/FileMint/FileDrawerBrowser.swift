@@ -4,7 +4,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 @MainActor
-final class FileDrawerBrowserFocus: ObservableObject {
+final class FileDrawerBrowserFocus {
     weak var collection: NSCollectionView?
     weak var searchField: NSTextField?
 
@@ -16,12 +16,18 @@ final class FileDrawerBrowserFocus: ObservableObject {
     }
 
     func restore(_ model: FileDrawerModel) {
-        DispatchQueue.main.async { [weak collection, weak model] in
-            guard let model, model.presented, model.pathMenu == nil, model.actionPalette == nil, !model.interacting,
-                  let collection, let window = collection.window, window === model.window,
-                  window.isKeyWindow, window.attachedSheet == nil else { return }
-            window.makeFirstResponder(collection)
+        DispatchQueue.main.async { [weak self, weak collection, weak model] in
+            guard let model, let collection, self?.collection === collection else { return }
+            self?.focusFiles(in: model)
         }
+    }
+
+    func focusFiles(in model: FileDrawerModel) {
+        guard model.presented, model.pathMenu == nil, model.actionPalette == nil, !model.interacting,
+              !model.writing, !model.dragging, let collection, !collection.isHiddenOrHasHiddenAncestor,
+              let window = collection.window, window === model.window, window.isKeyWindow, window.attachedSheet == nil,
+              (window.firstResponder as? NSTextView)?.hasMarkedText() != true else { return }
+        window.makeFirstResponder(collection)
     }
 }
 
@@ -229,8 +235,15 @@ struct FileDrawerBrowser: NSViewRepresentable {
             case 125, 126:
                 guard !entries.isEmpty else { return }
                 let indices = model.selection.compactMap { model.visibleIndex(for: $0) }
-                let next = key == 125 ? min((indices.max() ?? -1) + 1, entries.count - 1)
-                    : max((indices.min() ?? entries.count) - 1, 0)
+                let last = entries.count - 1
+                let next: Int
+                if key == 125 {
+                    let current = indices.max() ?? last
+                    next = current == last ? 0 : current + 1
+                } else {
+                    let current = indices.min() ?? 0
+                    next = current == 0 ? last : current - 1
+                }
                 let path = IndexPath(item: next, section: 0)
                 collection.selectionIndexPaths = [path]
                 syncSelection(collection)

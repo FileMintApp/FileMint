@@ -34,7 +34,9 @@ struct GlobalShortcutControls: View {
     var body: some View {
         Group {
             PreferenceRow(title: text(.enable), detail: isDrawer
-                ? (language.resolved() == .chinese ? "从其他应用呼出文件抽屉。" : "Show the drawer from another app.")
+                ? (language.resolved() == .chinese
+                    ? "从其他应用打开或聚焦抽屉，可直接用键盘操作文件列表。抽屉已聚焦时再按一次可收起。"
+                    : "Open or focus the drawer from another app to use file shortcuts. Press again while the drawer has focus to close it.")
                 : text(.enableHint)) {
                 Toggle(text(.enable), isOn: Binding(get: { saved.isEnabled }, set: { setEnabled($0) }))
                     .labelsHidden().accessibilityIdentifier(prefix + "enabled")

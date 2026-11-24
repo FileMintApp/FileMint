@@ -7,13 +7,8 @@ import SwiftUI
 struct FileDrawerView: View {
     @ObservedObject var model: FileDrawerModel
     @ObservedObject var settings: PreferencesModel
-    @StateObject private var browserFocus = FileDrawerBrowserFocus()
+    let browserFocus: FileDrawerBrowserFocus
     @State private var showingShortcuts = false
-
-    init(model: FileDrawerModel, settings: PreferencesModel) {
-        self.model = model
-        self.settings = settings
-    }
 
     private var chinese: Bool { settings.preferences.language.resolved() == .chinese }
     private func label(_ english: String, _ mandarin: String) -> String { chinese ? mandarin : english }

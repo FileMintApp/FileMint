@@ -3,6 +3,52 @@
 Observations below apply to the revisions and environments stated in each entry.
 Use [HARNESS](../specs/HARNESS.md) to select present-day verification.
 
+## Drawer arrow-key wrapping — 2026-11-24
+
+On arm64 macOS 27.2.1 with Xcode 27.2, the worktree based on `f1fc3fc` passed
+`make verify` and unsigned Release compilation. A Swift probe ran the
+production vertical-arrow branch with a test collection and verified selection
+and scroll targets in 12 cases, including both wraps and filtered results.
+The signed fixture stopped at settings initialization in runs `run.4ioxj2pe`
+and `run.hwskejuo`. The desktop was locked. The real viewport checks in list,
+icon and compact layouts remain pending. Logs are in `build/drawer-wrap.32aVBl/`.
+
+## Drawer surface and search dismissal — 2026-11-24
+
+On arm64 macOS 27.2.1 with Xcode 27.2, the worktree based on `f1fc3fc` passed
+`make verify`, unsigned Release compilation and the signed drawer suite.
+Activating each position choice left the settings responder in place. The
+fixture sampled distinct fill colors before and after an AppKit key-window
+transfer and matched its edge and interior samples in both states.
+Command-W released the folder-search editor before Genie. Reversing the
+dismissal returned keyboard input to the list and preserved the filter and
+selection. The composited mid-frame captured after closing from focused
+search showed the field moving with the drawer and no detached focus ring.
+
+The first cadence run stopped at the right-top solid opening endpoint.
+The isolated cadence recheck presented 27–31 frames in each of the 36
+transitions on the 60 Hz display. The cause of the first incomplete sample
+remains unconfirmed. Logs are in `build/drawer-surface.zzgc6B/` and native
+runs `run.k8mdzvtr` and `run.ckta6x6l`.
+
+## Drawer focus and width grip — 2026-11-24
+
+On arm64 macOS 27.2.1 with Xcode 27.2, the worktree based on `f1fc3fc` passed
+`make verify` (471 Swift tests) and unsigned Release compilation. The signed
+`file-drawer` suite verified keyboard focus on individual position buttons and
+measured the drawer outline before and after a real AppKit key-window transfer.
+It invoked the drawer shortcut handler, checked that the pinned window kept
+its folder, filter and selection, then sent Down to the file list. It also
+verified that the adaptive edge has no resize hit target and that dragging in
+fixed mode saves the width. The cadence suite presented 28–31 frames in each
+of 36 Genie transitions on the 60 Hz display.
+
+Logs are in `build/drawer-focus.ZscSmV/` and
+`build/native-checks.noindex/run.iczycs8y/`. In the earlier run
+`run.4flrhx0r`, the separate hotkey sandbox stopped when macOS reported
+Control-Option-K was already registered by another process. The drawer check
+observed in-app refocus. Physical cross-app key delivery remains unverified.
+
 ## Drawer keyboard navigation — 2026-11-23
 
 On arm64 macOS 27.2.1, offline verification, unsigned Release compilation and

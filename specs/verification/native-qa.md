@@ -60,7 +60,7 @@ all-locations menu and grant revocation, separate display-location and root
 authorization pickers, and the saved last-location switch. It tests reopening,
 restoration by a fresh controller and fallback when a remembered folder was replaced.
 The settings controls exercise both adaptive defaults, opening and focusing the
-drawer, selecting each of the eight positions, directional keyboard selection
+drawer, selecting each of the eight positions while preserving keyboard focus,
 and replacing the authorization button with status until an isolated directory grant is revoked. The rename
 fixture verifies that the drawer applies the latest saved position after the
 editor closes and preserves its current directory and selection.
@@ -68,7 +68,10 @@ The fixture edits the width and height settings
 through their native field editors and checks the open window, stored values, limits
 and reopened window. It also covers system material, interrupted fade, file-list layouts,
 query cancellation, sort direction, the full-width breadcrumb row, and four-arrow file
-navigation in each layout. It checks Genie opening, closing and reversal at all
+navigation in each layout, including wrap and scroll in both directions and wrap within
+filtered results. It measures the surface colors before and after a key-window
+transfer and checks that dismissal releases the native folder-search editor before Genie.
+It checks Genie opening, closing and reversal at all
 eight positions, plus diagonal Slide and Scale and a corner opening transferred
 between displays when two are attached. On macOS 14.4+ with glass
 available, it captures its own composited adaptive drawer at every position and

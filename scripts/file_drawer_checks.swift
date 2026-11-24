@@ -186,6 +186,10 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
         if let match = view as? T { return [match] }
         return view.subviews.flatMap { views(of: type, in: $0) }
     }
+    func widthGrip(in view: NSView) -> NSView? {
+        if view.accessibilityIdentifier() == "drawer.widthGrip" { return view }
+        return view.subviews.lazy.compactMap { widthGrip(in: $0) }.first
+    }
     func docked(_ window: NSWindow, at position: FileDrawerPreferences.Position) -> Bool {
         guard let display = window.screen else { return false }
         let bounds = display.visibleFrame.insetBy(dx: 6, dy: 6)
@@ -1147,6 +1151,7 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
         owner.makeKeyAndOrderFront(nil)
         defer {
             controller.panel?.close()
+            model.placesVisible = true
             owner.close()
         }
 
@@ -1192,31 +1197,146 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
         }
         owner.makeKeyAndOrderFront(nil)
         try await wait("Settings could not take focus for the position grid") { owner.isKeyWindow }
+        let previousResponder = owner.firstResponder
         for position in FileDrawerPreferences.Position.allCases {
-            try await press("drawer.position.\(position.rawValue)", in: host)
+            let id = "drawer.position.\(position.rawValue)"
+            try await press(id, in: host)
             try await wait("Appearance did not move the open drawer to \(position.rawValue)") {
                 settings.committedPreferences.fileDrawer.position == position && controller.panel === opened &&
                     model.pinned && docked(opened, at: position)
             }
+            let button = axElement(id, in: host)
+            let focused = button?.responds(to: NSSelectorFromString("isAccessibilityFocused")) == true &&
+                button?.value(forKey: "accessibilityFocused") as? Bool == true
+            try require(!focused && owner.firstResponder === previousResponder, "Position choice took keyboard focus")
         }
-        func movePicker(to position: FileDrawerPreferences.Position, by key: Int, code: UInt16) async throws {
-            guard let character = Unicode.Scalar(key),
-                  let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [],
-                    timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: owner.windowNumber, context: nil,
-                    characters: String(character), charactersIgnoringModifiers: String(character), isARepeat: false, keyCode: code)
-            else { throw failure("Could not make a position picker key event") }
-            owner.sendEvent(event)
-            try await wait("Arrow key did not select \(position.rawValue)") {
-                settings.committedPreferences.fileDrawer.position == position && docked(opened, at: position)
-            }
-        }
-        try await press("drawer.position.topLeft", in: host)
-        try await wait("The top-left position was not saved") { docked(opened, at: .topLeft) }
-        try await movePicker(to: .top, by: NSRightArrowFunctionKey, code: 124)
-        try await movePicker(to: .bottom, by: NSDownArrowFunctionKey, code: 125)
         try await press("drawer.position.right", in: host)
         try await wait("Appearance did not restore the right position") { docked(opened, at: .right) }
-        print("PASS drawer settings: adaptive defaults, grant status, open or focus, eight positions and arrow keys")
+        print("PASS drawer settings: adaptive defaults, grant status, open or focus, eight positions without taking keyboard focus")
+
+        let saved = settings.committedPreferences.fileDrawer
+        var solid = saved
+        solid.glass = false
+        try require(settings.setFileDrawer(solid), "Could not set a solid backdrop for the focus check")
+        defer {
+            _ = settings.setFileDrawer(saved)
+            UserDefaults.standard.removeObject(forKey: lastLocationKey)
+        }
+        controller.toggleFromShortcut()
+        try await wait("The shortcut did not make the visible drawer key") { opened.isKeyWindow }
+        let focusFolder = folder.standardizedFileURL
+        let firstFile = large.standardizedFileURL
+        let nextFile = small.standardizedFileURL
+        model.openFolder(focusFolder)
+        try await wait("The shortcut focus fixture could not open its folder") {
+            model.directory == focusFolder && !model.busy
+        }
+        model.query = "txt"
+        try await wait("The shortcut focus fixture did not show the filtered list") {
+            guard let content = opened.contentView else { return false }
+            return !model.isSearching && model.visibleEntries.count == 2 &&
+                views(of: NSCollectionView.self, in: content).first?.numberOfItems(inSection: 0) == 2
+        }
+        guard let content = opened.contentView, let list = views(of: NSCollectionView.self, in: content).first,
+              let filter = views(of: NSTextField.self, in: content).first(where: { $0.accessibilityIdentifier() == "drawer.filter" }),
+              opened.makeFirstResponder(filter), opened.firstResponder === filter.currentEditor() else {
+            throw failure("Could not leave the filter as the drawer's last responder")
+        }
+        model.selectFirstSearchResult()
+        try require(model.selection == [firstFile], "The refocus fixture had no selection to preserve")
+
+        func backgroundColor() throws -> NSColor {
+            content.layoutSubtreeIfNeeded()
+            guard let bitmap = content.bitmapImageRepForCachingDisplay(in: content.bounds) else {
+                throw failure("Could not render the drawer backdrop")
+            }
+            content.cacheDisplay(in: content.bounds, to: bitmap)
+            let y = bitmap.pixelsHigh / 2
+            let scale = CGFloat(bitmap.pixelsWide) / content.bounds.width
+            guard let edge = bitmap.colorAt(x: Int(1.5 * scale), y: y)?.usingColorSpace(.sRGB),
+                  let fill = bitmap.colorAt(x: bitmap.pixelsWide / 2, y: y)?.usingColorSpace(.sRGB) else {
+                throw failure("Could not sample the drawer backdrop")
+            }
+            try require(colorDifference(edge, fill) < 0.02, "Drawer focus appeared as a stroke instead of a uniform fill")
+            return fill
+        }
+        func colorDifference(_ a: NSColor, _ b: NSColor) -> CGFloat {
+            max(abs(a.redComponent - b.redComponent), abs(a.greenComponent - b.greenComponent),
+                abs(a.blueComponent - b.blueComponent))
+        }
+        let activeFill = try backgroundColor()
+        owner.makeKeyAndOrderFront(nil)
+        try await wait("A pinned drawer did not relinquish focus while staying visible") {
+            owner.isKeyWindow && opened.isVisible && !opened.isKeyWindow
+        }
+        let inactiveFill = try backgroundColor()
+        try require(colorDifference(activeFill, inactiveFill) > 0.04, "Focusing did not change the drawer's fill color")
+
+        controller.toggleFromShortcut()
+        try await wait("The global shortcut did not focus the visible file list") {
+            controller.panel === opened && opened.isKeyWindow && opened.firstResponder === list
+        }
+        try require(model.pinned && model.directory == focusFolder &&
+                    model.query == "txt" && model.selection == [firstFile], "Refocusing lost the drawer session")
+        opened.sendEvent(try drawerKeyEvent("\u{f701}", 125, [.numericPad, .function]))
+        try await wait("A file key did not work after refocusing") { model.selection == [nextFile] }
+        print("PASS drawer refocus: distinct surface colors, pinned window and filtered selection preserved, arrow reached the file list")
+
+        if !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+            try require(opened.makeFirstResponder(filter) && filter.currentEditor() != nil,
+                        "Search did not acquire focus before dismissal")
+            try sendWindowKey("w", 13)
+            try require(opened.isVisible && !views(of: FileDrawerGenieTransition.self, in: content).isEmpty &&
+                        filter.currentEditor() == nil, "Genie started closing with the search's field editor still attached")
+            controller.show(on: opened.screen)
+            try await wait("Reversing search dismissal lost keyboard input or filtered selection") {
+                opened.isKeyWindow && opened.firstResponder === list && model.query == "txt" && model.selection == [nextFile]
+            }
+            print("PASS drawer dismissal: the search editor released focus before Genie and reversal restored file input")
+        }
+
+        owner.makeKeyAndOrderFront(nil)
+        try await wait("Settings could not retake focus for width controls") { owner.isKeyWindow }
+        try await checkWidthGrip(on: opened, settingsView: host)
+    }
+
+    func checkWidthGrip(on drawer: NSWindow, settingsView: NSView) async throws {
+        guard let content = drawer.contentView, let handle = widthGrip(in: content) else {
+            throw failure("Missing drawer width grip")
+        }
+        func gripReceivesClicks() -> Bool {
+            content.layoutSubtreeIfNeeded()
+            let center = NSPoint(x: handle.bounds.midX, y: handle.bounds.midY)
+            return content.hitTest(handle.convert(center, to: content.superview)) === handle
+        }
+        try require(handle.isHidden && !gripReceivesClicks(), "Adaptive width admitted clicks on the resize grip")
+        try await press("drawer.fitsDisplayWidth", in: settingsView)
+        try await wait("Fixed width did not enable the resize grip") {
+            !settings.committedPreferences.fileDrawer.fitsDisplayWidth && !handle.isHidden && gripReceivesClicks()
+        }
+
+        func mouse(_ type: NSEvent.EventType, at point: NSPoint) throws -> NSEvent {
+            guard let event = NSEvent.mouseEvent(with: type, location: point, modifierFlags: [], timestamp: 0,
+                windowNumber: drawer.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1)
+            else { throw failure("Could not make a width drag event") }
+            return event
+        }
+        let start = handle.convert(NSPoint(x: handle.bounds.midX, y: handle.bounds.midY), to: nil)
+        let direction = settings.committedPreferences.fileDrawer.position.widthDragMultiplier
+        let dragged = NSPoint(x: start.x - 20 / direction, y: start.y)
+        let startWidth = drawer.frame.width
+        handle.mouseDown(with: try mouse(.leftMouseDown, at: start))
+        handle.mouseDragged(with: try mouse(.leftMouseDragged, at: dragged))
+        handle.mouseUp(with: try mouse(.leftMouseUp, at: dragged))
+        let fixedWidth = settings.committedPreferences.fileDrawer.width
+        try require(abs(drawer.frame.width - (startWidth - 20)) < 1 && fixedWidth == drawer.frame.width,
+                    "Dragging in fixed mode did not resize and save the drawer")
+        try await press("drawer.fitsDisplayWidth", in: settingsView)
+        try await wait("Enabling adaptive width did not hide the grip and keep the saved fixed width") {
+            let options = settings.committedPreferences.fileDrawer
+            return options.fitsDisplayWidth && options.width == fixedWidth && handle.isHidden && !gripReceivesClicks()
+        }
+        print("PASS drawer width grip: adaptive edge ignores drags, fixed width drags and saves")
     }
 
     func checkAnimationEffects() async throws {
@@ -1236,6 +1356,12 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
             model.pinned = true
             if !opening {
                 try await wait("Drawer did not finish opening before \(label)") { genieView() == nil && !model.busy }
+                if layout == "adaptive" && position == .right {
+                    guard let content = drawer.contentView,
+                          let field = views(of: NSTextField.self, in: content).first(where: { $0.accessibilityIdentifier() == "drawer.filter" }),
+                          drawer.makeFirstResponder(field), let editor = field.currentEditor(),
+                          drawer.firstResponder === editor else { throw failure("Could not focus search before the glass dismissal capture") }
+                }
                 model.close()
             }
             guard let genie = genieView(), genie.presentsWithTransaction else { throw failure("Missing live glass for \(label)") }
@@ -1302,29 +1428,28 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
             print("PASS composited Genie \(label): \(width)x\(height) px, maximum outline error \(maxEdgeError) px")
             guard position == .left || position == .right else { return }
             let columns = geometry.columns
-            // The side-docked resize grip is part of the Metal snapshot. Measure its visible mark
-            // against the adjacent glass in this same image, including in dark appearance.
-            func resizeGrip(in view: NSView) -> NSView? {
-                if view.accessibilityLabel() == model.text("Resize file drawer", "调整抽屉宽度") { return view }
-                return view.subviews.lazy.compactMap { resizeGrip(in: $0) }.first
-            }
-            guard let content = drawer.contentView, let handle = resizeGrip(in: content) else { throw failure("Missing drawer grip") }
-            let sourceX = genie.convert(handle.bounds, from: handle).midX / genie.bounds.width
-            let gripX = Int((Double(vertices[0].x) + sourceX * Double(vertices[columns].x - vertices[0].x)) * Double(width))
-            let mid = height / 2
-            let span = Int(40 * drawer.backingScaleFactor)
-            func brightness(_ y: Int) throws -> CGFloat {
-                guard let color = bitmap.colorAt(x: gripX, y: y)?.usingColorSpace(.sRGB) else {
-                    throw failure("Missing resize grip sample in \(label)")
+            guard let content = drawer.contentView, let handle = widthGrip(in: content) else { throw failure("Missing drawer grip") }
+            try require(handle.isHidden == (layout == "adaptive"), "Wrong resize grip visibility in \(label)")
+            if !handle.isHidden {
+                // Measure the fixed-width grip against the adjacent composited glass.
+                let sourceX = genie.convert(handle.bounds, from: handle).midX / genie.bounds.width
+                let gripX = Int((Double(vertices[0].x) + sourceX * Double(vertices[columns].x - vertices[0].x)) * Double(width))
+                let mid = height / 2
+                let span = Int(40 * drawer.backingScaleFactor)
+                func brightness(_ y: Int) throws -> CGFloat {
+                    guard let color = bitmap.colorAt(x: gripX, y: y)?.usingColorSpace(.sRGB) else {
+                        throw failure("Missing resize grip sample in \(label)")
+                    }
+                    return color.brightnessComponent
                 }
-                return color.brightnessComponent
+                let background = try brightness(mid - span)
+                let grip = try (mid - span...mid + span).filter { abs(try brightness($0) - background) > 0.06 }
+                guard let first = grip.first, let last = grip.last else { throw failure("Missing visible resize grip in \(label)") }
+                let gripCenter = Double(first + last) / 2
+                try require(grip.count >= 6 && grip.count == last - first + 1 && abs(gripCenter - Double(mid)) <= 2,
+                            "Resize grip did not align with the glass center in \(label) (\(first)...\(last), center \(mid))")
+                print("PASS composited Genie \(label): grip center \(gripCenter)")
             }
-            let background = try brightness(mid - span)
-            let grip = try (mid - span...mid + span).filter { abs(try brightness($0) - background) > 0.06 }
-            guard let first = grip.first, let last = grip.last else { throw failure("Missing visible resize grip in \(label)") }
-            let gripCenter = Double(first + last) / 2
-            try require(grip.count >= 6 && grip.count == last - first + 1 && abs(gripCenter - Double(mid)) <= 2,
-                        "Resize grip did not align with the glass center in \(label) (\(first)...\(last), center \(mid))")
             if layout == "adaptive" && position == .right {
                 // Locate actual file icons in the composited frame. A cached location chooser has none of these rows.
                 guard let list = views(of: NSCollectionView.self, in: content).first, list.numberOfItems(inSection: 0) >= 3 else {
@@ -1354,7 +1479,6 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
                     try require(containsTint, "The warped snapshot lost file icon \(index) during \(label)")
                 }
             }
-            print("PASS composited Genie \(label): grip center \(gripCenter)")
         }
         func checkMotionToEndpoint(_ genie: FileDrawerGenieTransition, opening: Bool) async throws {
             var previous = genie.progress
@@ -1692,7 +1816,8 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
     }
 
     func checkDimensionEditors() async throws {
-        guard let drawer = model.window, let screen = drawer.screen else { throw failure("Missing drawer for size settings") }
+        guard let drawer = model.window, let screen = drawer.screen, let content = drawer.contentView,
+              let handle = widthGrip(in: content) else { throw failure("Missing drawer for size settings") }
         model.pinned = true
         var setup = settings.committedPreferences.fileDrawer
         setup.fitsDisplayWidth = true
@@ -1762,13 +1887,14 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
         try await edit("drawer.maximumWidth", 720)
         try await wait("Raising the limit did not apply the user's pending fixed width") {
             let p = settings.committedPreferences.fileDrawer
-            return p.maximumWidth == 720 && p.width == 702 && !p.fitsDisplayWidth &&
+            return p.maximumWidth == 720 && p.width == 702 && !p.fitsDisplayWidth && !handle.isHidden &&
                 abs(drawer.frame.width - min(screen.visibleFrame.width - 12, 702)) < 1
         }
         try await edit("drawer.width", 572)
         try await wait("Entering a fixed width did not resize the open drawer or leave automatic mode") {
             let p = settings.committedPreferences.fileDrawer
-            return !p.fitsDisplayWidth && p.width == 572 && abs(drawer.frame.width - min(screen.visibleFrame.width - 12, 572)) < 1
+            return !p.fitsDisplayWidth && p.width == 572 && !handle.isHidden &&
+                abs(drawer.frame.width - min(screen.visibleFrame.width - 12, 572)) < 1
         }
         try await edit("drawer.minimumHeight", 590)
         try await edit("drawer.maximumHeight", 674)
@@ -1819,6 +1945,13 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
             }
             list.keyDown(with: event)
         }
+        func waitForArrowScroll(to index: Int) async throws {
+            let path = IndexPath(item: index, section: 0)
+            try await wait("Arrow did not scroll item \(index) into view") {
+                guard let list = views(of: NSCollectionView.self, in: content).first else { return false }
+                return list.selectionIndexPaths == [path] && list.indexPathsForVisibleItems().contains(path)
+            }
+        }
         guard let entry = model.entries.first(where: { $0.name == "Subfolder" }) else { throw failure("Missing arrow folder") }
         for (mode, height) in [(FileDrawerViewMode.list, 42), (.icons, 100), (.compact, 29)] {
             model.setViewMode(mode)
@@ -1832,17 +1965,17 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
             }
             try arrow(126)
             try require(model.selectedEntries.first?.name == "Item-49.txt", "Up from no selection did not choose the last item")
-            try await wait("Arrow selection was off screen") {
-                views(of: NSCollectionView.self, in: content).first?.indexPathsForVisibleItems().contains(IndexPath(item: 50, section: 0)) == true
-            }
+            try await waitForArrowScroll(to: 50)
             try arrow(125)
-            try require(model.selectedEntries.first?.name == "Item-49.txt", "Down wrapped past the last item")
+            try require(model.selection == [entry.url], "Down did not wrap from the last item to the first")
+            try await waitForArrowScroll(to: 0)
+            try arrow(126)
+            try require(model.selectedEntries.first?.name == "Item-49.txt", "Up did not wrap from the first item to the last")
+            try await waitForArrowScroll(to: 50)
 
             model.selection = []
             try arrow(125)
             try require(model.selection == [entry.url], "Down did not start at the first visible folder")
-            try arrow(126)
-            try require(model.selection == [entry.url], "Up wrapped past the first item")
             try arrow(125)
             try require(model.selectedEntries.first?.name == "Item-00.txt", "Down did not follow the visible sort order")
             try arrow(124)
@@ -1860,6 +1993,22 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
             }
         }
 
+        model.query = "Item-0"
+        try await wait("Filtered arrow fixture did not show ten files") {
+            !model.isSearching && model.selection.isEmpty &&
+                views(of: NSCollectionView.self, in: content).first?.numberOfItems(inSection: 0) == 10
+        }
+        try arrow(126)
+        try arrow(125)
+        try require(model.selectedEntries.first?.name == "Item-00.txt", "Down wrapped to an item outside the filtered results")
+        try arrow(126)
+        try require(model.selectedEntries.first?.name == "Item-09.txt", "Up wrapped to an item outside the filtered results")
+        model.query = ""
+        try await wait("Clearing the arrow filter did not restore the list") {
+            !model.isSearching && model.visibleEntries.count == 51
+        }
+        print("PASS drawer file arrows: wrap and scroll in three layouts and wrap within filtered results")
+
         // A same-name replacement is a different object, even in the same parent.
         model.navigate(entry.url)
         try await wait("Could not reenter the test subfolder") { !model.busy && model.directory == entry.url }
@@ -1869,5 +2018,6 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
         try await wait("Returning to the parent selected a replacement folder") {
             !model.busy && model.entries.count == 52 && model.selection.isEmpty
         }
+
     }
 }

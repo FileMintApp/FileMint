@@ -7,6 +7,7 @@ import FileMintCore
 @MainActor
 private final class DrawerPanel: NSPanel {
     override var canBecomeKey: Bool { true }
+    let browserFocus = FileDrawerBrowserFocus()
     var requestClose: (() -> Void)?
     weak var drawer: FileDrawerModel?
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
@@ -99,11 +100,13 @@ final class FileDrawerController: NSObject, NSWindowDelegate {
             modal.makeKeyAndOrderFront(nil)
             return
         }
-        guard !hasActiveInteraction, model.pathMenu == nil else { return }
+        guard !hasActiveInteraction, model.pathMenu == nil,
+              (panel?.firstResponder as? NSTextView)?.hasMarkedText() != true else { return }
         if let panel, panel.isKeyWindow, !closing {
             dismiss()
         } else {
             show()
+            (panel as? DrawerPanel)?.browserFocus.focusFiles(in: model)
         }
     }
 
@@ -125,6 +128,9 @@ final class FileDrawerController: NSObject, NSWindowDelegate {
             }
             if reopening { transition(opening: true) }
             panel.makeKeyAndOrderFront(nil)
+            if reopening, panel.firstResponder === panel {
+                (panel as? DrawerPanel)?.browserFocus.focusFiles(in: model)
+            }
             return
         }
         guard !model.writing, let screen = targetScreen else { return }
@@ -150,8 +156,10 @@ final class FileDrawerController: NSObject, NSWindowDelegate {
             self.dismiss()
         }
         let backdrop = DrawerBackground()
-        let content = NSHostingView(rootView: FileDrawerView(model: model, settings: settings).fileMintTheme())
+        let drawerView = FileDrawerView(model: model, settings: settings, browserFocus: p.browserFocus)
+        let content = NSHostingView(rootView: drawerView.fileMintTheme())
         let handle = DrawerGrip()
+        handle.setAccessibilityIdentifier("drawer.widthGrip")
         handle.setAccessibilityLabel(model.text("Resize file drawer", "调整抽屉宽度"))
         handle.resize = { [weak self] delta, finished in self?.resize(by: delta, finished: finished) }
         for view in [content as NSView, handle] {
@@ -197,6 +205,14 @@ final class FileDrawerController: NSObject, NSWindowDelegate {
         guard let panel else { return }
         guard value.enabled else { panel.close(); return }
         background?.apply(value)
+        if let grip, grip.isHidden != value.fitsDisplayWidth {
+            if value.fitsDisplayWidth {
+                grip.cancelResize()
+                draggingWidth = false
+            }
+            grip.isHidden = value.fitsDisplayWidth
+            panel.invalidateCursorRects(for: grip)
+        }
         if requestedLayout == nil || requestedLayout?.position == value.position || canReposition {
             layout(value)
         }
@@ -233,11 +249,11 @@ final class FileDrawerController: NSObject, NSWindowDelegate {
     }
 
     private func resize(by dx: CGFloat, finished: Bool) {
-        guard let panel, let position = requestedLayout?.position, dx != 0 || draggingWidth else { return }
         var options = settings.committedPreferences.fileDrawer
+        guard !options.fitsDisplayWidth, let panel, let position = requestedLayout?.position,
+              dx != 0 || draggingWidth else { return }
         let savedPosition = options.position
         options.position = position
-        options.fitsDisplayWidth = false
         options.width = panel.frame.width + position.widthDragMultiplier * dx
         draggingWidth = !finished
         layout(options)
@@ -275,8 +291,14 @@ final class FileDrawerController: NSObject, NSWindowDelegate {
               app.processIdentifier != ProcessInfo.processInfo.processIdentifier, app.processIdentifier != previousApp else { return }
         dismissWhenIdle()
     }
+    func windowDidBecomeKey(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow, window === panel else { return }
+        background?.setKeyAppearance(true)
+    }
     func windowDidResignKey(_ notification: Notification) {
-        DispatchQueue.main.async { [weak self, weak window = notification.object as? NSWindow] in
+        guard let window = notification.object as? NSWindow, window === panel else { return }
+        background?.setKeyAppearance(false)
+        DispatchQueue.main.async { [weak self, weak window] in
             guard let self, let window, self.panel === window, !window.isKeyWindow else { return }
             self.dismissWhenIdle()
         }
@@ -316,8 +338,14 @@ final class FileDrawerController: NSObject, NSWindowDelegate {
     }
 
     private func dismiss() {
-        guard panel != nil, !closing else { return }
+        guard let panel, !closing else { return }
         closing = true
+        if let search = (panel as? DrawerPanel)?.browserFocus.searchField,
+           let editor = search.currentEditor(), panel.firstResponder === editor {
+            // AppKit draws the field's focus ring separately from the animated controls.
+            panel.makeFirstResponder(nil)
+            search.setKeyboardFocusRingNeedsDisplay(search.bounds)
+        }
         transition(opening: false)
     }
 
@@ -455,6 +483,8 @@ final class FileDrawerController: NSObject, NSWindowDelegate {
 }
 
 private final class DrawerBackground: NSView {
+    private static let keyFill = FileMintStyle.adaptive(0xF2FAF5, 0x2D3E36)
+    private static let backgroundFill = FileMintStyle.adaptive(0xE7E9E8, 0x282A2C)
     let controls = NSView()
     private let material = NSView()
     private let effect = NSVisualEffectView()
@@ -475,7 +505,7 @@ private final class DrawerBackground: NSView {
         solid.boxType = .custom
         solid.borderWidth = 0
         solid.titlePosition = .noTitle
-        solid.fillColor = .windowBackgroundColor
+        solid.fillColor = Self.backgroundFill
         material.wantsLayer = true
         controls.wantsLayer = true
         for view in [material, controls] {
@@ -545,36 +575,50 @@ private final class DrawerBackground: NSView {
         genieMask.path = nil
     }
 
+    func setKeyAppearance(_ key: Bool) {
+        solid.fillColor = key ? Self.keyFill : Self.backgroundFill
+    }
+
     func apply(_ options: FileDrawerPreferences) {
         let glass = options.glass && !NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency
         effect.isHidden = !glass
-        // At the default, use AppKit's material unchanged. Mix toward the
-        // system window color below it or lighten just the backdrop above it.
         let standard = FileDrawerPreferences().transparency
-        solid.alphaValue = glass ? max(0, 1 - options.transparency / standard) : 1
-        effect.alphaValue = 1 - max(0, options.transparency - standard) / (1 - standard) * 0.4
+        let tint: CGFloat = 0.30
+        let solidMix = max(0, 1 - options.transparency / standard)
+        let fade = max(0, options.transparency - standard) / (1 - standard) * 0.4
+        solid.alphaValue = glass ? tint + (1 - tint) * solidMix : 1
+        // Fade the material under the tint to preserve the transparency range.
+        effect.alphaValue = 1 - fade / (1 - tint)
     }
 }
 
 private final class DrawerGrip: NSView {
     var resize: ((CGFloat, Bool) -> Void)?
     private var x: CGFloat?
-    override func resetCursorRects() { addCursorRect(bounds, cursor: .resizeLeftRight) }
+
+    func cancelResize() { x = nil }
+
+    override func resetCursorRects() {
+        if !isHidden { addCursorRect(bounds, cursor: .resizeLeftRight) }
+    }
     override func draw(_ dirtyRect: NSRect) {
         NSColor.secondaryLabelColor.withAlphaComponent(0.5).setFill()
         NSBezierPath(roundedRect: .init(x: bounds.midX - 1.5, y: bounds.midY - 16, width: 3, height: 32),
                      xRadius: 1.5, yRadius: 1.5).fill()
     }
-    override func mouseDown(with event: NSEvent) { x = NSEvent.mouseLocation.x }
+    override func mouseDown(with event: NSEvent) {
+        guard !isHidden, let window else { return }
+        x = window.convertPoint(toScreen: event.locationInWindow).x
+    }
     override func mouseDragged(with event: NSEvent) {
-        guard let x else { return }
-        let next = NSEvent.mouseLocation.x
+        guard let x, let window else { return }
+        let next = window.convertPoint(toScreen: event.locationInWindow).x
         resize?(next - x, false)
         self.x = next
     }
     override func mouseUp(with event: NSEvent) {
         guard x != nil else { return }
-        x = nil
+        cancelResize()
         resize?(0, true)
     }
 }
