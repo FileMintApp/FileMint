@@ -254,8 +254,9 @@ owns selection, naming, storage support and recovery semantics.
   and their disposable old build bundles. Do not reset global LaunchServices,
   PluginKit, background-item or privacy databases.
 - Preserve source, user preferences and created files. Keep one installed current
-  FileMint.app; remove staging bundles after DMG packaging to avoid duplicate
-  registration from a packaging directory. Verify registrations after cleanup.
+  `/Applications/FileMint.app` for local production Finder testing. Follow the
+  [build isolation contract](distribution.md#build-and-test-products) for
+  compilation and test products. Verify registrations after cleanup.
 - Packaging uses a separate temporary build directory. On success or failure,
   unregister only its own temporary app/extension and remove that directory, so
   a packaged development copy cannot compete with an installed release. Keep

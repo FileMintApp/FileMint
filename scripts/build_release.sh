@@ -40,4 +40,4 @@ XCODEBUILD_ARGS+=(build)
 xcodebuild "${XCODEBUILD_ARGS[@]}"
 
 echo "Built app:"
-echo "$DERIVED_DATA/Build/Products/Release/FileMint.app"
+echo "$DERIVED_DATA/Build/Products/Release/FileMint.bundle"

@@ -17,6 +17,7 @@ import time
 
 ROOT = Path(__file__).resolve().parent.parent
 APP = Path("/Applications/FileMint.app")
+BUILD_APP_NAME = "FileMint.bundle"
 APP_ID = "io.github.daigua.filemint"
 FINDER_ID = APP_ID + ".findersync"
 FINDER = Path("Contents/PlugIns/FileMintFinderSync.appex")
@@ -145,7 +146,7 @@ def build_candidate(staged, record, identity):
     with tempfile.TemporaryDirectory(prefix="build.", dir=record) as temporary:
         derived_data = Path(temporary)
         products = derived_data / "Build/Products/Debug"
-        built = products / APP.name
+        built = products / BUILD_APP_NAME
         try:
             with build_log.open("w") as log:
                 run("make", "project", stdout=log, stderr=subprocess.STDOUT)
@@ -172,7 +173,9 @@ def backup_previous(record, previous):
     run("bash", "scripts/make_zip.sh", APP, env=dict(os.environ, ZIP_PATH=str(archive)))
     with tempfile.TemporaryDirectory(prefix="check-backup.", dir=record) as temporary:
         run("/usr/bin/ditto", "-x", "-k", archive, temporary)
-        verify_copy(Path(temporary) / APP.name, previous)
+        restored = Path(temporary) / BUILD_APP_NAME
+        (restored.parent / APP.name).rename(restored)
+        verify_copy(restored, previous)
     print(f"Verified previous app backup at {archive}", flush=True)
 
 
@@ -232,7 +235,7 @@ def install(record):
     finder_executable = APP / FINDER / "Contents/MacOS/FileMintFinderSync"
 
     with tempfile.TemporaryDirectory(prefix=".filemint-debug.", dir=APP.parent) as temporary:
-        staged = Path(temporary) / APP.name
+        staged = Path(temporary) / BUILD_APP_NAME
         try:
             expected = build_candidate(staged, record, identity)
             if previous:

@@ -16,10 +16,12 @@ and real CLI regression via `make verify-harness-cli`. The CLI checks build a fr
 executable and verify both passing and deliberately failing inputs; no third-party
 test runner is needed. The current [Harness format](../specs/verification/core.md)
 and `HarnessSuite.load` are the only supported input/Swift entry points.
-`make build` generates FileMint.xcodeproj from project.yml and builds the app and
-Finder extension for arm64. `make package` uses the version in project.yml,
-removes Intel slices from embedded Sparkle executables, signs the bundle
-ad hoc by default, and produces local DMG and ZIP archives with checksums.
+`make build` generates FileMint.xcodeproj from project.yml and compiles the arm64
+app and its embedded Finder extension into `FileMint.bundle`. This
+bundle target also applies to Debug and direct Xcode builds and skips Xcode's
+application registration step. `make package` uses the version in project.yml,
+removes Intel slices from embedded Sparkle executables, signs the bundle ad hoc
+by default, and produces local DMG and ZIP archives with checksums.
 For a public release, follow [Distribution](DISTRIBUTION.md).
 Outputs are under build/ and ignored by Git.
 
@@ -77,11 +79,10 @@ and a new extension process establish loading. For menu acceptance, check the
 visible menu and follow the computer-use precautions in
 [creation window isolation](FINDER_QA.md#creation-window-isolation).
 
-Packaging uses an isolated temporary directory under `build/package-work.noindex`
-and removes its app/extension registrations and build products when it finishes
-or fails. The final DMG and checksum remain in `build/`. `make build` still keeps
-its runnable app in `build/DerivedData`; avoid leaving that development app
-registered alongside an installed release with the same bundle identifiers.
+Packaging keeps its build wrapper in an isolated directory under
+`build/package-work.noindex` and removes the staging products when it finishes
+or fails. The final DMG and ZIP contain `FileMint.app`. Use `make install-debug`
+to exercise the production Finder extension from `/Applications/FileMint.app`.
 
 For updater changes, select the applicable checks from the
 [update verification guide](../specs/verification/updates.md). Client changes need

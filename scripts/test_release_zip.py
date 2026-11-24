@@ -70,8 +70,8 @@ class ZipLayoutTests(unittest.TestCase):
         with patch.object(validator, "MAXIMUM_SIZE", 1), self.assertRaisesRegex(ValueError, "expanded size"):
             validator.validate_archive(self.archive)
 
-    def test_ditto_round_trip_preserves_framework_links_and_executable_permissions(self):
-        app = self.work / "FileMint.app"
+    def test_build_bundle_zips_as_app_with_links_and_permissions(self):
+        app = self.work / "FileMint.bundle"
         executable = app / "Contents/MacOS/FileMint"
         executable.parent.mkdir(parents=True)
         executable.write_text("fixture executable")
@@ -84,6 +84,7 @@ class ZipLayoutTests(unittest.TestCase):
         (framework / "Sparkle").symlink_to("Versions/Current/Sparkle")
         env = os.environ | {"ZIP_PATH": str(self.archive)}
         subprocess.run(["bash", str(ROOT / "scripts/make_zip.sh"), str(app)], env=env, check=True, capture_output=True)
+        self.assertTrue(app.is_dir())
         extracted = self.work / "extract"
         subprocess.run(["ditto", "-x", "-k", str(self.archive), str(extracted)], check=True)
         result = extracted / "FileMint.app/Contents"
@@ -141,7 +142,7 @@ fi
         self.assertEqual(result.returncode, 0, result.stderr)
         with zipfile.ZipFile(self.zip) as archive:
             self.assertEqual(archive.read("FileMint.app/Contents/FixtureTicket"), b"stapled ticket fixture")
-        self.assertIn("stapler staple FileMint.app", self.log.read_text())
+        self.assertIn("stapler staple FileMint.bundle", self.log.read_text())
         self.assertNotIn("notarytool", self.log.read_text())
         original, calls = self.zip.read_bytes(), self.log.read_text()
         # Recover an interruption between the immutable ZIP and checksum write.

@@ -56,11 +56,13 @@ trap cleanup_mount EXIT
 if [[ "$archive_format" == dmg ]]; then
   hdiutil attach -quiet -readonly -nobrowse -mountpoint "$mount_directory" "$dmg_path"
   mounted=1
+  app_path="$mount_directory/FileMint.app"
 else
   ditto -x -k "$dmg_path" "$mount_directory"
-  xcrun stapler validate "$mount_directory/FileMint.app"
+  app_path="$mount_directory/FileMint.bundle"
+  mv "$mount_directory/FileMint.app" "$app_path"
+  xcrun stapler validate "$app_path"
 fi
-app_path="$mount_directory/FileMint.app"
 extension_path="$app_path/Contents/PlugIns/FileMintFinderSync.appex"
 bash scripts/verify_bundle.sh "$app_path"
 bash scripts/verify_developer_id_signature.sh "$extension_path"

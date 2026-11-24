@@ -36,7 +36,8 @@ schemes:
 
 targets:
   FileMint:
-    type: application
+    # Only the installed app should be registered with LaunchServices.
+    type: bundle
     platform: macOS
     sources:
       - App/FileMint
@@ -66,6 +67,8 @@ targets:
       path: Config/AppInfo.plist
       properties:
         CFBundleLocalizations: [en, zh-Hans]
+        CFBundleExecutable: $(EXECUTABLE_NAME)
+        CFBundlePackageType: APPL
         UTExportedTypeDeclarations:
           - UTTypeIdentifier: io.github.daigua.filemint.templates
             UTTypeDescription: FileMint Template Package
@@ -104,6 +107,10 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: io.github.daigua.filemint
         PRODUCT_NAME: FileMint
+        MACH_O_TYPE: mh_execute
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks"
+        ENTITLEMENTS_ALLOWED: "YES"
+        AGGREGATE_TRACKED_DOMAINS: "YES"
         INFOPLIST_FILE: Config/AppInfo.plist
         CODE_SIGN_ENTITLEMENTS: Config/FileMint.entitlements
 

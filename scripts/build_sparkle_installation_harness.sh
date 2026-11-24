@@ -7,7 +7,7 @@ export APPLE_CODESIGN_IDENTITY="$(python3 scripts/native_qa.py signing-identity)
 mkdir -p build/sparkle-installation-harness.noindex
 SPARKLE_QA_ROOT="$(mktemp -d "$PWD/build/sparkle-installation-harness.noindex/run.XXXXXX")"
 SPARKLE_QA_FRAMEWORK="$PWD/build/SourcePackages/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64"
-SPARKLE_QA_COMPRESSION="${FILEMINT_DERIVED_DATA_PATH:-$PWD/build/DerivedData}/Build/Products/Release/FileMint.app/Contents/Frameworks/FileMintCompression.framework"
+SPARKLE_QA_COMPRESSION="${FILEMINT_DERIVED_DATA_PATH:-$PWD/build/DerivedData}/Build/Products/Release/FileMint.bundle/Contents/Frameworks/FileMintCompression.framework"
 [[ -d "$SPARKLE_QA_COMPRESSION" ]] || { echo 'Run the unsigned make build first.' >&2; exit 2; }
 swiftc -swift-version 6 -parse-as-library -target "arm64-apple-macos13.0" \
   scripts/sparkle_installation_smoke.swift -F "$SPARKLE_QA_FRAMEWORK" -framework Sparkle \

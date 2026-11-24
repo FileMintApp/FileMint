@@ -20,18 +20,17 @@ if [[ "${NOTARIZE:-0}" == "1" && "$IDENTITY" == "-" ]]; then
   exit 2
 fi
 
-# Xcode registers macOS build products with LaunchServices. Keep packaging
-# separate from runnable development builds and remove its registrations before
-# discarding the products, including when signing or packaging fails.
+# Keep this run's non-.app build product isolated from ordinary development
+# outputs. Clear only registrations at its own paths if they are present.
 mkdir -p "$PWD/build/package-work.noindex"
 PACKAGE_WORK_DIR="$(mktemp -d "$PWD/build/package-work.noindex/run.XXXXXX")"
 export FILEMINT_DERIVED_DATA_PATH="$PACKAGE_WORK_DIR/DerivedData"
-APP_PATH="$FILEMINT_DERIVED_DATA_PATH/Build/Products/Release/FileMint.app"
+APP_PATH="$FILEMINT_DERIVED_DATA_PATH/Build/Products/Release/FileMint.bundle"
 
 cleanup_package_build() {
   local package_status=$?
   local cleanup_status=0
-  local registrations extension_path
+  local registrations extension_path unregister_output
   trap - EXIT
   if [[ -d "$APP_PATH" ]]; then
     if registrations="$(/usr/bin/pluginkit -m -A -D -v -i io.github.daigua.filemint.findersync 2>&1)"; then
@@ -46,8 +45,11 @@ cleanup_package_build() {
       printf 'Cannot inspect temporary extension registrations: %s\n' "$registrations" >&2
       cleanup_status=1
     fi
-    /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \
-      -u "$APP_PATH" || cleanup_status=1
+    if ! unregister_output="$(/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \
+      -u "$APP_PATH" 2>&1)" && [[ "$unregister_output" != *-10814* ]]; then
+      printf 'Cannot unregister temporary app: %s\n' "$unregister_output" >&2
+      cleanup_status=1
+    fi
   fi
   if [[ "$PACKAGE_WORK_DIR" == "$PWD/build/package-work.noindex/run."* ]]; then
     rm -rf -- "$PACKAGE_WORK_DIR" || cleanup_status=1

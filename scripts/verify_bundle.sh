@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
-APP="${1:-$PWD/build/DerivedData/Build/Products/Release/FileMint.app}"
+APP="${1:-$PWD/build/DerivedData/Build/Products/Release/FileMint.bundle}"
 EXT="$APP/Contents/PlugIns/FileMintFinderSync.appex"
 codesign --verify --deep --strict "$APP"
 xcrun swift scripts/verify_signed_entitlements.swift "$APP"
@@ -16,6 +16,8 @@ for executable in "$APP/Contents/MacOS/FileMint" "$EXT/Contents/MacOS/FileMintFi
 done
 POINT="$(/usr/libexec/PlistBuddy -c 'Print :NSExtension:NSExtensionPointIdentifier' "$EXT/Contents/Info.plist")"
 [[ "$POINT" == "com.apple.FinderSync" ]]
+[[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundlePackageType' "$APP/Contents/Info.plist")" == APPL ]]
+[[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APP/Contents/Info.plist")" == FileMint ]]
 [[ "$(/usr/libexec/PlistBuddy -c 'Print :LSUIElement' "$APP/Contents/Info.plist")" == "true" ]]
 MINIMUM_SYSTEM_VERSION="$(python3 -B -c 'import sys; sys.path.insert(0, "scripts"); import update_appcast; print(update_appcast.minimum_system_version())')"
 for bundle in "$APP" "$EXT"; do

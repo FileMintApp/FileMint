@@ -3,8 +3,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-APP_PATH="${1:-$PWD/build/DerivedData/Build/Products/Release/FileMint.app}"
-DMG_ROOT="$PWD/build/dmg-stage.noindex"
+APP_PATH="${1:-$PWD/build/DerivedData/Build/Products/Release/FileMint.bundle}"
 DMG_PATH="${DMG_PATH:-$PWD/build/FileMint.dmg}"
 
 if [[ ! -d "$APP_PATH" ]]; then
@@ -13,8 +12,8 @@ if [[ ! -d "$APP_PATH" ]]; then
   exit 2
 fi
 
-rm -rf "$DMG_ROOT" "$DMG_PATH"
-mkdir -p "$DMG_ROOT"
+mkdir -p "$PWD/build"
+DMG_ROOT="$(mktemp -d "$PWD/build/dmg-stage.noindex.XXXXXX")"
 trap 'rm -rf "$DMG_ROOT"' EXIT
 ditto "$APP_PATH" "$DMG_ROOT/FileMint.app"
 ln -s /Applications "$DMG_ROOT/Applications"

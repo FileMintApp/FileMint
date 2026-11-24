@@ -53,10 +53,18 @@ jobs:
           CODE_SIGNING_ALLOWED: "NO"
           CODE_SIGNING_REQUIRED: "NO"
         run: |
-          make build
-          CI_APP=build/DerivedData/Build/Products/Release/FileMint.app
+          set -o pipefail
+          build_log="$RUNNER_TEMP/filemint-build.log"
+          make build | tee "$build_log"
+          if grep -q '^RegisterWithLaunchServices .*/FileMint\.' "$build_log"; then
+            echo 'Xcode scheduled registration of the temporary FileMint bundle.' >&2
+            exit 1
+          fi
+          CI_APP=build/DerivedData/Build/Products/Release/FileMint.bundle
           test -x "$CI_APP/Contents/MacOS/FileMint"
           test -x "$CI_APP/Contents/PlugIns/FileMintFinderSync.appex/Contents/MacOS/FileMintFinderSync"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundlePackageType' "$CI_APP/Contents/Info.plist")" = APPL
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$CI_APP/Contents/Info.plist")" = FileMint
 
   verify:
     # Preserve the required-check name; each matrix job now requires tests and compilation.

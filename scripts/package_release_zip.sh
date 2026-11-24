@@ -26,15 +26,16 @@ else
   if [[ "${NOTARIZE:-0}" == 1 ]]; then xcrun stapler validate "$dmg_path"; fi
   hdiutil attach -quiet -readonly -nobrowse -mountpoint "$work/mount" "$dmg_path"
   mounted=1
-  ditto "$work/mount/FileMint.app" "$work/FileMint.app"
+  app="$work/FileMint.bundle"
+  ditto "$work/mount/FileMint.app" "$app"
   hdiutil detach -quiet "$work/mount"
   mounted=0
   if [[ "${NOTARIZE:-0}" == 1 ]]; then
-    xcrun stapler staple "$work/FileMint.app"
-    xcrun stapler validate "$work/FileMint.app"
+    xcrun stapler staple "$app"
+    xcrun stapler validate "$app"
   fi
-  bash scripts/verify_bundle.sh "$work/FileMint.app"
-  ZIP_PATH="$work/$(basename "$zip_path")" bash scripts/make_zip.sh "$work/FileMint.app"
+  bash scripts/verify_bundle.sh "$app"
+  ZIP_PATH="$work/$(basename "$zip_path")" bash scripts/make_zip.sh "$app"
   zip_hash="$(shasum -a 256 "$work/$(basename "$zip_path")" | awk '{print $1}')"
   jq -n --arg source "$source_hash" --arg zip "$zip_hash" \
     '{dmgSHA256: $source, zipSHA256: $zip}' > "$work/source.json"

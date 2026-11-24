@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
-APP_PATH="${1:-$PWD/build/DerivedData/Build/Products/Release/FileMint.app}"
+APP_PATH="${1:-$PWD/build/DerivedData/Build/Products/Release/FileMint.bundle}"
 IDENTITY="${APPLE_CODESIGN_IDENTITY:-${CODESIGN_IDENTITY:--}}"
 EXTENSION_PATH="$APP_PATH/Contents/PlugIns/FileMintFinderSync.appex"
 [[ -d "$EXTENSION_PATH" ]] || { echo "Missing Finder extension: $EXTENSION_PATH"; exit 2; }

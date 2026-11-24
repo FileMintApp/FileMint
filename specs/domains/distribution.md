@@ -4,6 +4,20 @@ Load for: Build configuration, packaging, signing, notarization and publication 
 
 Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; other documents link here.
 
+## Build and test products
+
+- The production Xcode target writes a `FileMint.bundle` for
+  Debug and Release, including direct Xcode builds and CI. Use a generic Xcode
+  bundle target to omit the application registration step. Keep the executable
+  app's production metadata, embedded frameworks and Finder Sync executable.
+  The non-`.app` wrapper keeps the compiled bundle separate from installed apps.
+  Exercise a production Finder callback through the installed app. Native QA
+  fixtures use their own identifiers and the existing isolated launch paths.
+- Keep the build wrapper through signing, local installation staging, and
+  ticket or signature checks on loose archive copies. Use the `FileMint.app`
+  name in the installed path and inside DMG and ZIP payloads. Remove any
+  temporary archive assembly directory after use.
+
 ## Local Debug installation
 
 - `make install-debug` builds the arm64 Debug app with a direct executable,
@@ -11,7 +25,8 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   Finder extension and production entitlements. When replacing
   `/Applications/FileMint.app`, preserve both designated requirements and retain
   a verified ZIP of the previous bundle under the ignored `build/` directory.
-- Stage and verify the candidate on the Applications volume before replacement.
+- Stage and verify the candidate on the Applications volume under the build
+  wrapper name before replacement.
   Respect normal FileMint termination and leave the previous app installed if
   it declines to quit. Replace the bundle atomically and restore the prior
   bundle if installed signature verification fails before launch. Use only the
@@ -117,8 +132,10 @@ Part of the [FileMint SPEC](../SPEC.md). This file owns the behavior below; othe
   `CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO make build` on the standard
   arm64 `macos-15` and `macos-26` runners. The build uses the existing Release
   scheme, generates the project from `project.yml`, and must produce both the
-  main executable and its embedded Finder extension executable. Ensure XcodeGen
-  is available and log its version; package resolution may use the network.
+  main executable and its embedded Finder extension executable. Check the
+  application metadata and fail if Xcode schedules registration of the built
+  FileMint product. Ensure XcodeGen is available and log its version; package
+  resolution may use the network.
   Both tests and compilation must pass in both environments; a failure in
   one must not cancel the other. Keep the stable `Verify core behavior` check
   as an aggregate that runs even when a dependency fails, is cancelled or is

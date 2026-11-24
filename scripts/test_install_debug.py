@@ -13,7 +13,7 @@ class DebugInstallTests(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name)
-        self.staged = root / "Staged.app"
+        self.staged = root / "FileMint.bundle"
         self.destination = root / "FileMint.app"
         self.staged.mkdir()
         (self.staged / "new").touch()
