@@ -83,9 +83,13 @@ struct FileDrawerGenieGeometryTests {
         let stride = geometry.columns + 1
         let outline = geometry.outlineIndices
         #expect(Set(outline).count == 2 * (geometry.rows + geometry.columns))
-        #expect(zip(outline, outline.dropFirst() + [outline[0]]).allSatisfy { a, b in
-            abs(a % stride - b % stride) + abs(a / stride - b / stride) == 1
-        })
+        let nextOutlineIndices = outline.dropFirst() + outline.prefix(1)
+        let outlineIsContinuous = zip(outline, nextOutlineIndices).allSatisfy { current, next in
+            let columnDistance = abs(current % stride - next % stride)
+            let rowDistance = abs(current / stride - next / stride)
+            return columnDistance + rowDistance == 1
+        }
+        #expect(outlineIsContinuous)
 
         let anchor = SIMD2(Float(position.anchor.x), Float(position.anchor.y))
         let landing = Float(28 / max(size.width, size.height))
