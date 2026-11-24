@@ -60,20 +60,26 @@ all-locations menu and grant revocation, separate display-location and root
 authorization pickers, and the saved last-location switch. It tests reopening,
 restoration by a fresh controller and fallback when a remembered folder was replaced.
 The settings controls exercise both adaptive defaults, opening and focusing the
-drawer, and replacing the authorization button with status until an isolated
-directory grant is revoked.
+drawer, selecting each of the eight positions, directional keyboard selection
+and replacing the authorization button with status until an isolated directory grant is revoked. The rename
+fixture verifies that the drawer applies the latest saved position after the
+editor closes and preserves its current directory and selection.
 The fixture edits the width and height settings
 through their native field editors and checks the open window, stored values, limits
 and reopened window. It also covers system material, interrupted fade, file-list layouts,
 query cancellation, sort direction, the full-width breadcrumb row, and four-arrow file
-navigation in each layout. On macOS 14.4+ with glass available, the fixture
-captures its own composited Genie window at adaptive, tall and wide sizes on
-both edges and in both directions. It measures the glass outline and grip and
-checks that restored file icons appear in the moving controls. On macOS 15+ it
+navigation in each layout. It checks Genie opening, closing and reversal at all
+eight positions, plus diagonal Slide and Scale and a corner opening transferred
+between displays when two are attached. On macOS 14.4+ with glass
+available, it captures its own composited adaptive drawer at every position and
+repeats representative horizontal, vertical and corner motions at tall and wide
+sizes. It measures the glass outline and checks that restored file icons appear
+in the moving controls. On macOS 15+ it
 also records a complete closing and reopening cycle for visual inspection.
 `file-drawer-cadence` reuses the signed drawer fixture and prefers a display
 in a fixed 60 Hz mode. It samples presented Metal frames over repeated opening
-and closing motions with live glass and with the solid background. The fixture log
+and closing motions at right, top and top-right with live glass and the solid
+background. The fixture log
 records the display mode, backing scale and presentation intervals. The 60 Hz
 threshold applies on a display reporting a mode between 59 and 61 Hz.
 The selection action panel fixture checks keyboard focus,

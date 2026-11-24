@@ -99,6 +99,7 @@ final class FileDrawerModel: ObservableObject {
     let favorites: FavoriteLocationsModel
     private let placeHome: URL
     weak var window: NSWindow?
+    var interactionEnded: (() -> Void)?
     private var draftCloseObserver: AnyCancellable?
     weak var draftWindow: NSWindow? {
         didSet {
@@ -108,10 +109,20 @@ final class FileDrawerModel: ObservableObject {
                 NotificationCenter.default.publisher(for: NSWindow.willCloseNotification, object: window)
                     .first().sink { [weak self] _ in self?.draftWindow = nil }
             }
-            if draftWindow == nil { finishPendingRootChange() }
+            if draftWindow == nil {
+                finishPendingRootChange()
+                interactionEnded?()
+            }
         }
     }
-    var dragging = false { didSet { if !dragging { finishPendingRootChange() } } }
+    var dragging = false {
+        didSet {
+            if !dragging {
+                finishPendingRootChange()
+                interactionEnded?()
+            }
+        }
+    }
     var entries: [FileDrawerEntry] { searchIndex?.all.entries ?? [] }
     @Published var selection: Set<URL> = [] {
         didSet {
@@ -246,8 +257,17 @@ final class FileDrawerModel: ObservableObject {
     private var searchGeneration = UUID()
     private var selectFirstAfterSearch = false
     private var pathListingTask: Task<[FileDrawerEntry], Error>?
-    var writing = false
-    var interacting = false { didSet { if !interacting { finishPendingRootChange() } } }
+    var writing = false {
+        didSet { if oldValue && !writing { interactionEnded?() } }
+    }
+    var interacting = false {
+        didSet {
+            if !interacting {
+                finishPendingRootChange()
+                interactionEnded?()
+            }
+        }
+    }
     var presented = false
     private var rootObserver: AnyCancellable?
     private var rootChangePending = false
@@ -507,7 +527,10 @@ final class FileDrawerModel: ObservableObject {
     private func dismissPathMenu() {
         pathListingTask?.cancel()
         pathListingTask = nil
-        if pathMenu != nil { pathMenu = nil }
+        if pathMenu != nil {
+            pathMenu = nil
+            interactionEnded?()
+        }
     }
 
     func goToPathComponent(_ menuID: UUID) {
@@ -881,7 +904,10 @@ extension FileDrawerModel {
         actionValidation?.cancel()
         actionValidation = nil
         backFromApplications()
-        if actionPalette != nil { actionPalette = nil }
+        if actionPalette != nil {
+            actionPalette = nil
+            interactionEnded?()
+        }
     }
 
     func performPaletteAction(_ action: FileDrawerAction, session id: UUID) {

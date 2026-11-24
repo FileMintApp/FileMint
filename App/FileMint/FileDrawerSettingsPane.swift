@@ -44,14 +44,12 @@ struct FileDrawerSettingsPane: View {
                            \.showsShortcutHints, id: "drawer.shortcutHints")
                 }.disabled(!settings.enabled)
                 SettingsSection(title: model.text(.appearance)) {
-                    let side = text("Screen edge", "出现位置")
-                    PreferenceRow(title: side) {
-                        Picker(side, selection: binding(\.side)) {
-                            Text(text("Left", "左侧")).tag(FileDrawerPreferences.Side.left)
-                            Text(text("Right", "右侧")).tag(FileDrawerPreferences.Side.right)
-                        }
-                        .labelsHidden().pickerStyle(.segmented).frame(width: 130)
-                        .accessibilityIdentifier("drawer.side")
+                    let title = text("Screen position", "出现位置")
+                    PreferenceRow(title: title) {
+                        FileDrawerPositionPicker(selection: binding(\.position),
+                                                 chinese: model.preferences.language.resolved() == .chinese)
+                            .accessibilityElement(children: .contain)
+                            .accessibilityLabel(title)
                     }
                     Divider()
                     animationControl
@@ -174,6 +172,84 @@ struct FileDrawerSettingsPane: View {
             Text((sliderValue ?? settings.transparency).formatted(.percent.precision(.fractionLength(0))))
                 .monospacedDigit().frame(width: 42, alignment: .trailing)
         }
+    }
+}
+
+private struct FileDrawerPositionPicker: View {
+    typealias Position = FileDrawerPreferences.Position
+    @Binding var selection: Position
+    let chinese: Bool
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        Grid(horizontalSpacing: 5, verticalSpacing: 5) {
+            GridRow {
+                button(.topLeft)
+                button(.top)
+                button(.topRight)
+            }
+            GridRow {
+                button(.left)
+                Color.clear.gridCellUnsizedAxes([.horizontal, .vertical]).accessibilityHidden(true)
+                button(.right)
+            }
+            GridRow {
+                button(.bottomLeft)
+                button(.bottom)
+                button(.bottomRight)
+            }
+        }
+        .contentShape(RoundedRectangle(cornerRadius: 8))
+        .focusable()
+        .focused($focused)
+        .onMoveCommand(perform: move)
+        .environment(\.layoutDirection, .leftToRight)
+    }
+
+    private func button(_ position: Position) -> some View {
+        let selected = selection == position
+        return Button {
+            selection = position
+            focused = true
+        } label: {
+            Text(name(position))
+                .fontWeight(selected ? .semibold : .regular)
+                .lineLimit(1)
+                .frame(minWidth: 72)
+        }
+        .buttonStyle(MintButtonStyle(primary: selected))
+        .accessibilityIdentifier("drawer.position.\(position.rawValue)")
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    private func name(_ position: Position) -> String {
+        switch position {
+        case .topLeft: chinese ? "左上角" : "Top Left"
+        case .top: chinese ? "正上方" : "Top"
+        case .topRight: chinese ? "右上角" : "Top Right"
+        case .left: chinese ? "正左" : "Left"
+        case .right: chinese ? "正右" : "Right"
+        case .bottomLeft: chinese ? "左下角" : "Bottom Left"
+        case .bottom: chinese ? "正下方" : "Bottom"
+        case .bottomRight: chinese ? "右下角" : "Bottom Right"
+        }
+    }
+
+    private func move(_ direction: MoveCommandDirection) {
+        guard focused else { return }
+        let dx: CGFloat, dy: CGFloat
+        switch direction {
+        case .left: (dx, dy) = (-0.5, 0)
+        case .right: (dx, dy) = (0.5, 0)
+        case .up: (dx, dy) = (0, 0.5)
+        case .down: (dx, dy) = (0, -0.5)
+        @unknown default: return
+        }
+        let anchor = selection.anchor
+        var target = CGPoint(x: anchor.x + dx, y: anchor.y + dy)
+        if target == CGPoint(x: 0.5, y: 0.5) { target = CGPoint(x: target.x + dx, y: target.y + dy) }
+        guard let next = Position.allCases.first(where: { $0.anchor == target }) else { return }
+        selection = next
     }
 }
 

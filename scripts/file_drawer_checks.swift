@@ -66,30 +66,35 @@ func checkFileDrawerCadence(settings: PreferencesModel, favorites: FavoriteLocat
             throw failure("Genie did not present motion and its endpoint for \(label)")
         }
         let intervals = zip(presented, presented.dropFirst()).map { $1 - $0 }
-        print("GENIE \(label) \(Int(transition.bounds.width))x\(Int(transition.bounds.height))pt frames=\(presented.count) intervalP50/P95/max=\(percentile(intervals, 0.5))/\(percentile(intervals, 0.95))/\(percentile(intervals, 1))ms")
+        let unpresented = delivered.count - presented.count
+        print("GENIE \(label) \(Int(transition.bounds.width))x\(Int(transition.bounds.height))pt frames=\(presented.count) unpresented=\(unpresented) intervalP50/P95/max=\(percentile(intervals, 0.5))/\(percentile(intervals, 0.95))/\(percentile(intervals, 1))ms")
         if fixed60Hz {
             // Allow occasional scheduling delays, but catch sustained half-rate presentation.
             let missed = intervals.filter { $0 > 1.5 / modeHz }.count
             guard presented.count >= 23, Double(missed) <= Double(intervals.count) * 0.15 else {
-                throw failure("Genie missed the 60 Hz cadence for \(label) (\(missed) long intervals)")
+                throw failure("Genie missed the 60 Hz cadence for \(label) (\(presented.count) presented, \(unpresented) unpresented, \(missed) long intervals)")
             }
         }
     }
 
     let supportsGlass = !NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency
-    for glass in supportsGlass ? [true, false] : [false] {
-        options.glass = glass
-        guard settings.setFileDrawer(options) else { throw failure("Could not set isolated drawer preferences") }
-        for cycle in 1...3 {
-            let material = glass ? "glass" : "solid"
-            controller.show(on: screen)
-            controller.model.pinned = true
-            try await sample("\(material)-open-\(cycle)", opening: true)
-            try await wait("Fixture files did not load") {
-                !controller.model.busy && controller.model.entries.contains { $0.name == "Notes 20.txt" }
+    let positions: [FileDrawerPreferences.Position] = [.right, .top, .topRight]
+    for position in positions {
+        options.position = position
+        for glass in supportsGlass ? [true, false] : [false] {
+            options.glass = glass
+            guard settings.setFileDrawer(options) else { throw failure("Could not set isolated drawer preferences") }
+            for cycle in 1...3 {
+                let label = "\(position.rawValue)-\(glass ? "glass" : "solid")"
+                controller.show(on: screen)
+                controller.model.pinned = true
+                try await sample("\(label)-open-\(cycle)", opening: true)
+                try await wait("Fixture files did not load") {
+                    !controller.model.busy && controller.model.entries.contains { $0.name == "Notes 20.txt" }
+                }
+                controller.model.close()
+                try await sample("\(label)-close-\(cycle)", opening: false)
             }
-            controller.model.close()
-            try await sample("\(material)-close-\(cycle)", opening: false)
         }
     }
 }
@@ -181,6 +186,24 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
         if let match = view as? T { return [match] }
         return view.subviews.flatMap { views(of: type, in: $0) }
     }
+    func docked(_ window: NSWindow, at position: FileDrawerPreferences.Position) -> Bool {
+        guard let display = window.screen else { return false }
+        let bounds = display.visibleFrame.insetBy(dx: 6, dy: 6)
+        let frame = window.frame
+        let x: CGFloat
+        let y: CGFloat
+        switch position {
+        case .topLeft, .left, .bottomLeft: x = frame.minX - bounds.minX
+        case .top, .bottom: x = frame.midX - bounds.midX
+        case .topRight, .right, .bottomRight: x = frame.maxX - bounds.maxX
+        }
+        switch position {
+        case .topLeft, .top, .topRight: y = frame.maxY - bounds.maxY
+        case .left, .right: y = frame.midY - bounds.midY
+        case .bottomLeft, .bottom, .bottomRight: y = frame.minY - bounds.minY
+        }
+        return abs(x) <= 1 && abs(y) <= 1 && bounds.insetBy(dx: -1, dy: -1).contains(frame)
+    }
 
     let folder = root.appendingPathComponent("DrawerFixtures", isDirectory: true)
     let nested = folder.appendingPathComponent("Nested", isDirectory: true)
@@ -228,11 +251,11 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
         }
         return event
     }
-    func sendWindowKey(_ key: String, _ code: UInt16, _ flags: NSEvent.ModifierFlags = [.command]) throws {
+    func sendWindowKey(_ key: String, _ code: UInt16, _ flags: NSEvent.ModifierFlags = [.command], line: Int = #line) throws {
         guard let target = model.window else { throw failure("Missing drawer window for " + key) }
         let event = try drawerKeyEvent(key, code, flags)
         try require(target.performKeyEquivalent(with: event),
-                    "Drawer did not handle \(key) (key window: \(target.isKeyWindow), presented: \(model.presented))")
+                    "Drawer did not handle \(key) at line \(line) (key window: \(target.isKeyWindow), presented: \(model.presented))")
     }
     func captureDrawer(_ mode: String) throws {
         guard let view = window.contentView else { throw failure("Drawer has no content") }
@@ -261,7 +284,7 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
     let reduced = NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency
     try require(backdrop.isHidden == reduced && backdrop.alphaValue == 1, "Default panel material or transparency is incorrect")
     prefs = settings.committedPreferences.fileDrawer
-    prefs.side = .left
+    prefs.position = .left
     prefs.width = 0
     prefs.fitsDisplayHeight = false
     prefs.height = 511
@@ -472,6 +495,8 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
     try require(try FileManager.default.contentsOfDirectory(atPath: targetFolder.url.path).isEmpty,
                 "Opening a folder's creation action wrote a file")
     model.selection = [targetFolder.url]
+    window.makeKeyAndOrderFront(nil)
+    try await wait("Could not focus the drawer after cancelling the template draft") { window.isKeyWindow }
     try sendWindowKey("k", 40)
     _ = try await actionSearch()
     try sendWindowKey("o", 31)
@@ -665,9 +690,25 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
     try sendWindowKey("w", 13)
     try require(!CustomFileSavePanelController.shared.hasActiveDraft && model.presented && window.firstResponder === cancelEditor,
                 "A window or application command interrupted inline rename")
+    let beforeMove = settings.committedPreferences.fileDrawer
+    let pinnedBeforeMove = model.pinned
+    var move = beforeMove
+    move.position = .bottomRight
+    try require(settings.setFileDrawer(move), "Could not choose a new position during rename")
+    move.position = .top
+    try require(settings.setFileDrawer(move), "Could not change the pending position during rename")
+    try await Task.sleep(for: .milliseconds(120))
+    try require(docked(window, at: beforeMove.position) && window.firstResponder === cancelEditor,
+                "Position changed before the active field editor finished")
     cancelEditor.insertText("discard", replacementRange: cancelEditor.selectedRange())
     try sendRenameCommand(#selector(NSResponder.cancelOperation(_:)), field: cancelField, editor: cancelEditor)
     try await wait("Cancelling rename closed or blocked the drawer") { window.isVisible && renameField() == nil && !model.interacting }
+    try await wait("The open drawer did not apply the latest position after rename") {
+        controller.panel === window && docked(window, at: .top) && model.selection == [originalEntry.url] &&
+            model.directory == nestedEntry.url && model.pinned == pinnedBeforeMove
+    }
+    try require(settings.setFileDrawer(beforeMove), "Could not restore the previous fixture position")
+    try await wait("The drawer did not restore the previous fixture position") { docked(window, at: beforeMove.position) }
     try require(try Data(contentsOf: saved) == Data(expectedContent.utf8), "Cancelled inline rename changed the file")
 
     let occupied = nestedEntry.url.appendingPathComponent("occupied.txt")
@@ -955,8 +996,8 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
         let exit = surface?.layer?.animation(forKey: "drawerVisibility") as? CAAnimationGroup
         let tracks = exit?.animations?.compactMap { $0 as? CABasicAnimation } ?? []
         let fade = tracks.first { $0.keyPath == "opacity" }
-        let shift = tracks.first { $0.keyPath == "transform.translation.x" }
-        try require((fade?.toValue as? NSNumber)?.floatValue == 0 && (shift?.toValue as? NSNumber)?.doubleValue == -8,
+        let shift = (tracks.first { $0.keyPath == "transform" }?.toValue as? NSValue)?.caTransform3DValue
+        try require((fade?.toValue as? NSNumber)?.floatValue == 0 && shift?.m41 == -8 && shift?.m42 == 0,
                     "Left drawer did not fade with a short edge offset")
         if screen.maximumFramesPerSecond > 0 {
             try require(exit?.preferredFrameRateRange.maximum == Float(screen.maximumFramesPerSecond),
@@ -1149,7 +1190,33 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
         try await wait("Open File Drawer did not focus the existing drawer") {
             controller.panel === opened && opened.isKeyWindow
         }
-        print("PASS drawer settings: adaptive defaults, grant status and open or focus")
+        owner.makeKeyAndOrderFront(nil)
+        try await wait("Settings could not take focus for the position grid") { owner.isKeyWindow }
+        for position in FileDrawerPreferences.Position.allCases {
+            try await press("drawer.position.\(position.rawValue)", in: host)
+            try await wait("Appearance did not move the open drawer to \(position.rawValue)") {
+                settings.committedPreferences.fileDrawer.position == position && controller.panel === opened &&
+                    model.pinned && docked(opened, at: position)
+            }
+        }
+        func movePicker(to position: FileDrawerPreferences.Position, by key: Int, code: UInt16) async throws {
+            guard let character = Unicode.Scalar(key),
+                  let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [],
+                    timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: owner.windowNumber, context: nil,
+                    characters: String(character), charactersIgnoringModifiers: String(character), isARepeat: false, keyCode: code)
+            else { throw failure("Could not make a position picker key event") }
+            owner.sendEvent(event)
+            try await wait("Arrow key did not select \(position.rawValue)") {
+                settings.committedPreferences.fileDrawer.position == position && docked(opened, at: position)
+            }
+        }
+        try await press("drawer.position.topLeft", in: host)
+        try await wait("The top-left position was not saved") { docked(opened, at: .topLeft) }
+        try await movePicker(to: .top, by: NSRightArrowFunctionKey, code: 124)
+        try await movePicker(to: .bottom, by: NSDownArrowFunctionKey, code: 125)
+        try await press("drawer.position.right", in: host)
+        try await wait("Appearance did not restore the right position") { docked(opened, at: .right) }
+        print("PASS drawer settings: adaptive defaults, grant status, open or focus, eight positions and arrow keys")
     }
 
     func checkAnimationEffects() async throws {
@@ -1160,9 +1227,9 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
             return views(of: FileDrawerGenieTransition.self, in: content).first
         }
         @available(macOS 14.4, *)
-        func checkCompositedGlass(layout: String, side: FileDrawerPreferences.Side, opening: Bool) async throws {
+        func checkCompositedGlass(layout: String, position: FileDrawerPreferences.Position, opening: Bool) async throws {
             let phase = opening ? "opening" : "closing"
-            let label = "\(layout) \(side.rawValue) \(phase)"
+            let label = "\(layout) \(position.rawValue) \(phase)"
             controller.show()
             guard let drawer = controller.panel else { throw failure("Missing drawer for \(label)") }
             defer { drawer.close() }
@@ -1195,26 +1262,47 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
             let bitmap = NSBitmapImageRep(cgImage: frame)
             try require(frame.width == width && frame.height == height, "Unexpected backing dimensions for \(label)")
             guard let png = bitmap.representation(using: .png, properties: [:]) else { throw failure("Could not encode \(label)") }
-            try png.write(to: root.appendingPathComponent("drawer-genie-\(layout)-\(phase)-\(side.rawValue).png"))
+            try png.write(to: root.appendingPathComponent("drawer-genie-\(layout)-\(phase)-\(position.rawValue).png"))
 
-            // The glass must cover the entire warped cross-section from the body to the throat.
-            let vertices = FileDrawerGenieGeometry(size: genie.bounds.size, side: side).vertices(at: genie.progress)
-            let columns = FileDrawerGenieGeometry.columns
-            var maxEdgeError = 0.0
-            for column in [2, columns / 2, columns - 2] {
-                let a = vertices[column], b = vertices[column + 1]
-                let x = Int(Double((a.x + b.x) / 2) * Double(width))
-                let rows = (0..<height).filter { (bitmap.colorAt(x: x, y: $0)?.alphaComponent ?? 0) > 0.4 }
-                guard let first = rows.first, let last = rows.last else { throw failure("Missing glass at column \(column) in \(label)") }
-                let sampleX = Float((Double(x) + 0.5) / Double(width))
-                let fraction = (sampleX - a.x) / (b.x - a.x)
-                let inset = Double(a.y + fraction * (b.y - a.y)) * Double(height)
-                maxEdgeError = max(maxEdgeError, abs(Double(first) - inset), abs(Double(height - 1 - last) - inset))
-                try require(rows.count == last - first + 1, "Gap in the composited glass at column \(column) in \(label)")
+            // Measure the window-server result along both axes, including the curved side edges.
+            let geometry = FileDrawerGenieGeometry(size: genie.bounds.size, position: position)
+            let vertices = geometry.vertices(at: genie.progress)
+            let outline = geometry.outlineIndices.map { vertices[$0] }
+            var maxEdgeError: CGFloat = 0
+            for verticalScan in [true, false] {
+                let polygon = outline.map {
+                    let x = CGFloat($0.x) * CGFloat(width)
+                    let y = CGFloat(1 - $0.y) * CGFloat(height)
+                    return verticalScan ? CGPoint(x: x, y: y) : CGPoint(x: y, y: x)
+                }
+                let lower = polygon.map(\.x).min() ?? 0
+                let upper = polygon.map(\.x).max() ?? 0
+                for fraction in [0.21, 0.5, 0.79] as [CGFloat] {
+                    let sample = Int(lower + fraction * (upper - lower))
+                    let slice = CGFloat(sample) + 0.5
+                    let crossings = polygon.indices.compactMap { index -> CGFloat? in
+                        let a = polygon[index], b = polygon[(index + 1) % polygon.count]
+                        guard (a.x > slice) != (b.x > slice) else { return nil }
+                        return a.y + (slice - a.x) / (b.x - a.x) * (b.y - a.y)
+                    }.sorted()
+                    try require(crossings.count == 2, "Unexpected mesh cross-section for \(label)")
+                    let covered = (0..<(verticalScan ? height : width)).filter { pixel in
+                        let x = verticalScan ? sample : pixel
+                        let y = verticalScan ? pixel : sample
+                        return (bitmap.colorAt(x: x, y: y)?.alphaComponent ?? 0) > 0.4
+                    }
+                    guard let first = covered.first, let last = covered.last else { throw failure("Missing glass in \(label)") }
+                    maxEdgeError = max(maxEdgeError, abs(CGFloat(first) + 0.5 - crossings[0]),
+                                       abs(CGFloat(last) + 0.5 - crossings[1]))
+                    try require(covered.count == last - first + 1, "Gap in the composited glass in \(label)")
+                }
             }
             try require(maxEdgeError <= 3, "Glass outline missed the warped drawer by \(maxEdgeError) pixels in \(label)")
 
-            // The centered resize grip is part of the Metal snapshot. Measure its visible mark
+            print("PASS composited Genie \(label): \(width)x\(height) px, maximum outline error \(maxEdgeError) px")
+            guard position == .left || position == .right else { return }
+            let columns = geometry.columns
+            // The side-docked resize grip is part of the Metal snapshot. Measure its visible mark
             // against the adjacent glass in this same image, including in dark appearance.
             func resizeGrip(in view: NSView) -> NSView? {
                 if view.accessibilityLabel() == model.text("Resize file drawer", "调整抽屉宽度") { return view }
@@ -1237,7 +1325,7 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
             let gripCenter = Double(first + last) / 2
             try require(grip.count >= 6 && grip.count == last - first + 1 && abs(gripCenter - Double(mid)) <= 2,
                         "Resize grip did not align with the glass center in \(label) (\(first)...\(last), center \(mid))")
-            if layout == "adaptive" && side == .right {
+            if layout == "adaptive" && position == .right {
                 // Locate actual file icons in the composited frame. A cached location chooser has none of these rows.
                 guard let list = views(of: NSCollectionView.self, in: content).first, list.numberOfItems(inSection: 0) >= 3 else {
                     throw failure("The fixture listing did not restore during \(label)")
@@ -1266,7 +1354,7 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
                     try require(containsTint, "The warped snapshot lost file icon \(index) during \(label)")
                 }
             }
-            print("PASS composited Genie \(label): \(width)x\(height) px, grip center \(gripCenter), maximum outline error \(maxEdgeError) px")
+            print("PASS composited Genie \(label): grip center \(gripCenter)")
         }
         func checkMotionToEndpoint(_ genie: FileDrawerGenieTransition, opening: Bool) async throws {
             var previous = genie.progress
@@ -1331,7 +1419,7 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
             if let error = movie.error { throw error }
             controller.panel?.close()
         }
-        func captureGenie(_ genie: FileDrawerGenieTransition, side: FileDrawerPreferences.Side, phase: String,
+        func captureGenie(_ genie: FileDrawerGenieTransition, position: FileDrawerPreferences.Position, phase: String,
                           glass: NSVisualEffectView?) throws {
             let width = Int(genie.bounds.width.rounded(.up))
             let height = Int(genie.bounds.height.rounded(.up))
@@ -1364,47 +1452,62 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
                 throw failure("Could not decode the rendered Genie frame")
             }
             let bitmap = NSBitmapImageRep(cgImage: image)
-            let edge = side == .left ? width / 50 : width - 1 - width / 50
             guard let png = bitmap.representation(using: .png, properties: [:]) else { throw failure("Could not encode Genie taper") }
-            try png.write(to: root.appendingPathComponent("drawer-genie-\(phase)-\(side.rawValue).png"))
-            let interior = (height / 2 - 5)...(height / 2 + 5)
+            try png.write(to: root.appendingPathComponent("drawer-genie-\(phase)-\(position.rawValue).png"))
+            let geometry = FileDrawerGenieGeometry(size: genie.bounds.size, position: position)
+            let vertices = geometry.vertices(at: genie.progress)
+            let stride = geometry.columns + 1
+            let middle = vertices[(geometry.rows / 2) * stride + geometry.columns / 2]
+            let inside = CGPoint(x: CGFloat(middle.x), y: CGFloat(middle.y))
+            let anchor = position.anchor
+            let outside = CGPoint(x: 0.98 - 0.96 * anchor.x, y: 0.98 - 0.96 * anchor.y)
+            func alpha(at point: CGPoint) -> CGFloat {
+                let x = min(width - 1, Int(point.x * CGFloat(width)))
+                let y = min(height - 1, Int((1 - point.y) * CGFloat(height)))
+                return bitmap.colorAt(x: x, y: y)?.alphaComponent ?? 0
+            }
             if let glass {
                 try require(!glass.isHidden && genie.presentsWithTransaction, "Genie stopped compositing the live glass")
                 guard let path = (glass.superview?.layer?.mask as? CAShapeLayer)?.path else {
                     throw failure("The \(phase) Genie frame did not mask the native glass")
                 }
-                let maskEdge = glass.bounds.width * (side == .left ? 0.02 : 0.98)
-                try require(path.contains(CGPoint(x: maskEdge, y: glass.bounds.midY)) &&
-                            !path.contains(CGPoint(x: maskEdge, y: glass.bounds.height / 8)),
+                func inGlass(_ point: CGPoint) -> CGPoint {
+                    CGPoint(x: point.x * glass.bounds.width, y: point.y * glass.bounds.height)
+                }
+                try require(path.contains(inGlass(inside)) && !path.contains(inGlass(outside)),
                             "The \(phase) glass mask did not follow the Genie outline")
-                try require(interior.contains { (bitmap.colorAt(x: edge, y: $0)?.alphaComponent ?? 1) < 0.1 },
+                let interior = (1..<geometry.rows).flatMap { row in
+                    (1..<geometry.columns).map { vertices[row * stride + $0] }
+                }
+                try require(interior.contains { alpha(at: CGPoint(x: CGFloat($0.x), y: CGFloat($0.y))) < 0.1 },
                             "The \(phase) Genie frame covered the glass with a solid background")
-                try require(stride(from: 3, to: pixels.count, by: 4).contains { pixels[$0] > 0 },
+                try require(Swift.stride(from: 3, to: pixels.count, by: 4).contains { pixels[$0] > 0 },
                             "The \(phase) Genie frame lost the drawer controls")
             } else {
-                try require(interior.allSatisfy { (bitmap.colorAt(x: edge, y: $0)?.alphaComponent ?? 0) > 0.98 },
+                try require(alpha(at: inside) > 0.98,
                             "The \(phase) Genie frame lost its solid background")
             }
-            try require((bitmap.colorAt(x: edge, y: height / 8)?.alphaComponent ?? 1) < 0.05,
-                        "The \(phase) Genie frame did not taper into the \(side.rawValue) edge")
+            try require(alpha(at: outside) < 0.05,
+                        "The \(phase) Genie frame did not taper toward \(position.rawValue)")
         }
         var options = settings.committedPreferences.fileDrawer
         options.animation = .genie
         controller.panel?.close()
-        for side in FileDrawerPreferences.Side.allCases {
-            options.side = side
-            options.glass = side == .right
+        for position in FileDrawerPreferences.Position.allCases {
+            options.position = position
+            options.glass = position != .left && position != .bottom && position != .bottomLeft
             try require(settings.setFileDrawer(options), "Could not save the Genie effect")
-            controller.show()
+            controller.show(on: screen)
             guard let drawer = controller.panel, let opening = genieView(),
                   let content = drawer.contentView, let surface = content.subviews.first?.layer,
                   let material = views(of: NSVisualEffectView.self, in: content).first(where: { $0.blendingMode == .behindWindow }) else {
-                throw failure("Genie did not animate opening on the " + side.rawValue)
+                throw failure("Genie did not animate opening at " + position.rawValue)
             }
+            try require(docked(drawer, at: position), "Drawer did not open at " + position.rawValue)
             let glass = options.glass && !NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency ? material : nil
             model.pinned = true
             try await wait("Genie opening did not reach the taper") { (0.43..<0.8).contains(opening.progress) }
-            try captureGenie(opening, side: side, phase: "opening", glass: glass)
+            try captureGenie(opening, position: position, phase: "opening", glass: glass)
             try await checkMotionToEndpoint(opening, opening: true)
             try await wait("The live drawer did not finish loading") { !model.busy }
             try require(material.superview?.layer?.mask == nil, "Opening left the live drawer material masked")
@@ -1412,9 +1515,9 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
             model.close()
             guard let closing = genieView() else { throw failure("Genie did not animate closing") }
             try await wait("Genie closing did not reach the taper") { (0.43..<0.8).contains(closing.progress) }
-            try captureGenie(closing, side: side, phase: "closing", glass: glass)
+            try captureGenie(closing, position: position, phase: "closing", glass: glass)
             let progress = closing.progress
-            controller.show()
+            controller.show(on: screen)
             try require(controller.panel === drawer && genieView() === closing && closing.progress == progress,
                         "Reversing Genie replaced the window or restarted the deformation")
             try await checkMotionToEndpoint(closing, opening: true)
@@ -1427,6 +1530,25 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
             try await checkMotionToEndpoint(dismissal, opening: false)
             try require(controller.panel == nil && !drawer.isVisible, "Genie did not finish closing the drawer")
             try require(surface.opacity == 0 && material.superview?.layer?.mask == nil, "Finishing Genie did not clean up the closed drawer")
+        }
+
+        if let secondDisplay = NSScreen.screens.first(where: { $0 != screen }) {
+            options.position = .topRight
+            try require(settings.setFileDrawer(options), "Could not save the corner for the two-display check")
+            controller.show(on: screen)
+            guard let drawer = controller.panel, let firstMotion = genieView(), drawer.screen == screen else {
+                throw failure("The corner drawer did not begin opening on the first display")
+            }
+            model.pinned = true
+            controller.show(on: secondDisplay)
+            try await wait("Changing display kept the old mesh or lost the open corner drawer") {
+                controller.panel === drawer && drawer.isVisible && drawer.screen == secondDisplay &&
+                    firstMotion.superview == nil && docked(drawer, at: .topRight)
+            }
+            drawer.close()
+            print("PASS file drawer changed physical display during a corner opening")
+        } else {
+            print("SKIP file drawer display transfer: one display available")
         }
 
         if #available(macOS 14.4, *), !NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency {
@@ -1446,12 +1568,14 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
             wide.height = wide.minimumHeight
             wide.transparency = adaptive.transparency
             for (layout, sizing) in [("adaptive", adaptive), ("tall", tall), ("wide", wide)] {
-                for side in FileDrawerPreferences.Side.allCases {
+                let positions: [FileDrawerPreferences.Position] = layout == "adaptive"
+                    ? FileDrawerPreferences.Position.allCases : [.left, .right, .top, .topRight]
+                for position in positions {
                     var fixture = sizing
-                    fixture.side = side
+                    fixture.position = position
                     try require(settings.setFileDrawer(fixture), "Could not configure \(layout) drawer")
-                    try await checkCompositedGlass(layout: layout, side: side, opening: true)
-                    try await checkCompositedGlass(layout: layout, side: side, opening: false)
+                    try await checkCompositedGlass(layout: layout, position: position, opening: true)
+                    try await checkCompositedGlass(layout: layout, position: position, opening: false)
                 }
             }
             try require(settings.setFileDrawer(tall), "Could not configure active resize")
@@ -1467,6 +1591,27 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
                 } == true
             }
             window.close()
+            var constrained = adaptive
+            constrained.fitsDisplayHeight = false
+            constrained.maximumHeight = FileDrawerPreferences.supportedHeights.upperBound
+            constrained.height = constrained.maximumHeight
+            constrained.position = .top
+            let topFrame = constrained.panelFrame(in: screen.visibleFrame)
+            try require(settings.setFileDrawer(constrained), "Could not configure a full-height drawer")
+            controller.show(on: screen)
+            guard let sameFrameDrawer = controller.panel, let staleAnchor = genieView() else {
+                throw failure("Missing Genie with the top anchor")
+            }
+            model.pinned = true
+            constrained.position = .bottom
+            if constrained.panelFrame(in: screen.visibleFrame) == topFrame {
+                try require(settings.setFileDrawer(constrained), "Could not change the full-height drawer anchor")
+                try await wait("A position change with the same frame did not retire its Genie") {
+                    staleAnchor.superview == nil && staleAnchor.progress > 0 &&
+                        controller.panel === sameFrameDrawer && docked(sameFrameDrawer, at: .bottom)
+                }
+            }
+            sameFrameDrawer.close()
             if #available(macOS 15, *) {
                 try require(settings.setFileDrawer(adaptive), "Could not configure adaptive recording")
                 try await recordDrawerCycle()
@@ -1475,20 +1620,39 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
             print("SKIP composited Genie: own-window capture needs macOS 14.4+ with glass available")
         }
 
-        options.animation = .scale
-        try require(settings.setFileDrawer(options), "Could not save the Scale effect")
-        controller.show()
-        guard let drawer = controller.panel else { throw failure("Missing drawer for Scale effect") }
-        model.pinned = true
-        let layer = drawer.contentView?.subviews.first?.layer
-        try await wait("Scale did not finish opening the drawer") { layer?.animation(forKey: "drawerVisibility") == nil }
-        model.close()
-        let group = layer?.animation(forKey: "drawerVisibility") as? CAAnimationGroup
-        let scale = group?.animations?.compactMap { $0 as? CABasicAnimation }.first { $0.keyPath == "transform" }
-        try require((scale?.toValue as? NSValue)?.caTransform3DValue.m11 == 0.7, "Scale did not shrink the drawer")
-        controller.show()
-        try await wait("Reversing Scale lost the drawer") {
-            controller.panel === drawer && drawer.isVisible && layer?.animation(forKey: "drawerVisibility") == nil
+        for animation in [FileDrawerPreferences.Animation.slide, .scale] {
+            options.position = animation == .slide ? .bottomLeft : .topRight
+            options.animation = animation
+            try require(settings.setFileDrawer(options), "Could not save the drawer effect")
+            controller.show(on: screen)
+            guard let drawer = controller.panel, let layer = drawer.contentView?.subviews.first?.layer else {
+                throw failure("Missing drawer for " + animation.rawValue)
+            }
+            model.pinned = true
+            try await wait("The drawer did not finish opening") { layer.animation(forKey: "drawerVisibility") == nil }
+            model.close()
+            let group = layer.animation(forKey: "drawerVisibility") as? CAAnimationGroup
+            let motion = group?.animations?.compactMap { $0 as? CABasicAnimation }.first { $0.keyPath == "transform" }
+            guard let end = (motion?.toValue as? NSValue)?.caTransform3DValue else {
+                throw failure("Missing closing transform for " + animation.rawValue)
+            }
+            if animation == .scale {
+                let cornerX = layer.bounds.width * (1 - layer.anchorPoint.x)
+                let cornerY = layer.bounds.height * (1 - layer.anchorPoint.y)
+                let scaledX = end.m11 * cornerX + end.m41
+                let scaledY = end.m22 * cornerY + end.m42
+                try require(abs(end.m11 - 0.7) < 0.001 && abs(end.m22 - 0.7) < 0.001 &&
+                            abs(scaledX - cornerX) < 0.01 && abs(scaledY - cornerY) < 0.01,
+                            "Scale did not hold the top-right corner (\(scaledX), \(scaledY)) vs (\(cornerX), \(cornerY))")
+            } else {
+                try require(end.m41 < 0 && end.m42 < 0 && abs(hypot(end.m41, end.m42) - 8) < 0.01,
+                            "Slide did not move eight points toward the bottom-left corner")
+            }
+            controller.show(on: screen)
+            try await wait("Reversing the effect lost the drawer") {
+                controller.panel === drawer && drawer.isVisible && layer.animation(forKey: "drawerVisibility") == nil
+            }
+            if animation == .slide { drawer.close() }
         }
 
         options.animation = .genie
@@ -1502,7 +1666,7 @@ func checkFileDrawer(settings: PreferencesModel, favorites: FavoriteLocationsMod
         try require(controller.panel == nil && !model.presented, "Reduce Motion did not finish an active dismissal")
         controller.show()
         try require(controller.panel?.isVisible == true && genieView() == nil, "Reduce Motion did not skip opening animation")
-        print("PASS drawer animations: left/right Genie, interruption, Scale, persistence and Reduce Motion")
+        print("PASS drawer animations: eight Genie positions, interruption, diagonal Slide and Scale, persistence and Reduce Motion")
     }
 
     func turnOffLocationMemory() async throws {

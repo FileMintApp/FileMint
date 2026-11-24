@@ -60,7 +60,11 @@ final class FileDrawerController: NSObject, NSWindowDelegate {
     private var grip: DrawerGrip?
     private var edgeConstraint: NSLayoutConstraint?
     private var display: NSScreen?
-    private var requestedFrame: CGRect?
+    private struct Layout: Equatable {
+        let position: FileDrawerPreferences.Position
+        let frame: CGRect
+    }
+    private var requestedLayout: Layout?
     private var closing = false
     private static let transitionKey = "drawerVisibility"
     private var transitionID = UUID()
@@ -77,6 +81,7 @@ final class FileDrawerController: NSObject, NSWindowDelegate {
         self.reduceMotion = reduceMotion
         self.model = FileDrawerModel(settings: settings, favorites: favorites, placeHome: placeHome, lastLocationKey: lastLocationKey)
         super.init()
+        model.interactionEnded = { [weak self] in self?.applyPendingPosition() }
         preferenceObserver = settings.$committedPreferences.map(\.fileDrawer).removeDuplicates().sink { [weak self] _ in
             // @Published delivers before the containing snapshot has been assigned.
             Task { @MainActor [weak self] in guard let self else { return }; self.apply(self.settings.committedPreferences.fileDrawer) }
@@ -113,10 +118,10 @@ final class FileDrawerController: NSObject, NSWindowDelegate {
         if let panel {
             let reopening = closing
             closing = false
-            if !hasActiveInteraction, let screen = targetScreen, display != screen {
+            if canReposition, let screen = targetScreen, display != screen {
                 display = screen
-                requestedFrame = nil
-                layout(settings.committedPreferences.fileDrawer)
+                finishTransition(transitionID)
+                layout(settings.committedPreferences.fileDrawer, force: true)
             }
             if reopening { transition(opening: true) }
             panel.makeKeyAndOrderFront(nil)
@@ -191,15 +196,11 @@ final class FileDrawerController: NSObject, NSWindowDelegate {
     private func apply(_ value: FileDrawerPreferences) {
         guard let panel else { return }
         guard value.enabled else { panel.close(); return }
-        if let background, let grip {
-            edgeConstraint?.isActive = false
-            edgeConstraint = value.side == .right ? grip.leadingAnchor.constraint(equalTo: background.controls.leadingAnchor)
-                : grip.trailingAnchor.constraint(equalTo: background.controls.trailingAnchor)
-            edgeConstraint?.isActive = true
-            background.apply(value)
+        background?.apply(value)
+        if requestedLayout == nil || requestedLayout?.position == value.position || canReposition {
+            layout(value)
         }
-        layout(value)
-        if autoPreview != value.autoPreview {
+        if self.panel === panel, autoPreview != value.autoPreview {
             autoPreview = value.autoPreview
             model.schedulePreview()
         }
@@ -209,29 +210,42 @@ final class FileDrawerController: NSObject, NSWindowDelegate {
         NSScreen.screens.first(where: { $0.frame.contains(NSEvent.mouseLocation) }) ?? NSScreen.main
     }
 
-    private func layout(_ options: FileDrawerPreferences) {
+    private func layout(_ options: FileDrawerPreferences, force: Bool = false) {
         guard let screen = display, let panel else { return }
-        let rect = options.panelFrame(in: screen.visibleFrame)
+        let next = Layout(position: options.position, frame: options.panelFrame(in: screen.visibleFrame))
         // AppKit rounds some frame coordinates. Compare layout requests so an
         // unrelated preference save cannot cancel a transition on a rounded frame.
-        guard rect != requestedFrame else { return }
-        requestedFrame = rect
-        if panel.frame != rect {
+        guard force || next != requestedLayout else { return }
+        let movedAnchor = requestedLayout?.position != next.position
+        if requestedLayout != nil, movedAnchor || panel.frame != next.frame {
             finishTransition(transitionID)
-            if self.panel === panel { panel.setFrame(rect, display: true) }
+            guard self.panel === panel else { return }
         }
+        requestedLayout = next
+        if movedAnchor, let background, let grip {
+            edgeConstraint?.isActive = false
+            edgeConstraint = next.position.widthDragMultiplier < 0
+                ? grip.leadingAnchor.constraint(equalTo: background.controls.leadingAnchor)
+                : grip.trailingAnchor.constraint(equalTo: background.controls.trailingAnchor)
+            edgeConstraint?.isActive = true
+        }
+        if panel.frame != next.frame { panel.setFrame(next.frame, display: true) }
     }
 
     private func resize(by dx: CGFloat, finished: Bool) {
-        guard let panel, dx != 0 || draggingWidth else { return }
+        guard let panel, let position = requestedLayout?.position, dx != 0 || draggingWidth else { return }
         var options = settings.committedPreferences.fileDrawer
-        draggingWidth = !finished
+        let savedPosition = options.position
+        options.position = position
         options.fitsDisplayWidth = false
-        options.width = panel.frame.width + (options.side == .left ? dx : -dx)
+        options.width = panel.frame.width + position.widthDragMultiplier * dx
+        draggingWidth = !finished
         layout(options)
         if finished {
+            options.position = savedPosition
             options.width = min(options.maximumWidth, max(options.minimumWidth, panel.frame.width))
-            if !settings.setFileDrawer(options) { apply(settings.committedPreferences.fileDrawer) }
+            _ = settings.setFileDrawer(options)
+            apply(settings.committedPreferences.fileDrawer)
         }
     }
 
@@ -239,9 +253,10 @@ final class FileDrawerController: NSObject, NSWindowDelegate {
         let number = NSDeviceDescriptionKey("NSScreenNumber")
         let id = display?.deviceDescription[number] as? NSNumber
         display = NSScreen.screens.first { $0.deviceDescription[number] as? NSNumber == id } ?? pointerScreen
-        requestedFrame = nil
         finishTransition(transitionID)
-        apply(settings.committedPreferences.fileDrawer)
+        var options = settings.committedPreferences.fileDrawer
+        if !canReposition, let position = requestedLayout?.position { options.position = position }
+        layout(options, force: true)
     }
 
     func windowDidChangeBackingProperties(_ notification: Notification) {
@@ -270,7 +285,25 @@ final class FileDrawerController: NSObject, NSWindowDelegate {
         if let menu = note.object as? NSMenu { trackingMenus.insert(ObjectIdentifier(menu)) }
     }
     @objc private func menuEnded(_ note: Notification) {
-        if let menu = note.object as? NSMenu { trackingMenus.remove(ObjectIdentifier(menu)) }
+        if let menu = note.object as? NSMenu {
+            trackingMenus.remove(ObjectIdentifier(menu))
+            applyPendingPosition()
+        }
+    }
+    func windowDidEndSheet(_ notification: Notification) {
+        applyPendingPosition()
+    }
+    private var canReposition: Bool {
+        !hasActiveInteraction && model.pathMenu == nil && panel?.attachedSheet == nil
+    }
+    private func applyPendingPosition() {
+        guard let panel, let layout = requestedLayout,
+              layout.position != settings.committedPreferences.fileDrawer.position else { return }
+        // A sheet or editor completion can start a write before returning.
+        Task { @MainActor [weak self, weak panel] in
+            guard let self, let panel, self.panel === panel, self.canReposition else { return }
+            self.apply(self.settings.committedPreferences.fileDrawer)
+        }
     }
     private var hasActiveInteraction: Bool {
         model.dragging || draggingWidth || model.interacting || model.writing ||
@@ -296,6 +329,7 @@ final class FileDrawerController: NSObject, NSWindowDelegate {
             return
         }
         let options = settings.committedPreferences.fileDrawer
+        let position = requestedLayout?.position ?? options.position
         let running = layer.animation(forKey: Self.transitionKey) != nil
         if let genieTransition {
             genieTransition.play(opening: opening) { [weak self] in self?.finishTransition(id) }
@@ -305,7 +339,7 @@ final class FileDrawerController: NSObject, NSWindowDelegate {
             let updateBackdrop = background.genieBackdropUpdate()
             if updateBackdrop != nil || !background.showsGlass,
                let image = background.transitionImage(includeBackground: updateBackdrop == nil),
-               let genie = FileDrawerGenieTransition(image: image, frame: background.frame, side: options.side,
+               let genie = FileDrawerGenieTransition(image: image, frame: background.frame, position: position,
                                                      opening: opening, framesPerSecond: display?.maximumFramesPerSecond ?? 0,
                                                      updateBackdrop: updateBackdrop) {
                 genieTransition = genie
@@ -328,10 +362,10 @@ final class FileDrawerController: NSObject, NSWindowDelegate {
         }
         let animation = running ? layerAnimation : options.animation
         layerAnimation = animation == .scale ? .scale : .slide
-        animateLayer(layer, animation: layerAnimation, side: options.side, opening: opening, id: id)
+        animateLayer(layer, animation: layerAnimation, position: position, opening: opening, id: id)
     }
 
-    private func animateLayer(_ layer: CALayer, animation: FileDrawerPreferences.Animation, side: FileDrawerPreferences.Side,
+    private func animateLayer(_ layer: CALayer, animation: FileDrawerPreferences.Animation, position: FileDrawerPreferences.Position,
                               opening: Bool, id: UUID) {
         let current = layer.animation(forKey: Self.transitionKey) == nil ? nil : layer.presentation()
         let targetOpacity: Float = opening ? 1 : 0
@@ -339,26 +373,23 @@ final class FileDrawerController: NSObject, NSWindowDelegate {
         fade.fromValue = current?.opacity ?? (opening ? 0 : 1)
         fade.toValue = targetOpacity
         let hiddenTransform: CATransform3D
-        let motion: CABasicAnimation
+        let motion = CABasicAnimation(keyPath: "transform")
         let group = CAAnimationGroup()
+        let anchor = position.anchor
         if animation == .scale {
             let scale: CGFloat = 0.7
-            let edge: CGFloat = side == .right ? 1 : 0
-            let x = (edge - layer.anchorPoint.x) * layer.bounds.width * (1 - scale)
-            let y = (0.5 - layer.anchorPoint.y) * layer.bounds.height * (1 - scale)
+            let x = (anchor.x - layer.anchorPoint.x) * layer.bounds.width * (1 - scale)
+            let y = (anchor.y - layer.anchorPoint.y) * layer.bounds.height * (1 - scale)
             hiddenTransform = CATransform3DMakeAffineTransform(.init(a: scale, b: 0, c: 0, d: scale, tx: x, ty: y))
-            motion = CABasicAnimation(keyPath: "transform")
-            motion.fromValue = NSValue(caTransform3D: current?.transform ?? (opening ? hiddenTransform : CATransform3DIdentity))
-            motion.toValue = NSValue(caTransform3D: opening ? CATransform3DIdentity : hiddenTransform)
             group.duration = opening ? 0.22 : 0.18
         } else {
-            let edge: CGFloat = side == .right ? 8 : -8
-            hiddenTransform = CATransform3DMakeTranslation(edge, 0, 0)
-            motion = CABasicAnimation(keyPath: "transform.translation.x")
-            motion.fromValue = current?.transform.m41 ?? (opening ? edge : 0)
-            motion.toValue = opening ? 0 : edge
+            let x = anchor.x - 0.5, y = anchor.y - 0.5
+            let scale = 8 / hypot(x, y)
+            hiddenTransform = CATransform3DMakeTranslation(x * scale, y * scale, 0)
             group.duration = opening ? 0.16 : 0.12
         }
+        motion.fromValue = NSValue(caTransform3D: current?.transform ?? (opening ? hiddenTransform : CATransform3DIdentity))
+        motion.toValue = NSValue(caTransform3D: opening ? CATransform3DIdentity : hiddenTransform)
         fade.duration = group.duration
         motion.duration = group.duration
         group.animations = [fade, motion]
@@ -417,7 +448,7 @@ final class FileDrawerController: NSObject, NSWindowDelegate {
         background = nil
         edgeConstraint = nil
         display = nil
-        requestedFrame = nil
+        requestedLayout = nil
         autoPreview = nil
         draggingWidth = false
     }
@@ -497,10 +528,8 @@ private final class DrawerBackground: NSView {
         // Clip the live glass and its tint together at the backing scale.
         genieMask.frame = material.bounds
         genieMask.contentsScale = window?.backingScaleFactor ?? 1
-        let edgeCount = FileDrawerGenieGeometry.columns + 1
-        return { [weak self] vertices, opacity in
+        return { [weak self] outline, opacity in
             guard let self else { return }
-            let outline = Array(vertices.prefix(edgeCount)) + vertices.suffix(edgeCount).reversed()
             let path = CGMutablePath()
             path.addLines(between: outline.map { CGPoint(x: CGFloat($0.x) * size.width, y: CGFloat($0.y) * size.height) })
             path.closeSubpath()

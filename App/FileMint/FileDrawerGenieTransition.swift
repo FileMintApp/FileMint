@@ -20,6 +20,7 @@ final class FileDrawerGenieTransition: MTKView {
     private let queue: any MTLCommandQueue
     private let sprite: SKSpriteNode
     private let geometry: FileDrawerGenieGeometry
+    private let outlineIndices: [Int]
     private let updateBackdrop: BackdropUpdate?
     private var motion: Motion?
     private var completionTask: Task<Void, Never>?
@@ -28,13 +29,15 @@ final class FileDrawerGenieTransition: MTKView {
     // The signed fixture samples the actual display presentation times.
     var framePresented: (@Sendable (TimeInterval) -> Void)?
 
-    init?(image: CGImage, frame: CGRect, side: FileDrawerPreferences.Side, opening: Bool, framesPerSecond: Int,
+    init?(image: CGImage, frame: CGRect, position: FileDrawerPreferences.Position, opening: Bool, framesPerSecond: Int,
           updateBackdrop: BackdropUpdate?) {
         guard let device = MTLCreateSystemDefaultDevice(), let queue = device.makeCommandQueue() else { return nil }
         self.queue = queue
         renderer = SKRenderer(device: device)
         sprite = SKSpriteNode(texture: SKTexture(cgImage: image), size: frame.size)
-        geometry = FileDrawerGenieGeometry(size: frame.size, side: side)
+        let geometry = FileDrawerGenieGeometry(size: frame.size, position: position)
+        self.geometry = geometry
+        outlineIndices = geometry.outlineIndices
         self.updateBackdrop = updateBackdrop
         progress = opening ? 1 : 0
         super.init(frame: frame, device: device)
@@ -146,8 +149,8 @@ final class FileDrawerGenieTransition: MTKView {
         let opacity = CGFloat(geometry.opacity(at: progress))
         let vertices = geometry.vertices(at: progress)
         sprite.alpha = opacity
-        sprite.warpGeometry = SKWarpGeometryGrid(columns: FileDrawerGenieGeometry.columns, rows: FileDrawerGenieGeometry.rows,
+        sprite.warpGeometry = SKWarpGeometryGrid(columns: geometry.columns, rows: geometry.rows,
                                                   destinationPositions: vertices)
-        updateBackdrop?(vertices, opacity)
+        if let updateBackdrop { updateBackdrop(outlineIndices.map { vertices[$0] }, opacity) }
     }
 }

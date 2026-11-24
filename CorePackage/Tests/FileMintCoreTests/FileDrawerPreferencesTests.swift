@@ -30,7 +30,7 @@ struct FileDrawerPreferencesTests {
             #expect(!settings.enabled && !settings.autoPreview)
             #expect(settings.showsShortcutHints)
             #expect(settings.viewMode == .list && settings.sort == .name && settings.sortAscending)
-            #expect(settings.side == .right && settings.glass)
+            #expect(settings.position == .right && settings.glass)
             #expect(settings.minimumWidth == 320 && settings.maximumWidth == 640 && settings.width == 520)
             #expect(settings.fitsDisplayWidth && settings.fitsDisplayHeight && settings.height == 640)
             #expect(settings.minimumHeight == 480 && settings.maximumHeight == 1_100)
@@ -45,7 +45,7 @@ struct FileDrawerPreferencesTests {
                        #"{"animation":"future","enabled":true,"side":"left"}"#,
                        #"{"animation":12,"enabled":true,"side":"left"}"#] {
             let decoded = try JSONDecoder().decode(FileDrawerPreferences.self, from: Data(drawer.utf8))
-            #expect(decoded.animation == .genie && decoded.enabled && decoded.side == .left)
+            #expect(decoded.animation == .genie && decoded.enabled && decoded.position == .left)
         }
         for animation in FileDrawerPreferences.Animation.allCases {
             var settings = FileMintPreferences.default
@@ -87,9 +87,9 @@ struct FileDrawerPreferencesTests {
         let corrupt = Data(#"{"showMenuBar":false,"fileDrawer":"broken"}"#.utf8)
         let prefs = try JSONDecoder().decode(FileMintPreferences.self, from: corrupt)
         #expect(!prefs.showMenuBar && prefs.fileDrawer == FileDrawerPreferences())
-        let mixed = Data(#"{"enabled":true,"autoPreview":42,"side":"top","glass":false,"minimumWidth":400,"maximumWidth":"bad","width":900,"transparency":4}"#.utf8)
+        let mixed = Data(#"{"enabled":true,"autoPreview":42,"side":"center","glass":false,"minimumWidth":400,"maximumWidth":"bad","width":900,"transparency":4}"#.utf8)
         let settings = try JSONDecoder().decode(FileDrawerPreferences.self, from: mixed)
-        #expect(settings.enabled && !settings.autoPreview && !settings.glass && settings.side == .right)
+        #expect(settings.enabled && !settings.autoPreview && !settings.glass && settings.position == .right)
         #expect(settings.showsShortcutHints)
         let invalidView = try JSONDecoder().decode(FileDrawerPreferences.self, from:
             Data(#"{"viewMode":"bad","sort":"date","sortAscending":"bad","showsShortcutHints":null}"#.utf8))
@@ -99,7 +99,7 @@ struct FileDrawerPreferencesTests {
         #expect(settings.transparency == 0.3)
         let reversed = Data(#"{"minimumWidth":900,"maximumWidth":800,"side":"left"}"#.utf8)
         let invalidPair = try JSONDecoder().decode(FileDrawerPreferences.self, from: reversed)
-        #expect(invalidPair.minimumWidth == 320 && invalidPair.maximumWidth == 640 && invalidPair.side == .left)
+        #expect(invalidPair.minimumWidth == 320 && invalidPair.maximumWidth == 640 && invalidPair.position == .left)
     }
 
     @Test("configured values round trip and a smaller display only limits the visible width")
@@ -113,7 +113,7 @@ struct FileDrawerPreferencesTests {
         prefs.fileDrawer.viewMode = .compact
         prefs.fileDrawer.glass = false
         prefs.fileDrawer.transparency = 0.55
-        prefs.fileDrawer.side = .left
+        prefs.fileDrawer.position = .left
         prefs.fileDrawer.minimumWidth = 400
         prefs.fileDrawer.maximumWidth = 800
         prefs.fileDrawer.width = 700
@@ -136,7 +136,7 @@ struct FileDrawerPreferencesTests {
         let regular = prefs.panelFrame(in: laptop)
         #expect(regular.width == 520 && regular.height == 612)
         #expect(regular.maxX == laptop.maxX - 6 && regular.midY == laptop.midY)
-        prefs.side = .left
+        prefs.position = .left
         let large = prefs.panelFrame(in: external)
         #expect(large.width == 640 && large.height > regular.height && large.height < external.height)
         #expect(large.minX == external.minX + 6 && abs(large.midY - external.midY) <= 0.5)
@@ -147,6 +147,50 @@ struct FileDrawerPreferencesTests {
         #expect(legacyCustom.panelFrame(in: laptop).width == 580)
         let restored = try JSONDecoder().decode(FileDrawerPreferences.self, from: JSONEncoder().encode(legacyCustom))
         #expect(restored == legacyCustom)
+    }
+
+    @Test("saved positions use the existing settings key and keep their legacy values",
+          arguments: FileDrawerPreferences.Position.allCases)
+    func positionRoundTrip(position: FileDrawerPreferences.Position) throws {
+        let data = Data(#"{"fileDrawer":{"side":"\#(position.rawValue)","width":580,"animation":"scale"}}"#.utf8)
+        let settings = try JSONDecoder().decode(FileMintPreferences.self, from: data)
+        #expect(settings.fileDrawer.position == position)
+        #expect(settings.fileDrawer.width == 580 && !settings.fileDrawer.fitsDisplayWidth)
+        #expect(settings.fileDrawer.animation == .scale)
+        let encoded = try JSONEncoder().encode(settings)
+        let json = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        let drawer = try #require(json["fileDrawer"] as? [String: Any])
+        #expect(drawer["side"] as? String == position.rawValue)
+        #expect(try JSONDecoder().decode(FileMintPreferences.self, from: encoded).fileDrawer == settings.fileDrawer)
+    }
+
+    @Test("eight alignments use the usable display origin and preserve the same dimensions")
+    func allFrames() {
+        let display = CGRect(x: -1_296, y: 35, width: 1_200, height: 900)
+        let expected: [(FileDrawerPreferences.Position, CGPoint, CGFloat)] = [
+            (.topLeft, CGPoint(x: -1_290, y: 429), 1),
+            (.top, CGPoint(x: -896, y: 429), 2),
+            (.topRight, CGPoint(x: -502, y: 429), -1),
+            (.left, CGPoint(x: -1_290, y: 235), 1),
+            (.right, CGPoint(x: -502, y: 235), -1),
+            (.bottomLeft, CGPoint(x: -1_290, y: 41), 1),
+            (.bottom, CGPoint(x: -896, y: 41), 2),
+            (.bottomRight, CGPoint(x: -502, y: 41), -1)
+        ]
+        let small = CGRect(x: 300, y: -720, width: 180, height: 300)
+        var prefs = FileDrawerPreferences()
+        prefs.fitsDisplayWidth = false
+        prefs.fitsDisplayHeight = false
+        prefs.width = 400
+        prefs.height = 500
+        #expect(Set(expected.map { $0.0 }) == Set(FileDrawerPreferences.Position.allCases))
+        for (position, origin, dragMultiplier) in expected {
+            prefs.position = position
+            #expect(prefs.panelFrame(in: display) == CGRect(origin: origin, size: CGSize(width: 400, height: 500)))
+            #expect(prefs.panelFrame(in: small) == small.insetBy(dx: 6, dy: 6))
+            #expect(position.widthDragMultiplier == dragMultiplier)
+        }
+        #expect(prefs.width == 400 && prefs.height == 500)
     }
 
     @Test("fixed height survives switching modes and display bounds independently of width")

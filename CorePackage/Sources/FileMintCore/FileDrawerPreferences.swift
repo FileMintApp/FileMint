@@ -12,7 +12,31 @@ public enum FileDrawerViewMode: String, Codable, CaseIterable, Sendable {
 }
 
 public struct FileDrawerPreferences: Codable, Equatable, Sendable {
-    public enum Side: String, Codable, CaseIterable, Sendable { case left, right }
+    public enum Position: String, Codable, CaseIterable, Sendable {
+        case topLeft, top, topRight, left, right, bottomLeft, bottom, bottomRight
+
+        /// Unit coordinates in the AppKit window, with the origin at bottom left.
+        public var anchor: CGPoint {
+            switch self {
+            case .topLeft: CGPoint(x: 0, y: 1)
+            case .top: CGPoint(x: 0.5, y: 1)
+            case .topRight: CGPoint(x: 1, y: 1)
+            case .left: CGPoint(x: 0, y: 0.5)
+            case .right: CGPoint(x: 1, y: 0.5)
+            case .bottomLeft: CGPoint(x: 0, y: 0)
+            case .bottom: CGPoint(x: 0.5, y: 0)
+            case .bottomRight: CGPoint(x: 1, y: 0)
+            }
+        }
+
+        public var widthDragMultiplier: CGFloat {
+            switch anchor.x {
+            case 0: 1
+            case 1: -1
+            default: 2
+            }
+        }
+    }
     public enum Animation: String, Codable, CaseIterable, Sendable { case slide, scale, genie }
 
     public static let supportedWidths = 240.0...2_000.0
@@ -30,7 +54,7 @@ public struct FileDrawerPreferences: Codable, Equatable, Sendable {
     public var viewMode: FileDrawerViewMode = .list
     public var sort: FileDrawerSort = .name
     public var sortAscending = true
-    public var side: Side = .right
+    public var position: Position = .right
     public var animation: Animation = .genie
     public var glass = true
     public var transparency = 0.3
@@ -47,7 +71,8 @@ public struct FileDrawerPreferences: Codable, Equatable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case enabled, remembersLastLocation, shortcut, autoPreview, showsShortcutHints, viewMode, sort, sortAscending
-        case side, animation, glass, transparency, minimumWidth, maximumWidth, width, fitsDisplayWidth
+        case position = "side"
+        case animation, glass, transparency, minimumWidth, maximumWidth, width, fitsDisplayWidth
         case fitsDisplayHeight, minimumHeight, maximumHeight, height
         case defaultDirectoryPath = "rootDirectoryPath"
     }
@@ -75,8 +100,9 @@ public struct FileDrawerPreferences: Codable, Equatable, Sendable {
         let width = sized.effectiveWidth(availableWidth: available.width)
         let desiredHeight = fitsDisplayHeight ? (visible.height * 0.72).rounded() : self.height
         let height = min(available.height, min(max(desiredHeight, minimumHeight), maximumHeight))
-        return CGRect(x: side == .left ? available.minX : available.maxX - width,
-                      y: available.midY - height / 2, width: width, height: height)
+        let anchor = position.anchor
+        return CGRect(x: available.minX + anchor.x * (available.width - width),
+                      y: available.minY + anchor.y * (available.height - height), width: width, height: height)
     }
 
     public init(from decoder: Decoder) throws {
@@ -96,7 +122,7 @@ public struct FileDrawerPreferences: Codable, Equatable, Sendable {
         viewMode = (try? fields.decode(FileDrawerViewMode.self, forKey: .viewMode)) ?? viewMode
         sort = (try? fields.decode(FileDrawerSort.self, forKey: .sort)) ?? sort
         sortAscending = (try? fields.decode(Bool.self, forKey: .sortAscending)) ?? sort.defaultAscending
-        side = (try? fields.decode(Side.self, forKey: .side)) ?? side
+        position = (try? fields.decode(Position.self, forKey: .position)) ?? position
         animation = (try? fields.decode(Animation.self, forKey: .animation)) ?? animation
         glass = (try? fields.decode(Bool.self, forKey: .glass)) ?? glass
         if let value = try? fields.decode(Double.self, forKey: .transparency), (0...1).contains(value) {
