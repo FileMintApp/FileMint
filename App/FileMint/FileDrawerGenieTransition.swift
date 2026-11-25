@@ -22,6 +22,7 @@ final class FileDrawerGenieTransition: MTKView {
     private let geometry: FileDrawerGenieGeometry
     private let outlineIndices: [Int]
     private let updateBackdrop: BackdropUpdate?
+    private weak var liveLayer: CALayer?
     private var motion: Motion?
     private var completionTask: Task<Void, Never>?
     private(set) var progress: Float
@@ -30,7 +31,7 @@ final class FileDrawerGenieTransition: MTKView {
     var framePresented: (@Sendable (TimeInterval) -> Void)?
 
     init?(image: CGImage, frame: CGRect, position: FileDrawerPreferences.Position, opening: Bool, framesPerSecond: Int,
-          updateBackdrop: BackdropUpdate?) {
+          updateBackdrop: BackdropUpdate?, replacing liveLayer: CALayer?) {
         guard let device = MTLCreateSystemDefaultDevice(), let queue = device.makeCommandQueue() else { return nil }
         self.queue = queue
         renderer = SKRenderer(device: device)
@@ -39,10 +40,11 @@ final class FileDrawerGenieTransition: MTKView {
         self.geometry = geometry
         outlineIndices = geometry.outlineIndices
         self.updateBackdrop = updateBackdrop
+        self.liveLayer = liveLayer
         progress = opening ? 1 : 0
         super.init(frame: frame, device: device)
         isPaused = true
-        presentsWithTransaction = updateBackdrop != nil
+        presentsWithTransaction = updateBackdrop != nil || liveLayer != nil
         layer?.isOpaque = false
         clearColor = MTLClearColorMake(0, 0, 0, 0)
         if framesPerSecond > 0 { preferredFramesPerSecond = framesPerSecond }
@@ -52,7 +54,7 @@ final class FileDrawerGenieTransition: MTKView {
         sprite.subdivisionLevels = 0
         scene.addChild(sprite)
         renderer.scene = scene
-        deform(at: progress)
+        if opening { deform(at: progress) }
     }
 
     @available(*, unavailable)
@@ -70,7 +72,11 @@ final class FileDrawerGenieTransition: MTKView {
     }
 
     override func draw(_ dirtyRect: NSRect) {
-        guard let motion, let pass = currentRenderPassDescriptor, let drawable = currentDrawable,
+        guard let motion else { return }
+        if updateBackdrop == nil, liveLayer == nil, presentsWithTransaction {
+            presentsWithTransaction = false
+        }
+        guard let pass = currentRenderPassDescriptor, let drawable = currentDrawable,
               let buffer = queue.makeCommandBuffer() else { return }
         if let framePresented {
             drawable.addPresentedHandler { framePresented($0.presentedTime) }
@@ -93,13 +99,17 @@ final class FileDrawerGenieTransition: MTKView {
                     }
                 }
             }
+        } else if liveLayer != nil {
+            deform(at: motion.from)
         }
         renderFrame(to: pass, using: buffer)
         if presentsWithTransaction {
-            // Present the controls in the same transaction as the material's outline.
+            // Present the snapshot with the live glass mask or initial layer swap.
             buffer.commit()
             buffer.waitUntilScheduled()
             drawable.present()
+            liveLayer?.opacity = 0
+            liveLayer = nil
         } else {
             buffer.present(drawable)
             buffer.commit()

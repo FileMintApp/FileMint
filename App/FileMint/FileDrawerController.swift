@@ -366,10 +366,11 @@ final class FileDrawerController: NSObject, NSWindowDelegate {
         if !running, options.animation == .genie, let clip = panel.contentView {
             let updateBackdrop = background.genieBackdropUpdate()
             if updateBackdrop != nil || !background.showsGlass,
+               let liveLayer = updateBackdrop == nil ? layer : background.controls.layer,
                let image = background.transitionImage(includeBackground: updateBackdrop == nil),
                let genie = FileDrawerGenieTransition(image: image, frame: background.frame, position: position,
                                                      opening: opening, framesPerSecond: display?.maximumFramesPerSecond ?? 0,
-                                                     updateBackdrop: updateBackdrop) {
+                                                     updateBackdrop: updateBackdrop, replacing: opening ? nil : liveLayer) {
                 genieTransition = genie
                 if opening, model.busy, model.directory == nil {
                     let includeBackground = updateBackdrop == nil
@@ -381,8 +382,7 @@ final class FileDrawerController: NSObject, NSWindowDelegate {
                 CATransaction.begin()
                 CATransaction.setDisableActions(true)
                 clip.addSubview(genie, positioned: .above, relativeTo: background)
-                if updateBackdrop == nil { layer.opacity = 0 }
-                else { background.controls.layer?.opacity = 0 }
+                if opening { liveLayer.opacity = 0 }
                 CATransaction.commit()
                 genie.play(opening: opening) { [weak self] in self?.finishTransition(id) }
                 return

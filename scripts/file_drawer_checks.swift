@@ -52,13 +52,28 @@ func checkFileDrawerCadence(settings: PreferencesModel, favorites: FavoriteLocat
                                           lastLocationKey: UUID().uuidString, reduceMotion: { false })
     defer { controller.panel?.close() }
 
-    func sample(_ label: String, opening: Bool) async throws {
-        guard let transition = controller.panel?.contentView?.subviews.compactMap({ $0 as? FileDrawerGenieTransition }).first else {
+    func sample(_ label: String, opening: Bool, glass: Bool) async throws {
+        guard let clip = controller.panel?.contentView,
+              let transition = clip.subviews.compactMap({ $0 as? FileDrawerGenieTransition }).first,
+              let surface = clip.subviews.first,
+              let backdrop = surface.subviews.first?.layer,
+              let liveContent = glass ? surface.subviews.last?.layer : surface.layer else {
             throw failure("Missing Genie transition for \(label)")
         }
         let timestamps = OSAllocatedUnfairLock(initialState: [TimeInterval]())
         transition.framePresented = { timestamp in timestamps.withLock { $0.append(timestamp) } }
         defer { transition.framePresented = nil }
+        if !opening {
+            guard liveContent.opacity == 1, backdrop.mask == nil else {
+                throw failure("Genie hid live content or masked its backdrop before the first frame for \(label)")
+            }
+            try await wait("Genie did not present its first closing frame for \(label)") {
+                timestamps.withLock { $0.contains { $0 > 0 } }
+            }
+            guard liveContent.opacity == 0, !glass || backdrop.mask != nil else {
+                throw failure("Genie did not take over the live drawer on the first frame for \(label)")
+            }
+        }
         try await wait("Genie did not finish \(label)") { transition.superview == nil }
         let delivered = timestamps.withLock { $0 }
         let presented = delivered.filter { $0 > 0 }.sorted()
@@ -88,12 +103,12 @@ func checkFileDrawerCadence(settings: PreferencesModel, favorites: FavoriteLocat
                 let label = "\(position.rawValue)-\(glass ? "glass" : "solid")"
                 controller.show(on: screen)
                 controller.model.pinned = true
-                try await sample("\(label)-open-\(cycle)", opening: true)
+                try await sample("\(label)-open-\(cycle)", opening: true, glass: glass)
                 try await wait("Fixture files did not load") {
                     !controller.model.busy && controller.model.entries.contains { $0.name == "Notes 20.txt" }
                 }
                 controller.model.close()
-                try await sample("\(label)-close-\(cycle)", opening: false)
+                try await sample("\(label)-close-\(cycle)", opening: false, glass: glass)
             }
         }
     }

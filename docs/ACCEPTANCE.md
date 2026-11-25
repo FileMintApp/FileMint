@@ -3,6 +3,25 @@
 Observations below apply to the revisions and environments stated in each entry.
 Use [HARNESS](../specs/HARNESS.md) to select present-day verification.
 
+## Drawer dismissal first frame — 2026-11-25
+
+On arm64 macOS 27.2.1 with Xcode 27.2, the signed cadence fixture reproduced the
+drawer hiding its live controls before the first Genie closing frame in
+`run.a6a6lsru`. The fix submits the first snapshot and the live layer swap
+in one Core Animation transaction.
+
+The worktree based on `6682712` passed `make verify` (471 Swift tests),
+unsigned Release compilation and the signed `file-drawer` suite, including
+reversal and composited glass at all eight positions. The same native run
+(`run.9fsukyx5`) missed the 60 Hz target on one right-edge glass dismissal.
+The isolated cadence rerun with the same signed build (`run.hk345kp3`) passed
+all 36 transitions with 28–32 frames each and verified the first-frame swap
+on 18 glass and solid dismissals. The cause of the earlier drop is unconfirmed.
+
+Logs are in `build/drawer-close-handoff.p0n98C/` and the reports above under
+`build/native-checks.noindex/`. Installed FileMint and macOS 13/14 runtime
+remain unverified for this change.
+
 ## Drawer arrow-key wrapping — 2026-11-24
 
 On arm64 macOS 27.2.1 with Xcode 27.2, the worktree based on `f1fc3fc` passed
