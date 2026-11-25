@@ -106,6 +106,11 @@ body { -webkit-font-smoothing: antialiased; }
 .fm-landing h2 { font-size: clamp(30px, 3.2vw, 44px); line-height: 1.35; font-weight: 530; letter-spacing: -.04em; }
 .fm-section h2 { margin-top: 18px; }
 .fm-section-heading > p { color: var(--vp-c-text-2); font-size: 14px; line-height: 1.95; max-width: 340px; padding-bottom: 3px; }
+.fm-drawer-demo { margin: 0 0 32px; }
+.fm-drawer-demo video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; border-radius: 12px; background: var(--vp-c-bg-soft); }
+.fm-drawer-demo video:focus-visible { outline: 2px solid var(--fm-accent); outline-offset: 3px; }
+.fm-drawer-demo figcaption { margin-top: 12px; line-height: 1.65; }
+.fm-drawer-demo figcaption p { margin-top: 4px; color: var(--vp-c-text-2); font-size: 14px; }
 .fm-drawer-gallery { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; }
 .fm-drawer-gallery figure { margin: 0; min-width: 0; }
 .fm-drawer-capture { display: grid; place-items: center; width: 100%; aspect-ratio: 40 / 33; padding: 12px; overflow: hidden; background: var(--vp-c-bg-soft); border: 1px solid var(--vp-c-divider); border-radius: 12px; cursor: zoom-in; }

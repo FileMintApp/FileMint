@@ -288,10 +288,12 @@ owns the rules, supported storage, counts, explicit actions and recovery behavio
   accessible tab selection, arrow/Home/End navigation and screenshot enlargement
   across the scenarios, with readable labels at narrow widths.
 - Lead with File Drawer in the hero and navigation. Show real matching-language
-  captures of browsing, folder search and selected-item actions. When showing
-  the Genie motion, use a GIF recorded from the app. Link to setup and keyboard
-  use in both guides. Explain that the drawer is off by default, opens while
-  FileMint is running and browses folders with the user's authorization.
+  captures of browsing, folder search and selected-item actions. Both homepages
+  share a silent recording of the English interface, with on-screen shortcut
+  labels, a text description and user-controlled playback. Both READMEs preview
+  footage from that recording and link to the full video. Link to setup and
+  keyboard use in both guides. Explain that the drawer is off by default, opens
+  while FileMint is running and browses folders with the user's authorization.
 - Give Batch Rename and File Info/checksums a prominent bilingual homepage
   showcase with real, matching-language captures and direct usage-guide links.
   Explain preview-before-commit, protected extensions, conflict blocking and

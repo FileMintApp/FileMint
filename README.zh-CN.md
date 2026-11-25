@@ -91,6 +91,19 @@ FileMint 是原生 **macOS Finder 扩展**，支持复用模板，还可按需�
 
 无需 Finder 扩展，也可以从 FileMint 应用或菜单栏选择「新建文件…」。设置、快捷键和故障处理见[使用指南](https://filemintapp.github.io/FileMint/guide.html)。
 
+### 5. 文件抽屉
+
+在「扩展功能 → 文件抽屉」开启后，按 `⌃⌥D` 从屏幕边缘打开抽屉，按 `⌘F` 搜索当前文件夹。选中文件后，按空格预览，或按 `⌘K` 打开操作面板。
+
+<a href="https://filemintapp.github.io/FileMint/#file-drawer-demo">
+  <picture>
+    <source media="(prefers-reduced-motion: reduce)" srcset="website/public/images/file-drawer-demo-en.jpg">
+    <img src="website/public/images/file-drawer-demo-preview-en.gif" width="800" alt="查看 FileMint 在 Release 文件夹内搜索，并用快速查看预览匹配的文件">
+  </picture>
+</a>
+
+[观看完整演示（英文界面）](https://filemintapp.github.io/FileMint/#file-drawer-demo) · [MP4 文件](website/public/videos/file-drawer-en.mp4)
+
 ## 隐私与权限边界
 
 - 文件名、路径、内容、图片和 OCR 结果不会上传。

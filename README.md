@@ -91,6 +91,19 @@ The module starts off. Enable the actions you need and choose their Finder menu 
 
 Use **New File…** in the app or menu bar to create a file without Finder integration. See the [user guide](https://filemintapp.github.io/FileMint/en/guide.html) for settings, shortcuts and troubleshooting.
 
+### 5. File Drawer
+
+Enable the drawer in **Extensions → File Drawer**. Press `⌃⌥D` to open it at the screen edge, `⌘F` to search the current folder, Space to preview a selected file and `⌘K` to open its actions.
+
+<a href="https://filemintapp.github.io/FileMint/en/#file-drawer-demo">
+  <picture>
+    <source media="(prefers-reduced-motion: reduce)" srcset="website/public/images/file-drawer-demo-en.jpg">
+    <img src="website/public/images/file-drawer-demo-preview-en.gif" width="800" alt="Watch FileMint filter the Release folder and preview a matching file with Quick Look">
+  </picture>
+</a>
+
+[Watch the full walkthrough](https://filemintapp.github.io/FileMint/en/#file-drawer-demo) · [MP4 file](website/public/videos/file-drawer-en.mp4)
+
 ## Privacy and permission boundaries
 
 - Filenames, paths, content, images and OCR results are never uploaded.

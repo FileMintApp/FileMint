@@ -8,6 +8,8 @@ const t = (zh: string, english: string) => en.value ? english : zh
 const page = (path: string) => withBase(`${en.value ? '/en' : ''}/${path}.html`)
 const asset = (name: string) => withBase(`/images/${name}-${props.lang}.jpg`)
 const drawerImage = (name: string) => withBase(`/images/file-drawer-${name}-${props.lang}.png`)
+const drawerVideo = withBase('/videos/file-drawer-en.mp4')
+const drawerVideoPoster = withBase('/images/file-drawer-demo-en.jpg')
 const release = 'https://github.com/FileMintApp/FileMint/releases/latest'
 const drawerGuide = computed(() => `${page('guide')}#file-drawer`)
 const quickSearchGuide = computed(() => `${page('guide')}#${t('用快捷搜索找到操作、模板和设置', 'find-actions-templates-and-settings-with-quick-search')}`)
@@ -148,6 +150,17 @@ const faqs = computed(() => [
         <div><p class="fm-eyebrow">{{ t('文件抽屉', 'FILE DRAWER') }}</p><h2 id="file-drawer-title">{{ t('浏览、查找和处理，', 'Browse, find and act') }}<br><em>{{ t('都在一个抽屉里。', 'in one drawer.') }}</em></h2></div>
         <p>{{ t('在「扩展功能 → 文件抽屉」开启。FileMint 运行时，按 ⌃⌥D 打开，从侧栏进入已授权的文件夹。', 'Enable it in Extensions → File Drawer. While FileMint is running, press ⌃⌥D and use the sidebar to open folders you have authorized.') }}</p>
       </div>
+      <figure id="file-drawer-demo" class="fm-drawer-demo fm-anchor">
+        <video controls playsinline preload="metadata" loading="lazy" width="1920" height="1080"
+          :poster="drawerVideoPoster" aria-labelledby="file-drawer-demo-title" aria-describedby="file-drawer-demo-steps">
+          <source :src="drawerVideo" type="video/mp4">
+          <a :href="drawerVideo">{{ t('下载文件抽屉演示（MP4）', 'Download the File Drawer demo (MP4)') }}</a>
+        </video>
+        <figcaption>
+          <strong id="file-drawer-demo-title">{{ t('文件抽屉操作演示（英文界面）', 'File Drawer walkthrough') }}</strong>
+          <p id="file-drawer-demo-steps">{{ t('按 ⌃⌥D 打开抽屉，用方向键进入文件夹，按 ⌘F 搜索。回车选中文件后，按空格预览，再按 Esc 关闭预览。按 ⌘K 查看文件操作，按 Esc 退出操作面板，再按 ⌃⌥D 收起抽屉。', 'Press ⌃⌥D to open the drawer, use the arrow keys to enter a folder, and press ⌘F to search. Press Return to select a result, Space to preview it, then Esc to close the preview. Press ⌘K to see file actions, Esc to leave the palette, and ⌃⌥D to close the drawer.') }}</p>
+        </figcaption>
+      </figure>
       <div class="fm-drawer-gallery">
         <figure v-for="capture in drawerGallery" :key="capture.image">
           <button class="fm-drawer-capture" type="button" :aria-label="`${t('放大截图', 'Enlarge screenshot')} · ${capture.title}`" @click="openPreview(capture)"><img :src="capture.image" :alt="capture.alt" width="1600" height="1320" loading="lazy"></button>
