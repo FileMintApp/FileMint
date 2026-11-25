@@ -1,108 +1,75 @@
 <p align="center"><img src="Resources/IconSource/FileMint-AppIcon-1024.png" width="112" alt="FileMint"></p>
 <h1 align="center">FileMint</h1>
-<p align="center"><strong>在 Finder 当前文件夹右键新建文件。</strong><br>Markdown 笔记、Word 文档和 Excel 工作簿，都能在手边的文件夹里创建。</p>
+<p align="center"><strong>用 FileDraw 从屏幕边缘打开常用文件夹。</strong><br>在手头的 App 里查找和预览文件，也能在 Finder 里右键新建文件、处理图片。</p>
 <p align="center"><a href="README.md"><strong>← English</strong></a> ｜ <strong>简体中文</strong></p>
-<p align="center"><a href="https://github.com/FileMintApp/FileMint/releases/latest"><strong>下载 DMG</strong></a> · <a href="docs/INSTALL.md">安装帮助</a> · <a href="https://filemintapp.github.io/FileMint/">官网</a> · <a href="website/">官网源码</a> · <a href="https://github.com/FileMintApp/FileMint/issues">反馈问题</a></p>
+<p align="center"><a href="https://github.com/FileMintApp/FileMint/releases/latest"><strong>下载 DMG</strong></a> · <a href="#filedraw">FileDraw 演示</a> · <a href="https://filemintapp.github.io/FileMint/">官网</a> · <a href="docs/INSTALL.md">安装帮助</a> · <a href="https://github.com/FileMintApp/FileMint/issues">反馈问题</a></p>
 <p align="center"><sub>M 系列 Mac · macOS 13 或更新版本 · DMG 已通过 Apple 公证</sub></p>
 
-在 FileMint 中配置好文件夹后，在 Finder 的文件夹空白处右键，选择 **新建文件 → Markdown (.md)**，文件就会出现在当前目录。想先填写文件名和内容，可以选择 **新建文件…**。
+## FileDraw
+
+从侧栏进入下载目录或项目文件夹。固定抽屉后，切换 App 时它仍留在屏幕上。FileDraw 每次只浏览当前打开且已获授权的文件夹。
+
+<p align="center">
+  <a href="https://filemintapp.github.io/FileMint/#file-drawer-demo">
+    <picture>
+      <source media="(prefers-reduced-motion: reduce)" srcset="website/public/images/file-drawer-demo-en.jpg">
+      <img src="website/public/images/file-drawer-demo-preview-en.gif" width="800" alt="FileDraw 筛选 Release 文件夹，并用快速查看预览匹配的文件">
+    </picture>
+  </a>
+</p>
+
+[观看完整演示（英文界面）](https://filemintapp.github.io/FileMint/#file-drawer-demo) · [MP4 文件](website/public/videos/file-drawer-en.mp4) · [开启步骤和快捷键](https://filemintapp.github.io/FileMint/guide.html#file-drawer)
+
+| 按键 | 在 FileDraw 中 |
+| --- | --- |
+| `⌃⌥D` | FileMint 运行时打开抽屉。 |
+| `⌘F` | 在当前文件夹内按名称查找项目。 |
+| `空格` | 用快速查看预览选中的文件。 |
+| `⌘K` | 打开选中项的操作面板，拷贝路径、移动项目或选用 App 打开。 |
+
+## 安装并开启 FileDraw
+
+当前正式安装包支持 **运行 macOS 13.0 及以上的 M 系列 Mac**，使用 Developer ID 签名，通过 Apple 公证并附加公证票据。
+
+1. [下载最新 DMG](https://github.com/FileMintApp/FileMint/releases/latest)，把 FileMint 拖入「应用程序」，然后打开。
+2. 在「扩展功能 → 文件抽屉」开启 FileDraw。文件抽屉默认关闭。开启后点击「打开文件抽屉」，或按默认快捷键 `⌃⌥D`，按提示授权要访问的文件夹。
+3. 要使用 Finder 右键菜单，请启用 Finder 扩展并设置常用文件夹。详细操作见 [Finder 首次设置指南](https://filemintapp.github.io/FileMint/guide.html#先完成首次设置)。
+
+全新安装也可使用 [FileMint 官方 Homebrew tap](https://github.com/FileMintApp/homebrew-tap)：`brew install --cask filemintapp/tap/filemint`。
+
+旧版升级、Intel 兼容性及下载校验见[安装说明](docs/INSTALL.md)。Apple 在 0.5.3 发布后接受了该 DMG 的公证；公开下载包没有附加票据，Gatekeeper 需要联网获取。
+
+[最新正式版更新说明](https://github.com/FileMintApp/FileMint/releases/latest) · [官网源码](website/)
+
+## 从 Finder 右键新建文件
+
+在已配置的 Finder 文件夹空白处右键，选择「新建文件 → Markdown (.md)」或其他已启用的模板。也可选择「新建文件…」，一次填好文件名、保存位置和初始内容。FileMint 应用和菜单栏也有这个入口。
 
 <p align="center">
   <img src="website/public/images/finder-create-menu-zh.jpg" width="700" alt="Finder 右键菜单中的 FileMint 新建文件子菜单，显示文本和 Markdown 模板">
 </p>
-<p align="center"><sub>Finder 菜单示例；可用模板和可选工具取决于你的设置。</sub></p>
 
-FileMint 是原生 **macOS Finder 扩展**，支持复用模板，还可按需开启批量重命名、SHA-256 文件校验、图片压缩和 OCR 文字识别。文件创建与处理都在本机完成。
+- **复用模板。** 同一格式可存多份模板并设置默认项，按需预览文本或系统支持的 Office 输出。可导入自己的 Word、Excel 文档来创建独立副本，也可以用 `.filemint-templates` 分享模板。
+- **从剪贴板新建。** 核对拷贝的纯文本后保存，或预览并命名拷贝的截图，再保存为 PNG。
+- **创建后打开。** 在模板里或本次创建时选择 App，保存后接着处理文件。
 
-[查看最新正式版的更新说明](https://github.com/FileMintApp/FileMint/releases/latest)
-
-## 功能
-
-- **快捷搜索**：集中查找新建操作、启用的模板、常用文件和设置，可在通用页按需开启全局快捷键。
-- **快捷指令与 Raycast**：打开预填草稿或快捷搜索。需要 macOS 13.3 或更新版本，见[接入指南](docs/SHORTCUTS_AND_LAUNCHERS.zh-CN.md)。
-- **拷贝文件内容**：从 Finder 拷贝受支持文本文件的完整内容，保留空白和换行；在文件（夹）工具中启用。
-- **批量重命名**：在本地可写 APFS 上预览并重命名同一目录的 2–1,000 个项目，支持撤销和中断恢复，不覆盖已有项目。
-- **文件信息与校验值**：查看单个普通文件的信息，按需计算四种校验值，拷贝或粘贴比对。
-- **模板拷贝与预览**：从已有模板创建副本，按需查看文本输出或系统支持的 Office 预览。
-- **模板导入导出**：用 `.filemint-templates` 备份、迁移或分享模板，导入前核对冲突处理。
-- **创建后打开**：按模板或本次选择继续在应用中工作；打开失败保留已保存文件。
-- **从剪贴板新建**：主动读取单项纯文本，在创建前核对名称、目录和内容。
-- **使用 App 打开**：把常用应用加入 Finder 菜单，打开所选项目或当前文件夹。
-- **图片粘贴为文件**：预览并命名拷贝的截图或图片，再保存为 PNG。
-- **同格式多模板**：为同一种格式保存不同内容和默认文件名，并指定默认模板。
-- **Word / Excel 模板**：内置空白 `.docx`、`.xlsx`，也可导入自己的文档，创建保留原格式和内容的独立副本。
-- **切换隐藏文件显示**：通过 Finder 右键切换显示状态，不改变文件属性。
-
-## 为什么是 FileMint
-
-| 你关心的事 | FileMint 的做法 |
-| --- | --- |
-| 原生体验 | Swift + AppKit + SwiftUI；原生菜单、窗口和编辑器，不嵌网页运行时。 |
-| 轻量与专注 | 小体积、无账号、无订阅、无后台目录扫描；打开后只做当前任务。 |
-| 本地性能边界 | 文件创建、图片处理和 OCR 在 Mac 本机完成，不绕远程服务。 |
-| Finder 位置感 | 在桌面或已授权文件夹中右键，目标位置由当前上下文决定。 |
-| 按需扩展 | 文件工具和资源工具默认关闭，启用后也不会改变已有的新建文件菜单。 |
-
-## 先看它怎么工作
-
-### 1. 从 Finder 文件夹新建
-
-上方是安装版在已配置文件夹中的真实菜单示例。选择已启用的模板即可快速创建；也可以打开 **新建文件…**，先核对文件名和内容。
-
-### 2. 创建时保留上下文
-
-完整文件名、后缀、保存位置和初始内容在创建前一次完成。输入 `project-kickoff.md`，粘贴第一段 Markdown，然后创建；不必先生成空文件再打开其他应用。
+<details>
+<summary>查看新建文件面板</summary>
 
 <p align="center">
   <img src="website/public/images/create-panel-zh.png" width="600" alt="FileMint 新建文件面板，填写 project-kickoff.md 和初始内容">
 </p>
 
-创建面板支持：
+按 `⌘↩` 创建，`Esc` 取消。快速新建遇到同名时默认自动编号。自定义新建在替换前询问，使用自定义后缀时保存为 UTF-8 文本。
 
-- `⌘↩` 创建，`Esc` 取消；内容区回车正常换行。
-- 文件名和后缀选择器保持同步；自定义后缀仍然创建 UTF-8 文本。
-- 快速创建遇到同名会自动递增；自定义创建在替换前询问。
-- 中文、多行、空格和字面量模板符号按原文保存。
+</details>
 
-### 3. 七个图片资源工具
+## 更多日常工具
 
-选中图片后从 Finder 的“资源工具”开始，或在主应用中明确选择本地图片：
-
-- **转换图片格式**：JPEG、PNG、HEIC、TIFF。
-- **压缩图片**：JPEG 使用 MozJPEG，PNG / TIFF 无损编码，HEIC 使用系统编码器；原图和尺寸保持不变，成功结果会保存并显示实际大小。
-- **调整图片尺寸**：保持比例，批量缩放，不放大原图。
-- **生成图标**：ICNS、ICO 与多尺寸 PNG。
-- **拼接图片**：横向或纵向排列，预览并调整顺序。
-- **提取图片文字**：使用系统 OCR，结果可编辑、复制或保存。
-- **移除隐私元数据**：清理 GPS、拍摄时间与设备等元数据，校验后另存副本，保留原图。
-
-<p align="center">
-  <img src="website/public/images/resource-panel-longmao-zh.png" width="760" alt="FileMint 使用 longmao.navigator.png 的图片格式转换面板">
-</p>
-<p align="center"><sub>资源示例使用 longmao.navigator.png；预览、输出位置和“原文件始终保留”都在面板中明确显示。</sub></p>
-
-### 4. 文件（夹）工具
-
-模块默认关闭。可按需启用动作，再选择它在 Finder 的菜单位置。拷贝名称和路径、移动、彻底删除、隔空投送及创建 Finder 替身的操作见[使用指南](https://filemintapp.github.io/FileMint/guide.html#按需开启文件-夹-工具)。
-
-<p align="center">
-  <img src="website/public/images/file-tools-zh.png" width="760" alt="FileMint 文件与文件夹工具设置页面，显示菜单位置和独立开关">
-</p>
-
-无需 Finder 扩展，也可以从 FileMint 应用或菜单栏选择「新建文件…」。设置、快捷键和故障处理见[使用指南](https://filemintapp.github.io/FileMint/guide.html)。
-
-### 5. 文件抽屉
-
-在「扩展功能 → 文件抽屉」开启后，按 `⌃⌥D` 从屏幕边缘打开抽屉，按 `⌘F` 搜索当前文件夹。选中文件后，按空格预览，或按 `⌘K` 打开操作面板。
-
-<a href="https://filemintapp.github.io/FileMint/#file-drawer-demo">
-  <picture>
-    <source media="(prefers-reduced-motion: reduce)" srcset="website/public/images/file-drawer-demo-en.jpg">
-    <img src="website/public/images/file-drawer-demo-preview-en.gif" width="800" alt="查看 FileMint 在 Release 文件夹内搜索，并用快速查看预览匹配的文件">
-  </picture>
-</a>
-
-[观看完整演示（英文界面）](https://filemintapp.github.io/FileMint/#file-drawer-demo) · [MP4 文件](website/public/videos/file-drawer-en.mp4)
+- **快捷搜索。** 在「通用」按需开启全局快捷键，集中查找新建操作、已启用的模板、常用位置和设置。macOS 13.3 或更新版本也可用[快捷指令和 Raycast](docs/SHORTCUTS_AND_LAUNCHERS.zh-CN.md)打开预填草稿或快捷搜索。
+- **文件（夹）工具。** 在本地可写 APFS 上，预览并重命名同一文件夹内的 2–1,000 个项目，支持撤销和中断恢复。也可查看文件信息、计算 SHA-256 等校验值、拷贝受支持的文本内容，以及管理项目和隐藏文件显示。[文件（夹）工具指南](https://filemintapp.github.io/FileMint/guide.html#按需开启文件-夹-工具)
+- **图片工具。** 转换、压缩、缩放、拼接图片，生成图标、提取文字或移除隐私元数据。处理结果另存，原图保留。[图片工具指南](https://filemintapp.github.io/FileMint/guide.html#处理图片与提取文字)
+- **使用 App 打开与常用位置。** 把编辑器或终端加入 Finder 菜单，收藏下次还要用的文件和文件夹。[使用指南](https://filemintapp.github.io/FileMint/guide.html)
 
 ## 隐私与权限边界
 
@@ -113,19 +80,6 @@ FileMint 是原生 **macOS Finder 扩展**，支持复用模板，还可按需�
 - 在 macOS 系统设置中启用 Finder 扩展，在 FileMint 的「文件访问」中管理已保存的目录授权。
 
 完整说明见 [隐私政策](PRIVACY.md)。
-
-## 下载与安装
-
-当前正式安装包支持 **运行 macOS 13.0 及以上的 M 系列 Mac**，使用 Developer ID 签名，通过 Apple 公证并附加公证票据。
-
-1. [下载最新 DMG](https://github.com/FileMintApp/FileMint/releases/latest)，把 FileMint 拖入“应用程序”。
-2. 启动 FileMint，按应用内提示启用 Finder 扩展并授权常用文件夹。
-3. 回到 Finder，开始创建或处理图片。详细操作见[首次设置指南](https://filemintapp.github.io/FileMint/guide.html#先完成首次设置)。
-
-全新安装也可使用 [FileMint 官方 Homebrew tap](https://github.com/FileMintApp/homebrew-tap)：
-`brew install --cask filemintapp/tap/filemint`。
-
-旧版升级、Intel 兼容性及下载校验见[安装说明](docs/INSTALL.md)。Apple 在 0.5.3 发布后接受了该 DMG 的公证；公开下载包没有附加票据，Gatekeeper 需要联网获取。
 
 ## 未来规划
 

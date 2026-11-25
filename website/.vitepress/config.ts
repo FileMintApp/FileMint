@@ -10,7 +10,7 @@ const pageUrl = (path: string) => new URL(path.replace(/(^|\/)index\.md$/, '$1')
 export default defineConfig({
   base,
   title: 'FileMint',
-  description: 'Native macOS Finder extension for right-click file creation, reusable templates, batch rename, SHA-256 checksums, image compression and OCR.',
+  description: 'Open folders from the screen edge with FileDraw. Use FileMint to create files from Finder, rename batches and process images on your Mac.',
   sitemap: {
     hostname: siteUrl,
     transformItems: (items) => items.filter((item) => !/(^|\/)404\.html$/.test(item.url))
@@ -85,11 +85,11 @@ export default defineConfig({
       label: '简体中文',
       lang: 'zh-Hans',
       title: 'FileMint',
-      description: '原生 macOS Finder 扩展：右键新建文件、复用模板、批量重命名、SHA-256 文件校验、图片压缩与 OCR 文字识别。',
+      description: '用 FileDraw 从 Mac 屏幕边缘打开文件夹。FileMint 也支持 Finder 右键新建文件、批量重命名和本机图片处理。',
       themeConfig: {
         outline: { level: 'deep', label: '本页目录' },
         nav: [
-          { text: '文件抽屉', link: '/#file-drawer' },
+          { text: 'FileDraw', link: '/#file-drawer' },
           { text: '快捷搜索', link: '/#quick-search' },
           { text: '功能', link: '/#features' },
           { text: '设计理念', link: '/#privacy' },
@@ -108,10 +108,10 @@ export default defineConfig({
       lang: 'en-US',
       link: '/en/',
       title: 'FileMint',
-      description: 'Native macOS Finder extension for right-click file creation, reusable templates, batch rename, SHA-256 checksums, image compression and OCR.',
+      description: 'Open folders from the screen edge with FileDraw. Use FileMint to create files from Finder, rename batches and process images on your Mac.',
       themeConfig: {
         nav: [
-          { text: 'File Drawer', link: '/en/#file-drawer' },
+          { text: 'FileDraw', link: '/en/#file-drawer' },
           { text: 'Quick Search', link: '/en/#quick-search' },
           { text: 'Features', link: '/en/#features' },
           { text: 'Our approach', link: '/en/#privacy' },

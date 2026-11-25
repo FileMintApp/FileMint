@@ -23,22 +23,28 @@ async function openPreview(capture: Capture) {
   preview.value?.showModal()
 }
 const scenes = computed(() => [
-  { label: t('文件抽屉', 'File Drawer'), title: t('从屏幕边缘打开文件夹。', 'Open folders from the screen edge.'), detail: t('⌃⌥D · 在「扩展功能 → 文件抽屉」开启。', '⌃⌥D · Enable in Extensions → File Drawer.'), image: drawerImage('browse'), alt: t('文件抽屉显示发布资料文件夹、路径栏、常用位置和选中的文件', 'File Drawer showing a launch folder, its path, sidebar locations and a selected file'), class: 'drawer', width: 1600, height: 1320, href: drawerGuide.value },
+  { label: 'FileDraw', title: t('从侧栏进入常用位置', 'Open familiar folders from the sidebar'), detail: t('发布资料文件夹 · 实际界面', 'Launch Kit folder · App screenshot'), image: drawerImage('browse'), alt: t('文件抽屉显示发布资料文件夹、路径栏、常用位置和选中的文件', 'File Drawer showing a launch folder, its path, sidebar locations and a selected file'), class: 'drawer', width: 1600, height: 1320 },
   { label: t('新建文件', 'Create a file'), title: t('从一个好开头开始。', 'Start with a head start.'), detail: t('文件名、位置、初始内容，一次写好。', 'Name, location, and first lines. All in one place.'), image: en.value ? asset('create-panel') : withBase('/images/create-workflow-zh.png'), alt: t('真实新建文件面板，包含文件名、保存位置与 Markdown 内容', 'Real New File panel with filename, destination and Markdown content'), class: 'creation' },
   { label: t('处理图片', 'Process images'), title: t('给图片一个新的用途。', 'A new purpose for your images.'), detail: t('转换格式、预览结果，原图始终保留。', 'Choose a format. Preview it. Keep your original.'), image: withBase(`/images/resource-panel-longmao-${props.lang}.png`), alt: t('真实图片转换窗口，展示预览、输出格式与保存位置', 'Real image conversion window with preview, formats and destination'), class: 'image' },
   { label: t('打开 App', 'Open your apps'), title: t('接着在熟悉的 App 里工作。', 'Continue in your favorite app.'), detail: t('把常用编辑器和终端放进右键菜单。', 'Bring your editors and terminals into the context menu.'), image: asset('open-with'), alt: t('使用 App 打开设置示例，已配置应用与菜单位置', 'Example Open with App configuration with applications and menu placement'), class: 'apps' },
   { label: t('快捷搜索', 'Quick Search'), title: t('快捷搜索，一按就到。', 'Quick Search, a shortcut away.'), detail: t('⌃⌥K · 默认关闭，可在「通用 → 快捷搜索」启用。', '⌃⌥K · Optional. Enable in General → Quick Search.'), image: asset('quick-search'), alt: t('已安装 FileMint 的真实快捷搜索弹窗，展示分类、新建文件、从剪贴板新建和图片粘贴为文件', 'Quick Search in the installed FileMint app, showing categories, New File, New File from Clipboard and Paste Image as File'), class: 'search', width: 1360, height: 1000, href: quickSearchGuide.value }
 ])
+const drawerSteps = computed(() => [
+  { keys: '⌃⌥D', spokenKeys: t('Control 加 Option 加 D', 'Control plus Option plus D'), title: t('打开抽屉', 'Open the drawer'), detail: t('FileMint 运行时唤出抽屉，用方向键进入文件夹。', 'Bring up the drawer while FileMint is running and use the arrow keys to enter a folder.') },
+  { keys: '⌘F', spokenKeys: t('Command 加 F', 'Command plus F'), title: t('查找文件', 'Find a file'), detail: t('按名称过滤当前文件夹，按回车选中第一条结果。', 'Filter the open folder by name and press Return to select the first result.') },
+  { keys: t('空格', 'Space'), spokenKeys: t('空格键', 'Space'), title: t('快速查看', 'Preview with Quick Look'), detail: t('查看选中的文件，再按 Esc 回到列表。', 'Preview the selected file, then press Esc to return to the list.') },
+  { keys: '⌘K', spokenKeys: t('Command 加 K', 'Command plus K'), title: t('处理选中项', 'Act on the selection'), detail: t('打开操作面板，拷贝路径、移动项目或选用 App 打开。', 'Open the action palette to copy a path, move an item or choose an app to open it.') }
+])
 const drawerGallery = computed(() => [
   {
     image: drawerImage('search'), title: t('在当前文件夹里搜索', 'Search the open folder'),
     alt: t('文件抽屉按“发布”筛选出两份文件', 'File Drawer filters the folder to two files with Release in the name'),
-    detail: t('按名称缩小范围，选中文件后按空格预览。', 'Filter by name, then select a file and press Space to preview it.')
+    detail: t('用文件名里的关键词，把当前列表缩小到匹配的项目。', 'Use words from the filename to narrow the current list to matching items.')
   },
   {
     image: drawerImage('actions'), title: t('处理选中的文件', 'Act on selected files'),
     alt: t('文件抽屉的选中项操作面板，显示打开、拷贝路径和移动等命令', 'The File Drawer action palette showing commands for a selected file'),
-    detail: t('按 ⌘K 打开操作面板，拷贝路径、移动文件或用指定 App 打开。', 'Press ⌘K for actions such as copying paths, moving files or opening them in another app.')
+    detail: t('面板会列出当前选区可用的命令，也可以按名称查找操作。', 'The palette shows commands available for the selection and lets you search for an action by name.')
   }
 ])
 function choose(index: number) { active.value = index }
@@ -123,51 +129,62 @@ const faqs = computed(() => [
     </dialog>
     <section class="fm-hero fm-wrap" aria-labelledby="hero-title">
       <div class="fm-hero-copy">
-        <div class="fm-eyebrow"><span class="fm-dot" /> {{ t('为 macOS 而生', 'MADE FOR macOS') }} <span class="fm-eyebrow-rule" /></div>
-        <h1 id="hero-title">{{ t('文件抽屉，', 'File Drawer.') }}<br><em>{{ t('从屏幕边缘打开。', 'At the screen edge.') }}</em></h1>
-        <p class="fm-hero-lead">{{ t('按下快捷键，继续处理手边的文件。', 'Open your working folders with a shortcut.') }}</p>
-        <p class="fm-hero-description">{{ t('在抽屉里浏览、搜索和预览文件，选中就能处理。回到 Finder，仍可右键新建文件、批量重命名和处理图片。', 'Browse, search, preview and act on files in the drawer. In Finder, right-click to create files, rename a batch or process images.') }}</p>
-        <a class="fm-hero-shortcut" href="#file-drawer" :aria-label="t('了解文件抽屉快捷键 Control + Option + D', 'Discover the Control + Option + D shortcut for File Drawer')"><span class="fm-hero-keys" aria-hidden="true"><kbd>⌃</kbd><kbd>⌥</kbd><kbd>D</kbd></span><span>{{ t('了解文件抽屉', 'Explore File Drawer') }}</span><span aria-hidden="true">↗</span></a>
-        <div class="fm-actions"><a class="fm-button fm-button-primary" :href="release"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v4h16v-4"/></svg>{{ t('下载 macOS 版', 'Download for macOS') }}</a><a class="fm-text-link" :href="drawerGuide">{{ t('阅读抽屉指南', 'Read the drawer guide') }} <span aria-hidden="true">↗</span></a></div>
+        <p class="fm-hero-name"><strong>FileDraw</strong><span>{{ t('文件抽屉', 'File drawer for macOS') }}</span></p>
+        <h1 id="hero-title">{{ t('常用文件夹，', 'Your folders,') }}<br><em>{{ t('按快捷键打开。', 'a shortcut away.') }}</em></h1>
+        <p class="fm-hero-description">{{ t('从正在使用的 App 唤出屏幕边缘的文件抽屉。按名称找到文件，用快速查看预览，然后拷贝路径、移动文件或用指定 App 打开。', 'Bring up your folders at the screen edge while you work in another app. Find a file by name, preview it with Quick Look, then copy its path, move it or open it in the app you choose.') }}</p>
+        <div class="fm-hero-shortcut"><span class="fm-hero-keys" role="img" :aria-label="t('Control 加 Option 加 D', 'Control plus Option plus D')"><kbd>⌃</kbd><kbd>⌥</kbd><kbd>D</kbd></span><span>{{ t('启用后的默认快捷键', 'Default shortcut once enabled') }}</span></div>
+        <div class="fm-actions">
+          <a class="fm-button fm-button-primary" :href="release"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v4h16v-4"/></svg>{{ t('下载 macOS 版', 'Download for macOS') }}</a>
+          <a class="fm-button fm-button-demo" href="#file-drawer-demo"><span class="fm-play" aria-hidden="true"></span>{{ t('观看演示', 'Watch FileDraw') }}</a>
+        </div>
         <div class="fm-release-line"><LatestRelease :lang="lang" /><span>macOS 13+ · Apple M-series</span></div>
         <p class="fm-license">{{ t('个人及非商业使用免费', 'Free for personal & non-commercial use') }}</p>
       </div>
       <div class="fm-product-stage">
-        <div class="fm-stage-top"><span class="fm-stage-mark">F<span>ileMint</span></span><span>{{ t('少一点往返，多一点专注。', 'A little less friction.') }}</span></div>
+        <div class="fm-scene-tabs" role="tablist" :aria-label="t('探索使用场景', 'Explore workflows')"><button v-for="(scene, index) in scenes" :key="scene.class" :id="`scene-tab-${index}`" type="button" role="tab" :aria-selected="active === index" :aria-controls="`scene-panel-${index}`" :tabindex="active === index ? 0 : -1" @click="choose(index)" @keydown="onTabKey($event, index)">{{ scene.label }}</button></div>
         <div v-for="(scene, index) in scenes" :key="scene.class" v-show="active === index" :id="`scene-panel-${index}`" role="tabpanel" :aria-labelledby="`scene-tab-${index}`" tabindex="0" class="fm-scene" :class="`fm-scene--${scene.class}`">
           <div class="fm-scene-image"><button class="fm-capture-button" type="button" :aria-label="t('放大界面截图', 'Enlarge interface screenshot')" @click="openPreview(scene)"><img :src="scene.image" :alt="scene.alt" :width="scene.width" :height="scene.height" :fetchpriority="index === 0 ? 'high' : 'low'" :loading="index === 0 ? 'eager' : 'lazy'"></button></div>
           <div class="fm-scene-caption"><strong><a v-if="scene.href" class="fm-scene-guide" :href="scene.href">{{ scene.title }} <span aria-hidden="true">↗</span></a><template v-else>{{ scene.title }}</template></strong><span>{{ scene.detail }}</span></div>
         </div>
-        <div class="fm-scene-tabs" role="tablist" :aria-label="t('探索使用场景', 'Explore workflows')"><button v-for="(scene, index) in scenes" :key="scene.class" :id="`scene-tab-${index}`" type="button" role="tab" :aria-selected="active === index" :aria-controls="`scene-panel-${index}`" :tabindex="active === index ? 0 : -1" @click="choose(index)" @keydown="onTabKey($event, index)">{{ scene.label }}</button></div>
-        <p class="fm-capture-note">{{ t('真实应用界面 · 示例配置，可按需调整', 'Real app captures · Example configuration, yours to customize') }}</p>
       </div>
     </section>
 
-    <div class="fm-principles fm-wrap"><span>{{ t('原生 macOS 体验', 'Native to macOS') }}</span><span>{{ t('文件在本机处理', 'Files stay on your Mac') }}</span><span>{{ t('无需账号', 'No account needed') }}</span><span>{{ t('菜单按你所需', 'Your menu, your way') }}</span></div>
-
     <section id="file-drawer" class="fm-section fm-wrap fm-drawer" aria-labelledby="file-drawer-title">
       <div class="fm-section-heading">
-        <div><p class="fm-eyebrow">{{ t('文件抽屉', 'FILE DRAWER') }}</p><h2 id="file-drawer-title">{{ t('浏览、查找和处理，', 'Browse, find and act') }}<br><em>{{ t('都在一个抽屉里。', 'in one drawer.') }}</em></h2></div>
-        <p>{{ t('在「扩展功能 → 文件抽屉」开启。FileMint 运行时，按 ⌃⌥D 打开，从侧栏进入已授权的文件夹。', 'Enable it in Extensions → File Drawer. While FileMint is running, press ⌃⌥D and use the sidebar to open folders you have authorized.') }}</p>
+        <h2 id="file-drawer-title">{{ t('用 FileDraw 找到并处理文件', 'Find and act on a file with FileDraw') }}</h2>
+        <p>{{ t('从侧栏打开下载目录或已收藏的项目文件夹。固定抽屉，切换 App 时它仍留在屏幕上。', 'Open Downloads or a saved project folder from the sidebar. Pin the drawer to keep it visible when you switch apps.') }}</p>
       </div>
-      <figure id="file-drawer-demo" class="fm-drawer-demo fm-anchor">
-        <video controls playsinline preload="metadata" loading="lazy" width="1920" height="1080"
-          :poster="drawerVideoPoster" aria-labelledby="file-drawer-demo-title" aria-describedby="file-drawer-demo-steps">
-          <source :src="drawerVideo" type="video/mp4">
-          <a :href="drawerVideo">{{ t('下载文件抽屉演示（MP4）', 'Download the File Drawer demo (MP4)') }}</a>
-        </video>
-        <figcaption>
-          <strong id="file-drawer-demo-title">{{ t('文件抽屉操作演示（英文界面）', 'File Drawer walkthrough') }}</strong>
-          <p id="file-drawer-demo-steps">{{ t('按 ⌃⌥D 打开抽屉，用方向键进入文件夹，按 ⌘F 搜索。回车选中文件后，按空格预览，再按 Esc 关闭预览。按 ⌘K 查看文件操作，按 Esc 退出操作面板，再按 ⌃⌥D 收起抽屉。', 'Press ⌃⌥D to open the drawer, use the arrow keys to enter a folder, and press ⌘F to search. Press Return to select a result, Space to preview it, then Esc to close the preview. Press ⌘K to see file actions, Esc to leave the palette, and ⌃⌥D to close the drawer.') }}</p>
-        </figcaption>
-      </figure>
+      <div class="fm-drawer-walkthrough">
+        <figure id="file-drawer-demo" class="fm-drawer-demo fm-anchor">
+          <video controls playsinline preload="metadata" width="1920" height="1080"
+            :poster="drawerVideoPoster" aria-labelledby="file-drawer-demo-title" aria-describedby="file-drawer-demo-steps">
+            <source :src="drawerVideo" type="video/mp4">
+            <a :href="drawerVideo">{{ t('下载 FileDraw 演示（MP4）', 'Download the FileDraw demo (MP4)') }}</a>
+          </video>
+          <figcaption>
+            <strong id="file-drawer-demo-title">{{ t('FileDraw 操作演示', 'FileDraw walkthrough') }}</strong>
+          </figcaption>
+        </figure>
+        <ol id="file-drawer-demo-steps" class="fm-drawer-steps" role="list" :aria-label="t('演示中的快捷键', 'Shortcuts in the walkthrough')">
+          <li v-for="step in drawerSteps" :key="step.keys">
+            <kbd role="img" :aria-label="step.spokenKeys">{{ step.keys }}</kbd>
+            <div><h3>{{ step.title }}</h3><p>{{ step.detail }}</p></div>
+          </li>
+        </ol>
+      </div>
+      <div class="fm-drawer-setup">
+        <div>
+          <h3>{{ t('开启 FileDraw', 'Enable FileDraw') }}</h3>
+          <p>{{ t('文件抽屉默认关闭。在「扩展功能 → 文件抽屉」开启，打开需要访问的文件夹时按提示授权。', 'The drawer is off by default. Enable it in Extensions → File Drawer, then grant access when you open a folder that needs it.') }}</p>
+        </div>
+        <a class="fm-text-link" :href="drawerGuide">{{ t('查看开启步骤和快捷键', 'See setup and keyboard shortcuts') }} <span aria-hidden="true">↗</span></a>
+      </div>
       <div class="fm-drawer-gallery">
         <figure v-for="capture in drawerGallery" :key="capture.image">
           <button class="fm-drawer-capture" type="button" :aria-label="`${t('放大截图', 'Enlarge screenshot')} · ${capture.title}`" @click="openPreview(capture)"><img :src="capture.image" :alt="capture.alt" width="1600" height="1320" loading="lazy"></button>
           <figcaption><strong>{{ capture.title }}</strong><p>{{ capture.detail }}</p></figcaption>
         </figure>
       </div>
-      <a class="fm-text-link fm-drawer-guide" :href="drawerGuide">{{ t('查看开启步骤和快捷键', 'See setup and keyboard shortcuts') }} <span aria-hidden="true">↗</span></a>
     </section>
 
     <section id="quick-actions" class="fm-section fm-wrap fm-everyday" aria-labelledby="quick-actions-title">
@@ -245,6 +262,6 @@ const faqs = computed(() => [
 
     <section id="roadmap" class="fm-wrap fm-roadmap"><details><summary><span>{{ t('接下来，继续把小事做好。', 'More good things to come.') }}<small>{{ t('查看未来规划 · 以下尚未实现', 'View the roadmap · Planned, not yet available') }}</small></span><span aria-hidden="true">↗</span></summary><div class="fm-roadmap-content"><slot /></div></details></section>
 
-    <section id="download" class="fm-section fm-wrap"><div class="fm-download"><img :src="withBase('/filemint-icon.png')" alt="" width="80" height="80" loading="lazy"><p class="fm-eyebrow">{{ t('下一次右键，从这里开始', 'YOUR NEXT RIGHT-CLICK STARTS HERE') }}</p><h2>{{ t('给工作流，留一点从容。', 'Make room for a smoother day.') }}</h2><p>{{ t('把常用的文件工具，放在恰好需要它们的地方。', 'Keep your everyday file tools right where you need them.') }}</p><div class="fm-actions"><a class="fm-button fm-button-primary" :href="release">{{ t('下载 FileMint', 'Download FileMint') }} <span aria-hidden="true">↓</span></a><a class="fm-text-link" :href="page('install')">{{ t('安装帮助', 'Installation help') }} ↗</a></div><div class="fm-release-line"><LatestRelease :lang="lang" /><span>macOS 13+ · Apple M-series</span></div><p class="fm-license">{{ t('个人及非商业使用免费 · 商业使用须获得授权', 'Free for non-commercial use · Commercial use requires authorization') }}</p><a class="fm-source-link" href="https://github.com/FileMintApp/FileMint">{{ t('在 GitHub 查看源码与更新记录', 'Source code & release history on GitHub') }} ↗</a></div></section>
+    <section id="download" class="fm-section fm-wrap"><div class="fm-download"><img :src="withBase('/filemint-icon.png')" alt="" width="80" height="80" loading="lazy"><h2>{{ t('在 Mac 上试试 FileDraw', 'Get FileDraw with FileMint') }}</h2><p>{{ t('安装 FileMint 后，在「扩展功能 → 文件抽屉」开启。', 'After installing FileMint, enable File Drawer in Extensions.') }}</p><div class="fm-actions"><a class="fm-button fm-button-primary" :href="release">{{ t('下载 FileMint', 'Download FileMint') }} <span aria-hidden="true">↓</span></a><a class="fm-text-link" :href="page('install')">{{ t('安装帮助', 'Installation help') }} ↗</a></div><div class="fm-release-line"><LatestRelease :lang="lang" /><span>macOS 13+ · Apple M-series</span></div><p class="fm-license">{{ t('个人及非商业使用免费 · 商业使用须获得授权', 'Free for non-commercial use · Commercial use requires authorization') }}</p><a class="fm-source-link" href="https://github.com/FileMintApp/FileMint">{{ t('在 GitHub 查看源码与更新记录', 'Source code & release history on GitHub') }} ↗</a></div></section>
   </main>
 </template>

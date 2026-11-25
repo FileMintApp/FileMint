@@ -1,14 +1,14 @@
 ---
 title: FileMint 使用指南
-description: 学习如何在 Mac Finder 右键新建 Word、Excel 和文本文件，复用模板、批量重命名、计算文件校验值、压缩图片及识别文字。
+description: 学习如何开启 FileDraw 文件抽屉，按名称查找并预览文件，在 Finder 里新建文件，以及使用批量重命名、校验值和图片工具。
 pageClass: guide-page
 ---
 
 # FileMint 使用指南
 
-按需要启用文件抽屉、Finder 菜单或其它工具。尚未安装？先看[安装指引](./install)。截图使用的是示例文件和设置。
+按需要启用 FileDraw 文件抽屉、Finder 菜单或其他工具。尚未安装？先看[安装指引](./install)。截图使用的是示例文件和设置。
 
-## 在屏幕边缘打开文件抽屉 {#file-drawer}
+## 从屏幕边缘打开 FileDraw {#file-drawer}
 
 1. 在 FileMint 中打开**扩展功能 → 文件抽屉**，开启文件抽屉。它默认关闭。
 2. 点击**打开文件抽屉**，或在 FileMint 运行时按 **Control + Option + D（⌃⌥D）**。快捷键可以在同一页调整。

@@ -1,14 +1,14 @@
 ---
 title: FileMint User Guide
-description: Create Word, Excel and text files from Finder's right-click menu. Learn to reuse templates, batch rename, check file hashes and process images with FileMint.
+description: Learn to enable FileDraw, find and preview files, create files from Finder, batch rename, check file hashes and process images with FileMint.
 pageClass: guide-page
 ---
 
 # FileMint User Guide
 
-Turn on File Drawer, Finder menus or other tools as you need them. If FileMint is not installed yet, follow the [installation guide](./install). Screenshots show example files and settings.
+Turn on FileDraw, Finder menus or other tools as you need them. If FileMint is not installed yet, follow the [installation guide](./install). Screenshots show example files and settings.
 
-## Open File Drawer from the screen edge {#file-drawer}
+## Open FileDraw from the screen edge {#file-drawer}
 
 1. Open **Extensions → File Drawer** in FileMint and enable File Drawer. It is off by default.
 2. Click **Open File Drawer**, or press **Control + Option + D (⌃⌥D)** while FileMint is running. You can change the shortcut in the same settings pane.

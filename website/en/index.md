@@ -1,8 +1,8 @@
 ---
 layout: home
 titleTemplate: false
-title: FileMint — File Drawer & Finder File Tools for Mac
-description: Open File Drawer from the screen edge to browse folders, search by name and preview files. Create files in Finder, use Quick Search and process images locally. Free for non-commercial use.
+title: FileMint — FileDraw and Finder Tools for Mac
+description: Open FileDraw from the screen edge with a shortcut. Find files by name, preview with Quick Look and act on them. FileMint also offers Finder file creation, Quick Search and local image tools.
 ---
 
 <LandingPage lang="en">
