@@ -22,7 +22,9 @@ Search filters the open folder by name. Use the arrow keys to select an item, pr
 
 ![File Drawer shows the action palette for a selected Markdown file](/images/file-drawer-actions-en.png)
 
-In File Drawer settings, choose the screen edge, adjust the width and height, and pick an animation. The drawer remembers the last location by default. Turn that option off to use your chosen default location on each fresh opening.
+In **File Drawer → Appearance → Screen position**, choose one of the four edge centers or four corners. In the same settings pane, choose an animation and adjust width and height separately. The drawer remembers the last location by default. Turn that option off to use your chosen default location on each fresh opening.
+
+Press **Esc** in the search field to return to the file list and keep your filter. Press **⌘0** to open the location menu, or use **⌘⌥1**, **⌘⌥2** or **⌘⌥3** for icon, list or compact list view.
 
 ## Complete the first-time setup
 

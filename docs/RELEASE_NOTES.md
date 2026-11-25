@@ -1,6 +1,58 @@
 <!-- Future releases after 0.8.0 use docs/RELEASE_NOTES_TEMPLATE.md.
 Keep released entries unchanged; add the next version only during release preparation. -->
 
+# FileMint 0.8.4
+
+## 更新摘要
+
+把文件抽屉放到八个屏幕位置之一，打开后就能用键盘浏览文件。
+
+- 文件抽屉可贴靠屏幕四边的中点或四个角。宽度和高度可分别适应显示器。
+- 搜索时按 Esc 回到文件列表并保留筛选。方向键可循环选中文件，快捷键可直接切换视图。
+- 修复神奇效果收起时，抽屉内容可能先于动画消失的问题。
+
+## 开始使用
+
+在 **扩展功能 → 文件抽屉 → 外观 → 出现位置** 选择抽屉贴靠的位置。首次使用需要先开启文件抽屉。FileMint 运行时，可按默认快捷键 **⌃⌥D** 打开抽屉。更多操作见[文件抽屉使用指南](https://filemintapp.github.io/FileMint/guide.html#file-drawer)。
+
+## 详细改进
+
+- 可为自适应宽度和高度分别设置范围。使用固定宽度时，可以拖动抽屉边缘调整宽度。
+- 全局快捷键会将后台抽屉带到前台，并将键盘焦点交给文件列表，保留当前文件夹、筛选和选区。抽屉已有焦点时，再按一次可收起。
+- 在文件列表中，按 **↑** 或 **↓** 可在首尾循环选择，筛选结果也支持循环。按 **⌘0** 打开位置菜单。按 **⌘⌥1**、**⌘⌥2** 或 **⌘⌥3** 切换图标、列表或紧凑列表视图。
+- 神奇效果的第一帧与抽屉内容同步切换。从搜索框收起时，输入焦点会在动画开始前解除。
+
+## 升级须知
+
+支持搭载 Apple M 系列芯片并运行 macOS 13.0 或更新版本的 Mac。快捷指令与启动器功能要求 macOS 13.3 或更新版本。Intel Mac 可继续使用兼容的旧版本。
+
+升级会保留偏好、模板及已保存的文件夹授权。原来贴靠左侧或右侧的抽屉会保留在对应边的中央。从 0.5.7 或 0.5.8 升级时，请手动下载并安装一次。
+
+## Highlights
+
+Place File Drawer in one of eight screen positions and start browsing with the keyboard as soon as it opens.
+
+- Dock File Drawer at any corner or edge center. Let its width and height fit the display independently.
+- Press Esc in search to return to the file list and keep the filter. Use the arrow keys to wrap through results or switch views with shortcuts.
+- Fixed a glitch where drawer contents could disappear before the Genie closing animation started.
+
+## Getting started
+
+Choose a position in **Extensions → File Drawer → Appearance → Screen position**. Enable File Drawer there if you are using it for the first time. Press the default shortcut **⌃⌥D** while FileMint is running to open it. See the [File Drawer guide](https://filemintapp.github.io/FileMint/en/guide.html#file-drawer) for more shortcuts.
+
+## Details
+
+- Set separate ranges for adaptive width and height. When using a fixed width, drag the drawer edge to adjust it.
+- The global shortcut brings a background drawer forward and gives the file list keyboard focus while keeping the current folder, filter and selection. Press it again while the drawer has focus to close it.
+- Use **↑** or **↓** to wrap through the file list or filtered results. Press **⌘0** to choose a location. Press **⌘⌥1**, **⌘⌥2** or **⌘⌥3** for icon, list or compact list view.
+- Genie shows its first closing frame as the live drawer disappears. Closing from the search field releases keyboard focus before the animation starts.
+
+## Before you update
+
+FileMint supports Apple M-series Macs on macOS 13.0 or later. Shortcuts and Launchers require macOS 13.3 or later. Intel Macs can continue using the last compatible release.
+
+Updating keeps preferences, templates and saved folder access. Existing left or right drawer positions stay centered on the same edge. If you are updating from 0.5.7 or 0.5.8, download and install this release manually once.
+
 # FileMint 0.8.3
 
 ## 更新摘要
