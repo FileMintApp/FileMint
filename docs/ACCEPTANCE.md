@@ -3,6 +3,14 @@
 Observations below apply to the revisions and environments stated in each entry.
 Use [HARNESS](../specs/HARNESS.md) to select present-day verification.
 
+## FileMint 0.8.4 release — 2026-11-25
+
+The signed build 33 at `512761f` became public Latest at 15:36:38 Asia/Shanghai.
+Apple notarization, source CI, draft verification, Pages deployment and official
+Homebrew tap CI passed. Both live homepages included the FileDraw walkthrough,
+and both guides showed the updated setup instructions. Installed upgrade and
+macOS 13/14 runtime remain unverified. [Release evidence](tasks/release-0.8.4.md).
+
 ## Drawer dismissal first frame — 2026-11-25
 
 On arm64 macOS 27.2.1 with Xcode 27.2, the signed cadence fixture reproduced the
