@@ -290,14 +290,18 @@ owns the rules, supported storage, counts, explicit actions and recovery behavio
 - Lead both homepages and READMEs with FileDraw, the public name for the native
   file drawer. Use File Drawer / 文件抽屉 when referring to the in-app controls.
   Put an entry to the walkthrough next to the hero download and the README
-  recording preview ahead of the Finder and other tool workflows. Show real
+  player ahead of the Finder and other tool workflows. Show real
   matching-language captures of browsing, folder search and selected-item
-  actions. Both homepages share a silent recording of the English interface, with
-  on-screen shortcut labels, a text description and user-controlled playback.
-  Both READMEs link to that full video. Describe the sequence from opening the
-  drawer through folder search, Quick Look and file actions. Link to setup and
-  keyboard use in both guides. Explain that the drawer is off by default, opens
-  while FileMint is running and browses folders with the user's authorization.
+  actions. Both homepages and READMEs use the same silent recording of the English
+  interface, with on-screen shortcut labels, a text description and
+  user-controlled playback.
+  Record one continuous walkthrough from the closed drawer through opening,
+  folder navigation, search, Quick Look and file actions, then show the drawer
+  closing and reopening from the screen edge. Embed the MP4 in the READMEs as a
+  GitHub video attachment and link to the repository MP4 for direct access.
+  Link to setup and keyboard use in both guides. Explain that the drawer is off
+  by default, opens while FileMint is running and browses folders with the
+  user's authorization.
 - Give Batch Rename and File Info/checksums a prominent bilingual homepage
   showcase with real, matching-language captures and direct usage-guide links.
   Explain preview-before-commit, protected extensions, conflict blocking and

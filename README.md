@@ -9,16 +9,11 @@
 
 Open Downloads or a project folder from the sidebar. Pin the drawer to keep it visible when you switch apps. FileDraw browses one open, authorized folder at a time.
 
-<p align="center">
-  <a href="https://filemintapp.github.io/FileMint/en/#file-drawer-demo">
-    <picture>
-      <source media="(prefers-reduced-motion: reduce)" srcset="website/public/images/file-drawer-demo-en.jpg">
-      <img src="website/public/images/file-drawer-demo-preview-en.gif" width="800" alt="FileDraw filters the Release folder and previews a matching file with Quick Look">
-    </picture>
-  </a>
-</p>
+Open the drawer, browse and filter a folder, preview a file with Quick Look and open its actions. Then close the drawer and bring it back from the screen edge.
 
-[Watch the full walkthrough](https://filemintapp.github.io/FileMint/en/#file-drawer-demo) · [MP4 file](website/public/videos/file-drawer-en.mp4) · [Setup and shortcuts](https://filemintapp.github.io/FileMint/en/guide.html#file-drawer)
+https://github.com/user-attachments/assets/bd80a10b-bd88-4e44-87bc-08375e12ef22
+
+[Watch on the website](https://filemintapp.github.io/FileMint/en/#file-drawer-demo) · [MP4 file](website/public/videos/file-drawer-en.mp4) · [Setup and shortcuts](https://filemintapp.github.io/FileMint/en/guide.html#file-drawer)
 
 | Shortcut | In FileDraw |
 | --- | --- |
@@ -26,6 +21,7 @@ Open Downloads or a project folder from the sidebar. Pin the drawer to keep it v
 | `⌘F` | Find items by name in the open folder. |
 | `Space` | Preview the selected file with Quick Look. |
 | `⌘K` | Show actions for the selection, such as copying a path, moving an item or choosing an app to open it. |
+| `⌘W` | Close the drawer. |
 
 ## Install and enable FileDraw
 

@@ -9,16 +9,11 @@
 
 从侧栏进入下载目录或项目文件夹。固定抽屉后，切换 App 时它仍留在屏幕上。FileDraw 每次只浏览当前打开且已获授权的文件夹。
 
-<p align="center">
-  <a href="https://filemintapp.github.io/FileMint/#file-drawer-demo">
-    <picture>
-      <source media="(prefers-reduced-motion: reduce)" srcset="website/public/images/file-drawer-demo-en.jpg">
-      <img src="website/public/images/file-drawer-demo-preview-en.gif" width="800" alt="FileDraw 筛选 Release 文件夹，并用快速查看预览匹配的文件">
-    </picture>
-  </a>
-</p>
+这段录屏从打开抽屉开始，演示进入文件夹、筛选文件、快速查看和选区操作，最后收起抽屉并让它从屏幕边缘再次弹出。
 
-[观看完整演示（英文界面）](https://filemintapp.github.io/FileMint/#file-drawer-demo) · [MP4 文件](website/public/videos/file-drawer-en.mp4) · [开启步骤和快捷键](https://filemintapp.github.io/FileMint/guide.html#file-drawer)
+https://github.com/user-attachments/assets/bd80a10b-bd88-4e44-87bc-08375e12ef22
+
+[官网播放（英文界面）](https://filemintapp.github.io/FileMint/#file-drawer-demo) · [MP4 文件](website/public/videos/file-drawer-en.mp4) · [开启步骤和快捷键](https://filemintapp.github.io/FileMint/guide.html#file-drawer)
 
 | 按键 | 在 FileDraw 中 |
 | --- | --- |
@@ -26,6 +21,7 @@
 | `⌘F` | 在当前文件夹内按名称查找项目。 |
 | `空格` | 用快速查看预览选中的文件。 |
 | `⌘K` | 打开选中项的操作面板，拷贝路径、移动项目或选用 App 打开。 |
+| `⌘W` | 收起抽屉。 |
 
 ## 安装并开启 FileDraw
 
